@@ -1,0 +1,1161 @@
+{
+ "usage": {
+  "type": "generations",
+  "generations": 3.0
+ },
+ "id": "dfdad709-838e-4d7a-bf45-76520cdea39b",
+ "status": "completed",
+ "created_at": "2026-11-07T19:56:00.365634+00:00",
+ "last_response": {
+  "seed": 17768888,
+  "type": "done",
+  "usage": {
+   "seconds": 28.08309030532837
+  },
+  "action": "tiles",
+  "status": "completed",
+  "progress": 0.6023255813953489,
+  "tileset_id": "bcb7bdba-a70e-478a-9860-bd002173b89c",
+  "frame_index": 0,
+  "request_type": "tileset",
+  "tileset_data": {
+   "tiles": [
+    {
+     "id": "af84e993-ef00-4da4-9d41-d4bfab82b6f9",
+     "name": "wang_13",
+     "image": {
+      "url": "https://backblaze.pixellab.ai/file/pixellab-tiles/ba149b34-c2af-4153-a797-fffbb7d80131/bcb7bdba-a70e-478a-9860-bd002173b89c/tile_0.png"
+     },
+     "corners": {
+      "NE": "upper",
+      "NW": "upper",
+      "SE": "upper",
+      "SW": "lower"
+     },
+     "connections": {
+      "east": [
+       "bda24867-e888-4bd1-9c87-f19ce21c7a48",
+       "23fd554b-3340-49f1-97ad-0bc7b005af59",
+       "c2ac6a0b-a3e7-4487-9f25-262eece7ff6d",
+       "51eb42d4-afb1-4389-b33f-e7869fbc532a"
+      ],
+      "west": [
+       "00d948dd-47e7-4b18-861e-83f021a3745a",
+       "c2ac6a0b-a3e7-4487-9f25-262eece7ff6d",
+       "79cdbe42-8f17-432e-b4e1-0869b59838a0",
+       "fed88d04-80b0-459e-8873-f96fdeeeb679"
+      ],
+      "north": [
+       "bda24867-e888-4bd1-9c87-f19ce21c7a48",
+       "1cb7f6e9-a492-44e6-8eae-9b7b31f4e74e",
+       "51eb42d4-afb1-4389-b33f-e7869fbc532a",
+       "883e2698-e574-4111-a0c6-c0ddaece1252"
+      ],
+      "south": [
+       "df475495-c2c3-4e9b-a5f1-42a795e6e440",
+       "00d948dd-47e7-4b18-861e-83f021a3745a",
+       "883e2698-e574-4111-a0c6-c0ddaece1252",
+       "fed88d04-80b0-459e-8873-f96fdeeeb679"
+      ]
+     },
+     "description": "transparent background and dark mossy forest stone packed with tangled old tree roots, warm earthy browns and deep greens - wang_13",
+     "pattern_4x4": {
+      "row_0": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "row_1": [
+       255,
+       1,
+       1,
+       255
+      ],
+      "row_2": [
+       255,
+       0,
+       1,
+       255
+      ],
+      "row_3": [
+       255,
+       255,
+       255,
+       255
+      ]
+     },
+     "original_position": {
+      "col": 2,
+      "row": 4
+     }
+    },
+    {
+     "id": "fa7c5d7e-0b0c-4cfa-9c3f-2cfa35fffc93",
+     "name": "wang_10",
+     "image": {
+      "url": "https://backblaze.pixellab.ai/file/pixellab-tiles/ba149b34-c2af-4153-a797-fffbb7d80131/bcb7bdba-a70e-478a-9860-bd002173b89c/tile_1.png"
+     },
+     "corners": {
+      "NE": "lower",
+      "NW": "upper",
+      "SE": "lower",
+      "SW": "upper"
+     },
+     "connections": {
+      "east": [
+       "0fcf71d5-347d-44db-856a-7514c36a87fb",
+       "bcd94ded-87e0-4bd0-896e-dd1023c92fd8",
+       "7d5adee0-9305-4cb9-9ffd-3333376abf4a"
+      ],
+      "west": [
+       "00d948dd-47e7-4b18-861e-83f021a3745a",
+       "c2ac6a0b-a3e7-4487-9f25-262eece7ff6d",
+       "fed88d04-80b0-459e-8873-f96fdeeeb679"
+      ],
+      "north": [
+       "bda24867-e888-4bd1-9c87-f19ce21c7a48",
+       "1cb7f6e9-a492-44e6-8eae-9b7b31f4e74e",
+       "51eb42d4-afb1-4389-b33f-e7869fbc532a",
+       "883e2698-e574-4111-a0c6-c0ddaece1252"
+      ],
+      "south": [
+       "31d809f7-ca61-4e93-b406-b22f79679e90",
+       "5af83de2-f772-46d5-9409-4bc662ff03d3",
+       "1cb7f6e9-a492-44e6-8eae-9b7b31f4e74e",
+       "d617e853-bf20-4eee-8f08-a8e4938de6e5"
+      ]
+     },
+     "description": "transparent background and dark mossy forest stone packed with tangled old tree roots, warm earthy browns and deep greens - wang_10",
+     "pattern_4x4": {
+      "row_0": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "row_1": [
+       255,
+       1,
+       0,
+       255
+      ],
+      "row_2": [
+       255,
+       1,
+       0,
+       255
+      ],
+      "row_3": [
+       255,
+       255,
+       255,
+       255
+      ]
+     },
+     "original_position": {
+      "col": 6,
+      "row": 2
+     }
+    },
+    {
+     "id": "c134004f-673e-4ff5-a67e-90433fa35cf3",
+     "name": "wang_4",
+     "image": {
+      "url": "https://backblaze.pixellab.ai/file/pixellab-tiles/ba149b34-c2af-4153-a797-fffbb7d80131/bcb7bdba-a70e-478a-9860-bd002173b89c/tile_2.png"
+     },
+     "corners": {
+      "NE": "upper",
+      "NW": "lower",
+      "SE": "lower",
+      "SW": "lower"
+     },
+     "connections": {
+      "east": [
+       "d617e853-bf20-4eee-8f08-a8e4938de6e5",
+       "883e2698-e574-4111-a0c6-c0ddaece1252",
+       "fed88d04-80b0-459e-8873-f96fdeeeb679"
+      ],
+      "west": [
+       "5af83de2-f772-46d5-9409-4bc662ff03d3",
+       "51eb42d4-afb1-4389-b33f-e7869fbc532a",
+       "7d5adee0-9305-4cb9-9ffd-3333376abf4a"
+      ],
+      "north": [
+       "31d809f7-ca61-4e93-b406-b22f79679e90",
+       "0fcf71d5-347d-44db-856a-7514c36a87fb",
+       "00d948dd-47e7-4b18-861e-83f021a3745a",
+       "79cdbe42-8f17-432e-b4e1-0869b59838a0"
+      ],
+      "south": [
+       "bda24867-e888-4bd1-9c87-f19ce21c7a48",
+       "c2ac6a0b-a3e7-4487-9f25-262eece7ff6d",
+       "79cdbe42-8f17-432e-b4e1-0869b59838a0",
+       "bcd94ded-87e0-4bd0-896e-dd1023c92fd8"
+      ]
+     },
+     "description": "transparent background and dark mossy forest stone packed with tangled old tree roots, warm earthy browns and deep greens - wang_4",
+     "pattern_4x4": {
+      "row_0": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "row_1": [
+       255,
+       0,
+       1,
+       255
+      ],
+      "row_2": [
+       255,
+       0,
+       0,
+       255
+      ],
+      "row_3": [
+       255,
+       255,
+       255,
+       255
+      ]
+     },
+     "original_position": {
+      "col": 1,
+      "row": 4
+     }
+    },
+    {
+     "id": "73f3705a-6843-4c1d-8119-3cc249177e81",
+     "name": "wang_12",
+     "image": {
+      "url": "https://backblaze.pixellab.ai/file/pixellab-tiles/ba149b34-c2af-4153-a797-fffbb7d80131/bcb7bdba-a70e-478a-9860-bd002173b89c/tile_3.png"
+     },
+     "corners": {
+      "NE": "upper",
+      "NW": "upper",
+      "SE": "lower",
+      "SW": "lower"
+     },
+     "connections": {
+      "east": [
+       "bda24867-e888-4bd1-9c87-f19ce21c7a48",
+       "23fd554b-3340-49f1-97ad-0bc7b005af59",
+       "c2ac6a0b-a3e7-4487-9f25-262eece7ff6d",
+       "51eb42d4-afb1-4389-b33f-e7869fbc532a"
+      ],
+      "west": [
+       "5af83de2-f772-46d5-9409-4bc662ff03d3",
+       "1cb7f6e9-a492-44e6-8eae-9b7b31f4e74e",
+       "51eb42d4-afb1-4389-b33f-e7869fbc532a",
+       "7d5adee0-9305-4cb9-9ffd-3333376abf4a"
+      ],
+      "north": [
+       "5af83de2-f772-46d5-9409-4bc662ff03d3",
+       "df475495-c2c3-4e9b-a5f1-42a795e6e440",
+       "bcd94ded-87e0-4bd0-896e-dd1023c92fd8",
+       "7d5adee0-9305-4cb9-9ffd-3333376abf4a"
+      ],
+      "south": [
+       "bda24867-e888-4bd1-9c87-f19ce21c7a48",
+       "c2ac6a0b-a3e7-4487-9f25-262eece7ff6d",
+       "79cdbe42-8f17-432e-b4e1-0869b59838a0",
+       "bcd94ded-87e0-4bd0-896e-dd1023c92fd8"
+      ]
+     },
+     "description": "transparent background and dark mossy forest stone packed with tangled old tree roots, warm earthy browns and deep greens - wang_12",
+     "pattern_4x4": {
+      "row_0": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "row_1": [
+       255,
+       1,
+       1,
+       255
+      ],
+      "row_2": [
+       255,
+       0,
+       0,
+       255
+      ],
+      "row_3": [
+       255,
+       255,
+       255,
+       255
+      ]
+     },
+     "original_position": {
+      "col": 5,
+      "row": 3
+     }
+    },
+    {
+     "id": "b38f781d-309d-4c11-87fa-9b92cdbd7e05",
+     "name": "wang_6",
+     "image": {
+      "url": "https://backblaze.pixellab.ai/file/pixellab-tiles/ba149b34-c2af-4153-a797-fffbb7d80131/bcb7bdba-a70e-478a-9860-bd002173b89c/tile_4.png"
+     },
+     "corners": {
+      "NE": "upper",
+      "NW": "lower",
+      "SE": "lower",
+      "SW": "upper"
+     },
+     "connections": {
+      "east": [
+       "bda24867-e888-4bd1-9c87-f19ce21c7a48",
+       "23fd554b-3340-49f1-97ad-0bc7b005af59",
+       "c2ac6a0b-a3e7-4487-9f25-262eece7ff6d",
+       "51eb42d4-afb1-4389-b33f-e7869fbc532a"
+      ],
+      "west": [
+       "31d809f7-ca61-4e93-b406-b22f79679e90",
+       "0fcf71d5-347d-44db-856a-7514c36a87fb",
+       "d617e853-bf20-4eee-8f08-a8e4938de6e5",
+       "23fd554b-3340-49f1-97ad-0bc7b005af59"
+      ],
+      "north": [
+       "5af83de2-f772-46d5-9409-4bc662ff03d3",
+       "bcd94ded-87e0-4bd0-896e-dd1023c92fd8",
+       "7d5adee0-9305-4cb9-9ffd-3333376abf4a"
+      ],
+      "south": [
+       "00d948dd-47e7-4b18-861e-83f021a3745a",
+       "883e2698-e574-4111-a0c6-c0ddaece1252",
+       "fed88d04-80b0-459e-8873-f96fdeeeb679"
+      ]
+     },
+     "description": "transparent background and dark mossy forest stone packed with tangled old tree roots, warm earthy browns and deep greens - wang_6",
+     "pattern_4x4": {
+      "row_0": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "row_1": [
+       255,
+       0,
+       1,
+       255
+      ],
+      "row_2": [
+       255,
+       1,
+       0,
+       255
+      ],
+      "row_3": [
+       255,
+       255,
+       255,
+       255
+      ]
+     },
+     "original_position": {
+      "col": 2,
+      "row": 5
+     }
+    },
+    {
+     "id": "21f6c61d-2883-4e7f-ae6b-0676242d96d5",
+     "name": "wang_8",
+     "image": {
+      "url": "https://backblaze.pixellab.ai/file/pixellab-tiles/ba149b34-c2af-4153-a797-fffbb7d80131/bcb7bdba-a70e-478a-9860-bd002173b89c/tile_5.png"
+     },
+     "corners": {
+      "NE": "lower",
+      "NW": "upper",
+      "SE": "lower",
+      "SW": "lower"
+     },
+     "connections": {
+      "east": [
+       "31d809f7-ca61-4e93-b406-b22f79679e90",
+       "5af83de2-f772-46d5-9409-4bc662ff03d3",
+       "df475495-c2c3-4e9b-a5f1-42a795e6e440",
+       "00d948dd-47e7-4b18-861e-83f021a3745a"
+      ],
+      "west": [
+       "bda24867-e888-4bd1-9c87-f19ce21c7a48",
+       "df475495-c2c3-4e9b-a5f1-42a795e6e440",
+       "883e2698-e574-4111-a0c6-c0ddaece1252",
+       "bcd94ded-87e0-4bd0-896e-dd1023c92fd8"
+      ],
+      "north": [
+       "d617e853-bf20-4eee-8f08-a8e4938de6e5",
+       "c2ac6a0b-a3e7-4487-9f25-262eece7ff6d",
+       "fed88d04-80b0-459e-8873-f96fdeeeb679"
+      ],
+      "south": [
+       "0fcf71d5-347d-44db-856a-7514c36a87fb",
+       "51eb42d4-afb1-4389-b33f-e7869fbc532a",
+       "7d5adee0-9305-4cb9-9ffd-3333376abf4a"
+      ]
+     },
+     "description": "transparent background and dark mossy forest stone packed with tangled old tree roots, warm earthy browns and deep greens - wang_8",
+     "pattern_4x4": {
+      "row_0": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "row_1": [
+       255,
+       1,
+       0,
+       255
+      ],
+      "row_2": [
+       255,
+       0,
+       0,
+       255
+      ],
+      "row_3": [
+       255,
+       255,
+       255,
+       255
+      ]
+     },
+     "original_position": {
+      "col": 6,
+      "row": 3
+     }
+    },
+    {
+     "id": "31d809f7-ca61-4e93-b406-b22f79679e90",
+     "name": "wang_0",
+     "image": {
+      "url": "https://backblaze.pixellab.ai/file/pixellab-tiles/ba149b34-c2af-4153-a797-fffbb7d80131/bcb7bdba-a70e-478a-9860-bd002173b89c/tile_6.png"
+     },
+     "corners": {
+      "NE": "lower",
+      "NW": "lower",
+      "SE": "lower",
+      "SW": "lower"
+     },
+     "connections": {
+      "east": [
+       "5af83de2-f772-46d5-9409-4bc662ff03d3",
+       "df475495-c2c3-4e9b-a5f1-42a795e6e440",
+       "00d948dd-47e7-4b18-861e-83f021a3745a"
+      ],
+      "west": [
+       "0fcf71d5-347d-44db-856a-7514c36a87fb",
+       "d617e853-bf20-4eee-8f08-a8e4938de6e5",
+       "23fd554b-3340-49f1-97ad-0bc7b005af59"
+      ],
+      "north": [
+       "0fcf71d5-347d-44db-856a-7514c36a87fb",
+       "00d948dd-47e7-4b18-861e-83f021a3745a",
+       "79cdbe42-8f17-432e-b4e1-0869b59838a0"
+      ],
+      "south": [
+       "5af83de2-f772-46d5-9409-4bc662ff03d3",
+       "1cb7f6e9-a492-44e6-8eae-9b7b31f4e74e",
+       "d617e853-bf20-4eee-8f08-a8e4938de6e5"
+      ]
+     },
+     "description": "transparent background and dark mossy forest stone packed with tangled old tree roots, warm earthy browns and deep greens - wang_0",
+     "pattern_4x4": {
+      "row_0": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "row_1": [
+       255,
+       0,
+       0,
+       255
+      ],
+      "row_2": [
+       255,
+       0,
+       0,
+       255
+      ],
+      "row_3": [
+       255,
+       255,
+       255,
+       255
+      ]
+     },
+     "original_position": {
+      "col": 3,
+      "row": 6
+     }
+    },
+    {
+     "id": "961b1965-399a-40c7-86cc-253bcae0f283",
+     "name": "wang_1",
+     "image": {
+      "url": "https://backblaze.pixellab.ai/file/pixellab-tiles/ba149b34-c2af-4153-a797-fffbb7d80131/bcb7bdba-a70e-478a-9860-bd002173b89c/tile_7.png"
+     },
+     "corners": {
+      "NE": "lower",
+      "NW": "lower",
+      "SE": "upper",
+      "SW": "lower"
+     },
+     "connections": {
+      "east": [
+       "23fd554b-3340-49f1-97ad-0bc7b005af59",
+       "c2ac6a0b-a3e7-4487-9f25-262eece7ff6d",
+       "51eb42d4-afb1-4389-b33f-e7869fbc532a"
+      ],
+      "west": [
+       "df475495-c2c3-4e9b-a5f1-42a795e6e440",
+       "883e2698-e574-4111-a0c6-c0ddaece1252",
+       "bcd94ded-87e0-4bd0-896e-dd1023c92fd8"
+      ],
+      "north": [
+       "1cb7f6e9-a492-44e6-8eae-9b7b31f4e74e",
+       "51eb42d4-afb1-4389-b33f-e7869fbc532a",
+       "883e2698-e574-4111-a0c6-c0ddaece1252"
+      ],
+      "south": [
+       "c2ac6a0b-a3e7-4487-9f25-262eece7ff6d",
+       "79cdbe42-8f17-432e-b4e1-0869b59838a0",
+       "bcd94ded-87e0-4bd0-896e-dd1023c92fd8"
+      ]
+     },
+     "description": "transparent background and dark mossy forest stone packed with tangled old tree roots, warm earthy browns and deep greens - wang_1",
+     "pattern_4x4": {
+      "row_0": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "row_1": [
+       255,
+       0,
+       0,
+       255
+      ],
+      "row_2": [
+       255,
+       0,
+       1,
+       255
+      ],
+      "row_3": [
+       255,
+       255,
+       255,
+       255
+      ]
+     },
+     "original_position": {
+      "col": 1,
+      "row": 1
+     }
+    },
+    {
+     "id": "bb03963e-13d2-464c-96ec-f9ac44461c0b",
+     "name": "wang_11",
+     "image": {
+      "url": "https://backblaze.pixellab.ai/file/pixellab-tiles/ba149b34-c2af-4153-a797-fffbb7d80131/bcb7bdba-a70e-478a-9860-bd002173b89c/tile_8.png"
+     },
+     "corners": {
+      "NE": "lower",
+      "NW": "upper",
+      "SE": "upper",
+      "SW": "upper"
+     },
+     "connections": {
+      "east": [
+       "1cb7f6e9-a492-44e6-8eae-9b7b31f4e74e",
+       "d617e853-bf20-4eee-8f08-a8e4938de6e5",
+       "883e2698-e574-4111-a0c6-c0ddaece1252",
+       "fed88d04-80b0-459e-8873-f96fdeeeb679"
+      ],
+      "west": [
+       "bda24867-e888-4bd1-9c87-f19ce21c7a48",
+       "df475495-c2c3-4e9b-a5f1-42a795e6e440",
+       "883e2698-e574-4111-a0c6-c0ddaece1252",
+       "bcd94ded-87e0-4bd0-896e-dd1023c92fd8"
+      ],
+      "north": [
+       "d617e853-bf20-4eee-8f08-a8e4938de6e5",
+       "23fd554b-3340-49f1-97ad-0bc7b005af59",
+       "c2ac6a0b-a3e7-4487-9f25-262eece7ff6d",
+       "fed88d04-80b0-459e-8873-f96fdeeeb679"
+      ],
+      "south": [
+       "bda24867-e888-4bd1-9c87-f19ce21c7a48",
+       "c2ac6a0b-a3e7-4487-9f25-262eece7ff6d",
+       "79cdbe42-8f17-432e-b4e1-0869b59838a0",
+       "bcd94ded-87e0-4bd0-896e-dd1023c92fd8"
+      ]
+     },
+     "description": "transparent background and dark mossy forest stone packed with tangled old tree roots, warm earthy browns and deep greens - wang_11",
+     "pattern_4x4": {
+      "row_0": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "row_1": [
+       255,
+       1,
+       0,
+       255
+      ],
+      "row_2": [
+       255,
+       1,
+       1,
+       255
+      ],
+      "row_3": [
+       255,
+       255,
+       255,
+       255
+      ]
+     },
+     "original_position": {
+      "col": 3,
+      "row": 2
+     }
+    },
+    {
+     "id": "fad8a41e-dd29-4b47-836b-2265dd15bb84",
+     "name": "wang_3",
+     "image": {
+      "url": "https://backblaze.pixellab.ai/file/pixellab-tiles/ba149b34-c2af-4153-a797-fffbb7d80131/bcb7bdba-a70e-478a-9860-bd002173b89c/tile_9.png"
+     },
+     "corners": {
+      "NE": "lower",
+      "NW": "lower",
+      "SE": "upper",
+      "SW": "upper"
+     },
+     "connections": {
+      "east": [
+       "1cb7f6e9-a492-44e6-8eae-9b7b31f4e74e",
+       "d617e853-bf20-4eee-8f08-a8e4938de6e5",
+       "883e2698-e574-4111-a0c6-c0ddaece1252",
+       "fed88d04-80b0-459e-8873-f96fdeeeb679"
+      ],
+      "west": [
+       "31d809f7-ca61-4e93-b406-b22f79679e90",
+       "0fcf71d5-347d-44db-856a-7514c36a87fb",
+       "d617e853-bf20-4eee-8f08-a8e4938de6e5",
+       "23fd554b-3340-49f1-97ad-0bc7b005af59"
+      ],
+      "north": [
+       "31d809f7-ca61-4e93-b406-b22f79679e90",
+       "0fcf71d5-347d-44db-856a-7514c36a87fb",
+       "00d948dd-47e7-4b18-861e-83f021a3745a",
+       "79cdbe42-8f17-432e-b4e1-0869b59838a0"
+      ],
+      "south": [
+       "df475495-c2c3-4e9b-a5f1-42a795e6e440",
+       "00d948dd-47e7-4b18-861e-83f021a3745a",
+       "883e2698-e574-4111-a0c6-c0ddaece1252",
+       "fed88d04-80b0-459e-8873-f96fdeeeb679"
+      ]
+     },
+     "description": "transparent background and dark mossy forest stone packed with tangled old tree roots, warm earthy browns and deep greens - wang_3",
+     "pattern_4x4": {
+      "row_0": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "row_1": [
+       255,
+       0,
+       0,
+       255
+      ],
+      "row_2": [
+       255,
+       1,
+       1,
+       255
+      ],
+      "row_3": [
+       255,
+       255,
+       255,
+       255
+      ]
+     },
+     "original_position": {
+      "col": 2,
+      "row": 1
+     }
+    },
+    {
+     "id": "9d09527e-5116-4c18-b771-bfabade41ebb",
+     "name": "wang_2",
+     "image": {
+      "url": "https://backblaze.pixellab.ai/file/pixellab-tiles/ba149b34-c2af-4153-a797-fffbb7d80131/bcb7bdba-a70e-478a-9860-bd002173b89c/tile_10.png"
+     },
+     "corners": {
+      "NE": "lower",
+      "NW": "lower",
+      "SE": "lower",
+      "SW": "upper"
+     },
+     "connections": {
+      "east": [
+       "31d809f7-ca61-4e93-b406-b22f79679e90",
+       "5af83de2-f772-46d5-9409-4bc662ff03d3",
+       "df475495-c2c3-4e9b-a5f1-42a795e6e440",
+       "00d948dd-47e7-4b18-861e-83f021a3745a"
+      ],
+      "west": [
+       "00d948dd-47e7-4b18-861e-83f021a3745a",
+       "c2ac6a0b-a3e7-4487-9f25-262eece7ff6d",
+       "79cdbe42-8f17-432e-b4e1-0869b59838a0",
+       "fed88d04-80b0-459e-8873-f96fdeeeb679"
+      ],
+      "north": [
+       "d617e853-bf20-4eee-8f08-a8e4938de6e5",
+       "23fd554b-3340-49f1-97ad-0bc7b005af59",
+       "c2ac6a0b-a3e7-4487-9f25-262eece7ff6d",
+       "fed88d04-80b0-459e-8873-f96fdeeeb679"
+      ],
+      "south": [
+       "31d809f7-ca61-4e93-b406-b22f79679e90",
+       "5af83de2-f772-46d5-9409-4bc662ff03d3",
+       "1cb7f6e9-a492-44e6-8eae-9b7b31f4e74e",
+       "d617e853-bf20-4eee-8f08-a8e4938de6e5"
+      ]
+     },
+     "description": "transparent background and dark mossy forest stone packed with tangled old tree roots, warm earthy browns and deep greens - wang_2",
+     "pattern_4x4": {
+      "row_0": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "row_1": [
+       255,
+       0,
+       0,
+       255
+      ],
+      "row_2": [
+       255,
+       1,
+       0,
+       255
+      ],
+      "row_3": [
+       255,
+       255,
+       255,
+       255
+      ]
+     },
+     "original_position": {
+      "col": 3,
+      "row": 1
+     }
+    },
+    {
+     "id": "c1d121f1-4a3c-46a7-9686-0ba0651004f2",
+     "name": "wang_5",
+     "image": {
+      "url": "https://backblaze.pixellab.ai/file/pixellab-tiles/ba149b34-c2af-4153-a797-fffbb7d80131/bcb7bdba-a70e-478a-9860-bd002173b89c/tile_11.png"
+     },
+     "corners": {
+      "NE": "upper",
+      "NW": "lower",
+      "SE": "upper",
+      "SW": "lower"
+     },
+     "connections": {
+      "east": [
+       "31d809f7-ca61-4e93-b406-b22f79679e90",
+       "5af83de2-f772-46d5-9409-4bc662ff03d3",
+       "df475495-c2c3-4e9b-a5f1-42a795e6e440",
+       "00d948dd-47e7-4b18-861e-83f021a3745a"
+      ],
+      "west": [
+       "5af83de2-f772-46d5-9409-4bc662ff03d3",
+       "1cb7f6e9-a492-44e6-8eae-9b7b31f4e74e",
+       "51eb42d4-afb1-4389-b33f-e7869fbc532a",
+       "7d5adee0-9305-4cb9-9ffd-3333376abf4a"
+      ],
+      "north": [
+       "31d809f7-ca61-4e93-b406-b22f79679e90",
+       "0fcf71d5-347d-44db-856a-7514c36a87fb",
+       "00d948dd-47e7-4b18-861e-83f021a3745a",
+       "79cdbe42-8f17-432e-b4e1-0869b59838a0"
+      ],
+      "south": [
+       "0fcf71d5-347d-44db-856a-7514c36a87fb",
+       "23fd554b-3340-49f1-97ad-0bc7b005af59",
+       "51eb42d4-afb1-4389-b33f-e7869fbc532a",
+       "7d5adee0-9305-4cb9-9ffd-3333376abf4a"
+      ]
+     },
+     "description": "transparent background and dark mossy forest stone packed with tangled old tree roots, warm earthy browns and deep greens - wang_5",
+     "pattern_4x4": {
+      "row_0": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "row_1": [
+       255,
+       0,
+       1,
+       255
+      ],
+      "row_2": [
+       255,
+       0,
+       1,
+       255
+      ],
+      "row_3": [
+       255,
+       255,
+       255,
+       255
+      ]
+     },
+     "original_position": {
+      "col": 1,
+      "row": 2
+     }
+    },
+    {
+     "id": "3351af34-356a-42de-867c-31c9fcc22c96",
+     "name": "wang_15",
+     "image": {
+      "url": "https://backblaze.pixellab.ai/file/pixellab-tiles/ba149b34-c2af-4153-a797-fffbb7d80131/bcb7bdba-a70e-478a-9860-bd002173b89c/tile_12.png"
+     },
+     "corners": {
+      "NE": "upper",
+      "NW": "upper",
+      "SE": "upper",
+      "SW": "upper"
+     },
+     "connections": {
+      "east": [
+       "0fcf71d5-347d-44db-856a-7514c36a87fb",
+       "79cdbe42-8f17-432e-b4e1-0869b59838a0",
+       "bcd94ded-87e0-4bd0-896e-dd1023c92fd8",
+       "7d5adee0-9305-4cb9-9ffd-3333376abf4a"
+      ],
+      "west": [
+       "5af83de2-f772-46d5-9409-4bc662ff03d3",
+       "1cb7f6e9-a492-44e6-8eae-9b7b31f4e74e",
+       "51eb42d4-afb1-4389-b33f-e7869fbc532a",
+       "7d5adee0-9305-4cb9-9ffd-3333376abf4a"
+      ],
+      "north": [
+       "5af83de2-f772-46d5-9409-4bc662ff03d3",
+       "df475495-c2c3-4e9b-a5f1-42a795e6e440",
+       "bcd94ded-87e0-4bd0-896e-dd1023c92fd8",
+       "7d5adee0-9305-4cb9-9ffd-3333376abf4a"
+      ],
+      "south": [
+       "0fcf71d5-347d-44db-856a-7514c36a87fb",
+       "23fd554b-3340-49f1-97ad-0bc7b005af59",
+       "51eb42d4-afb1-4389-b33f-e7869fbc532a",
+       "7d5adee0-9305-4cb9-9ffd-3333376abf4a"
+      ]
+     },
+     "description": "transparent background and dark mossy forest stone packed with tangled old tree roots, warm earthy browns and deep greens - wang_15",
+     "pattern_4x4": {
+      "row_0": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "row_1": [
+       255,
+       1,
+       1,
+       255
+      ],
+      "row_2": [
+       255,
+       1,
+       1,
+       255
+      ],
+      "row_3": [
+       255,
+       255,
+       255,
+       255
+      ]
+     },
+     "original_position": {
+      "col": 2,
+      "row": 2
+     }
+    },
+    {
+     "id": "54880053-b5b6-4b40-982e-201014c6614a",
+     "name": "wang_14",
+     "image": {
+      "url": "https://backblaze.pixellab.ai/file/pixellab-tiles/ba149b34-c2af-4153-a797-fffbb7d80131/bcb7bdba-a70e-478a-9860-bd002173b89c/tile_13.png"
+     },
+     "corners": {
+      "NE": "upper",
+      "NW": "upper",
+      "SE": "lower",
+      "SW": "upper"
+     },
+     "connections": {
+      "east": [
+       "1cb7f6e9-a492-44e6-8eae-9b7b31f4e74e",
+       "d617e853-bf20-4eee-8f08-a8e4938de6e5",
+       "883e2698-e574-4111-a0c6-c0ddaece1252",
+       "fed88d04-80b0-459e-8873-f96fdeeeb679"
+      ],
+      "west": [
+       "00d948dd-47e7-4b18-861e-83f021a3745a",
+       "c2ac6a0b-a3e7-4487-9f25-262eece7ff6d",
+       "79cdbe42-8f17-432e-b4e1-0869b59838a0",
+       "fed88d04-80b0-459e-8873-f96fdeeeb679"
+      ],
+      "north": [
+       "d617e853-bf20-4eee-8f08-a8e4938de6e5",
+       "23fd554b-3340-49f1-97ad-0bc7b005af59",
+       "c2ac6a0b-a3e7-4487-9f25-262eece7ff6d",
+       "fed88d04-80b0-459e-8873-f96fdeeeb679"
+      ],
+      "south": [
+       "df475495-c2c3-4e9b-a5f1-42a795e6e440",
+       "00d948dd-47e7-4b18-861e-83f021a3745a",
+       "883e2698-e574-4111-a0c6-c0ddaece1252",
+       "fed88d04-80b0-459e-8873-f96fdeeeb679"
+      ]
+     },
+     "description": "transparent background and dark mossy forest stone packed with tangled old tree roots, warm earthy browns and deep greens - wang_14",
+     "pattern_4x4": {
+      "row_0": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "row_1": [
+       255,
+       1,
+       1,
+       255
+      ],
+      "row_2": [
+       255,
+       1,
+       0,
+       255
+      ],
+      "row_3": [
+       255,
+       255,
+       255,
+       255
+      ]
+     },
+     "original_position": {
+      "col": 4,
+      "row": 3
+     }
+    },
+    {
+     "id": "00d12c32-0227-4ff7-9059-d8a411fe1152",
+     "name": "wang_9",
+     "image": {
+      "url": "https://backblaze.pixellab.ai/file/pixellab-tiles/ba149b34-c2af-4153-a797-fffbb7d80131/bcb7bdba-a70e-478a-9860-bd002173b89c/tile_14.png"
+     },
+     "corners": {
+      "NE": "lower",
+      "NW": "upper",
+      "SE": "upper",
+      "SW": "lower"
+     },
+     "connections": {
+      "east": [
+       "0fcf71d5-347d-44db-856a-7514c36a87fb",
+       "79cdbe42-8f17-432e-b4e1-0869b59838a0",
+       "bcd94ded-87e0-4bd0-896e-dd1023c92fd8",
+       "7d5adee0-9305-4cb9-9ffd-3333376abf4a"
+      ],
+      "west": [
+       "bda24867-e888-4bd1-9c87-f19ce21c7a48",
+       "df475495-c2c3-4e9b-a5f1-42a795e6e440",
+       "883e2698-e574-4111-a0c6-c0ddaece1252",
+       "bcd94ded-87e0-4bd0-896e-dd1023c92fd8"
+      ],
+      "north": [
+       "bda24867-e888-4bd1-9c87-f19ce21c7a48",
+       "1cb7f6e9-a492-44e6-8eae-9b7b31f4e74e",
+       "51eb42d4-afb1-4389-b33f-e7869fbc532a",
+       "883e2698-e574-4111-a0c6-c0ddaece1252"
+      ],
+      "south": [
+       "0fcf71d5-347d-44db-856a-7514c36a87fb",
+       "23fd554b-3340-49f1-97ad-0bc7b005af59",
+       "51eb42d4-afb1-4389-b33f-e7869fbc532a",
+       "7d5adee0-9305-4cb9-9ffd-3333376abf4a"
+      ]
+     },
+     "description": "transparent background and dark mossy forest stone packed with tangled old tree roots, warm earthy browns and deep greens - wang_9",
+     "pattern_4x4": {
+      "row_0": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "row_1": [
+       255,
+       1,
+       0,
+       255
+      ],
+      "row_2": [
+       255,
+       0,
+       1,
+       255
+      ],
+      "row_3": [
+       255,
+       255,
+       255,
+       255
+      ]
+     },
+     "original_position": {
+      "col": 4,
+      "row": 4
+     }
+    },
+    {
+     "id": "31f2a99f-9beb-4fc6-8c29-68b90bd689a4",
+     "name": "wang_7",
+     "image": {
+      "url": "https://backblaze.pixellab.ai/file/pixellab-tiles/ba149b34-c2af-4153-a797-fffbb7d80131/bcb7bdba-a70e-478a-9860-bd002173b89c/tile_15.png"
+     },
+     "corners": {
+      "NE": "upper",
+      "NW": "lower",
+      "SE": "upper",
+      "SW": "upper"
+     },
+     "connections": {
+      "east": [
+       "0fcf71d5-347d-44db-856a-7514c36a87fb",
+       "79cdbe42-8f17-432e-b4e1-0869b59838a0",
+       "bcd94ded-87e0-4bd0-896e-dd1023c92fd8",
+       "7d5adee0-9305-4cb9-9ffd-3333376abf4a"
+      ],
+      "west": [
+       "31d809f7-ca61-4e93-b406-b22f79679e90",
+       "0fcf71d5-347d-44db-856a-7514c36a87fb",
+       "d617e853-bf20-4eee-8f08-a8e4938de6e5",
+       "23fd554b-3340-49f1-97ad-0bc7b005af59"
+      ],
+      "north": [
+       "5af83de2-f772-46d5-9409-4bc662ff03d3",
+       "df475495-c2c3-4e9b-a5f1-42a795e6e440",
+       "bcd94ded-87e0-4bd0-896e-dd1023c92fd8",
+       "7d5adee0-9305-4cb9-9ffd-3333376abf4a"
+      ],
+      "south": [
+       "31d809f7-ca61-4e93-b406-b22f79679e90",
+       "5af83de2-f772-46d5-9409-4bc662ff03d3",
+       "1cb7f6e9-a492-44e6-8eae-9b7b31f4e74e",
+       "d617e853-bf20-4eee-8f08-a8e4938de6e5"
+      ]
+     },
+     "description": "transparent background and dark mossy forest stone packed with tangled old tree roots, warm earthy browns and deep greens - wang_7",
+     "pattern_4x4": {
+      "row_0": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "row_1": [
+       255,
+       0,
+       1,
+       255
+      ],
+      "row_2": [
+       255,
+       1,
+       1,
+       255
+      ],
+      "row_3": [
+       255,
+       255,
+       255,
+       255
+      ]
+     },
+     "original_position": {
+      "col": 4,
+      "row": 2
+     }
+    }
+   ],
+   "tile_size": {
+    "width": 16,
+    "height": 16
+   },
+   "total_tiles": 16,
+   "tileset_type": "sidescroller",
+   "terrain_types": [
+    "central",
+    "background"
+   ],
+   "spritesheet_url": "https://backblaze.pixellab.ai/file/pixellab-tiles/ba149b34-c2af-4153-a797-fffbb7d80131/bcb7bdba-a70e-478a-9860-bd002173b89c/spritesheet.png",
+   "spritesheet_grid": {
+    "cols": 4,
+    "rows": 4
+   },
+   "spritesheet_layout": "tileset15_4x4"
+  },
+  "tileset_name": "dark mossy forest stone packed with tangled old",
+  "billing_usage": {
+   "usd": 0.0,
+   "type": "generations",
+   "generations": 3
+  },
+  "generation_id": "8e1dda14-5613-436c-a6ce-7884a27c6141",
+  "queue_position": 0,
+  "billing_charged": true,
+  "saved_to_database": true,
+  "tileset_description": "sidescroller: dark mossy forest stone packed with tangled old tree roots, warm earthy browns and deep greens",
+  "generation_started_at": "2026-11-07T19:56:07.819893+00:00",
+  "estimated_wait_seconds": 0,
+  "original_image_n_colors": 134,
+  "quantized_image_n_colors": 33
+ }
+}

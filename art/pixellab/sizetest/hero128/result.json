@@ -1,0 +1,32 @@
+{
+ "usage": {
+  "type": "generations",
+  "generations": 3.0
+ },
+ "id": "f0f78ada-1016-4a83-83d5-0f4d5d480594",
+ "status": "completed",
+ "created_at": "2026-11-07T19:56:00.343953+00:00",
+ "last_response": {
+  "status": "completed",
+  "character_id": "26459cdb-5b64-473e-a0d3-df7613345e6f",
+  "storage_urls": {
+   "east": "https://backblaze.pixellab.ai/file/pixellab-characters/ba149b34-c2af-4153-a797-fffbb7d80131/26459cdb-5b64-473e-a0d3-df7613345e6f/rotations/east.png",
+   "west": "https://backblaze.pixellab.ai/file/pixellab-characters/ba149b34-c2af-4153-a797-fffbb7d80131/26459cdb-5b64-473e-a0d3-df7613345e6f/rotations/west.png",
+   "north": "https://backblaze.pixellab.ai/file/pixellab-characters/ba149b34-c2af-4153-a797-fffbb7d80131/26459cdb-5b64-473e-a0d3-df7613345e6f/rotations/north.png",
+   "south": "https://backblaze.pixellab.ai/file/pixellab-characters/ba149b34-c2af-4153-a797-fffbb7d80131/26459cdb-5b64-473e-a0d3-df7613345e6f/rotations/south.png",
+   "north-east": "https://backblaze.pixellab.ai/file/pixellab-characters/ba149b34-c2af-4153-a797-fffbb7d80131/26459cdb-5b64-473e-a0d3-df7613345e6f/rotations/north-east.png",
+   "north-west": "https://backblaze.pixellab.ai/file/pixellab-characters/ba149b34-c2af-4153-a797-fffbb7d80131/26459cdb-5b64-473e-a0d3-df7613345e6f/rotations/north-west.png",
+   "south-east": "https://backblaze.pixellab.ai/file/pixellab-characters/ba149b34-c2af-4153-a797-fffbb7d80131/26459cdb-5b64-473e-a0d3-df7613345e6f/rotations/south-east.png",
+   "south-west": "https://backblaze.pixellab.ai/file/pixellab-characters/ba149b34-c2af-4153-a797-fffbb7d80131/26459cdb-5b64-473e-a0d3-df7613345e6f/rotations/south-west.png"
+  },
+  "billing_usage": {
+   "type": "generations",
+   "generations": 3.0
+  },
+  "character_name": "Hero size test 128",
+  "directions_type": "8-directions",
+  "generation_mode": "pixen_v3",
+  "directions_count": 8,
+  "character_description": "Side-scroller game hero, full body, a slender young elf wanderer. Shoulder-length violet-purple hair, long pointed elf ears, calm pale face. He wears a fitted dark green high-collared tunic with thin gold trim down the front, a brown leather belt, dark brown trousers and tall brown leather boots with turned-down cuffs. A long ankle-length deep forest-green cloak hangs behind him from the shoulders, hood down, with a thin gold trim along its edge. Empty hands at his sides. Nothing on his head. Clean single color dark outline, limited palette, top-left light."
+ }
+}
