@@ -63,5 +63,47 @@ func test_atmos_material_carries_the_layer_parameters() -> void:
 	check(is_equal_approx(mat.get_shader_parameter("fade"), Backdrop.ATMOS["far"]["fade"]),
 		"its fade uniform matches the far config")
 	check((mat.get_shader_parameter("haze") as Color).is_equal_approx(Backdrop.HAZE),
-		"its haze uniform matches the palette haze")
+		"its haze uniform defaults to the shared night haze")
 	check(Backdrop.atmos_material("unknown") == null, "a layer with no atmosphere config gets no material")
+
+
+func test_atmos_material_carries_the_zone_haze() -> void:
+	var haze := Backdrop.haze_for("haar")
+	var mat := Backdrop.atmos_material("far", haze)
+	check((mat.get_shader_parameter("haze") as Color).is_equal_approx(haze),
+		"a layer's haze uniform is the zone's distance-fog colour, not the default")
+
+
+func test_haze_for_falls_back_to_the_default() -> void:
+	check(Backdrop.haze_for("hearthroot").is_equal_approx(Backdrop.ZONE_HAZE["hearthroot"]),
+		"a zone with an entry gets its own haze")
+	check(Backdrop.haze_for("gym").is_equal_approx(Backdrop.HAZE),
+		"a zone with no entry falls back to the shared night haze")
+
+
+func test_every_shipped_zone_has_its_own_fog_colour() -> void:
+	# Every playable zone (a levels/ folder that is not the gym or the test rings)
+	# should recede into a fog colour of its own, so no zone shares the flat global
+	# haze. gym and trials are fixtures; the rest are the shipped world.
+	var shipped := ["hearthroot", "heartwood", "tower", "haar", "boughs",
+		"vorrhallow", "evercrown", "sunken", "spires"]
+	for z: String in shipped:
+		check(Backdrop.ZONE_HAZE.has(z), "%s has a distance-fog colour" % z)
+
+
+func test_every_zone_haze_is_a_dark_tone() -> void:
+	# A fog colour must stay dark, or fading into it would brighten the backdrop
+	# instead of receding it (design bible 12.5).
+	for z: String in Backdrop.ZONE_HAZE:
+		check((Backdrop.ZONE_HAZE[z] as Color).v < 0.4,
+			"%s fog colour is dark enough to recede into" % z)
+
+
+func test_zones_differ_in_fog_colour() -> void:
+	# The point of the pass: a warm hearth and a cold spring must not share one
+	# haze. Sample one zone per family and confirm they are visibly apart.
+	var warm := Backdrop.haze_for("hearthroot")
+	var cold := Backdrop.haze_for("sunken")
+	var green := Backdrop.haze_for("boughs")
+	check(warm.r > cold.r, "the warm hearth fog is redder than the cold spring fog")
+	check(green.g > warm.g and green.g > cold.g, "the canopy fog is the greenest")

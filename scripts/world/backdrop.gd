@@ -16,9 +16,30 @@ const ATMOS := {
 	"far": {"desat": 0.55, "fade": 0.5},
 	"mid": {"desat": 0.3, "fade": 0.24},
 }
-## The dark zone haze the layers fade toward: night-1 from the master palette
+## The default dark haze the layers fade toward when a zone has no entry in
+## ZONE_HAZE (gym, or any new zone): night-1 from the master palette
 ## (tools/art/palette.py), the deep blue-violet of every zone's shadows.
 const HAZE := Color8(44, 37, 65)
+## Per-zone distance-fog colour (design bible 12.5): the dark haze each zone's
+## parallax layers recede into, so a zone reads with its own atmosphere instead
+## of one shared night. Each is a low shade of the zone's dominant master-palette
+## hue blended halfway toward night-1 (HAZE) — tinted for identity, anchored to
+## the shared night for cohesion. Warm hearths (hearthroot, spires), green woods
+## (heartwood, boughs), cold spring-blue (haar, sunken), crystal violet
+## (evercrown, vorrhallow) and bare grey stone (tower, trials). Computed from the
+## palette in tools/art/palette.py; mirror any change there.
+const ZONE_HAZE := {
+	"hearthroot": Color8(58, 34, 48),
+	"heartwood": Color8(37, 54, 51),
+	"tower": Color8(46, 40, 62),
+	"haar": Color8(44, 60, 92),
+	"boughs": Color8(43, 83, 53),
+	"vorrhallow": Color8(46, 39, 69),
+	"evercrown": Color8(55, 34, 68),
+	"sunken": Color8(37, 43, 68),
+	"trials": Color8(46, 40, 62),
+	"spires": Color8(64, 37, 42),
+}
 const SIZE := Vector2(640, 480)
 ## Starts the layers a little above the room's top so vertical scrolling never shows a gap.
 const OFFSET := Vector2(0, -60)
@@ -51,21 +72,28 @@ func set_zone(next: String) -> void:
 		sprite.scale = SIZE / sprite.texture.get_size()
 		sprite.centered = false
 		sprite.position = OFFSET
-		sprite.material = atmos_material(suffix)
+		sprite.material = atmos_material(suffix, haze_for(zone))
 		layer.add_child(sprite)
 		add_child(layer)
 
 
+## The distance-fog colour a zone's layers recede into: its ZONE_HAZE entry, or
+## the default night haze for a zone with none.
+static func haze_for(a_zone: String) -> Color:
+	return ZONE_HAZE.get(a_zone, HAZE)
+
+
 ## The atmospheric-perspective material for a layer, or null if the suffix has no
-## entry (then the layer draws as painted).
-static func atmos_material(suffix: String) -> ShaderMaterial:
+## entry (then the layer draws as painted). `haze` is the zone's distance-fog
+## colour (defaults to the shared night haze).
+static func atmos_material(suffix: String, haze: Color = HAZE) -> ShaderMaterial:
 	if not ATMOS.has(suffix):
 		return null
 	var mat := ShaderMaterial.new()
 	mat.shader = ATMOS_SHADER
 	mat.set_shader_parameter("desat", ATMOS[suffix]["desat"])
 	mat.set_shader_parameter("fade", ATMOS[suffix]["fade"])
-	mat.set_shader_parameter("haze", HAZE)
+	mat.set_shader_parameter("haze", haze)
 	return mat
 
 
