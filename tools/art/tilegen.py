@@ -11,6 +11,11 @@ Tileset atlas (16 world px tiles at 2x render density, so 32 px each; 8 columns)
   row 6:    one-way platform, amber, 2 interior tiles one shade darker (two
             tiles from open air) and 2 two shades darker (three or more), then
             the two 45-degree slopes: "/" rising to the east, "\\" rising to the west
+  row 7:    extra masonry variants so large solid fields stop reading as a 32 px
+            grid (bible 12.8): 3 full-solid surface variants, then 2 more of each
+            darker interior tile (MID one shade, DEEP two). The factory picks one
+            per cell by position, so adjacent same-mask cells draw a different
+            pattern and the repeat unit no longer bands.
 Backgrounds: <zone>_far.png and <zone>_mid.png, 640x480, tile horizontally.
 
 Usage: python3 tools/art/tilegen.py
@@ -606,7 +611,7 @@ def build_tileset(zone):
         return
     masks = blob_masks()
     assert len(masks) == 47
-    img = Image.new("RGBA", (T * COLS, T * 7), CLEAR)
+    img = Image.new("RGBA", (T * COLS, T * 8), CLEAR)
     for i, m in enumerate(masks):
         paint_tile(img, (i % COLS) * T, (i // COLS) * T, m, zone, 11 + i)
     paint_one_way(img, 0, 6 * T, zone)
@@ -618,6 +623,20 @@ def build_tileset(zone):
         darken(img, (2 + k) * T, 6 * T, 1 if k < 2 else 2)
     paint_slope(img, 6 * T, 6 * T, zone, True, 121)
     paint_slope(img, 7 * T, 6 * T, zone, False, 122)
+    # Row 7: masonry variants so solid fields stop reading as a 32 px grid
+    # (bible 12.8). Each is a full-solid tile painted with a fresh seed, so its
+    # brick courses and pits land differently; the factory scatters them by cell
+    # position. Cols 0-2 are surface-bright variants (match the FULL blob tile);
+    # cols 3-4 are MID (one shade down) and 5-6 DEEP (two) so a darkened interior
+    # field varies too. The brightness darkening mirrors the row-6 interiors.
+    for k in range(3):
+        paint_tile(img, k * T, 7 * T, 255, zone, 201 + k)
+    for k in range(2):
+        paint_tile(img, (3 + k) * T, 7 * T, 255, zone, 211 + k)
+        darken(img, (3 + k) * T, 7 * T, 1)
+    for k in range(2):
+        paint_tile(img, (5 + k) * T, 7 * T, 255, zone, 221 + k)
+        darken(img, (5 + k) * T, 7 * T, 2)
     TILES.mkdir(parents=True, exist_ok=True)
     img.save(TILES / f"{zone}.png")
 

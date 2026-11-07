@@ -1171,9 +1171,11 @@ func test_every_zone_has_a_tileset() -> void:
 func test_tiles_are_drawn_at_double_density() -> void:
 	var size := TilesetFactory.TILE * TilesetFactory.DENSITY
 	var small: Array[String] = []
+	# 8 rows: rows 0-6 (blobs, one-way, amber, MID/DEEP, slopes) plus row 7, the
+	# masonry variant row that keeps solid fields from banding (design bible 12.8).
 	for zone: String in DirAccess.get_directories_at("res://levels"):
 		var tex: Texture2D = load(TilesetFactory.TILES_DIR + zone + ".png")
-		if tex.get_width() != TilesetFactory.COLUMNS * size or tex.get_height() != 7 * size:
+		if tex.get_width() != TilesetFactory.COLUMNS * size or tex.get_height() != 8 * size:
 			small.append(zone)
 	check(small.is_empty(), "every atlas holds %d px tiles (wrong: %s)" % [size, small])
 	var room := make_room(["##########", "#........#", "#........#", "#........#", "#........#", "##########", "##########"])

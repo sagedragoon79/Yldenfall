@@ -8,7 +8,9 @@ extends RefCounted
 ## them are solid). The atlas has them in rows 0-5 in the order of
 ## `blob_masks()`; row 6 holds the one-way platform, amber, and darker interior
 ## tiles for wall cells two (MID) or three or more (DEEP) tiles from open air,
-## then the two 45-degree slopes (design bible 6.1).
+## then the two 45-degree slopes (design bible 6.1). Row 7 holds masonry variants
+## (full-solid surface plus more MID/DEEP) that `ground()` scatters by cell so a
+## large solid field stops reading as a 32 px grid (design bible 12.8).
 
 const TILE := 16
 ## Render density of the atlases (design bible 12.1): each 16 px world tile is
@@ -22,8 +24,14 @@ const FALLBACK_ZONE := "gym"
 
 const ONE_WAY := Vector2i(0, 6)
 const AMBER := Vector2i(1, 6)
-const MID: Array[Vector2i] = [Vector2i(2, 6), Vector2i(3, 6)]
-const DEEP: Array[Vector2i] = [Vector2i(4, 6), Vector2i(5, 6)]
+## Darker interior tiles for cells two (MID) or three-plus (DEEP) tiles from open
+## air. The last two of each are row-7 variants (tilegen.py) so a darkened field
+## does not read as one repeated tile either (design bible 12.8).
+const MID: Array[Vector2i] = [Vector2i(2, 6), Vector2i(3, 6), Vector2i(3, 7), Vector2i(4, 7)]
+const DEEP: Array[Vector2i] = [Vector2i(4, 6), Vector2i(5, 6), Vector2i(5, 7), Vector2i(6, 7)]
+## Surface-bright full-solid variants (row 7, cols 0-2): the visible interior of
+## a large solid field, scattered by cell so the 32 px repeat unit stops reading.
+const FULL_VARIANTS: Array[Vector2i] = [Vector2i(0, 7), Vector2i(1, 7), Vector2i(2, 7)]
 ## Legend `/`: solid below a diagonal rising to the east.
 const SLOPE_EAST := Vector2i(6, 6)
 ## Legend `\`: solid below a diagonal rising to the west.
@@ -77,9 +85,19 @@ static func reduce_mask(m: int) -> int:
 static func ground(mask: int, cell := Vector2i.ZERO, depth := 1) -> Vector2i:
 	blob_masks()
 	var m := reduce_mask(mask)
-	if m == FULL and depth >= 2:
-		var h := absi((cell.x * 73856093) ^ (cell.y * 19349663)) % 2
-		return DEEP[h] if depth >= 3 else MID[h]
+	if m == FULL:
+		# A large field is mostly full-solid cells, so if they all drew one atlas
+		# tile the field would band on the 32 px grid. Scatter several masonry
+		# variants by cell position (design bible 12.8). Deeper cells keep their
+		# darker MID/DEEP look; both now carry variants too.
+		var h := absi((cell.x * 73856093) ^ (cell.y * 19349663))
+		if depth >= 3:
+			return DEEP[h % DEEP.size()]
+		if depth >= 2:
+			return MID[h % MID.size()]
+		var k := h % (FULL_VARIANTS.size() + 1)
+		if k > 0:
+			return FULL_VARIANTS[k - 1]
 	var i: int = _index[m]
 	return Vector2i(i % COLUMNS, i / COLUMNS)
 
@@ -123,6 +141,7 @@ static func build(zone := "", with_collision := true) -> TileSet:
 	var all: Array[Vector2i] = [ONE_WAY, AMBER, SLOPE_EAST, SLOPE_WEST]
 	all.append_array(MID)
 	all.append_array(DEEP)
+	all.append_array(FULL_VARIANTS)
 	for i in blob_masks().size():
 		all.append(Vector2i(i % COLUMNS, i / COLUMNS))
 	for coords in all:

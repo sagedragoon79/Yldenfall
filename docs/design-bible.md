@@ -1578,6 +1578,14 @@ The green (or, for water zones, cyan) fringe on the top of every ground tile and
 
 Code-first and deterministic: only the eight moss-capped tilesets change, no art is repainted, and `tools/art/test_tilegen.py` guards the ramp, the root line and the per-tile shift.
 
+### 12.8 Tileset variants (grid banding)
+
+A zone's atlas (`tools/art/tilegen.py`) holds one tile per blob autotile mask, each painted with a single seed. A large solid field is mostly full-solid (`FULL`-mask) cells, so if every one drew the same atlas tile the field read as a rigid 32 px grid — the same brick courses, pits and accent stones recurring every tile. The independent grade flagged this as "brick and wall fields tile obviously" (pass 497/502/503).
+
+**Masonry variants (pass 504).** Row 7 of every atlas carries extra full-solid tiles painted with fresh seeds, so their brick courses and pits land differently: three surface-bright variants (matching the base `FULL` brightness) and two more each of the darker interior tiles (`MID`, one shade down; `DEEP`, two). `TilesetFactory.ground()` scatters them across a field by cell position — a 4-way choice at depth 1 (base plus three variants) and across the widened `MID`/`DEEP` sets deeper in — so adjacent same-mask cells draw a different pattern and the repeat unit stops reading. Edges (non-`FULL` masks) are untouched, so outlines and caps stay continuous. The pixellab zones (e.g. hearthroot) fill their interior from a seamless `GroundFill` texture, so they have no grid banding to break; their row-7 variants mirror the base tiles (`tools/art/pixellab_tileset.py`) only so every atlas coord the factory can return exists.
+
+Code-first and deterministic: rows 0–6 of every atlas are unchanged (only the new row 7 is added), no art is repainted, and the selection is a pure hash of the cell. `tools/art/test_tilegen.py` guards the variant row and that the variants differ and darken correctly; `tests/test_tileset_factory.gd` guards the scatter, the depth tiers and that every variant coord is a real tile in the built atlas.
+
 ---
 
 ## 13. Asset Production Plan

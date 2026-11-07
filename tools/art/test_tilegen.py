@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Guards for the backdrop gradient (bible 12.6) and the moss cap (bible 12.7).
+"""Guards for the backdrop gradient (bible 12.6), the moss cap (bible 12.7) and
+the tileset variant row (bible 12.8).
 
 These cover the pure tilegen helpers that shape every far layer's sky (so the
 moire dot-grid the independent grade flagged at passes 497/500/501 stays fixed)
@@ -125,6 +126,69 @@ def test_cap_moss_varies_per_tile():
         px = _moss_indices(seed)
         means.append(sum(k for _, _, k in px) / len(px))
     assert max(means) - min(means) >= 1.0, f"per-tile brightness barely moves: {min(means):.2f}..{max(means):.2f}"
+
+
+def _build_atlas(zone="gym"):
+    """Builds `zone`'s atlas into a temp dir and returns the PIL image."""
+    import tempfile
+    from pathlib import Path as _P
+    orig = tg.TILES
+    try:
+        tg.TILES = _P(tempfile.mkdtemp()) / "tiles"
+        tg.build_tileset(zone)
+        return tg.Image.open(tg.TILES / f"{zone}.png").convert("RGBA")
+    finally:
+        tg.TILES = orig
+
+
+def _tile(img, cx, cy):
+    T = tg.T
+    return img.crop((cx * T, cy * T, cx * T + T, cy * T + T))
+
+
+def _differ(a, b):
+    return a.tobytes() != b.tobytes()
+
+
+def test_atlas_has_the_variant_row():
+    # The atlas must carry row 7 (8 rows of 32 px tiles), or the factory's variant
+    # coords would point past the texture. (Leaving the atlas at 7 rows fails here.)
+    img = _build_atlas()
+    assert img.size[1] == tg.T * 8, f"atlas is 8 rows tall for the variant row, got {img.size}"
+
+
+def test_full_variants_differ_from_the_base_and_each_other():
+    # The three surface variants (row 7, cols 0-2) must each be a distinct masonry
+    # pattern, else scattering them would still read as one repeated tile.
+    img = _build_atlas()
+    masks = tg.blob_masks()
+    full_i = masks.index(255)
+    base = _tile(img, full_i % 8, full_i // 8)
+    v = [_tile(img, k, 7) for k in range(3)]
+    for k, var in enumerate(v):
+        assert _differ(base, var), f"FULL variant {k} differs from the base FULL tile"
+    assert _differ(v[0], v[1]) and _differ(v[1], v[2]), "the three FULL variants differ from each other"
+
+
+def test_mid_and_deep_variants_are_darker_than_their_surface():
+    # The row-7 MID/DEEP variants (cols 3-4, 5-6) carry the same darkening as the
+    # row-6 interiors, so a darkened field does not mix bright and dark tiles.
+    img = _build_atlas()
+
+    def mean(t):
+        data = t.tobytes()  # RGBA bytes
+        tot = cnt = 0
+        for i in range(0, len(data), 4):
+            if data[i + 3]:
+                tot += data[i] + data[i + 1] + data[i + 2]
+                cnt += 1
+        return tot / max(1, cnt)
+
+    surface = mean(_tile(img, 0, 7))  # a bright FULL variant
+    mid = mean(_tile(img, 3, 7))
+    deep = mean(_tile(img, 5, 7))
+    assert mid < surface, f"MID variant ({mid:.0f}) is darker than the surface ({surface:.0f})"
+    assert deep < mid, f"DEEP variant ({deep:.0f}) is darker than the MID variant ({mid:.0f})"
 
 
 def main():

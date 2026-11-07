@@ -148,12 +148,12 @@ def slope(tile: Image.Image, fill: Image.Image, rising_east: bool) -> Image.Imag
 
 def atlas(set_dir: str, fill_png: Path, out_png: Path, ledge_png: Path | None = None) -> None:
     """Writes a zone atlas laid out as TilesetFactory reads it (rows 0-5 blob tiles, row 6
-    one-way, amber, two MID, two DEEP, two slopes)."""
+    one-way, amber, two MID, two DEEP, two slopes; row 7 the masonry variants, bible 12.8)."""
     sys.path.insert(0, str(ROOT / "tools/art"))
     import tilegen
     tiles = load(ROOT / "art" / "pixellab" / set_dir)
     fill = Image.open(fill_png).convert("RGBA")
-    img = Image.new("RGBA", (T * 8, T * 7))
+    img = Image.new("RGBA", (T * 8, T * 8))
     for i, m in enumerate(tilegen.blob_masks()):
         img.alpha_composite(edge_only(blob_tile(tiles, m), m), ((i % 8) * T, (i // 8) * T))
     if ledge_png:
@@ -170,6 +170,16 @@ def atlas(set_dir: str, fill_png: Path, out_png: Path, ledge_png: Path | None = 
     cap = blob_tile(tiles, E | S | W | SE | SW)
     img.alpha_composite(slope(cap, fill, True), (6 * T, 6 * T))
     img.alpha_composite(slope(cap, fill, False), (7 * T, 6 * T))
+    # Row 7 masonry variants (bible 12.8). The factory scatters these across a
+    # solid field. A pixellab zone's interior is a seamless GroundFill texture, so
+    # it has no 32 px grid banding to break; the variants simply mirror their row-6
+    # equivalents so every coord the factory references exists. FULL variants
+    # (cols 0-2) stay clear, like the base FULL tile, so the fill shows through;
+    # the MID extras (cols 3-4) and DEEP extras (cols 5-6) keep the same night veil.
+    for k, alpha in enumerate([60, 60]):
+        img.alpha_composite(Image.new("RGBA", (T, T), NIGHT + (alpha,)), ((3 + k) * T, 7 * T))
+    for k, alpha in enumerate([110, 110]):
+        img.alpha_composite(Image.new("RGBA", (T, T), NIGHT + (alpha,)), ((5 + k) * T, 7 * T))
     img.save(out_png)
 
 
