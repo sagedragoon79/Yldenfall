@@ -1556,3 +1556,5 @@ date,endpoint,out_dir,cost,result,notes
 2026-11-07,create-tileset-sidescroller,sizetest/tiles32,3.0 generations,"done 47a7672d-93a5-48fb-a7a2-83f2b1a496e1, 0 image(s)","size test (Sean): 32 px tiles, 2x"
 2026-11-07,create-character-v3,sizetest/hero128,3.0 generations,"done f0f78ada-1016-4a83-83d5-0f4d5d480594, 0 image(s)","size test (Sean): hero at 128 px, 2x"
 2026-11-07,create-character-v3,sizetest/hero64,2.0 generations,"done 0766f46e-706f-4660-9402-0ce79211dd1b, 0 image(s)","size test (Sean): hero at 64 px, 1x"
+2026-11-07,create-character-v3,sizetest/hero96,?,queued f7c986cf-dd1e-44fd-b865-be61b2424eae,"Art size test: hero on a 96 px canvas (2x, keeps today's height)"
+2026-11-07,create-character-v3,sizetest/hero96,3.0 generations,"done f7c986cf-dd1e-44fd-b865-be61b2424eae, 0 image(s)","Art size test: hero on a 96 px canvas (2x, keeps today's height)"
