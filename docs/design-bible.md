@@ -1524,11 +1524,23 @@ the style guide, section 8.
 
 ### 12.2 Palette
 
-- One **master palette of 64 colors** (stored in `art/palette/master.gpl` and as a Godot resource). Every asset is quantized to it,
-  except the HD (2x density) characters made in Autosprite: each of those sheets keeps its **own palette of 56
-  colors** cut from its reference clip (plus the master outline and the neutral stone ramp). Quantizing them to the
-  master ramps turned the hooded hero's leather red and flattened his armor detail, which is what Sean asked for
-  (2026-10-23). They stay limited-palette pixel art (a test caps each sheet at 96 colors).
+- One **master palette of 96 colors**: 12 ramps of 8 shades, made by `tools/art/palette.py` and stored in
+  `art/palette/master.gpl` (GIMP, Aseprite), `master.png` (swatches) and `master.json` (PixelLab's
+  `target_palette` shape). Eight ramps are saturated (night, stone, bark, leaf, sky, ember, gold, crystal). Four are
+  **muted** (umber, ash, moss, ochre: leather and old wood, weathered stone, lichen and moss, dry grass and straw),
+  added in pass 506 (Sean, 2026-11-07). A remap test on both heroes, Sean's Hearthroot Arms and a third-party
+  graveyard tileset showed why: with the saturated ramps alone, dull browns turned red, grey stone turned lavender
+  and moss broke into speckles. The muted ramps cut the colour error by about a third. Sky and haze gradients keep
+  to the eight saturated ramps (`palette.MUTED`), so the night stays blue-violet. New ramps go at the end, so the
+  names of the first eight never change.
+- **One palette for the 2x redo (Sean, 2026-11-07).** Every new asset is drawn in the master palette from the start:
+  each PixelLab call that takes `target_palette` gets `master.json` (or a zone's sub-palette of it), and a call that
+  takes only `color_image` gets `master.png`. The importer then maps every pixel to the palette as a safety net.
+  Remapping finished art afterward is the fallback, not the method: it is what turned the October hero's leather red.
+- The HD (2x density) sheets made before the redo keep their **own palette of 56 colors** cut from the reference
+  clip (plus the master outline and the neutral stone ramp) until they are redrawn, because quantizing them to the
+  old eight ramps turned the hooded hero's leather red and flattened his armor detail (Sean, 2026-10-23). They stay
+  limited-palette pixel art (a test caps each sheet at 96 colors).
 - Each zone uses a **sub-palette of 24 to 32** of those colors, plus 4 accent colors.
 - No pure black (#000) or pure white (#fff). Darkest is a deep blue-violet; lightest is a warm cream.
 - **Hero look (changed 2026-10-23):** a tall, slender hooded elf ranger after Sean's own reference

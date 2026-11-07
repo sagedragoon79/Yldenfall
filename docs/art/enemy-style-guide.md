@@ -61,8 +61,11 @@ gets them the same way:
 
 - **Outline:** the importer drops the source's own soft rim and draws the master 1 px full
   outline. Ask PixelLab for "single color black outline"; never draw a coloured glow outline.
-- **Palette:** the sheet's own palette, `"colors": 40` to `56`, cut from its reference clip,
-  plus the ramps it names. 96 at most (a test). No pure black or white.
+- **Palette:** new art for the 2x redo is drawn in the 96-color master palette (bible 12.2, Sean
+  2026-11-07): pass `art/palette/master.json` as `target_palette` to every PixelLab call that takes
+  it (`master.png` as `color_image` where that is the only option). Sheets made before the redo keep
+  their own palette, `"colors": 40` to `56`, cut from the reference clip, plus the ramps they name,
+  until they are redrawn. 96 at most (a test). No pure black or white.
 - **Light:** top-left key light. A dark foe (night armour, black chitin) gets a `"gain"` and
   a `"rim"` in its zone's light colour, as the Iron Dwarf has, so it stands off dark walls.
 - **No dithering** and no painted motion blur on bodies. A smear frame for a fast strike is

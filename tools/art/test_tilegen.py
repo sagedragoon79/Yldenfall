@@ -44,6 +44,15 @@ def test_ramp_ends_sit_on_the_endpoints():
     assert ramp[-1] == _nearest("sky-2"), f"ramp ends at the bottom colour, got {ramp[-1]}"
 
 
+def test_ramp_keeps_to_the_saturated_ramps():
+    # The muted material ramps (pass 506) never enter a sky: their near-blacks are
+    # closer to neutral, and picking them turned the Tower's violet night brown.
+    import palette
+    for top, bottom in [("night-0", "sky-2"), ("night-1", "crystal-2"), ("night-0", "stone-1"), ("night-0", "bark-2")]:
+        for name in tg.gradient_ramp(top, bottom):
+            assert name.split("-")[0] not in palette.MUTED, f"{top}->{bottom} uses muted {name}"
+
+
 def test_ramp_has_no_repeated_neighbours():
     ramp = tg.gradient_ramp("night-0", "stone-1")
     assert all(a != b for a, b in zip(ramp, ramp[1:])), f"adjacent ramp steps differ, got {ramp}"
