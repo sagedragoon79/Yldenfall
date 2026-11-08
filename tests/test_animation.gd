@@ -81,6 +81,24 @@ func test_every_hero_frame_marks_the_crown_for_the_helmet() -> void:
 	GameState.new_game()
 
 
+func test_the_master_palette_has_muted_ramps_and_a_pixellab_copy() -> void:
+	# Bible 12.2 (pass 506): 12 ramps of 8, the last four muted, and master.json carries
+	# the same colours in order for PixelLab's target_palette.
+	var colors: Array = []
+	var ramps := {}
+	for line in FileAccess.get_file_as_string("res://art/palette/master.gpl").split("
+"):
+		var parts := line.replace("	", " ").strip_edges().split(" ", false)
+		if parts.size() >= 4 and parts[0].is_valid_int():
+			colors.append("#%02x%02x%02x" % [int(parts[0]), int(parts[1]), int(parts[2])])
+			ramps[parts[3].get_slice("-", 0)] = true
+	check(colors.size() == 96 and ramps.size() == 12, "the master palette is 12 ramps of 8 (%d colours, %d ramps)" % [colors.size(), ramps.size()])
+	for ramp in ["umber", "ash", "moss", "ochre"]:
+		check(ramps.has(ramp), "the master palette has the muted %s ramp" % ramp)
+	var target = JSON.parse_string(FileAccess.get_file_as_string("res://art/palette/master.json"))
+	check(target is Dictionary and target.get("colors", []) == colors, "master.json lists the master colours in order for PixelLab")
+
+
 func test_sheets_use_the_master_palette() -> void:
 	var allowed := {}
 	for line in FileAccess.get_file_as_string("res://art/palette/master.gpl").split("\n"):

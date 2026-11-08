@@ -661,11 +661,13 @@ def gradient_ramp(top, bottom, stops=8):
     reads as a soft grain instead of a 50/50 screen of the two far-apart endpoints
     — the moire dot-grid the independent grade flagged (pass 500/501, bible 12.6)."""
     tr, br = c(top)[:3], c(bottom)[:3]
+    # Atmosphere, not material: only the saturated ramps (palette.MUTED, pass 506).
+    sky = [n for n in PAL if n.split("-")[0] not in palette.MUTED]
     ramp = []
     for s in range(stops):
         t = s / (stops - 1)
         target = tuple(tr[i] + (br[i] - tr[i]) * t for i in range(3))
-        name = min(PAL, key=lambda n: sum((PAL[n][i] - target[i]) ** 2 for i in range(3)))
+        name = min(sky, key=lambda n: sum((PAL[n][i] - target[i]) ** 2 for i in range(3)))
         if not ramp or ramp[-1] != name:
             ramp.append(name)
     return ramp
