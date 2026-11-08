@@ -2140,7 +2140,8 @@ func test_the_readmes_safe_jumps_are_real() -> void:
 		jumps.append([int(m.get_string(1)), int(m.get_string(2))])
 	check(jumps == [[4, 2], [3, 4], [2, 5]], "the README names three safe jumps (%s)" % [jumps])
 	var headroom := int(readme.get_slice("Leave ", 1).get_slice(" clear tiles of headroom", 0))
-	check(headroom == 3, "and 3 tiles of headroom (%d)" % headroom)
+	# Four since pass 508: the 2x hero stands about 60 px tall (Reach.BODY_ROWS).
+	check(headroom == Reach.BODY_ROWS, "and %d tiles of headroom (%d)" % [Reach.BODY_ROWS, headroom])
 	check(readme.contains("reachable from the floor go 4 rows above it") and [4, 2] in jumps, "a platform 4 rows up is one of them")
 	for j: Array in jumps:
 		var up: int = j[0]

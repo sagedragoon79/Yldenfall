@@ -40,6 +40,42 @@ const MOVED_PICKUPS := {
 	"boughs/north_bough:9,6": "boughs/north_bough:2,6",  # pass 216
 	"spires/sky_steps:6,20": "spires/sky_steps:6,19",  # pass 219
 	"haar/feather_hollow:18,7": "haar/feather_hollow:18,6",  # pass 235
+	# Pass 508 gave every passage four tiles for the 2x hero: a lowered vault floor took
+	# its chest, its pickup and its key door down a row.
+	"evercrown/threshold:2,19": "evercrown/threshold:2,20",  # pass 508, the Elven Helm
+	"boughs/north_bough:2,15": "boughs/north_bough:2,16",  # pass 508
+	"boughs/north_bough:2,40": "boughs/north_bough:2,41",  # pass 508
+	"boughs/north_bough:4,40": "boughs/north_bough:4,41",  # pass 508
+	"haar/feather_hollow:2,19": "haar/feather_hollow:2,20",  # pass 508
+	"haar/feather_hollow:4,19": "haar/feather_hollow:4,20",  # pass 508
+	"haar/scorched_hall:34,11": "haar/scorched_hall:34,12",  # pass 508
+	"haar/scorched_hall:37,11": "haar/scorched_hall:37,12",  # pass 508
+	"haar/veiled_rise:3,20": "haar/veiled_rise:3,21",  # pass 508
+	"hearthroot/east_gate:20,19": "hearthroot/east_gate:20,20",  # pass 508
+	"hearthroot/west_gate:2,19": "hearthroot/west_gate:2,20",  # pass 508
+	"hearthroot/west_gate:24,19": "hearthroot/west_gate:24,20",  # pass 508
+	"spires/broken_shrine:32,19": "spires/broken_shrine:32,20",  # pass 508
+	"spires/broken_shrine:35,19": "spires/broken_shrine:35,20",  # pass 508
+	"spires/spire_stair:2,19": "spires/spire_stair:2,20",  # pass 508
+	"spires/spire_stair:4,19": "spires/spire_stair:4,20",  # pass 508
+	"vorrhallow/meteor_rise:2,19": "vorrhallow/meteor_rise:2,20",  # pass 508
+	"vorrhallow/meteor_rise:4,19": "vorrhallow/meteor_rise:4,20",  # pass 508
+}
+## Breakable walls a newer build made a cell taller: new cell -> the old cell it grew from
+## (pass 508, every passage four tiles tall). A save that broke the old wall has broken
+## the new cell too, so no lone block is left standing in the doorway.
+const GROWN_GATES := {
+	"boughs/north_bough:4,16": "boughs/north_bough:4,15",
+	"haar/scorched_hall:35,12": "haar/scorched_hall:35,11",
+	"hearthroot/west_gate:4,20": "hearthroot/west_gate:4,19",
+	"hearthroot/west_gate:23,20": "hearthroot/west_gate:23,19",
+	"heartwood/dwarf_larder:5,16": "heartwood/dwarf_larder:5,17",
+	"spires/spire_foot:8,16": "spires/spire_foot:8,17",
+	"tower/kettleforge_stair:13,9": "tower/kettleforge_stair:13,10",
+	"tower/old_flue:34,36": "tower/old_flue:34,37",
+	"tower/ore_vault:19,17": "tower/ore_vault:19,18",
+	"tower/slag_heap:70,15": "tower/slag_heap:70,16",
+	"tower/sorting_floor:9,9": "tower/sorting_floor:9,10",
 }
 ## The equipment slots, in the order the Equipment page lists them.
 const GEAR_SLOTS := ["blade", "armor", "shield", "helmet"]
@@ -724,6 +760,9 @@ static func sanitize(src: Variant) -> Dictionary:
 		if out.collected.has(old):
 			out.collected[MOVED_PICKUPS[old]] = true
 			out.collected.erase(old)
+	for cell: String in GROWN_GATES:
+		if out.collected.has(GROWN_GATES[cell]):
+			out.collected[cell] = true
 	# Thane Vorrund has given up the Severance since pass 217; before, it lay
 	# on the Heart Gate's altar, which is now bare. A save past him that never
 	# took it from the altar gets it in hand, so the heart can still be cut.

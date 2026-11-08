@@ -67,7 +67,7 @@ camera: wide       (optional: the camera eases out to show 25% more each way, fo
 | `y` | Storm Harpy (Carillon: hangs above and beside you; rears and spreads her wings with a screech, then flings a fan of three parryable feathers (a parried one flies back at her); winded, she sags into reach) |
 | `]` | Spire Sentinel (Carillon: a stone knight that moves only while your back is turned and turns every blow; raises its halberd, then slams in front of it, parryable; cracked open after a parry or a miss) |
 | `q` | Crystal Dwarf (Vorrhallow: trudges toward you; raises his crystal fist, then drives it into the floor and a chain of crystal spikes erupts toward you (unparryable: jump them); his crystal back turns blows from behind except from above; rooted after, he takes every blow) |
-| `R` | Root-gate tile (solid roots; a column of three is usual) |
+| `R` | Root-gate tile (solid roots; a column of four is usual) |
 | `Z` | Fire seal tile (red runic flames: solid, burns on touch; one Deluge bolt douses every seal in the room for good. Wall it in above, or it can be jumped) |
 | `c` | Dead conduit (a copper coil, not solid; a Tempest Lance bolt passing within 72 px wakes it for good) |
 | `k` | Conduit gate tile (solid; slides open for good once every conduit in the room is awake) |
@@ -83,7 +83,7 @@ camera: wide       (optional: the camera eases out to show 25% more each way, fo
 | `>` `<` | Wind current (High Boughs): a band of wind blowing east (`>`) or west (`<`) that carries an airborne player and bears up a fall; holding Down drops out. Once the Sky Spring is restored every current blows the other way. Draw them as whole rectangles over open sky
 | `Q` | Flue damper tile (iron louvers, solid until Durgan falls and the winch turns; a row of three is usual) |
 | `N` | Root Heart: strike it and every root-gate in the room opens for good |
-| `\|` | Elven veil (pass 216): a wall to the player, but a dash passes it (the Elven Stride). A column of three seals an alcove; only the player is stopped, so keep foes out of veiled spaces |
+| `\|` | Elven veil (pass 216): a wall to the player, but a dash passes it (the Elven Stride). A column of four seals an alcove; only the player is stopped, so keep foes out of veiled spaces |
 | `Y` | Bound fog (the Haar): solid until the player brings the Lantern Key near, then every curtain in the room parts for good (a row of three is usual) |
 | `P` | Player spawn (feet at the bottom of the tile) |
 | `1`-`9` | Door cells (see below) |
@@ -106,8 +106,8 @@ camera: wide       (optional: the camera eases out to show 25% more each way, fo
 | `s` | Glass Slug (Vorrhallow: lobs three burning globs; shell turns pogos; the Stillstone holds the globs) |
 | `~` | Sap pool: halves run speed and weakens jumps (Heartwood) |
 | `S` | Meditation Shrine (save, refill, respawn point) |
-| `J` | Copper door, 3 tiles tall from this cell up (opens with a Copper Key). A `lock:` header line makes it a Silver, Gold, Thorn or Glass door |
-| `g` | Vorrhallow's upper gate, 3 tiles tall from this cell up (opens with the Sky Key, Skyrend's reward) |
+| `J` | Copper door, 4 tiles tall from this cell up (opens with a Copper Key). A `lock:` header line makes it a Silver, Gold, Thorn or Glass door |
+| `g` | Vorrhallow's upper gate, 4 tiles tall from this cell up (opens with the Sky Key, Skyrend's reward) |
 | `$` | Treasure chest (gold, opens once) |
 | `G` | Climbing Glove (ability pickup) |
 | `X` | Featherstep Boots (ability pickup: double jump; glows in the fog) |
@@ -163,8 +163,12 @@ Every character a room's grid uses has a row in the legend above, and every lege
 the room loader knows (`tests/test_rooms.gd`, `test_the_readme_legend_matches_the_rooms`, pass 363).
 
 Safe numbers for layouts (a little under the real movement): a standing jump clears 4 tiles
-up with 2 across, 3 up with 4 across, or 2 up with 5 across. Leave 3 clear tiles of headroom
-for the body. Platforms that should be reachable from the floor go 4 rows above it.
+up with 2 across, 3 up with 4 across, or 2 up with 5 across. Leave 4 clear tiles of headroom
+for the body (the 2x hero, pass 508), and doors, gates and passages 4 tiles tall: under a jump's
+arc as well as over a floor. `python3 tools/levels/raise_passages.py` finds and fixes any spot with
+only 3, and `tools/levels/reach_map.tscn` prints where the checker can stand in a room (its header
+says how to run it). Platforms that should be reachable from the floor go 4 rows above it; make
+one you also walk under a one-way plank (`-`), since a solid one leaves only 3 tiles beneath.
 `tests/test_movement.gd` (`test_the_readmes_safe_jumps_are_real`, pass 355) reads these
 numbers here and makes each jump with the real controller, from a standstill.
 A slope (`/`, `\`) starts on open floor at its low side and meets ground at its high side;

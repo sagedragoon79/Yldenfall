@@ -380,7 +380,7 @@ func test_every_card_door_guards_a_vault() -> void:
 		for cx in range(1, x):
 			inside = inside or grid[y][cx] == "$"
 		check(inside, "%s: a chest behind it" % room)
-		check(grid[y - 3].substr(1, x).count("#") == x, "%s: a roof over the vault, so the door is the only way in" % room)
+		check(grid[y - Reach.BODY_ROWS].substr(1, x).count("#") == x, "%s: a roof over the vault, so the door is the only way in" % room)
 
 
 func test_the_elven_helm_is_a_secret_worth_a_mask() -> void:
@@ -422,7 +422,7 @@ func test_the_elven_helm_is_a_secret_worth_a_mask() -> void:
 	check(_find(w.room, ItemPickup) == null, "it never comes back")
 	# Where it lies: a hidden pocket at the Everbloom's threshold, behind fake wall.
 	var t := Room.parse(FileAccess.get_file_as_string("res://levels/evercrown/threshold.room"))
-	check("2, 19, elven_helm" in t.lists.get("prop", []), "it lies in the Threshold")
+	check("2, 20, elven_helm" in t.lists.get("prop", []), "it lies in the Threshold")
 	var hidden := false
 	for spec: String in t.lists.get("secret", []):
 		var r := spec.split(",")

@@ -3,7 +3,7 @@ zone: hearthroot
 map: 2, -1
 npc: 22, 19, ringreader
 sign: 30, 19, Carved into the wood:|'The Tree drinks from three springs. When the springs run dry, the Tree forgets, and so do we.'
-secret: 33, 17, 38, 19
+secret: 33, 17, 38, 20
 door: 1, hearthroot/plaza, 4
 door: 2, hearthroot/old_hearthroot, 1
 ---
@@ -26,7 +26,7 @@ door: 2, hearthroot/old_hearthroot, 1
 #................................#######
 #................................%.....#
 #................................%.....#
-#.....1..........................%..2..#
-########################################
+#.....1..........................%.....#
+################################.%..2..#
 ########################################
 ########################################

@@ -1,6 +1,6 @@
 class_name KeyDoor
 extends StaticBody2D
-## A locked door (three tiles tall). Walk into it holding the right key and it
+## A locked door (four tiles tall since pass 508, for the 2x hero). Walk into it holding the right key and it
 ## unlocks for good; without one it tells you what it needs. The key doors
 ## (design bible 3, "Key doors"), each with a mark of Yldenfall's own (pass 471:
 ## they had worn the card suits of the game this one began as): Copper (oak, an
@@ -13,7 +13,7 @@ extends StaticBody2D
 
 const IRON := Color("6b6380")
 const GLYPH := Color("ffd24a")
-const SIZE := Vector2(16, 48)
+const SIZE := Vector2(16, 64)
 const SHRINE := Color("c9c4d6")
 const SHRINE_DARK := Color("8d84a3")
 const SKY := Color("b8a8ff")
@@ -80,7 +80,7 @@ func open() -> void:
 	var d := Dust.new()
 	d.setup("debris")
 	get_parent().add_child(d)
-	d.global_position = global_position + Vector2(0, -24)
+	d.global_position = global_position + Vector2(0, -SIZE.y * 0.5)
 	queue_free()
 
 
@@ -89,11 +89,11 @@ func _draw() -> void:
 		_draw_sky_gate()
 		return
 	var door: Dictionary = DOORS.get(kind, DOORS.copper)
-	draw_rect(Rect2(-8, -48, 16, 48), door.dark)
-	draw_rect(Rect2(-7, -47, 14, 47), door.panel)
-	for y in [-40, -24, -8]:
+	draw_rect(Rect2(-8, -SIZE.y, 16, SIZE.y), door.dark)
+	draw_rect(Rect2(-7, -SIZE.y + 1, 14, SIZE.y - 1), door.panel)
+	for y in [-56, -32, -8]:
 		draw_rect(Rect2(-8, y, 16, 3), door.band)
-	draw_mark(self, String(door.mark), Vector2(0, -31), door.glyph)
+	draw_mark(self, String(door.mark), Vector2(0, -43), door.glyph)
 
 
 ## A door's mark, about 8 px across, centered on `c`, drawn on `ci`. Each has a
@@ -136,12 +136,12 @@ static func draw_mark(ci: CanvasItem, mark: String, c: Vector2, col: Color) -> v
 
 
 func _draw_sky_gate() -> void:
-	draw_rect(Rect2(-8, -48, 16, 48), SHRINE_DARK)
-	draw_rect(Rect2(-7, -47, 14, 47), SHRINE)
-	for y in [-44, -6]:
+	draw_rect(Rect2(-8, -SIZE.y, 16, SIZE.y), SHRINE_DARK)
+	draw_rect(Rect2(-7, -SIZE.y + 1, 14, SIZE.y - 1), SHRINE)
+	for y in [-60, -6]:
 		draw_rect(Rect2(-8, y, 16, 3), GLYPH)
 	# A lightning glyph, pulsing faintly.
 	var a := 0.75 + 0.25 * sin(Time.get_ticks_msec() * 0.004)
-	var bolt := PackedVector2Array([Vector2(1, -38), Vector2(-3, -27), Vector2(1, -27), Vector2(-2, -16)])
+	var bolt := PackedVector2Array([Vector2(1, -51), Vector2(-3, -36), Vector2(1, -36), Vector2(-2, -21)])
 	draw_polyline(bolt, SKY * Color(1, 1, 1, a), 3.0)
 	draw_polyline(bolt, GLYPH, 1.0)

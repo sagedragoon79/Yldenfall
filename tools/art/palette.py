@@ -5,7 +5,8 @@
 warm yellow; no pure black or white. Writes art/palette/master.gpl (GIMP/Aseprite)
 art/palette/master.png (one 8x8 swatch per color, ramps in rows) and
 art/palette/master.json, the colors as hex in PixelLab's target_palette shape
-({"name", "colors"}), to pass with every PixelLab call that takes one.
+({"name", "colors"}), to pass with every PixelLab call that takes one, and art/palette/master.hex
+(Lospec's format, one color per line, no #) for editors and web tools that import palettes.
 Usage: python3 tools/art/palette.py
 """
 import colorsys
@@ -74,6 +75,7 @@ def main():
     img.save(OUT / "master.png")
     target = {"name": "Yldenfall Master", "colors": ["#%02x%02x%02x" % rgb for _, rgb in colors]}
     (OUT / "master.json").write_text(json.dumps(target, indent=1) + "\n")
+    (OUT / "master.hex").write_bytes(("\n".join(c[1:] for c in target["colors"]) + "\n").encode())
 
 
 if __name__ == "__main__":

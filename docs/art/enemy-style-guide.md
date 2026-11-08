@@ -77,6 +77,11 @@ gets them the same way:
   three-quarter stance**, turned toward the camera, which reads warmer and shows the face. A
   character that has a still three-quarter clip also gets a short **turn clip** that bridges the
   two facings (see 6, step 1b). West is always east mirrored. See 6, step 1a.
+- **Strict orthographic (Sean, 2026-11-07, bible 12.3):** a level camera, no perspective, both feet
+  (or every foot, claw and hoof) on one ground line in standing frames. A tilted camera lifts the far
+  foot and the foe looks like it floats. Put "strict orthographic side view, no perspective, feet flat
+  on the same ground line" in every request, and in the three-quarter stance turn the body, never the
+  camera. Retake a frame whose back foot floats.
 - **Effects stay out of the art.** Projectiles, spells, mist, sparks, glows that pulse,
   shockwaves and the tell's white flash are code or shader, drawn over the sheet. If a clip
   bakes one in, cut it at import (`"erase"`, `pick` around it). A glow that is part of the
