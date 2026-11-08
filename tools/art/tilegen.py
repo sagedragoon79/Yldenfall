@@ -1291,11 +1291,16 @@ def vorrhallow_far():
     for i in range(7):
         x0 = int((i + rng.uniform(0.0, 0.4)) * BG_W / 7)
         w = rng.randrange(24, 40) * D
+        cs = masonry_courses(0, BG_H, 440 + i, 18 * D)
         for y in range(BG_H):
             for dx in range(w):
-                col = "night-1" if dx > w * 0.3 else "stone-1"
-                if y % (18 * D) == 0:
-                    col = "night-0"
+                # The far pillars: weathered courses on a jittered period, each
+                # stone a touch lighter or darker, so the great hall stops reading
+                # as one stamped column (bible 12.14). Muted (stone-1, no stone-2)
+                # to stay behind vorrhallow_mid.
+                col = "stone-1" if dx <= w * 0.3 else masonry_shade(x0 + dx, y, 440 + i, "night-0", "night-1", "stone-1")
+                if y in cs:
+                    col = "night-0"  # a weathered mortar course
                 put(img, x0 + dx, y, c(col))
         # An arch springing to the next pillar.
         span = BG_W // 7
@@ -1467,11 +1472,15 @@ def sunken_mid():
     for i in range(5):
         x0 = i * span
         pw = rng.randrange(16, 24) * D
+        cs = masonry_courses(deck, BG_H, 560 + i, 16 * D)
         for y in range(deck, BG_H):
             for dx in range(pw):
-                col = "stone-2" if dx < pw * 0.25 else "night-1"
-                if (y - deck) % (16 * D) < D:
-                    col = "night-0"
+                # The aqueduct piers: weathered courses on a jittered period with
+                # per-stone value, so the arcade stops reading as one stamped pier
+                # (bible 12.14).
+                col = "stone-2" if dx < pw * 0.25 else masonry_shade(x0 + dx, y, 560 + i, "night-0", "night-1", "stone-2")
+                if y in cs:
+                    col = "night-0"  # a weathered mortar course
                 put(img, x0 + dx, y, c(col))
         for dx in range(span - pw):
             k = dx / (span - pw)
