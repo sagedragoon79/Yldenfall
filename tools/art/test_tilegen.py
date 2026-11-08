@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Guards for the backdrop gradient (bible 12.6), the moss cap (bible 12.7) and
-the tileset variant row (bible 12.8).
+"""Guards for the backdrop gradient (bible 12.6), the moss cap (bible 12.7), the
+tileset variant row (bible 12.8), the foreground silhouette (bible 12.11) and the
+distant ridge layer (bible 12.12).
 
 These cover the pure tilegen helpers that shape every far layer's sky (so the
 moire dot-grid the independent grade flagged at passes 497/500/501 stays fixed)
@@ -252,6 +253,99 @@ def test_foreground_is_a_dark_silhouette():
     for z in tg.FORE_KIND:
         m = _fore(z)
         assert m["maxch"] < 70, f"{z}: brightest channel {m['maxch']} is too light for a silhouette"
+
+
+def _ridge(zone):
+    """One zone's ridge image (bible 12.12) and its silhouette measurements: the
+    first opaque y per column (the crest line), the sky clear above, the band at
+    the very bottom, the brightest channel, and the seam jump against the roughest
+    interior join."""
+    img = tg.ridge(zone)
+    w, h = img.size
+    q = h // 4
+    a = img.getchannel("A")
+    firsts = [h] * w
+    seen = 0
+    data = a.tobytes()  # row-major alpha bytes
+    for y in range(h):
+        base = y * w
+        for x in range(w):
+            if firsts[x] == h and data[base + x]:
+                firsts[x] = y
+                seen += 1
+        if seen == w:
+            break
+    jumps = [abs(firsts[x] - firsts[x - 1]) for x in range(1, w)]
+    return {
+        "w": w, "h": h, "q": q,
+        "top": sum(a.crop((0, 0, w, q)).histogram()[1:]),
+        "bottom_clear": a.crop((0, h - 1, w, h)).histogram()[0],
+        "maxch": max(ch[1] for ch in img.convert("RGB").getextrema()),
+        "horizon": sum(firsts) / w,
+        "wrap_jump": abs(firsts[0] - firsts[-1]),
+        "max_interior_jump": max(jumps),
+    }
+
+
+def test_ridge_exists_for_every_shipped_zone():
+    # Every playable zone gets a distant ridge layer; the gym and any new zone has
+    # none (Backdrop falls back to no ridge layer).
+    shipped = ["hearthroot", "heartwood", "tower", "haar", "boughs",
+               "vorrhallow", "evercrown", "sunken", "spires"]
+    for z in shipped:
+        assert z in tg.RIDGE_KIND, f"{z} has a ridge kind"
+        assert z in tg.RIDGE_COLOR, f"{z} has a ridge colour"
+    assert "gym" not in tg.RIDGE_KIND, "the gym has no ridge"
+
+
+def test_ridge_is_horizon_weighted_and_clear_above():
+    # The ridgeline sits at the horizon (RIDGE_BASE), its crest rising above and a
+    # solid distant ground filled below; the sky above the crest stays clear so
+    # the far layer grades through. (Filling from the top instead fails this.)
+    for z in tg.RIDGE_KIND:
+        m = _ridge(z)
+        top_frac = m["top"] / (m["w"] * m["q"])
+        assert top_frac < 0.02, f"{z}: top quarter is {top_frac:.3f} opaque — the sky is not clear"
+        assert tg.RIDGE_BASE - 120 * tg.D < m["horizon"] < tg.RIDGE_BASE + 8 * tg.D, \
+            f"{z}: crest line {m['horizon']:.0f} is not around the horizon {tg.RIDGE_BASE}"
+
+
+def test_ridge_reaches_the_bottom_edge():
+    # The distant ground fills to the bottom edge, so the ridge never floats with a
+    # hard lower seam. (Clipping the fill short fails this.)
+    for z in tg.RIDGE_KIND:
+        assert _ridge(z)["bottom_clear"] == 0, f"{z}: the bottom row has transparent pixels"
+
+
+def test_ridge_is_a_dark_tinted_silhouette():
+    # A receded silhouette in a dark shade of the zone's ramp: darker than the lit
+    # gameplay layer, so the haze can push it back without it competing. (Painting
+    # it in a lit colour fails here.)
+    for z in tg.RIDGE_KIND:
+        m = _ridge(z)
+        assert m["maxch"] < 150, f"{z}: brightest channel {m['maxch']} is too light for a receding ridge"
+
+
+def test_ridge_colours_are_dark_palette_shades():
+    # The body and rim are master-palette names, the body a dark shade (index <= 2)
+    # and the rim one step lighter, so the ridge reads as a crest-lit silhouette.
+    for z, (body, rim) in tg.RIDGE_COLOR.items():
+        assert body in tg.PAL and rim in tg.PAL, f"{z}: ridge colours are palette names"
+        bi = int(body.rsplit("-", 1)[1])
+        ri = int(rim.rsplit("-", 1)[1])
+        assert bi <= 2, f"{z}: ridge body {body} is a dark shade"
+        assert ri == bi + 1, f"{z}: ridge rim {rim} is one step lighter than the body {body}"
+
+
+def test_ridge_is_seamless_at_the_seam():
+    # The layer repeats sideways, so the crest at column 0 must continue from the
+    # last column with no cut: the roll is built from whole-cycle sines and the
+    # teeth wrap, so the seam join is no rougher than the roughest interior join.
+    # (Clamping the teeth to the edge instead of wrapping fails this.)
+    for z in tg.RIDGE_KIND:
+        m = _ridge(z)
+        assert m["wrap_jump"] <= m["max_interior_jump"], \
+            f"{z}: the seam jump {m['wrap_jump']} exceeds the roughest interior join {m['max_interior_jump']}"
 
 
 def main():

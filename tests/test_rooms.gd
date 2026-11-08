@@ -1196,8 +1196,8 @@ func test_decor_and_backgrounds_are_drawn_at_double_density() -> void:
 	var backdrop := Backdrop.new()
 	arena.add_child(backdrop)
 	backdrop.set_zone("heartwood")
-	# Two back layers (far, mid) plus the foreground silhouette (bible 12.11).
-	check(backdrop.get_child_count() == 3, "the trunk has two back layers and a foreground")
+	# Three back layers (far, ridge, mid) plus the foreground silhouette (bible 12.12, 12.11).
+	check(backdrop.get_child_count() == 4, "the trunk has three back layers and a foreground")
 	for layer in backdrop.get_children():
 		var sprite := layer.get_child(0) as Sprite2D
 		check(sprite.texture.get_width() == Backdrop.SIZE.x * TilesetFactory.DENSITY, "a background is painted at %dx" % TilesetFactory.DENSITY)
@@ -1217,13 +1217,19 @@ func test_every_zone_is_dressed() -> void:
 		var backdrop := Backdrop.new()
 		arena.add_child(backdrop)
 		backdrop.set_zone(zone)
-		# Two back layers (far, mid) plus the foreground silhouette (bible 12.11).
-		check(backdrop.get_child_count() == 3, "%s has two back layers and a foreground" % zone)
+		# Three back layers (far, ridge, mid) plus the foreground silhouette (bible 12.12, 12.11).
+		check(backdrop.get_child_count() == 4, "%s has three back layers and a foreground" % zone)
 		var fores := 0
 		for layer: Parallax2D in backdrop.get_children():
 			if layer.z_index == Backdrop.FORE_Z and not layer.z_as_relative:
 				fores += 1
 		check(fores == 1, "%s has exactly one foreground silhouette layer" % zone)
+		# The ridge (bible 12.12) is one of the back layers, scrolling between far and mid.
+		var ridges := 0
+		for layer: Parallax2D in backdrop.get_children():
+			if layer.scroll_scale.is_equal_approx(Backdrop.LAYERS["ridge"]):
+				ridges += 1
+		check(ridges == 1, "%s has exactly one ridge back layer" % zone)
 		backdrop.queue_free()
 
 
