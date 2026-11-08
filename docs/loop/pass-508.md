@@ -62,6 +62,8 @@ and the movement tests change with it.
 - Bible 3.3: two new entries, "Passages four tiles tall" and "Room density, the redesign" (Sean's
   direction, his Hollow Knight map and screenshots as density references, never layouts, and his note
   that the solid mass is drawn tree, not black void).
+- Bible 3.3: "The tree is a spiral" (Sean's decision after seeing the atlas): turns stack, and
+  shortcuts open from the far side.
 - Bible 4.5: key doors, fire seals and the gates' numbers say four tiles; 12.1 records the 2x hero and
   his base (Sean's hood-down state, `d81e27dc`).
 - `levels/README.md`: four tiles of headroom, gates and doors four tall, a plank (not a slab) for a
@@ -103,3 +105,5 @@ Weighted: 97.65.
   `master.json` as the palette, checked in game; the cloak's dye key needs checking against the darker
   forest green. Then the hitbox (about 14x54), section 6 and the movement tests.
 - **Room rebuilds, zone by zone** with the 32 px tiles, to the density rule in bible 3.3.
+- **The spiral (Sean, 2026-11-07, bible 3.3):** the tree's real shape is a spiral of about three turns,
+  and secret shortcuts that open from the far side join stacked turns. The rebuilds lay rooms out for it.
