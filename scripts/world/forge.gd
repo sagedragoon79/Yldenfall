@@ -36,9 +36,16 @@ var _embers: Array = []
 var _rng := RandomNumberGenerator.new()
 var _glow: Node2D
 
+## The ember pool the hearth throws onto the brick and floor around it (RoomLight
+## reads these): the forge is the brightest fixed light in the Kettleforge.
+var glow_color := EMBER
+var glow_radius := 118.0
+
 
 func _ready() -> void:
 	z_index = -2
+	# Its coals light the smithy around it (design bible 12.10).
+	add_to_group(RoomLight.GROUP)
 	_rng.seed = 7
 	_glow = Node2D.new()
 	var mat := CanvasItemMaterial.new()

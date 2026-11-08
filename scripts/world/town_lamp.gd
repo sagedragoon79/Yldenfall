@@ -14,11 +14,17 @@ const CORE := Color("f7f1de")
 
 ## How far the flame clears the fog (Fog reads it).
 var light_radius := 84.0
+## The warm pool it casts onto the floor and walls around it (RoomLight reads
+## these): its flame's gold, reaching a little past the fog pocket.
+var glow_color := GLASS
+var glow_radius := 112.0
 var _t := 0.0
 
 
 func _ready() -> void:
 	add_to_group("light")
+	# Its flame also lights the stones around the post (design bible 12.10).
+	add_to_group(RoomLight.GROUP)
 	z_index = -2
 	_t = fmod(global_position.x * 0.37, TAU)
 

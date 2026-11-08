@@ -13,6 +13,10 @@ const RUNE := Color("7ee0d6")
 
 ## How far its glow clears the Haar's fog.
 var light_radius := 80.0
+## The cool pool its rune casts onto the shrine's stone and the floor (RoomLight
+## reads these).
+var glow_color := RUNE
+var glow_radius := 96.0
 var _glow := 0.0
 
 
@@ -22,6 +26,8 @@ func _ready() -> void:
 	z_index = -1
 	# Its rune burns through the Haar's fog (see Fog).
 	add_to_group("light")
+	# And casts a pool of rune-light onto the stone around it (design bible 12.10).
+	add_to_group(RoomLight.GROUP)
 
 
 func _process(delta: float) -> void:
