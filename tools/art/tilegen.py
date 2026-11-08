@@ -82,6 +82,46 @@ def hash2(x, y, seed):
     return (h & 0xFFFF) / 0xFFFF
 
 
+# --- Weathered masonry (design bible 12.14) ------------------------------------
+# The backdrop's brick and column fields used to draw their mortar courses on a
+# fixed vertical period (``y % spacing``) over a single flat body colour, so the
+# independent grade kept reading them as one repeated stamp (passes 497, 502,
+# 504). These two helpers break that lattice: courses land on jittered, partly
+# worn-away rows, and each stone takes a slightly different value, so a wall reads
+# as real coursed masonry instead of a stencil.
+
+
+def masonry_courses(top, bottom, seed, spacing):
+    """The y rows of weathered mortar courses between ``top`` and ``bottom``.
+
+    Gaps jitter between 0.5x and 1.5x ``spacing`` (so there is no fixed vertical
+    period), a course is one or two render pixels thick, and roughly one course in
+    six is worn away (a gap of two courses or more). Deterministic from ``seed``;
+    returns a set for fast membership in a pixel loop."""
+    ys = set()
+    y = top + spacing
+    i = 0
+    while y < bottom:
+        if hash2(i, 1, seed) > 0.16:  # ~1 course in 6 worn away
+            for k in range(2 if hash2(i, 2, seed) > 0.7 else 1):
+                ys.add(y + k)
+        y += spacing + int((hash2(i, 0, seed) - 0.5) * spacing)  # gap 0.5x..1.5x
+        i += 1
+    return ys
+
+
+def masonry_shade(x, y, seed, dark, body, light, cell=16):
+    """A per-stone shade for a masonry field: most cells draw ``body``, a few drop
+    to ``dark`` or lift to ``light``, keyed by a coarse ``cell`` grid so adjacent
+    stones differ in value and the field stops reading as one flat colour."""
+    h = hash2(x // cell, y // cell, seed)
+    if h > 0.93:
+        return light
+    if h < 0.16:
+        return dark
+    return body
+
+
 def paint_bricks(img, ox, oy, seed, ramp):
     """Masonry: rows of 8x4 world-pixel bricks offset per row, lit from the top
     left, with a one-render-pixel mortar line and a grain of tiny pits."""
@@ -801,11 +841,12 @@ def hearthroot_far():
         w = rng.randrange(40, 80) * D
         h = rng.randrange(80, 200) * D
         top = BG_H - 120 * D - h
+        cs = masonry_courses(top, BG_H, 300 + (x % 97), 22)
         for yy in range(top, BG_H):
             for xx in range(x, min(x + w, BG_W)):
-                col = "stone-1" if (xx - x) < 2 * D else "night-1"
-                # Faint courses of stone.
-                if (yy - top) % 22 == 0 and (xx - x) > 2 * D and hash2(xx // 12, yy, 3) > 0.4:
+                col = "stone-1" if (xx - x) < 2 * D else masonry_shade(xx, yy, 3, "night-0", "night-1", "stone-2")
+                # Weathered courses of stone: jittered rows, still broken horizontally.
+                if (xx - x) > 2 * D and yy in cs and hash2(xx // 12, yy, 3) > 0.4:
                     col = "night-0"
                 img.putpixel((xx, yy), c(col))
         # Arched roof with a stone rim.
@@ -910,13 +951,14 @@ def tower_far():
     for i in range(6):
         x0 = rng.randrange(BG_W)
         w = rng.randrange(30, 60) * D
+        cs = masonry_courses(0, BG_H, 210 + i, 12 * D)
         for y in range(BG_H):
             for dx in range(w):
-                col = "night-1"
-                if (y // (12 * D)) % 2 == 0 and dx % (16 * D) == 0:
-                    col = "night-0"
-                if y % (12 * D) == 0:
-                    col = "night-0"
+                col = masonry_shade(x0 + dx, y, 210 + i, "night-0", "night-1", "stone-2")
+                if y in cs:
+                    col = "night-0"  # a weathered mortar course
+                elif dx % (16 * D) == 0 and hash2(dx // D, y // (10 * D), i) > 0.45:
+                    col = "night-0"  # a worn vertical joint, broken by height
                 put(img, x0 + dx, y, c(col))
         for wy in range(rng.randrange(20, 60) * D, BG_H, rng.randrange(60, 110) * D):
             wx = x0 + w // 2 - 2 * D
@@ -940,12 +982,13 @@ def tower_mid():
     for i in range(5):
         x0 = i * BG_W // 5 + rng.randrange(-40, 40)
         w = 10 * D
+        cs = masonry_courses(0, BG_H, 500 + i, 24 * D)
         for y in range(BG_H):
             for dx in range(w):
                 edge = dx in (0, w - 1)
                 col = "night-0" if edge else ("stone-1" if dx < 3 else "night-1")
-                if y % (24 * D) in (0, 1) and not edge:
-                    col = "stone-2"
+                if (not edge) and y in cs:
+                    col = "stone-2"  # a bolt course, weathered off the fixed period
                 put(img, x0 + dx, y, c(col))
         # A diagonal brace to the next girder.
         x1 = x0 + BG_W // 5
@@ -1293,13 +1336,14 @@ def vorrhallow_mid():
         x0 = int((i + rng.uniform(0.1, 0.7)) * BG_W / 6)
         w = rng.randrange(14, 24) * D
         top = rng.randrange(120, 300) * D
+        cs = masonry_courses(top, BG_H, 620 + i, 24 * D)
         for y in range(top, BG_H):
             for dx in range(w):
                 if y < top + 8 * D and (dx // (4 * D)) % 2 and rng.random() > 0.3:
                     continue  # a broken top
-                col = "stone-1" if dx < w * 0.25 else "night-1"
-                if (y - top) % (24 * D) < D:
-                    col = "night-0"
+                col = "stone-1" if dx < w * 0.25 else masonry_shade(x0 + dx, y, 620 + i, "night-0", "night-1", "stone-2")
+                if y in cs:
+                    col = "night-0"  # a weathered mortar course
                 put(img, x0 + dx, y, c(col))
         # A crystal spear through the column.
         sx, sy = x0 + w // 2, top + rng.randrange(20, 80) * D

@@ -1679,6 +1679,17 @@ The lore tablet / sign (every sign in the world is a `LoreTablet`, 11) is drawn 
 
 The layout is tested, not the pixels: `tests/test_lore_tablet.gd` holds `rune_strokes` to its rule across 40 seeds — every stroke stays within the face, the runes fall on at least two lines each opening with an upright stem (never the old flat bars), and the carving is deterministic and differs between signs. Combat is untouched: the sign is `z_index -1` background decor. Judged by eye at 1x and up in the Boughs (`leaf_landing`).
 
+### 12.14 Weathered backdrop masonry (pass 514)
+
+The painted parallax backdrops (`tools/art/tilegen.py`) drew their brick and column fields on a rigid grid: mortar courses on a fixed vertical period (`y % spacing`) over one flat body colour. The independent grade read that as one repeated stamp — a "regular mortar lattice" and "backdrop brick that tiles obviously" (passes 497, 502, 504). Two shared helpers break the lattice so a backdrop wall reads as real coursed stone:
+
+- **`masonry_courses(top, bottom, seed, spacing)`** returns the mortar-course rows with jittered gaps (0.5x to 1.5x the spacing, so there is no fixed vertical period), a one- or two-pixel course thickness, and roughly one course in six worn away. Deterministic from the seed; a set for fast membership in a pixel loop.
+- **`masonry_shade(x, y, seed, dark, body, light)`** gives each stone a slightly different value — most draw `body`, a minority drop to `dark` or lift to `light`, keyed by a coarse cell grid — so adjacent stones differ and the field stops reading as one flat colour.
+
+Applied to the brick and column fields the grade named: the Tower's far shafts and mid girders (`tower_far`, `tower_mid`), the Vorrhallow colonnade (`vorrhallow_mid`) and the Hearthroot distant houses (`hearthroot_far`). Only those four `assets/bg/*.png` change; the other backdrops are untouched.
+
+Combat is untouched by construction: these are the receding parallax layers behind the play field, muted further by the atmospheric-perspective shader (12.5), never the gameplay tiles, hazards or foes. The helpers are tested, not the pixels: `tools/art/test_tilegen.py` holds `masonry_courses` to jittered, partly-worn, non-overlapping gaps and `masonry_shade` to a varied-but-body-dominant field (mutation-checked; this Python guard runs locally, not in the Godot suite or CI). Judged by eye at 1x and in the raw layers (the 2x render density) in the Tower (`foot`), Vorrhallow (`gate_hall`) and Hearthroot (`plaza`).
+
 ---
 
 ## 13. Asset Production Plan
