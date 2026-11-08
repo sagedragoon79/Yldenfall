@@ -348,6 +348,68 @@ def test_ridge_is_seamless_at_the_seam():
             f"{z}: the seam jump {m['wrap_jump']} exceeds the roughest interior join {m['max_interior_jump']}"
 
 
+def _course_gaps(spacing, seed=7, top=0, bottom=4000):
+    """Gaps between consecutive mortar-course starts from tg.masonry_courses, with
+    the 1-2px course thickness collapsed to one start per course (bible 12.14)."""
+    rows = sorted(tg.masonry_courses(top, bottom, seed, spacing))
+    starts = [r for i, r in enumerate(rows) if i == 0 or r - rows[i - 1] > 1]
+    return [b - a for a, b in zip(starts, starts[1:])]
+
+
+def test_masonry_courses_have_no_fixed_period():
+    # The old lattice drew a course every `spacing` pixels on the dot (the grade's
+    # "repeated stamp", passes 497/502/504). The weathered courses jitter, so the
+    # gaps take several distinct values instead of one. (Removing the jitter term
+    # collapses every gap to `spacing` and fails this.)
+    for spacing in (24, 48, 60):
+        gaps = _course_gaps(spacing)
+        assert len(set(gaps)) >= 4, f"spacing {spacing}: only gaps {sorted(set(gaps))} — too regular"
+
+
+def test_masonry_courses_are_partly_worn_away():
+    # Roughly one course in six is missing, so some gaps run to two courses or
+    # more — a gap wider than the widest a jitter alone allows (1.5x spacing).
+    # (Dropping the wear test in masonry_courses keeps every course and fails this.)
+    for spacing in (24, 48, 60):
+        gaps = _course_gaps(spacing)
+        assert max(gaps) > spacing * 1.6, \
+            f"spacing {spacing}: widest gap {max(gaps)} shows no worn-away course"
+
+
+def test_masonry_courses_never_overlap():
+    # However the gaps jitter or a course wears away, two courses never fall on
+    # top of each other: every gap stays at least half the spacing. (A jitter
+    # term that could go fully negative would collapse a gap and fail this.)
+    for spacing in (24, 48, 60):
+        gaps = _course_gaps(spacing)
+        assert min(gaps) >= spacing * 0.5, f"spacing {spacing}: a gap {min(gaps)} is too tight"
+
+
+def test_masonry_shade_varies_across_a_field():
+    # A masonry field draws all three values — body, a darker stone and a lighter
+    # one — so it reads as varied stone, not one flat colour (the grade's flat
+    # "stamp"). (Making masonry_shade always return `body` fails this.)
+    seen = set()
+    for x in range(0, 640, 4):
+        for y in range(0, 480, 4):
+            seen.add(tg.masonry_shade(x, y, 3, "night-0", "night-1", "stone-2"))
+    assert {"night-0", "night-1", "stone-2"} <= seen, f"field is not varied: {seen}"
+
+
+def test_masonry_shade_is_mostly_body():
+    # The body colour dominates; the dark and light stones are the minority accents
+    # (thresholds >0.93 and <0.16), so the field reads as stone with variation, not
+    # noise. (Widening the accent bands past this balance fails.)
+    counts = {"night-0": 0, "night-1": 0, "stone-2": 0}
+    total = 0
+    for x in range(0, 1600, 2):
+        for y in range(0, 960, 2):
+            counts[tg.masonry_shade(x, y, 11, "night-0", "night-1", "stone-2")] += 1
+            total += 1
+    assert counts["night-1"] / total > 0.6, f"body is only {counts['night-1'] / total:.2f} of the field"
+    assert counts["stone-2"] / total < 0.12, f"light stone is {counts['stone-2'] / total:.2f} — too busy"
+
+
 def main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for t in tests:
