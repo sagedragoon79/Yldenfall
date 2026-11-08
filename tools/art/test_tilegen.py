@@ -410,6 +410,28 @@ def test_masonry_shade_is_mostly_body():
     assert counts["stone-2"] / total < 0.12, f"light stone is {counts['stone-2'] / total:.2f} — too busy"
 
 
+def test_flagged_backdrop_fields_use_weathered_courses():
+    # Every brick/column/pier field the grade called a "regular mortar lattice"
+    # (passes 497/502/504) now draws its courses through masonry_courses (jittered,
+    # partly worn) instead of a fixed `y % spacing` period. Reverting any one of
+    # these painters to the old on-the-dot course (dropping its masonry_courses
+    # call) fails this. Swept over passes 514 (tower/vorrhallow_mid/hearthroot_far)
+    # and 515 (vorrhallow_far, sunken_mid).
+    import inspect
+
+    for name in (
+        "tower_far", "tower_mid", "hearthroot_far", "vorrhallow_mid",
+        "vorrhallow_far", "sunken_mid",
+    ):
+        src = inspect.getsource(getattr(tg, name))
+        assert "masonry_courses(" in src, f"{name} no longer uses weathered courses"
+        # No vertical-period course lattice (`y % spacing`); a horizontal `dx %`
+        # window/bolt stride is fine.
+        assert "y % (" not in src and "- deck) % (" not in src, (
+            f"{name} still draws a course on a fixed vertical period"
+        )
+
+
 def main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for t in tests:
