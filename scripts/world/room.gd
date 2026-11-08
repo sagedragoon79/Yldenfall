@@ -191,6 +191,15 @@ func build(text: String) -> void:
 	tiles.name = "Tiles"
 	add_child(tiles)
 
+	# Emissive light pools from the room's fixed sources, drawn just over the raw
+	# tiles and under every actor (design bible 12.10). Added here, before the
+	# sources and the decor, so it sits beneath them; it gathers them once the
+	# room is in the tree (its decor is handed to it after the Decor is built).
+	var room_light := RoomLight.new()
+	room_light.name = "RoomLight"
+	room_light.room = self
+	add_child(room_light)
+
 	# Which cells look like ground, so each wall tile can match its neighbours.
 	var amber := _amber_on()
 	for y in grid.size():
@@ -237,6 +246,8 @@ func build(text: String) -> void:
 	decor.name = "Decor"
 	add_child(decor)
 	decor.build(id, zone, grid, covers)
+	# The decor's candle and fungus glows pool their light onto the floor too.
+	room_light.decor = decor
 
 	# Ambient-occlusion rim shading where solid edges meet open air.
 	var shade := EdgeShade.new()

@@ -1613,7 +1613,20 @@ Two rules keep combat readable (Sean's standing concern):
 
 **The Stillstone overrides the grade.** While time is held the world still drains to the pale-blue stop tint (8, A8) whatever the zone, so the Stillstone reads the same everywhere. `tests/test_time_tint.gd` drives the pure grade and target logic (every shipped zone graded, high-key, families distinct, the stop override).
 
-Still open from Sean's lighting/depth request after this pass: room light sources (lanterns, windows, shrines, spell light with falloff and rim light on figures), dark foreground silhouette layers that pass in front of the camera, and more parallax layers.
+### 12.10 Room light sources (pass 509)
+
+The per-zone fog (12.5) and grade (12.9) light the *whole* frame, but the independent grade kept flagging a nearer problem: a lamp, a shrine rune or a forge mouth was a bright sprite stuck on a flat scene, casting no light onto the stones around it. This is the "room light sources … with falloff" part of Sean's 2026-11-07 request.
+
+**`RoomLight`** (`scripts/world/room_light.gd`) is a per-room overlay that draws a soft radial **pool** of each fixed source's own colour onto the floor and walls around it:
+
+- **Additive and localised.** Each pool is `STEPS` concentric filled circles, largest to smallest, each the same faint alpha; stacked additively they sum to a centre peak and step down to the edge (`RoomLight.rings`). The peak is capped at `READABLE_CAP` (0.16), so a pool only ever adds a little light — it tints its pocket, it never washes it out, and the lit gameplay layer keeps the contrast combat reads by.
+- **Under the actors.** The overlay is added to the room right after the tile layer, before the sources, decor and actors, so by tree order the pool draws over the raw tiles but under every foe and the player: a pool lights the ground a foe stands on, not the foe.
+- **Fixed sources only.** A source opts in by joining the `room_light` group and exposing `glow_color` and `glow_radius`. Town lamps (warm gold), meditation shrines (rune cyan) and the Kettleforge forge (ember) are enlisted; the decor's own candle and fungus glows pool their zone colour too. Dynamic lights — projectiles, foes, pickups — stay in the fog's separate `light` group and are deliberately never pooled, so a thrown fireball drags no light across the floor.
+- **Static.** The pools are gathered once, when the room enters the tree, and then never recomputed — no per-frame cost, like `EdgeShade` (12.3).
+
+`tests/test_room_light.gd` drives the pure falloff maths (rings shrink, each adds light, the centre sums to the capped peak), the colour/reach read with warm fallbacks, and the collect (a shrine room pools its rune light, the overlay sits under the actors, a projectile is not pooled).
+
+Still open from Sean's lighting/depth request after this pass: **rim light on figures** (a directional key edge on the player and foes), **dark foreground silhouette layers** that pass in front of the camera, and **more parallax layers**.
 
 ---
 

@@ -16,6 +16,9 @@ const GLOW_COLORS := {"heartwood": Color("84cbd6"), "hearthroot": Color("f0c02e"
 ## [kind row, variant, cell] for every placed piece.
 var pieces: Array = []
 var glows: Array[Vector2] = []
+## The zone's glow colour, so RoomLight can pool the candle/fungus light onto the
+## floor around each glow (design bible 12.10). Resolved in `build`.
+var pool_color: Color = Color.WHITE
 
 var _tex: Texture2D
 var _meta: Dictionary
@@ -30,6 +33,7 @@ func build(room_id: String, zone: String, grid: Array[String], skip: Dictionary)
 		return
 	_tex = load(path + ".png")
 	_meta = (load(path + ".json") as JSON).data
+	pool_color = GLOW_COLORS.get(zone, Color.WHITE)
 	z_index = -1
 	var seed_value := room_id.hash()
 	for y in grid.size():
