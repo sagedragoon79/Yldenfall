@@ -50,6 +50,54 @@ func test_far_recedes_further_than_mid() -> void:
 	check(_haze_dist(far_out) < _haze_dist(mid_out), "and closer to the haze on the far layer")
 
 
+func test_the_layers_are_ordered_back_to_front() -> void:
+	# Insertion order in LAYERS is draw order: far furthest back, the ridge between
+	# (design bible 12.12), mid nearest. Backdrop iterates LAYERS, so a child added
+	# earlier draws further back.
+	var order := Backdrop.LAYERS.keys()
+	check(order == ["far", "ridge", "mid"], "the back layers run far -> ridge -> mid, got %s" % [order])
+
+
+func test_the_ridge_scrolls_between_far_and_mid() -> void:
+	# The distant ridge (design bible 12.12) parallaxes as a mid-distance: slower
+	# than the near mid layer, faster than the far backdrop, on both axes.
+	var far: Vector2 = Backdrop.LAYERS["far"]
+	var ridge: Vector2 = Backdrop.LAYERS["ridge"]
+	var mid: Vector2 = Backdrop.LAYERS["mid"]
+	check(far.x < ridge.x and ridge.x < mid.x, "the ridge scrolls between far and mid horizontally")
+	check(far.y < ridge.y and ridge.y < mid.y, "the ridge scrolls between far and mid vertically")
+
+
+func test_the_ridge_recedes_between_far_and_mid() -> void:
+	# Atmospheric perspective steps down with depth (design bible 12.5): the ridge
+	# is desaturated and faded harder than the near mid layer and lighter than the
+	# far backdrop, so the three layers recede in order.
+	var far: Dictionary = Backdrop.ATMOS["far"]
+	var ridge: Dictionary = Backdrop.ATMOS["ridge"]
+	var mid: Dictionary = Backdrop.ATMOS["mid"]
+	check(far["desat"] > ridge["desat"] and ridge["desat"] > mid["desat"],
+		"the ridge is desaturated between far and mid")
+	check(far["fade"] > ridge["fade"] and ridge["fade"] > mid["fade"],
+		"the ridge is faded between far and mid")
+
+	var far_out := Backdrop.haze_color(BRIGHT, far["desat"], far["fade"], Backdrop.HAZE)
+	var ridge_out := Backdrop.haze_color(BRIGHT, ridge["desat"], ridge["fade"], Backdrop.HAZE)
+	var mid_out := Backdrop.haze_color(BRIGHT, mid["desat"], mid["fade"], Backdrop.HAZE)
+	check(far_out.s < ridge_out.s and ridge_out.s < mid_out.s,
+		"a bright pixel ends up least saturated on far, most on mid, ridge between")
+	check(_haze_dist(far_out) < _haze_dist(ridge_out) and _haze_dist(ridge_out) < _haze_dist(mid_out),
+		"and closest to the haze on far, furthest on mid, ridge between")
+
+
+func test_atmos_material_carries_the_ridge_parameters() -> void:
+	var mat := Backdrop.atmos_material("ridge")
+	check(mat != null, "the ridge layer gets an atmosphere material")
+	check(is_equal_approx(mat.get_shader_parameter("desat"), Backdrop.ATMOS["ridge"]["desat"]),
+		"its desat uniform matches the ridge config")
+	check(is_equal_approx(mat.get_shader_parameter("fade"), Backdrop.ATMOS["ridge"]["fade"]),
+		"its fade uniform matches the ridge config")
+
+
 func test_the_haze_is_a_dark_tone() -> void:
 	check(Backdrop.HAZE.v < 0.3, "the haze is dark, so atmosphere means receding into shadow")
 

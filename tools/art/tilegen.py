@@ -16,7 +16,8 @@ Tileset atlas (16 world px tiles at 2x render density, so 32 px each; 8 columns)
             darker interior tile (MID one shade, DEEP two). The factory picks one
             per cell by position, so adjacent same-mask cells draw a different
             pattern and the repeat unit no longer bands.
-Backgrounds: <zone>_far.png and <zone>_mid.png, 640x480, tile horizontally.
+Backgrounds: <zone>_far.png, <zone>_ridge.png and <zone>_mid.png, 640x480, tile
+horizontally (far, a distant ridgeline, then the near parallax).
 
 Usage: python3 tools/art/tilegen.py
 """
@@ -1624,6 +1625,119 @@ def foreground(zone):
     return img
 
 
+# --- Ridge parallax layer (design bible 12.12) ---------------------------------
+# A distant silhouette ridgeline between the far backdrop and the mid layer, so
+# the parallax recedes through three depths instead of two (the independent
+# grade's recurring "depth collapse"). Backdrop draws it with atmospheric-
+# perspective knobs between far and mid (bible 12.5), so it sits back in the haze
+# and never competes with the play field — a pure depth cue, behind everything
+# the player touches, combat untouched. One parametrized painter (like the
+# foreground, bible 12.11): a seamless rolling ridgeline whose crest profile is
+# the zone's distant material — firs over the woods, jagged shards over the
+# crystal halls, broken crags over the stone towers, battlemented roofs over the
+# hearth towns, low mounds over the marsh springs.
+RIDGE_KIND = {
+    "heartwood": "fir", "boughs": "fir",
+    "haar": "mound", "sunken": "mound",
+    "evercrown": "shard", "vorrhallow": "shard",
+    "tower": "crag", "trials": "crag",
+    "hearthroot": "roof", "spires": "roof",
+}
+# Body silhouette and a one-step-lighter crest rim: a dark shade of each zone's
+# dominant ramp, so the ridge belongs to its world even before the haze recedes
+# it (the warm hearth and cold spring never share one ridge colour).
+RIDGE_COLOR = {
+    "heartwood": ("bark-1", "bark-2"), "boughs": ("leaf-1", "leaf-2"),
+    "haar": ("sky-1", "sky-2"), "sunken": ("sky-1", "sky-2"),
+    "evercrown": ("crystal-1", "crystal-2"), "vorrhallow": ("crystal-1", "crystal-2"),
+    "tower": ("stone-1", "stone-2"), "trials": ("stone-1", "stone-2"),
+    "hearthroot": ("stone-1", "stone-2"), "spires": ("stone-1", "stone-2"),
+}
+RIDGE_BASE = int(BG_H * 0.56)  # the ridgeline's resting canvas y (the horizon)
+RIDGE_A = 236                  # a touch see-through, so the far sky grades through
+RIDGE_RIM_A = 212
+
+
+def _ridge_roll(rng):
+    """A seamless rolling baseline, canvas px above RIDGE_BASE per column, summed
+    from sines with whole-number cycle counts so the left and right edges meet
+    (the layer repeats sideways)."""
+    h = [0.0] * BG_W
+    for cyc, lo, hi in ((rng.randint(2, 3), 10, 16), (rng.randint(4, 6), 5, 9), (rng.randint(8, 11), 2, 4)):
+        amp = rng.uniform(lo, hi) * D
+        ph = rng.uniform(0, 2 * math.pi)
+        for x in range(BG_W):
+            h[x] += amp * math.sin(2 * math.pi * cyc * x / BG_W + ph)
+    return h
+
+
+def _tri(teeth, cx, half, peak, lean=0):
+    """A triangular crest `half` wide, `peak` tall, into `teeth` (indices wrap)."""
+    for dx in range(-half, half + 1):
+        t = 1.0 - abs(dx) / max(1, half)
+        i = (cx + int(lean * (1 - t)) + dx) % BG_W
+        teeth[i] = max(teeth[i], peak * t)
+
+
+def _block(teeth, cx, half, peak):
+    """A flat-topped block (a battlement), into `teeth` (indices wrap)."""
+    for dx in range(-half, half + 1):
+        teeth[(cx + dx) % BG_W] = max(teeth[(cx + dx) % BG_W], peak)
+
+
+def _jag(teeth, cx, half, peak, rng):
+    """A random-walk crest for broken rock, into `teeth` (indices wrap)."""
+    steps = rng.randint(3, 6)
+    pts = [rng.uniform(0.3, 1.0) * peak for _ in range(steps + 1)]
+    for dx in range(-half, half + 1):
+        f = (dx + half) / max(1, 2 * half) * steps
+        a = int(f)
+        fr = f - a
+        v = pts[a] * (1 - fr) + pts[min(a + 1, steps)] * fr
+        teeth[(cx + dx) % BG_W] = max(teeth[(cx + dx) % BG_W], v)
+
+
+def _ridge_profile(kind, rng):
+    """The crest height (canvas px above RIDGE_BASE) per column: a rolling
+    baseline with the zone's teeth raised onto it, seamless across the seam."""
+    roll = _ridge_roll(rng)
+    teeth = [0.0] * BG_W
+    x = rng.randint(0, 20) * D
+    while x < BG_W:
+        if kind == "mound":
+            _tri(teeth, x, rng.randint(14, 26) * D, rng.randint(4, 10) * D)
+            x += rng.randint(30, 60) * D
+        elif kind == "fir":
+            _tri(teeth, x, rng.randint(5, 10) * D, rng.randint(22, 46) * D)
+            x += rng.randint(10, 20) * D
+        elif kind == "shard":
+            _tri(teeth, x, rng.randint(4, 9) * D, rng.randint(26, 54) * D, lean=rng.randint(-4, 4) * D)
+            x += rng.randint(12, 24) * D
+        elif kind == "crag":
+            _jag(teeth, x, rng.randint(10, 22) * D, rng.randint(14, 40) * D, rng)
+            x += rng.randint(14, 30) * D
+        else:  # roof
+            _block(teeth, x, rng.randint(9, 18) * D, rng.randint(18, 44) * D)
+            x += rng.randint(16, 32) * D
+    return [roll[i] + teeth[i] for i in range(BG_W)]
+
+
+def ridge(zone):
+    """The distant ridgeline silhouette for `zone` (design bible 12.12): the
+    zone's far crest filled from the horizon down, over a transparent sky, so
+    Backdrop can recede it into the haze between the far and mid layers."""
+    img = Image.new("RGBA", (BG_W, BG_H), CLEAR)
+    body, rim = RIDGE_COLOR[zone]
+    rng = random.Random(sum(ord(ch) for ch in zone) + 1300)
+    h = _ridge_profile(RIDGE_KIND[zone], rng)
+    for x in range(BG_W):
+        top = RIDGE_BASE - int(round(h[x]))
+        for y in range(top, BG_H):
+            put(img, x, y, c(body, RIDGE_A))
+        put(img, x, top, c(rim, RIDGE_RIM_A))
+    return img
+
+
 BACKGROUNDS = {
     "heartwood": (heartwood_far, heartwood_mid),
     "hearthroot": (hearthroot_far, hearthroot_mid),
@@ -1647,6 +1761,8 @@ def main():
         far().save(BG / f"{zone}_far.png")
         if mid:
             mid().save(BG / f"{zone}_mid.png")
+    for zone in RIDGE_KIND:
+        ridge(zone).save(BG / f"{zone}_ridge.png")
     for zone in FORE_KIND:
         foreground(zone).save(BG / f"{zone}_fore.png")
 
