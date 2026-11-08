@@ -1481,6 +1481,149 @@ def gym_far():
     return img
 
 
+# --- Foreground silhouette layers (design bible 12.11) -------------------------
+# A near-black silhouette band hugging the bottom of the view, drawn by Backdrop
+# as a fast horizontal-parallax layer in front of the play field. Mostly
+# transparent so the centre of the screen stays clear for combat; the shapes
+# differ by zone material so each foreground belongs to its world. The band is
+# anchored to the view bottom (world y 360, the base framing height) and painted
+# down past it, because Backdrop locks this layer vertically to the camera.
+FORE_KIND = {
+    "heartwood": "fern", "boughs": "fern",
+    "haar": "reed", "sunken": "reed",
+    "evercrown": "crystal", "vorrhallow": "crystal",
+    "tower": "rubble", "trials": "rubble",
+    "hearthroot": "post", "spires": "post",
+}
+FORE_BODY = "night-0"  # the darkest night shade: an unlit near-black silhouette
+FORE_RIM = "night-1"   # one step up, a faint top/leading edge so a shape reads
+FORE_FLOOR = 360 * D   # the view bottom in canvas pixels (bible: BASE_SIZE.y)
+FORE_BAND = 16 * D     # solid ground strip above the floor line
+BAND_A, PART_A, RIM_A = 242, 206, 224  # band / protrusion / rim alphas (see-through foreground)
+
+
+def _fore_fill(img):
+    """The solid ground band, from the floor line down past the view bottom."""
+    top = FORE_FLOOR - FORE_BAND
+    for y in range(top, BG_H):
+        col = c(FORE_RIM, RIM_A) if y < top + D else c(FORE_BODY, BAND_A)
+        for x in range(BG_W):
+            put(img, x, y, col)
+
+
+def _fore_stalk(img, cx, base, h, w, lean, taper_to_point):
+    """A tapering stalk/shard rising `h` from `base` at `cx`, leaning by `lean`.
+    Width `w` at the base narrows to a point (shards/blades) or 1 px (stalks)."""
+    for i in range(h):
+        t = i / max(1, h)
+        y = base - i
+        half = max(0 if taper_to_point else 0, int((w * (1.0 - t)) / 2))
+        x0 = cx + int(lean * t)
+        for dx in range(-half, half + 1):
+            put(img, x0 + dx, y, c(FORE_BODY, PART_A))
+        put(img, x0 - half, y, c(FORE_RIM, RIM_A))
+        if taper_to_point:
+            put(img, x0 + half, y, c(FORE_RIM, RIM_A))
+
+
+def _fore_fern(img, x, base, rng):
+    spread = rng.randint(10, 20) * D
+    for _ in range(rng.randint(3, 6)):
+        cx = x + rng.randint(0, spread)
+        h = rng.randint(40, 108) * D
+        w = rng.choice([3, 4, 5]) * D
+        lean = rng.randint(-10, 10) * D
+        _fore_stalk(img, cx, base, h, w, lean, False)
+        for j in range(4 * D, h, 10 * D):  # leaflets off the frond
+            t = j / h
+            lx, ly = cx + int(lean * t), base - j
+            d = rng.choice([-1, 1])
+            for m in range(rng.randint(3, 7) * D):
+                put(img, lx + d * m, ly + m // 2, c(FORE_BODY, PART_A))
+    return spread + rng.randint(12, 26) * D
+
+
+def _fore_reed(img, x, base, rng):
+    spread = rng.randint(8, 16) * D
+    for _ in range(rng.randint(2, 4)):
+        cx = x + rng.randint(0, spread)
+        h = rng.randint(60, 128) * D
+        lean = rng.randint(-8, 8) * D
+        _fore_stalk(img, cx, base, h, rng.choice([2, 3]) * D, lean, False)
+        if rng.random() < 0.6:  # a cattail tip
+            tx, ty = cx + int(lean * 0.85), base - h + rng.randint(8, 16) * D
+            for dy in range(-6 * D, 6 * D):
+                for dx in range(-2 * D, 3 * D):
+                    if (dx / (2.5 * D)) ** 2 + (dy / (6.0 * D)) ** 2 <= 1.0:
+                        put(img, tx + dx, ty + dy, c(FORE_BODY, PART_A))
+    return spread + rng.randint(10, 22) * D
+
+
+def _fore_crystal(img, x, base, rng):
+    spread = rng.randint(10, 18) * D
+    for _ in range(rng.randint(2, 4)):
+        cx = x + rng.randint(0, spread)
+        h = rng.randint(34, 88) * D
+        w = rng.randint(8, 16) * D
+        _fore_stalk(img, cx, base, h, w, rng.randint(-6, 6) * D, True)
+    return spread + rng.randint(12, 22) * D
+
+
+def _fore_rubble(img, x, base, rng):
+    span = rng.randint(24, 46) * D
+    peak = rng.randint(20, 54) * D
+    steps = rng.randint(4, 7)
+    pts = [rng.randint(peak // 3, peak) for _ in range(steps + 1)]
+    for i in range(span):
+        fi = (i / span) * steps
+        a = int(fi)
+        b = min(a + 1, steps)
+        f = fi - a
+        hgt = int(pts[a] * (1 - f) + pts[b] * f)
+        for j in range(hgt):
+            put(img, x + i, base - j, c(FORE_BODY, PART_A))
+        put(img, x + i, base - hgt, c(FORE_RIM, RIM_A))
+    return span + rng.randint(8, 18) * D
+
+
+def _fore_post(img, x, base, rng):
+    w = rng.randint(6, 11) * D
+    h = rng.randint(55, 118) * D
+    lean = rng.randint(-3, 3) * D
+    for i in range(h):
+        t = i / h
+        y = base - i
+        x0 = x + int(lean * t)
+        for dx in range(w):
+            put(img, x0 + dx, y, c(FORE_BODY, PART_A))
+        put(img, x0, y, c(FORE_RIM, RIM_A))
+        put(img, x0 + w - 1, y, c(FORE_RIM, RIM_A))
+    for dx in range(w):  # a flat cap rim
+        put(img, x + int(lean) + dx, base - h, c(FORE_RIM, RIM_A))
+    return w + rng.randint(26, 50) * D
+
+
+FORE_SHAPE = {
+    "fern": _fore_fern, "reed": _fore_reed, "crystal": _fore_crystal,
+    "rubble": _fore_rubble, "post": _fore_post,
+}
+
+
+def foreground(zone):
+    """The near-black foreground silhouette for `zone`: protrusions of the zone's
+    material rising from a solid ground band at the view bottom, over a mostly
+    transparent canvas (bible 12.11)."""
+    img = Image.new("RGBA", (BG_W, BG_H), CLEAR)
+    shape = FORE_SHAPE[FORE_KIND[zone]]
+    rng = random.Random(sum(ord(ch) for ch in zone) + 700)
+    base = FORE_FLOOR - FORE_BAND
+    x = -rng.randint(10, 30) * D
+    while x < BG_W + 20 * D:
+        x += shape(img, x, base, rng)
+    _fore_fill(img)  # the band last, so it covers the protrusion roots cleanly
+    return img
+
+
 BACKGROUNDS = {
     "heartwood": (heartwood_far, heartwood_mid),
     "hearthroot": (hearthroot_far, hearthroot_mid),
@@ -1504,6 +1647,8 @@ def main():
         far().save(BG / f"{zone}_far.png")
         if mid:
             mid().save(BG / f"{zone}_mid.png")
+    for zone in FORE_KIND:
+        foreground(zone).save(BG / f"{zone}_fore.png")
 
 
 if __name__ == "__main__":

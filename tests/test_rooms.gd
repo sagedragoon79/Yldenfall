@@ -1196,7 +1196,8 @@ func test_decor_and_backgrounds_are_drawn_at_double_density() -> void:
 	var backdrop := Backdrop.new()
 	arena.add_child(backdrop)
 	backdrop.set_zone("heartwood")
-	check(backdrop.get_child_count() == 2, "the trunk has two parallax layers")
+	# Two back layers (far, mid) plus the foreground silhouette (bible 12.11).
+	check(backdrop.get_child_count() == 3, "the trunk has two back layers and a foreground")
 	for layer in backdrop.get_children():
 		var sprite := layer.get_child(0) as Sprite2D
 		check(sprite.texture.get_width() == Backdrop.SIZE.x * TilesetFactory.DENSITY, "a background is painted at %dx" % TilesetFactory.DENSITY)
@@ -1216,7 +1217,13 @@ func test_every_zone_is_dressed() -> void:
 		var backdrop := Backdrop.new()
 		arena.add_child(backdrop)
 		backdrop.set_zone(zone)
-		check(backdrop.get_child_count() == 2, "%s has two parallax layers" % zone)
+		# Two back layers (far, mid) plus the foreground silhouette (bible 12.11).
+		check(backdrop.get_child_count() == 3, "%s has two back layers and a foreground" % zone)
+		var fores := 0
+		for layer: Parallax2D in backdrop.get_children():
+			if layer.z_index == Backdrop.FORE_Z and not layer.z_as_relative:
+				fores += 1
+		check(fores == 1, "%s has exactly one foreground silhouette layer" % zone)
 		backdrop.queue_free()
 
 

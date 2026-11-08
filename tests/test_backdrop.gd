@@ -99,6 +99,43 @@ func test_every_zone_haze_is_a_dark_tone() -> void:
 			"%s fog colour is dark enough to recede into" % z)
 
 
+func test_fore_scroll_reads_as_near_and_in_front() -> void:
+	# The foreground silhouette (design bible 12.11) scrolls faster than the camera
+	# horizontally, so it reads as near and slides past; it is locked vertically
+	# (scale 1), so its band always frames the view bottom with no gap. Its z sits
+	# above the atmosphere overlays (fog/motes/rain at 4) and every actor (<= 3),
+	# so it is the nearest thing on screen.
+	check(Backdrop.FORE_SCROLL.x > 1.0, "the foreground scrolls faster than the camera (near, in front)")
+	check(is_equal_approx(Backdrop.FORE_SCROLL.y, 1.0), "it is locked to the camera vertically, so the band never gaps")
+	check(Backdrop.FORE_Z > 4, "it draws in front of the fog, motes and rain overlays")
+	check(Backdrop.FORE_Z > 3, "it draws in front of every actor and projectile")
+
+
+func test_fore_layer_builds_in_front_for_a_zone_with_art() -> void:
+	# A zone with a <zone>_fore.png gets a foreground Parallax2D: absolute high z
+	# (z_as_relative false, so the backdrop's own z_index -50 doesn't drag it back),
+	# the fast/locked scroll, and the zone's silhouette sprite.
+	var fl := Backdrop.fore_layer("haar")
+	check(fl != null, "the haar zone builds a foreground layer")
+	if fl == null:
+		return
+	check(not fl.z_as_relative, "its z is absolute, not relative to the backdrop node")
+	check(fl.z_index == Backdrop.FORE_Z, "it draws at the foreground z")
+	check(fl.scroll_scale.is_equal_approx(Backdrop.FORE_SCROLL), "it carries the foreground scroll")
+	check(fl.ignore_camera_scroll, "it takes its offset from Backdrop, like the back layers")
+	var sprite := fl.get_child(0) as Sprite2D
+	check(sprite != null and sprite.texture != null, "it shows the zone's silhouette art")
+	check(sprite.material == null, "the near foreground is not hazed like the receding back layers")
+	fl.free()
+
+
+func test_fore_layer_absent_without_art() -> void:
+	# The gym and any new zone has no foreground art, so no layer is built — the
+	# game just draws the back layers, no error.
+	check(Backdrop.fore_layer("gym") == null, "the gym has no foreground layer")
+	check(Backdrop.fore_layer("not_a_zone") == null, "an unknown zone has no foreground layer")
+
+
 func test_zones_differ_in_fog_colour() -> void:
 	# The point of the pass: a warm hearth and a cold spring must not share one
 	# haze. Sample one zone per family and confirm they are visibly apart.
