@@ -34,15 +34,23 @@ const HAZE := Color8(44, 37, 65)
 ## (heartwood, boughs), cold spring-blue (haar, sunken), crystal violet
 ## (evercrown, vorrhallow) and bare grey stone (tower, trials). Computed from the
 ## palette in tools/art/palette.py; mirror any change there.
+##
+## The two murkiest zones (haar, sunken) are eased toward neutral (pass 513): the
+## independent grade read them as a low-contrast grey-green / grey-teal where the
+## play field and backdrop merged. Their haze is desaturated so the dark backdrop
+## recedes as a paler mist (higher luminance at the same dark HSV value, still
+## under the `.v < 0.4` dark-tone cap and still cool-blue), lifting its separation
+## from the play field while the tiles, hazards and foes — all drawn in front and
+## untouched by the haze — keep their contrast.
 const ZONE_HAZE := {
 	"hearthroot": Color8(58, 34, 48),
 	"heartwood": Color8(37, 54, 51),
 	"tower": Color8(46, 40, 62),
-	"haar": Color8(44, 60, 92),
+	"haar": Color8(74, 84, 98),
 	"boughs": Color8(43, 83, 53),
 	"vorrhallow": Color8(46, 39, 69),
 	"evercrown": Color8(55, 34, 68),
-	"sunken": Color8(37, 43, 68),
+	"sunken": Color8(56, 62, 80),
 	"trials": Color8(46, 40, 62),
 	"spires": Color8(64, 37, 42),
 }

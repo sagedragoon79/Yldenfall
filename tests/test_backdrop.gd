@@ -147,6 +147,22 @@ func test_every_zone_haze_is_a_dark_tone() -> void:
 			"%s fog colour is dark enough to recede into" % z)
 
 
+func test_the_murkiest_zones_are_eased_toward_neutral() -> void:
+	# The two murkiest zones — the Haar and the Sunken Spring, the darkest fogs — read
+	# as a low-contrast grey-green / grey-teal where the play field merged into the
+	# backdrop (the independent grade). Their haze is desaturated toward neutral so the
+	# dark backdrop recedes as a paler mist and separates from the play field, while
+	# staying under the dark-tone cap and keeping its cool-blue lean (design bible 12.5,
+	# pass 513). Fails if either reverts to its old saturated dark murk.
+	for z: String in ["haar", "sunken"]:
+		var c := Backdrop.ZONE_HAZE[z] as Color
+		check(c.s < 0.38, "%s haze is eased toward neutral, not a saturated murk" % z)
+		check(c.v < 0.4, "%s haze stays under the dark-tone cap" % z)
+		var lum := c.r * 0.299 + c.g * 0.587 + c.b * 0.114
+		check(lum > 0.22, "%s haze is lifted to a paler mist, not a dark merge" % z)
+		check(c.b >= c.r and c.b >= c.g, "%s haze keeps its cool-blue lean" % z)
+
+
 func test_fore_scroll_reads_as_near_and_in_front() -> void:
 	# The foreground silhouette (design bible 12.11) scrolls faster than the camera
 	# horizontally, so it reads as near and slides past; it is locked vertically
