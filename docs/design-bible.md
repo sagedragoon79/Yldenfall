@@ -1660,6 +1660,15 @@ Combat is untouched: the ridge is a distant layer behind the play field, hazed i
 
 Still open from Sean's lighting/depth request after this pass: **rim light on figures** (a directional key edge on the player and foes); the figures are drawn procedurally with swapping dye/wash/dissolve materials, so a uniform rim needs a cross-cutting compositing change (a `CanvasGroup` per figure) better landed when its combat readability can be watched. A further option under "more parallax layers" is a second, nearer foreground band (12.11).
 
+### 12.13 Carved sign faces (pass 512)
+
+The lore tablet / sign (every sign in the world is a `LoreTablet`, 11) is drawn in `scripts/world/lore_tablet.gd`, not painted art. It used to show four identical flat horizontal bars on a plain grey card — the independent grade (pass 504) flagged it as an un-authored UI stub, the same meaningless scribble appearing in five rooms. It now reads as a carved stone sign:
+
+- **A bevelled slab.** The stone face is lit along the top and left edges (`STONE.lightened`) and shadowed down the right and bottom (`STONE_DARK`), so it reads as cut stone with depth, not a flat card.
+- **Engraved runes, seeded per sign.** `LoreTablet.rune_strokes(seed)` is a pure function that lays short grooved strokes — upright stems (some with a cross-tick), short bars and dots — in two or three lines across the face (`FACE`), read left to right with word gaps, each line opening with a stem so it reads as writing. The seed is a hash of the sign's own text (`_seed_text`, all variant lines joined), so each distinct sign carves its own marks and the same stamp no longer repeats across rooms; a flag-swapped sign keeps its carving. Every stroke is a dark groove with the inlay (`GLYPH`) over it, so the marks read as incised.
+
+The layout is tested, not the pixels: `tests/test_lore_tablet.gd` holds `rune_strokes` to its rule across 40 seeds — every stroke stays within the face, the runes fall on at least two lines each opening with an upright stem (never the old flat bars), and the carving is deterministic and differs between signs. Combat is untouched: the sign is `z_index -1` background decor. Judged by eye at 1x and up in the Boughs (`leaf_landing`).
+
 ---
 
 ## 13. Asset Production Plan
