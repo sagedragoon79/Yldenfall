@@ -355,7 +355,9 @@ func test_the_warden_cache_needs_the_stride() -> void:
 		await frames(30)
 		p.input.jump_pressed = true
 		p.input.jump_held = true
-		await frames(10)
+		# Dash as the hop leaves the porch (pass 508): the alcove is four tiles tall now, and a
+		# dash any higher sails over the fruit to the back wall.
+		await frames(1)
 		p.input.dash_pressed = true
 		await frames(40)
 		check(GameState.is_collected(fruit) == stride, "with the Stride %s, the Life Fruit is %s" % [stride, "taken" if GameState.is_collected(fruit) else "out of reach"])

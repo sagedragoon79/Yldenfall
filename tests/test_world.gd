@@ -555,7 +555,7 @@ func test_torrent_douses_the_fire_seal_for_good() -> void:
 	p.max_hp = 9999
 	p.hp = 9999
 	var seals := runner.get_tree().get_nodes_in_group("fire_seal")
-	check(seals.size() == 3, "three tiles of fire seal the road east (%d)" % seals.size())
+	check(seals.size() == 4, "four tiles of fire seal the road east (%d)" % seals.size())
 	check(not p.abilities.torrent, "the run starts without Deluge")
 	var scroll: ItemPickup = null
 	for c in w.room.get_children():
@@ -720,7 +720,7 @@ func test_thunder_wakes_the_conduit_and_opens_the_gate() -> void:
 	check(p.equipped_spell == "thunder", "and, with no other spell, puts it on the Spell button")
 	var conduits := runner.get_tree().get_nodes_in_group("conductor")
 	var gates := runner.get_tree().get_nodes_in_group("conduit_gate")
-	check(conduits.size() == 1 and gates.size() == 3, "one conduit and a gate three tiles tall (%d, %d)" % [conduits.size(), gates.size()])
+	check(conduits.size() == 1 and gates.size() == 4, "one conduit and a gate four tiles tall (%d, %d)" % [conduits.size(), gates.size()])
 	if conduits.is_empty() or gates.is_empty():
 		return
 	var conduit := conduits[0] as Conduit

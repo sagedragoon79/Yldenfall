@@ -10,7 +10,7 @@ const PICKUPS := "GXOdhnzLWF*$SN&{(}:"
 const AMBER_SECRETS := [["heartwood/amber_falls", 31, 13]]
 ## Caches behind cracked stone outside the Delver's Pick rooms (pass 135): the town
 ## shows you one from the first step, and only the Delver's Pick opens it.
-const DELVERS_PICK_SECRETS := [["hearthroot/west_gate", 2, 19]]
+const DELVERS_PICK_SECRETS := [["hearthroot/west_gate", 2, 20]]
 ## Pickups only a second jump reaches, once the Featherstep Boots are found (bible 4.1, A3).
 ## The Sky Steps' purse sits on the climb's first island, a boots leap up from the
 ## one below (pass 211: it had been listed as the Stride's). Pass 219 raised the
@@ -31,7 +31,7 @@ const WIND_SECRETS := [["boughs/thicket_road", 38, 8]]
 const FIRE_SECRETS := [["spires/spires", 76, 19]]
 ## Caches behind cracked stone seals, which only a Lithic Fracture cast shatters
 ## (bible 4.5, pass 497): [room, tile x, tile y]. Optional, off the critical path.
-const FRACTURE_SECRETS := [["hearthroot/west_gate", 24, 19], ["heartwood/dwarf_larder", 6, 19],
+const FRACTURE_SECRETS := [["hearthroot/west_gate", 24, 20], ["heartwood/dwarf_larder", 6, 19],
 	["tower/ore_vault", 20, 20], ["tower/old_flue", 35, 39]]
 ## Rooms beyond cracked stone, open only once the Foreman gives up the Delver's Pick,
 ## or above the flue damper, open once Durgan falls (the "winch" ability),
@@ -387,10 +387,11 @@ func test_checker_climbs_falling_water_only_with_the_stillstone() -> void:
 	# until the Stillstone freezes it into footholds (bible A8).
 	var rows := grid_rows(40, 23)
 	put_tiles(rows, 0, 4, "#", 40, 16)
-	put_tiles(rows, 1, 17, ".", 12, 3)
+	# Passages four tiles tall for the 2x hero (Reach.BODY_ROWS, pass 508).
+	put_tiles(rows, 1, 16, ".", 12, 4)
 	put_tiles(rows, 3, 19, "P")
 	put_tiles(rows, 13, 4, "f", 3, 16)
-	put_tiles(rows, 16, 5, ".", 10, 3)
+	put_tiles(rows, 16, 4, ".", 10, 4)
 	put_tiles(rows, 22, 7, "L")
 	var texts := {"t/falls": room_text(["name: Falls"], rows)}
 	var dry := Reach.new(texts, {"glove": true})
@@ -530,8 +531,9 @@ func test_checker_wont_climb_through_thorns() -> void:
 func test_checker_opens_root_gates_from_their_heart() -> void:
 	var rows := grid_rows(30, 23)
 	put_tiles(rows, 3, 19, "P")
-	put_tiles(rows, 14, 2, "#", 1, 15)
-	put_tiles(rows, 14, 17, "R", 1, 3)
+	# A gate four tiles tall, the body's height (pass 508).
+	put_tiles(rows, 14, 2, "#", 1, 14)
+	put_tiles(rows, 14, 16, "R", 1, 4)
 	put_tiles(rows, 22, 19, "L")
 	var blocked := {"t/gate": room_text(["name: Gate"], rows)}
 	var r0 := Reach.new(blocked, {"glove": true})
@@ -700,8 +702,10 @@ func test_every_ringreader_trial_can_be_cleared_with_the_glove() -> void:
 ## high to jump has a ladder up it: the loft is in reach only with the ladder
 ## there, and the ladder is the way back down.
 func test_checker_climbs_ladders() -> void:
+	# The loft is four tiles tall, the body's height (pass 508).
 	var rows := [
 		"####################",
+		"#..................#",
 		"#..................#",
 		"#..................#",
 		"#..................#",
@@ -717,11 +721,11 @@ func test_checker_climbs_ladders() -> void:
 	var text := "zone: test\n---\n" + "\n".join(PackedStringArray(rows))
 	var reach := Reach.new({"t/shaft": text}, {})
 	var nodes := reach.reachable(reach.spot_of("t/shaft", "P"))
-	check(nodes.has(Reach.key("t/shaft", 9, 7)), "the checker hangs on the ladder halfway up")
-	check(nodes.has(Reach.key("t/shaft", 3, 3)), "and climbs over its top into the loft")
+	check(nodes.has(Reach.key("t/shaft", 9, 8)), "the checker hangs on the ladder halfway up")
+	check(nodes.has(Reach.key("t/shaft", 3, 4)), "and climbs over its top into the loft")
 	check(reach.stuck(nodes, [reach.spot_of("t/shaft", "P")]).is_empty(), "and can always climb back down")
 	var bare := Reach.new({"t/shaft": text.replace("\"", ".").replace("#########.#########", "####################")}, {})
-	check(not bare.reachable(bare.spot_of("t/shaft", "P")).has(Reach.key("t/shaft", 3, 3)), "without the ladder the loft is out of reach")
+	check(not bare.reachable(bare.spot_of("t/shaft", "P")).has(Reach.key("t/shaft", 3, 4)), "without the ladder the loft is out of reach")
 
 
 ## Pass 125: ladders are a convenience, never a key. Take every ladder out (its

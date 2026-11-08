@@ -1172,9 +1172,9 @@ func test_a_moved_pickup_stays_taken() -> void:
 	for old: String in GameState.MOVED_PICKUPS:
 		var now: String = GameState.MOVED_PICKUPS[old]
 		var src := GameState.fresh()
-		src.collected = {old: true, "haar/feather_hollow:4,19": true}
+		src.collected = {old: true, "haar/feather_hollow:9,5": true}
 		var got := GameState.sanitize(JSON.parse_string(JSON.stringify(src)))
-		check(got.collected.has(now) and not got.collected.has(old) and got.collected.has("haar/feather_hollow:4,19"),
+		check(got.collected.has(now) and not got.collected.has(old) and got.collected.has("haar/feather_hollow:9,5"),
 				"a save that took %s has taken %s (%s)" % [old, now, got.collected])
 		check(_pickup_char(old) == "" and _pickup_char(now) != "", "%s is empty now and %s holds a pickup" % [old, now])
 	var src := GameState.fresh()
@@ -1229,13 +1229,20 @@ func test_the_severance_is_held_as_ability_and_gear_together() -> void:
 func _pickup_char(pickup_id: String) -> String:
 	var room := pickup_id.get_slice(":", 0)
 	var cell := pickup_id.get_slice(":", 1)
-	var grid: Array = Room.parse(FileAccess.get_file_as_string("res://levels/%s.room" % room)).grid
+	var parsed := Room.parse(FileAccess.get_file_as_string("res://levels/%s.room" % room))
+	var grid: Array = parsed.grid
 	var y := int(cell.get_slice(",", 1))
 	var x := int(cell.get_slice(",", 0))
+	# A find a `prop:` line lays (the Elven Helm) is a pickup at its cell too.
+	for spec: String in parsed.lists.get("prop", []):
+		var q := spec.split(",")
+		if q.size() >= 3 and int(q[0]) == x and int(q[1]) == y:
+			return q[2].strip_edges()
 	if y >= grid.size() or x >= String(grid[y]).length():
 		return ""
 	var c := String(grid[y])[x]
-	return c if "GXOdhnzLWF*&{(}$".contains(c) else ""
+	# Key doors keep an id the same way (pass 508 moved four down a row with their vaults).
+	return c if "GXOdhnzLWF*&{(}$Jg".contains(c) else ""
 
 
 ## Pass 184: the Hand Dagger is now the Short Sword. A save from before
@@ -1337,7 +1344,7 @@ func test_the_whole_world_is_counted() -> void:
 func test_finds_laid_by_props_count_as_treasures() -> void:
 	var w := make_world({}, "evercrown/threshold")
 	await frames(2)
-	var helm_id := "evercrown/threshold:2,19"
+	var helm_id := "evercrown/threshold:2,20"
 	check(w.catalog["evercrown/threshold"].treasures.has(helm_id), "the Elven Helm is a Threshold treasure (%s)" % [w.catalog["evercrown/threshold"].treasures])
 	check(w.catalog["vorrhallow/drowned_market"].treasures.has("vorrhallow/drowned_market:49,12"), "and the Glass Key a Drowned Market one")
 	var helm: ItemPickup = null

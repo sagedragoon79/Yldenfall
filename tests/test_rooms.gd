@@ -238,7 +238,7 @@ func test_late_additions_survive_a_save_round_trip() -> void:
 	GameState.refresh_stats(p)
 	var top := p.max_hp
 	GameState.data.trials["walls"] = 31.5
-	GameState.collect("haar/feather_hollow:4,19")
+	GameState.collect("haar/feather_hollow:4,20")
 	check(GameState.save_game(), "the save writes")
 	GameState.new_game()
 	check(GameState.load_game(SAVE_SLOT), "and loads")
@@ -248,7 +248,7 @@ func test_late_additions_survive_a_save_round_trip() -> void:
 	check(GameState.data.equipment.helmet == "elven_helm" and p.max_hp == top, "the Elven Helm and its mask survive, health full (%d)" % p.max_hp)
 	check(p.hp == p.max_hp, "loading fills the new top, not the old one (%d/%d)" % [p.hp, p.max_hp])
 	check(is_equal_approx(float(GameState.data.trials["walls"]), 31.5), "a trial's best survives")
-	check(GameState.is_collected("haar/feather_hollow:4,19"), "an opened card door stays open")
+	check(GameState.is_collected("haar/feather_hollow:4,20"), "an opened card door stays open")
 	var bad := GameState.sanitize({"save_room": "hearthroot/plaza", "keys": {"copper": "two", "silver": -3, "gold": [1], "thorn": 1, "sky": true}})
 	check(bad.keys == {"thorn": 1, "sky": true}, "a damaged key entry is dropped (%s)" % [bad.keys])
 	GameState.delete_save(SAVE_SLOT)

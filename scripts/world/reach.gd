@@ -6,7 +6,7 @@ extends RefCounted
 ##
 ## It is a conservative approximation of the real controller. A node is a
 ## standing spot: room, tile column x and the tile row y holding the feet, with
-## three clear tiles for the body and support below. Moves are walking, walking
+## BODY_ROWS clear tiles for the body and support below. Moves are walking, walking
 ## off ledges (with some drift), jumps within the safe envelope, doors, with
 ## the Climbing Glove climbing any wall face, and with the Delver's Pick pogo bounces
 ## off spikes and thorn bulbs (see drop()), and with the Featherstep Boots a higher,
@@ -16,6 +16,11 @@ extends RefCounted
 
 ## Safe jump envelope in tiles: rise -> max horizontal distance.
 const JUMP := {0: 5, 1: 5, 2: 5, 3: 4, 4: 2}
+## Rows the body fills, feet row included: four since the 2x hero (pass 508), who stands
+## about 60 px tall where the old one stood 46 (every passage was raised to match).
+const BODY_ROWS := 4
+## Rows from the feet up to the head's row.
+const HEAD := BODY_ROWS - 1
 ## With the Featherstep Boots: a second jump at the top adds three tiles of rise
 ## (double_jump_height 48) and keeps the player in the air longer. In play the
 ## feet rise 124 px; seven rows (112 px) keeps the plain jump's 12 px margin
@@ -223,9 +228,12 @@ func clear(room_id: String, x: int, y: int) -> bool:
 	return not solid(room_id, x, y)
 
 
-## Room for the 3-tile body with the feet in row y.
+## Room for the body with the feet in row y.
 func body_clear(room_id: String, x: int, y: int) -> bool:
-	return clear(room_id, x, y) and clear(room_id, x, y - 1) and clear(room_id, x, y - 2)
+	for k in BODY_ROWS:
+		if not clear(room_id, x, y - k):
+			return false
+	return true
 
 
 func supported(room_id: String, x: int, y: int) -> bool:
@@ -420,7 +428,7 @@ func _jump_from(out: Array, r: String, x: int, y: int, s: int) -> void:
 	if drifting:
 		envelope = DRIFT_JUMP
 	if WATER.contains(ch(r, x, y)):
-		if WATER.contains(ch(r, x, y - 2)):
+		if WATER.contains(ch(r, x, y - HEAD)):
 			return
 		envelope = WATER_JUMP
 	if abilities.get("stride", false):
@@ -429,7 +437,7 @@ func _jump_from(out: Array, r: String, x: int, y: int, s: int) -> void:
 		# Caught by a current above the landing envelope's reach.
 		for rise in range(envelope.size(), POD_CATCH + 1):
 			var top := y - rise
-			if not _column_clear(r, x, top - 2, y - 3):
+			if not _column_clear(r, x, top - HEAD, y - BODY_ROWS):
 				break
 			if _caught_rising(r, x, y, top) >= 0:
 				break
@@ -441,7 +449,7 @@ func _jump_from(out: Array, r: String, x: int, y: int, s: int) -> void:
 		if drifting and not JUMP.has(rise) and ch(r, x, top) != "v":
 			break
 		var ok := true
-		for yy in range(top - 2, y - 2):
+		for yy in range(top - HEAD, y - HEAD):
 			if not clear(r, x, yy):
 				ok = false
 				break
@@ -503,7 +511,7 @@ func _climb(r: String, cx: int, y0: int) -> Array:
 ## Whether a body with its feet in row y of column x would touch a hazard
 ## (no one climbs a wall through thorns).
 func _body_hurts(r: String, x: int, y: int) -> bool:
-	for yy in range(y - 2, y + 1):
+	for yy in range(y - HEAD, y + 1):
 		if HAZARD.contains(ch(r, x, yy)):
 			return true
 	return false
@@ -514,7 +522,7 @@ func _add_doors(out: Array, r: String, x: int, y: int) -> void:
 	# Side doors: walk into the edge column.
 	for s: int in [-1, 1]:
 		if x + s == 0 or x + s == size.x - 1:
-			for yy in range(y - 2, y + 1):
+			for yy in range(y - HEAD, y + 1):
 				_door_at(out, r, x + s, yy)
 	# Floor doors: fall through a gap.
 	for s: int in [-1, 0, 1]:
@@ -528,8 +536,8 @@ func _add_doors(out: Array, r: String, x: int, y: int) -> void:
 				break
 			yy += 1
 	# Ceiling doors: jump into them.
-	if y - 2 - 4 <= 0:
-		var yy := y - 3
+	if y - HEAD - 4 <= 0:
+		var yy := y - BODY_ROWS
 		while yy >= 0 and clear(r, x, yy):
 			yy -= 1
 		if yy < 0:

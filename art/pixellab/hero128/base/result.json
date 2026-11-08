@@ -1,0 +1,67 @@
+{
+ "usage": {
+  "type": "usd",
+  "usd": 0.15
+ },
+ "id": "5933b26c-63bc-44d7-9fd0-d7103d6dc3e0",
+ "status": "completed",
+ "created_at": "2026-11-08T03:47:09.760968+00:00",
+ "last_response": {
+  "seed": 5061107,
+  "type": "done",
+  "view": "side",
+  "action": "Checking every direction",
+  "images": [
+   "00.png",
+   "01.png",
+   "02.png",
+   "03.png",
+   "04.png",
+   "05.png",
+   "06.png",
+   "07.png"
+  ],
+  "status": "initializing",
+  "progress": 0.85,
+  "canvas_size": 128,
+  "character_id": "fa145c4c-62cb-447c-a526-77cab75ed2b6",
+  "n_directions": 8,
+  "billing_usage": {
+   "usd": 0.15,
+   "type": "usd"
+  },
+  "character_name": "Side-scroller game hero, full body, a slender young elf wanderer, standing at ease. Shoulder-length violet-purple hair, long pointed elf ears, calm pale face, his head bare and his hair fully visible. He wears a fitted dark green high-collared tunic with thin gold trim down the front, a brown leather belt, dark brown trousers and tall brown leather boots with turned-down cuffs. A long ankle-length forest-green cloak hangs behind him from the shoulders; its hood is down, folded flat on his upper back below the collar, never over the head. Empty hands at his sides. Clean single color dark outline, top-left light.",
+  "billing_charged": true,
+  "directions_type": "8-directions",
+  "generation_mode": "pro",
+  "style_reference": "built-in placeholder set",
+  "style_selection": null,
+  "directions_count": 8,
+  "quantized_images": [
+   "08.png",
+   "09.png",
+   "10.png",
+   "11.png",
+   "12.png",
+   "13.png",
+   "14.png",
+   "15.png"
+  ],
+  "saved_to_storage": true,
+  "uploaded_directions": [
+   "south",
+   "south-east",
+   "east",
+   "north-east",
+   "north",
+   "north-west",
+   "west",
+   "south-west"
+  ],
+  "style_reference_path": "rotations/128x128/sidescroller/south.png",
+  "character_description": "Side-scroller game hero, full body, a slender young elf wanderer, standing at ease. Shoulder-length violet-purple hair, long pointed elf ears, calm pale face, his head bare and his hair fully visible. He wears a fitted dark green high-collared tunic with thin gold trim down the front, a brown leather belt, dark brown trousers and tall brown leather boots with turned-down cuffs. A long ankle-length forest-green cloak hangs behind him from the shoulders; its hood is down, folded flat on his upper back below the collar, never over the head. Empty hands at his sides. Clean single color dark outline, top-left light.",
+  "generation_started_at": "2026-11-08T03:47:10.019312+00:00",
+  "original_image_n_colors": 14845,
+  "quantized_image_n_colors": 73
+ }
+}
