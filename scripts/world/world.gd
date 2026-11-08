@@ -61,6 +61,9 @@ var start_room := ""
 var view_size := Vector2(640, 360)
 var busy := false
 var backdrop: Backdrop
+## The whole-scene colour grade (per-zone, design bible 12.9) and the Stillstone's
+## time-stop tint; created with the camera on the first placement.
+var time_tint: TimeTint
 var motes: Motes
 ## Blossom drifting through the Tree once the Everbloom is dead (Motes.BLOSSOM).
 var blossom: Motes
@@ -290,7 +293,11 @@ func start(room_id: String, at := Vector2.INF) -> void:
 		camera.view_size = view_size
 		add_child(camera)
 		camera.make_current()
-		add_child(TimeTint.new())
+		time_tint = TimeTint.new()
+		# _enter sets the backdrop zone before the tint exists on the first room, so
+		# seed the grade from the room we are placing into now (design bible 12.9).
+		time_tint.set_zone(room.zone)
+		add_child(time_tint)
 	camera.set_room_limits(room.pixel_rect(), room.wide_camera())
 	camera.snap_to_target()
 
@@ -321,6 +328,10 @@ func _enter(room_id: String) -> void:
 	room = next
 	add_child(room)
 	backdrop.set_zone(room.zone)
+	# The whole-scene colour grade follows the zone (design bible 12.9); on the very
+	# first room the tint is not built yet (the camera block below seeds it instead).
+	if time_tint != null:
+		time_tint.set_zone(room.zone)
 	# Carillon's rain is either the code streak field (Motes) or the PixelLab sheet
 	# (SheetRain); never both. The sheet is off unless kept (SheetRain.SHIPPED) or a
 	# capture asks for it (--sheet-rain).
