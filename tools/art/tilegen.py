@@ -752,6 +752,68 @@ def glow_dot(img, x, y, core, rim, r=1):
                 put(img, x + dx, y + dy, c(rim))
 
 
+def soft_glow(img, cx, cy, name, r):
+    """A soft, dim radial glow: a distant light seen through atmosphere. Alpha
+    falls off with distance (squared), so it reads as a haze-blurred point, not a
+    hard dot. Wraps sideways (the layers repeat) and clips vertically."""
+    over = c(name)
+    for dy in range(-r, r + 1):
+        for dx in range(-r, r + 1):
+            d = math.sqrt(dx * dx + dy * dy)
+            if d > r:
+                continue
+            a = int(190 * (1 - d / r) ** 2)
+            if a <= 0:
+                continue
+            y = cy + dy
+            if 0 <= y < BG_H:
+                x = (cx + dx) % BG_W
+                img.putpixel((x, y), blend(img.getpixel((x, y)), over, a))
+
+
+def far_motes(img, rng, cols, glows=5):
+    """Faint distant light over the dark far sky of a far layer (design bible 12.15).
+    The independent grade (pass 515) read the dark upper backdrop of tall rooms as
+    dead, structureless space. This gives the far sky atmospheric depth: a sparse
+    field of dim, zone-tinted motes — dust catching far light — weighted to the
+    upper two-thirds, plus a few soft haloed glows (distant lights seen through the
+    murk), so the far backdrop reads as receding atmosphere with particles instead
+    of one flat dark field.
+
+    Everything is dim and lands only on a dark pixel (the running RGB sum of the
+    under-colour stays low), so the atmospheric-perspective shader (12.5) still
+    recedes it and it never specks over a bright backdrop feature. The whole field
+    lives on the far parallax layer behind the play field, so combat is untouched.
+    This dresses the far sky where the far layer draws; it does not fill the empty
+    band above the far layer in the very tallest rooms (that would need a
+    screen-space sky overlay in front of the play field, left for a watched session).
+    """
+    dark = 360  # only draw where the far sky is dark (0-765 running RGB sum)
+    # Soft distant glows high in the band: far lights seen through the murk, bright
+    # enough to read after the atmosphere shader (12.5) fades the far layer halfway
+    # toward the dark haze.
+    for _ in range(glows):
+        x, y = rng.randrange(BG_W), rng.randrange(BG_H // 12, int(BG_H * 0.6))
+        if sum(img.getpixel((x, y))[:3]) <= dark:
+            soft_glow(img, x, y, rng.choice(cols), rng.choice([6, 8, 11]))
+    # Drifting dust motes over the dark sky, weighted toward the top (a power of a
+    # uniform sits high) and gated to dark pixels so they fall in the dead band and
+    # never over a bright backdrop feature. A quarter are haloed so a few catch the
+    # eye as nearer specks; the rest are single pixels, at full palette value so
+    # they survive the haze.
+    for k in range(180):
+        x = rng.randrange(BG_W)
+        y = int((rng.random() ** 1.5) * BG_H * 0.78)
+        base = img.getpixel((x, y))
+        if sum(base[:3]) > dark:
+            continue
+        col = rng.choice(cols)
+        if k % 4 == 0:
+            glow_dot(img, x, y, col, "night-1", 0)
+        else:
+            img.putpixel((x, y), c(col))
+
+
 def heartwood_far():
     img = Image.new("RGBA", (BG_W, BG_H), c("night-0"))
     gradient(img, "night-0", "bark-0")
@@ -778,6 +840,7 @@ def heartwood_far():
             glow_dot(img, x, y, col, "sky-1", 0)
         else:
             put(img, x, y, c(col))
+    far_motes(img, rng, ["sky-3", "gold-3", "sky-4"], glows=5)
     return img
 
 
@@ -874,6 +937,7 @@ def hearthroot_far():
                     for xx in range(wx + 2, wx + ww - 2):
                         put(img, xx, wy - 1, c("gold-3"))
         x += w + rng.randrange(6, 24) * D
+    far_motes(img, rng, ["gold-3", "ember-2", "gold-4"], glows=6)
     return img
 
 
@@ -972,6 +1036,7 @@ def tower_far():
     # Sparks and lamp glints.
     for _ in range(140):
         put(img, rng.randrange(BG_W), rng.randrange(BG_H), c(rng.choice(["ember-3", "gold-3", "ember-2"])))
+    far_motes(img, rng, ["ember-2", "gold-3", "ember-3"], glows=5)
     return img
 
 
@@ -1087,6 +1152,7 @@ def haar_far():
     # Will-o'-lanterns, far off in the murk.
     for _ in range(26):
         glow_dot(img, rng.randrange(BG_W), rng.randrange(BG_H // 3, BG_H), "gold-5", "gold-2", rng.choice([0, 0, 1]))
+    far_motes(img, rng, ["leaf-2", "gold-4", "sky-2"], glows=4)
     return img
 
 
@@ -1258,6 +1324,7 @@ def spires_far():
         x0 = rng.randrange(BG_W)
         dead_limb(img, x0, BG_H, rng.randrange(260, 420) * D, rng.randrange(8, 14) * D,
                   -math.pi / 2 + rng.uniform(-0.3, 0.3), "night-2", rng)
+    far_motes(img, rng, ["crystal-2", "sky-2", "gold-3"], glows=5)
     return img
 
 
@@ -1329,6 +1396,7 @@ def vorrhallow_far():
     for _ in range(220):
         x, y = rng.randrange(BG_W), rng.randrange(water, BG_H)
         put(img, x, y, c(rng.choice(["sky-3", "crystal-3", "sky-2"])))
+    far_motes(img, rng, ["sky-2", "crystal-2", "sky-3"], glows=5)
     return img
 
 
@@ -1400,6 +1468,7 @@ def evercrown_far():
         for x in range(BG_W):
             if hash2(x // (4 * D), y // (4 * D), 7) > 0.55 - (y - BG_H * 0.8) / BG_H:
                 put(img, x, y, c("ember-1"))
+    far_motes(img, rng, ["crystal-2", "sky-2", "crystal-3"], glows=6)
     return img
 
 
@@ -1459,6 +1528,7 @@ def sunken_far():
     # Specks drifting in the water.
     for _ in range(260):
         put(img, rng.randrange(BG_W), rng.randrange(BG_H), c(rng.choice(["sky-4", "sky-3", "stone-3"])))
+    far_motes(img, rng, ["sky-2", "sky-3", "sky-1"], glows=5)
     return img
 
 
@@ -1512,6 +1582,7 @@ def trials_far():
                 continue
             for w in range(D):
                 put(img, cx + int(math.cos(a) * (r + w)), cy + int(math.sin(a) * (r + w)), c("stone-2"))
+    far_motes(img, rng, ["sky-1", "stone-2", "gold-2"], glows=4)
     return img
 
 

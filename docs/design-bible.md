@@ -1690,6 +1690,19 @@ Applied to the brick and column fields the grade named: the Tower's far shafts a
 
 Combat is untouched by construction: these are the receding parallax layers behind the play field, muted further by the atmospheric-perspective shader (12.5), never the gameplay tiles, hazards or foes. The helpers are tested, not the pixels: `tools/art/test_tilegen.py` holds `masonry_courses` to jittered, partly-worn, non-overlapping gaps and `masonry_shade` to a varied-but-body-dominant field (mutation-checked; this Python guard runs locally, not in the Godot suite or CI). Judged by eye at 1x and in the raw layers (the 2x render density) in the Tower (`foot`), Vorrhallow (`gate_hall`) and Hearthroot (`plaza`).
 
+### 12.15 Far-sky depth motes (pass 516)
+
+The independent grade (pass 515) read the dark upper backdrop of the tall rooms as dead, structureless space. `tools/art/tilegen.py` now dresses each dark-sky far layer with faint atmospheric depth so the far backdrop reads as distance, not one flat dark field:
+
+- **`soft_glow(img, cx, cy, name, r)`** paints a soft radial glow whose alpha falls off with the square of the distance — a distant light seen through atmosphere, not a hard dot.
+- **`far_motes(img, rng, cols, glows)`** scatters a sparse field of dim, zone-tinted motes (dust catching far light) weighted to the upper two-thirds of the far layer, plus a few `soft_glow` lights high up. Every speck lands only on a dark pixel (the running RGB sum of the under-colour stays low), so the atmospheric-perspective shader (12.5) still recedes it and it never specks over a lit backdrop feature.
+
+Applied to the nine dark-sky far layers (`heartwood`, `hearthroot`, `tower`, `haar`, `vorrhallow`, `evercrown`, `sunken`, `trials`, `spires`), each with a zone-appropriate mote palette. The daylit `boughs` canopy is deliberately left out — a bright sky needs no motes. Only those nine `assets/bg/*_far.png` change.
+
+Combat is untouched by construction: the motes live on the far parallax layer, behind the play field and under the atmosphere haze. Tested, not the pixels: `tools/art/test_tilegen.py` holds `far_motes` to lifting a dark field, weighting to the top, and sparing a bright feature (mutation-checked, local). Judged by eye at 1x in Heartwood (`deep_roots`) and the Haar (`drowned_stair`), where the far sky now carries drifting specks and distant glows.
+
+**Still open — the empty band above the far layer.** This dresses the far sky *where the far layer draws*; it does not fill the band *above* the far layer in the very tallest rooms (the grade's "letterbox"). The far layer is 480 px tall and the parallax anchors its content to the lower view, so above it the view falls through to the clear colour. Every tested way to back that band from behind (a plain node, a canvas layer, a taller or extra sprite) is occluded or culled in this project's SubViewport/parallax setup; only a screen-space overlay *in front of* the play field reaches it, and that would risk covering high platforms and flying foes — a combat-readability call best made in a watched session, not an unattended loop pass. Parked alongside rim light on figures (12.12) and a second foreground band (12.11).
+
 ---
 
 ## 13. Asset Production Plan
