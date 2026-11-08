@@ -200,6 +200,60 @@ def test_mid_and_deep_variants_are_darker_than_their_surface():
     assert deep < mid, f"DEEP variant ({deep:.0f}) is darker than the MID variant ({mid:.0f})"
 
 
+def _fore(zone):
+    """One zone's foreground image and its alpha-band measurements (bible 12.11)."""
+    img = tg.foreground(zone)
+    w, h = img.size
+    q = h // 4
+    a = img.getchannel("A")
+
+    def opaque(region):
+        return sum(region.histogram()[1:])  # alpha > 0
+
+    top = opaque(a.crop((0, 0, w, q)))
+    bot = opaque(a.crop((0, h - q, w, h)))
+    bottom_row = a.crop((0, h - 1, w, h)).histogram()
+    maxch = max(ch[1] for ch in img.convert("RGB").getextrema())
+    return {"w": w, "h": h, "q": q, "top": top, "bot": bot,
+            "bottom_clear": bottom_row[0], "maxch": maxch}
+
+
+def test_foreground_exists_for_every_shipped_zone():
+    # Every playable zone gets a foreground silhouette; the gym and any new zone
+    # has none (Backdrop falls back to no fore layer).
+    shipped = ["hearthroot", "heartwood", "tower", "haar", "boughs",
+               "vorrhallow", "evercrown", "sunken", "spires"]
+    for z in shipped:
+        assert z in tg.FORE_KIND, f"{z} has a foreground silhouette kind"
+    assert "gym" not in tg.FORE_KIND, "the gym has no foreground"
+
+
+def test_foreground_is_bottom_weighted_and_clear_up_top():
+    # The silhouette hugs the view bottom; the top of the frame stays clear so the
+    # centre of the screen is readable in combat. (Filling the top band instead of
+    # the bottom — mutating _fore_fill's range — fails the bottom-weighting.)
+    for z in tg.FORE_KIND:
+        m = _fore(z)
+        assert m["bot"] > m["top"] * 5, f"{z}: bottom ({m['bot']}) far outweighs top ({m['top']})"
+        top_frac = m["top"] / (m["w"] * m["q"])
+        assert top_frac < 0.05, f"{z}: top quarter is {top_frac:.3f} opaque — not clear enough"
+
+
+def test_foreground_band_reaches_the_very_bottom():
+    # The ground band must fill the bottom edge, or the foreground would float.
+    for z in tg.FORE_KIND:
+        m = _fore(z)
+        assert m["bottom_clear"] == 0, f"{z}: the bottom row has {m['bottom_clear']} transparent pixels"
+
+
+def test_foreground_is_a_dark_silhouette():
+    # An unlit near-black silhouette: no opaque pixel is brighter than the night
+    # shades it is drawn in. (Painting it in a lit colour fails here.)
+    for z in tg.FORE_KIND:
+        m = _fore(z)
+        assert m["maxch"] < 70, f"{z}: brightest channel {m['maxch']} is too light for a silhouette"
+
+
 def main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for t in tests:

@@ -44,6 +44,19 @@ const SIZE := Vector2(640, 480)
 ## Starts the layers a little above the room's top so vertical scrolling never shows a gap.
 const OFFSET := Vector2(0, -60)
 
+## The foreground silhouette layer (design bible 12.11): the zone's dark near-black
+## material (ferns, reeds, crystals, rubble, posts; tools/art/tilegen.py paints
+## <zone>_fore.png) drawn in front of the play field. It scrolls FASTER than the
+## camera horizontally (x > 1) so it reads as near and slides past as the player
+## walks, and is locked to the camera vertically (y = 1) so the silhouette band
+## always frames the bottom of the view with no gap. The art is anchored to the
+## view bottom, so the layer draws from the camera top with no vertical offset.
+const FORE_SCROLL := Vector2(1.5, 1.0)
+## An absolute z above the atmosphere overlays (fog/motes/rain sit at 4) and every
+## actor and projectile (<= 3), so the foreground is the nearest thing on screen.
+const FORE_Z := 5
+const FORE_OFFSET := Vector2(0, 0)
+
 var zone := ""
 
 
@@ -75,6 +88,34 @@ func set_zone(next: String) -> void:
 		sprite.material = atmos_material(suffix, haze_for(zone))
 		layer.add_child(sprite)
 		add_child(layer)
+	var fore := fore_layer(zone)
+	if fore != null:
+		add_child(fore)
+
+
+## The foreground silhouette layer for a zone (design bible 12.11), or null when
+## the zone has no <zone>_fore.png (gym, or any new zone). A Parallax2D that
+## scrolls fast horizontally and is locked vertically (FORE_SCROLL), drawn at an
+## absolute z in front of everything (FORE_Z), with the zone's silhouette art.
+static func fore_layer(a_zone: String) -> Parallax2D:
+	var path := DIR + "%s_fore.png" % a_zone
+	if not ResourceLoader.exists(path):
+		return null
+	var layer := Parallax2D.new()
+	layer.scroll_scale = FORE_SCROLL
+	layer.repeat_size = Vector2(SIZE.x, 0)
+	layer.repeat_times = 3
+	layer.ignore_camera_scroll = true
+	layer.z_as_relative = false
+	layer.z_index = FORE_Z
+	var sprite := Sprite2D.new()
+	sprite.texture = load(path)
+	# Painted at the render density (design bible 12.1): scale back to world pixels.
+	sprite.scale = SIZE / sprite.texture.get_size()
+	sprite.centered = false
+	sprite.position = FORE_OFFSET
+	layer.add_child(sprite)
+	return layer
 
 
 ## The distance-fog colour a zone's layers recede into: its ZONE_HAZE entry, or
