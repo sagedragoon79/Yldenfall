@@ -108,10 +108,40 @@ static func falloff(t: float) -> float:
 	return x * x * (3.0 - 2.0 * x)
 
 
-## A white radial-gradient sprite whose alpha is `falloff` of the distance from
-## its centre, built once and shared. Each pool draws one of these tinted and
-## scaled, so the bloom is a single smooth quad — none of the ringing a stack of
-## filled circles shows on a dark backdrop.
+## How much tighter the glow is above the source than a plain circle: the air over
+## a lamp or a glow-mushroom catches far less light than the ground beneath it, so
+## the upward reach is divided down by this.
+const UP_TIGHTEN := 2.1
+## How far the glow reaches below the source, as a fraction of the plain radius —
+## a little short of the rim so the cast pool fades before the quad's edge.
+const DOWN_REACH := 0.94
+## How much the pool widens toward the floor: a real cast pool spreads sideways
+## where it lands, so x-distance is eased down for the rows below the source.
+const GROUND_SPREAD := 0.7
+
+
+## A pool's brightness at a texel, given normalised offsets from the source
+## (`nx`, `ny` in -1..1, with `ny` positive downward toward the ground). The
+## source still sits at the centre (nx=ny=0 is full brightness, so the centre
+## peak is exactly the pool's cap, bible 12.10), but the falloff is shaped so the
+## glow hugs the surface instead of reading as a floating disc: the air above the
+## source (ny<0) is tightened hard, and below it (ny>0) the pool reaches the floor
+## and widens across it. This is the "shape the glow to its source/surface"
+## lighting fix — a lantern or glow-mushroom now casts a pool on the ground rather
+## than a symmetric blob. Pure, so the on-screen shape is backed by tested maths.
+static func shaped_alpha(nx: float, ny: float) -> float:
+	# Upward reaches much less far than downward.
+	var vy := ny * UP_TIGHTEN if ny < 0.0 else ny * DOWN_REACH
+	# Below the source the pool spreads sideways where it lands on the floor.
+	var vx := nx / (1.0 + GROUND_SPREAD * maxf(ny, 0.0))
+	return falloff(sqrt(vx * vx + vy * vy))
+
+
+## A white sprite whose alpha is `shaped_alpha` of the offset from its centre,
+## built once and shared. Each pool draws one of these tinted and scaled, so the
+## cast pool is a single smooth quad — none of the ringing a stack of filled
+## circles shows on a dark backdrop — and the shaping makes it hug the ground
+## under its source instead of floating as an even disc.
 static func pool_texture() -> Texture2D:
 	if _pool_tex != null:
 		return _pool_tex
@@ -119,8 +149,9 @@ static func pool_texture() -> Texture2D:
 	var mid := float(TEX_SIZE - 1) * 0.5
 	for y in TEX_SIZE:
 		for x in TEX_SIZE:
-			var t := Vector2(float(x) - mid, float(y) - mid).length() / mid
-			img.set_pixel(x, y, Color(1.0, 1.0, 1.0, falloff(t)))
+			var nx := (float(x) - mid) / mid
+			var ny := (float(y) - mid) / mid
+			img.set_pixel(x, y, Color(1.0, 1.0, 1.0, shaped_alpha(nx, ny)))
 	_pool_tex = ImageTexture.create_from_image(img)
 	return _pool_tex
 
