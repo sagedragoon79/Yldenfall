@@ -1703,6 +1703,18 @@ Combat is untouched by construction: the motes live on the far parallax layer, b
 
 **Still open — the empty band above the far layer.** This dresses the far sky *where the far layer draws*; it does not fill the band *above* the far layer in the very tallest rooms (the grade's "letterbox"). The far layer is 480 px tall and the parallax anchors its content to the lower view, so above it the view falls through to the clear colour. Every tested way to back that band from behind (a plain node, a canvas layer, a taller or extra sprite) is occluded or culled in this project's SubViewport/parallax setup; only a screen-space overlay *in front of* the play field reaches it, and that would risk covering high platforms and flying foes — a combat-readability call best made in a watched session, not an unattended loop pass. Parked alongside rim light on figures (12.12) and a second foreground band (12.11).
 
+### 12.16 Drift pockets as columns of light (pass 517)
+
+The independent grade (pass 503) read the Evercrown's wrong-gravity pockets (8.9, legend `v`, `GravityDrift`) as "large teal semi-transparent rectangles" that look like unstyled collision volumes — the flat `0.22` wash filled the whole cell rectangle and the only edges were two hard full-height side lines, so the pocket read as a solid glass box rather than the drift you fall up through.
+
+`GravityDrift._draw()` now paints each pocket as a feathered shaft of light, matching 8.9's "violet columns with cyan motes rising through them":
+
+- **`column_alpha(x, w)`** gives the horizontal profile: the wash feathers to nothing at the two sides (no hard box edge), carries across the interior, and brightens toward a core down the centre.
+- **`rise_alpha(y, h)`** gives the vertical envelope: the shaft fades in at the floor and out at the crown, so it is not read as a capped rectangle.
+- The wash is drawn as feathered vertical strips (`STRIP` px wide) with floor/crown fade bands; a pulsing `MOTE`-cyan core streak runs up the centre ("where the light drifts upward, so will you" — the Drift Well's sign); the climbing light bands are kept inside the feathered interior so their ends never draw a hard edge; the rising motes are unchanged.
+
+The pocket still sits behind the play field (`z_index = -1`) and affects only the player, so combat reads over it exactly as before. Tested, not the pixels: `test_the_drift_pocket_reads_as_a_feathered_column` holds `column_alpha` to feathered sides, a carried interior and a brighter core, and `rise_alpha` to a floor/crown fade with a full body (mutation-checked — a flat profile fails the feathered-edge guard). Judged by eye at 1x and 2x in `evercrown/drift_well`, where the three pockets read as rising light rather than glass slabs.
+
 ---
 
 ## 13. Asset Production Plan
