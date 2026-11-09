@@ -153,14 +153,26 @@ def paint_bricks(img, ox, oy, seed, ramp):
 
 def paint_shrine(img, ox, oy, seed, ramp):
     """Carillon's ruined elf shrines: big pale ashlar blocks, weathered and
-    cracked, some still carrying a groove of gold inlay along their face."""
-    bw, bh = 12 * D, 6 * D
+    cracked, some still carrying a groove of gold inlay along their face.
+
+    The block scale, the per-stone weathering and the gold inlay are all keyed to
+    ``seed``, so the factory's scattered row-7 variants (each a fresh seed) read as
+    differently-coursed masonry instead of one repeated stamp — the independent
+    grade's recurring "Spires brick field reads as one repeated stamp" (passes
+    497/502/504/515, bible 12.8)."""
+    # Course scale varies with the seed so adjacent scattered variants differ.
+    bw = (10 + int(hash2(seed, 7, 91) * 5)) * D  # 10..14 blocks wide
+    bh = (5 + int(hash2(seed, 8, 92) * 3)) * D   # 5..7 blocks tall
     for y in range(T):
         row = y // bh
         for x in range(T):
             sx = x + (row % 2) * (bw // 2) + int(hash2(row, 0, seed) * 4) * D
             bx, ly, lx = sx // bw, y % bh, sx % bw
             shade = 4 if hash2(bx, row, seed) > 0.5 else 3
+            # A weathered stone here and there drops a shade, so the field carries
+            # block-scale value variation instead of a flat two-tone repeat.
+            if hash2(bx, row, seed + 11) > 0.82:
+                shade = max(2, shade - 1)
             if ly == bh - 1 or lx == 0:
                 col = f"{ramp}-1"
             elif ly == 0 or lx == 1:
@@ -171,8 +183,10 @@ def paint_shrine(img, ox, oy, seed, ramp):
                 col = f"{ramp}-{shade}"
                 if hash2(x // 2, y // 2, seed + 5) > 0.9:
                     col = f"{ramp}-{shade - 1}"
-            # Gold inlay: a groove across the middle of some blocks.
-            if ly == bh // 2 and 3 <= lx < bw - 3 and hash2(bx, row, seed + 7) > 0.62:
+            # Gold inlay: a groove across the middle of a few blocks. Rare and
+            # keyed per block (not a regular course), so it reads as scattered
+            # accents, never a gold dash marching across every row.
+            if ly == bh // 2 and 3 <= lx < bw - 3 and hash2(bx, row, seed + 7) > 0.82:
                 col = "gold-4" if lx % 4 else "gold-5"
             img.putpixel((ox + x, oy + y), c(col))
     # A crack or two, running down and sideways.
@@ -912,14 +926,35 @@ def hearthroot_far():
                 if (xx - x) > 2 * D and yy in cs and hash2(xx // 12, yy, 3) > 0.4:
                     col = "night-0"
                 img.putpixel((xx, yy), c(col))
-        # Arched roof with a stone rim.
+        # Roofline: one of several silhouettes per house, so a row of distant
+        # houses stops reading as the same arch copied across (independent grade,
+        # pass 515: "Hearthroot background buildings are the same two silhouettes").
+        style = rng.choice(("arch", "gable", "battlement", "stepped", "arch"))
+        peak = rng.randrange(10, 22) * D
         for xx in range(x, min(x + w, BG_W)):
             k = (xx - x) / max(w - 1, 1)
-            rise = int(math.sin(k * math.pi) * 12 * D)
+            if style == "arch":
+                rise = int(math.sin(k * math.pi) * peak)
+            elif style == "gable":
+                rise = int((1 - abs(2 * k - 1)) * peak)  # a triangular peak
+            elif style == "stepped":
+                step = int(abs(2 * k - 1) * 4)  # 0 at centre, up to 4 steps out
+                rise = max(0, peak - step * (peak // 5 + 1))
+            else:  # battlement: a flat parapet with square merlons
+                rise = peak // 2 if ((xx - x) // (5 * D)) % 2 == 0 else peak // 2 - 4 * D
+                rise = max(0, rise)
             for yy in range(top - rise, top):
                 img.putpixel((xx, yy), c("stone-1" if yy - (top - rise) < 2 else "night-1"))
+        # A chimney on some houses, a little smoke-dark stack above the roof.
+        if rng.random() < 0.4:
+            cx = x + rng.randrange(6, max(7, w // D - 6)) * D
+            ch = rng.randrange(6, 14) * D
+            for yy in range(top - peak - ch, top - peak // 2):
+                for xx in range(cx, min(cx + 4 * D, BG_W)):
+                    img.putpixel((xx, yy), c("stone-1" if yy < top - peak - ch + 2 else "night-1"))
+        wstride = rng.randrange(14, 22) * D
         for wy in range(top + 14 * D, BG_H - 140 * D, 26 * D):
-            for wx in range(x + 8 * D, x + w - 12 * D, 18 * D):
+            for wx in range(x + 8 * D, x + w - 12 * D, wstride):
                 if rng.random() < 0.22:
                     ww, wh = 6 * D, 9 * D
                     for yy in range(wy, wy + wh):
