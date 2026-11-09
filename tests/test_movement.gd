@@ -412,6 +412,25 @@ func test_wrong_gravity_lifts_a_jump_and_slows_a_fall() -> void:
 	check_near(start_y - min_y, q.tuning.jump_height, 3.0, "outside it a jump is a normal jump")
 
 
+## Bible 12.16: the drift pocket is drawn as a feathered shaft of light, not a
+## flat translucent box. Its wash profile fades to nothing at the two sides,
+## brightens toward the core, and fades in at the floor and out at the crown, so
+## it reads as a column you pass through rather than a solid glass volume.
+func test_the_drift_pocket_reads_as_a_feathered_column() -> void:
+	var w := 96.0
+	# The two sides feather away; the interior and core carry the wash.
+	check(GravityDrift.column_alpha(0.0, w) < 0.03, "the left edge feathers to nothing")
+	check(GravityDrift.column_alpha(w, w) < 0.03, "the right edge feathers to nothing")
+	check(GravityDrift.column_alpha(w * 0.5, w) > 0.5, "the interior carries the wash")
+	check(GravityDrift.column_alpha(w * 0.5, w) > GravityDrift.column_alpha(16.0, w),
+			"and the core is brighter than the interior's edge")
+	# The vertical envelope fades the shaft in at the floor and out at the crown.
+	var h := 400.0
+	check(GravityDrift.rise_alpha(0.0, h) < 0.03, "the crown fades out")
+	check(GravityDrift.rise_alpha(h, h) < 0.03, "the floor fades in")
+	check(GravityDrift.rise_alpha(h * 0.5, h) > 0.99, "the body is full")
+
+
 ## A pool 10 tiles deep (rows 8-17) with a stone bank on its right whose top is
 ## level with the water (row 8).
 func _pool_room() -> Room:

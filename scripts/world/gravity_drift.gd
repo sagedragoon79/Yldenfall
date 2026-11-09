@@ -12,8 +12,14 @@ const PULL := 0.4
 const WASH := Color("7a4ac8")
 const MOTE := Color("8af0e8")
 const EDGE := Color("4ae0d8")
+## Peak opacity of the wash down the shaft's core.
+const WASH_A := 0.26
 ## Rising speed of the motes (px/s).
 const RISE := 26.0
+## Column width (px) drawn per wash strip, and the number of fade sub-bands at
+## the shaft's floor and crown.
+const STRIP := 4.0
+const FADE_BANDS := 5
 
 ## The pocket's cells (tiles).
 var cells := Rect2i()
@@ -39,18 +45,55 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 
+## The soft horizontal profile of the light column: ~0 at the two sides and
+## full across the interior, with a brighter core down the middle, so the pocket
+## reads as a shaft of light instead of a flat slab with hard box edges (bible
+## 8.9, 12.16).
+static func column_alpha(x: float, w: float) -> float:
+	var feather: float = minf(16.0, w * 0.45)
+	var side: float = clampf(minf(x, w - x) / maxf(feather, 1.0), 0.0, 1.0)
+	var d: float = absf(x - w * 0.5) / maxf(w * 0.5, 1.0)
+	var core: float = 0.55 + 0.45 * (1.0 - d * d)
+	return side * core
+
+
+## The vertical envelope of the shaft: the rising light fades in at the floor and
+## out at the crown, so the column is not read as a capped rectangle.
+static func rise_alpha(y: float, h: float) -> float:
+	var feather: float = minf(24.0, h * 0.3)
+	return minf(clampf(y / maxf(feather, 1.0), 0.0, 1.0),
+			clampf((h - y) / maxf(feather, 1.0), 0.0, 1.0))
+
+
 func _draw() -> void:
 	var w := float(cells.size.x * Room.TILE)
 	var h := float(cells.size.y * Room.TILE)
-	draw_rect(Rect2(0, 0, w, h), Color(WASH, 0.22))
-	# Bands of light climbing the column.
+	var shimmer := 0.9 + 0.1 * sin(_t * 2.2)
+	var feather := minf(24.0, h * 0.3)
+	var seg := feather / float(FADE_BANDS)
+	var body := maxf(h - 2.0 * feather, 0.0)
+	# The wash as feathered vertical strips: soft at the sides, brighter at the
+	# core, and faded in at the floor and out at the crown — a column of light,
+	# not a translucent box.
+	var sx := 0.0
+	while sx < w:
+		var a := WASH_A * column_alpha(sx + STRIP * 0.5, w) * shimmer
+		if a > 0.004:
+			draw_rect(Rect2(sx, feather, STRIP, body), Color(WASH, a))
+			for b in FADE_BANDS:
+				var ba := a * float(b + 1) / float(FADE_BANDS)
+				draw_rect(Rect2(sx, seg * b, STRIP, seg), Color(WASH, ba))
+				draw_rect(Rect2(sx, h - seg * (b + 1), STRIP, seg), Color(WASH, ba))
+		sx += STRIP
+	# Bands of light climbing the shaft, kept within the feathered interior so
+	# their ends never draw a hard edge.
+	var edge := minf(16.0, w * 0.45)
 	for i in 3:
 		var y := h - fmod(_t * RISE * 0.6 + i * h / 3.0, h)
-		draw_rect(Rect2(0, y, w, 10.0), Color(EDGE, 0.08))
-	# Shimmering edges at the sides.
-	var a := 0.45 + 0.2 * sin(_t * 3.0)
-	draw_rect(Rect2(0, 0, 1, h), Color(EDGE, a))
-	draw_rect(Rect2(w - 1.0, 0, 1, h), Color(EDGE, a))
+		draw_rect(Rect2(edge, y, maxf(w - 2.0 * edge, 0.0), 10.0), Color(EDGE, 0.08 * rise_alpha(y, h)))
+	# A bright updraft core pulsing down the centre — "where the light drifts
+	# upward, so will you" (the Drift Well's sign).
+	draw_rect(Rect2(w * 0.5 - 1.0, feather, 2.0, body), Color(MOTE, 0.12 * shimmer))
 	# Motes drifting up, each on its own column and pace, swaying a little.
 	var count := int(w * h / 380.0) + 4
 	for i in count:
