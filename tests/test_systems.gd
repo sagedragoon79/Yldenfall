@@ -215,6 +215,37 @@ func test_the_pad_can_be_rebound() -> void:
 	_restore()
 
 
+## Sean, 2026-11-09: his controller did nothing in play. Pad bindings made in
+## code belonged to device 0 alone, and on his PC a Razer keypad that reports
+## itself as a joystick holds device 0, so the real pad came in as device 1.
+## Every pad binding now answers any pad, the defaults and a rebind alike.
+func test_a_second_pad_is_heard() -> void:
+	Settings.path = TEMP_SETTINGS
+	for action: String in Controls.BINDINGS:
+		for ev in InputMap.action_get_events(action):
+			if ev is InputEventJoypadButton or ev is InputEventJoypadMotion:
+				check(ev.device == Controls.ANY_PAD, "%s's pad binding answers every pad" % action)
+	for device: int in [1, 3]:
+		_press_pad(JOY_BUTTON_A, true, device)
+		check(Input.is_action_pressed("jump"), "A on pad %d jumps" % device)
+		_press_pad(JOY_BUTTON_A, false, device)
+		check(not Input.is_action_pressed("jump"), "and letting go of it lands")
+		_move_axis(JOY_AXIS_LEFT_X, 1.0, device)
+		check(Input.is_action_pressed("move_right"), "pad %d's stick walks right" % device)
+		_move_axis(JOY_AXIS_LEFT_X, 0.0, device)
+		_move_axis(JOY_AXIS_TRIGGER_LEFT, 1.0, device)
+		check(Input.is_action_pressed("heal"), "pad %d's left trigger drinks" % device)
+		_move_axis(JOY_AXIS_TRIGGER_LEFT, 0.0, device)
+	check(Settings.bind_button("jump", JOY_BUTTON_RIGHT_SHOULDER), "Jump takes RB")
+	_press_pad(JOY_BUTTON_RIGHT_SHOULDER, true, 1)
+	check(Input.is_action_pressed("jump"), "a rebound button answers pad 1 too")
+	_press_pad(JOY_BUTTON_RIGHT_SHOULDER, false, 1)
+	Settings.reset_keys()
+	var bible := FileAccess.get_file_as_string("res://docs/design-bible.md")
+	check(bible.contains("**Any pad (2026-11-09):**"), "bible 14 tells it")
+	_restore()
+
+
 ## Pass 366: a menu's refusal had borrowed the spell-fail fizzle, so a ware
 ## you couldn't afford sounded like a cast short of MP. A menu now says no in
 ## its own voice, and the fizzle is left to the spells and the Stillstone.
@@ -256,10 +287,20 @@ func test_a_menu_says_no_in_its_own_voice() -> void:
 	_restore()
 
 
-func _press_pad(button: int, down: bool) -> void:
+func _press_pad(button: int, down: bool, device := 0) -> void:
 	var ev := InputEventJoypadButton.new()
+	ev.device = device
 	ev.button_index = button as JoyButton
 	ev.pressed = down
+	Input.parse_input_event(ev)
+	Input.flush_buffered_events()
+
+
+func _move_axis(axis: JoyAxis, value: float, device: int) -> void:
+	var ev := InputEventJoypadMotion.new()
+	ev.device = device
+	ev.axis = axis
+	ev.axis_value = value
 	Input.parse_input_event(ev)
 	Input.flush_buffered_events()
 
