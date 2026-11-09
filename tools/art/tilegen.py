@@ -604,13 +604,45 @@ def darken(img, ox, oy, steps):
             img.putpixel((ox + x, oy + y), c("night-0") if j < 0 else c(f"{ramp}-{j}"))
 
 
+# Per-zone one-way plank material and fastener accent (design bible 12.20, pass
+# 521). The plank used one hardcoded `bark` board with a stubby bracket in every
+# zone, so the independent grade read it as a copy-pasted prototyping block that
+# floats with nothing holding it up. Each zone now carries its own board tone,
+# fastener colour and support tone, so a run of ledges no longer looks identical
+# from zone to zone, and the stub becomes a drawn trestle so the ledge reads as
+# built. `metal` gives the board a brighter catch-light (the iron Tower). The
+# families: warm wood (gym, heartwood, boughs), grey driftwood (haar, sunken),
+# pale stone (vorrhallow, trials, tower), dry timber (spires), stillglass
+# (evercrown). hearthroot's plank is PixelLab art (pixellab_tileset.atlas) and
+# does not use this painter.
+PLANK = {
+    "gym": {"wood": "bark", "nail": "stone-5", "strut": "bark"},
+    "heartwood": {"wood": "bark", "nail": "gold-4", "strut": "bark"},
+    "boughs": {"wood": "bark", "nail": "leaf-5", "strut": "bark"},
+    "haar": {"wood": "umber", "nail": "ash-4", "strut": "umber"},
+    "sunken": {"wood": "umber", "nail": "sky-5", "strut": "umber"},
+    "vorrhallow": {"wood": "ash", "nail": "crystal-5", "strut": "ash"},
+    "trials": {"wood": "ash", "nail": "ash-5", "strut": "ash"},
+    "spires": {"wood": "ochre", "nail": "gold-5", "strut": "umber"},
+    "tower": {"wood": "ash", "nail": "sky-5", "strut": "ash", "metal": True},
+    "evercrown": {"wood": "crystal", "nail": "sky-6", "strut": "crystal"},
+    "hearthroot": {"wood": "bark", "nail": "gold-4", "strut": "bark"},
+}
+
+
 def paint_one_way(img, ox, oy, zone):
-    """A plank on brackets: 6 world pixels thick with grain and nail heads."""
-    wood = "bark"
+    """A plank on a trestle (design bible 12.20): 6 world pixels of board whose
+    material and fastener accent are set per zone (PLANK), carried by a drawn
+    trestle below so the ledge reads as built, not floated. hearthroot's plank is
+    PixelLab art and does not use this."""
+    spec = PLANK.get(zone, PLANK["gym"])
+    wood, nail, strut = spec["wood"], spec["nail"], spec["strut"]
+    metal = spec.get("metal", False)
+    period = 8 * D
     for x in range(T):
         for y in range(6 * D):
             if y < 2:
-                col = f"{wood}-5"
+                col = f"{wood}-6" if metal else f"{wood}-5"
             elif y < 3:
                 col = f"{wood}-4"
             elif y < 8:
@@ -619,16 +651,32 @@ def paint_one_way(img, ox, oy, zone):
                 col = f"{wood}-2"
             else:
                 col = "night-0"
-            if x % (8 * D) == 0 and 2 <= y <= 9:
+            # A dark groove every `period` so a run of boards reads as laid
+            # planks, not one slab.
+            if x % period == 0 and 2 <= y <= 9:
                 col = f"{wood}-1"
-            if x % (8 * D) in (3, 12) and y == 4:
-                col = "stone-5"
+            # Fastener heads flanking each groove, in the zone's accent.
+            if x % period in (3, 12) and y == 4:
+                col = nail
             img.putpixel((ox + x, oy + y), c(col))
-        # Brackets under the plank.
-        if x % (8 * D) in (6, 7, 8, 9):
-            for y in range(6 * D, 10 * D):
-                edge = x % (8 * D) in (6, 9)
-                img.putpixel((ox + x, oy + y), c("night-0" if y >= 10 * D - 2 or edge else f"{wood}-2"))
+    # A trestle under each board groove: a short post with two splayed legs, so
+    # the ledge reads as carried rather than floating. Kept within the lower half
+    # of the tile so it never implies a floor below.
+    leg = 4 * D
+    for gx in range(0, T, period):
+        # The post, two pixels wide, straight down from the groove.
+        for x in (gx, gx + 1):
+            xx = x % T
+            for y in range(6 * D, 6 * D + leg):
+                img.putpixel((ox + xx, oy + y), c(f"{strut}-2"))
+        # Two legs splaying out from the post foot, a shade darker for depth.
+        foot = 6 * D + leg
+        for k in range(leg):
+            y = foot + k - 1
+            for sgn in (-1, 1):
+                xx = (gx + (1 if sgn > 0 else 0) + sgn * k) % T
+                shade = "night-0" if k >= leg - 1 else f"{strut}-1"
+                img.putpixel((ox + xx, oy + y), c(shade))
 
 
 def paint_amber(img, ox, oy):
