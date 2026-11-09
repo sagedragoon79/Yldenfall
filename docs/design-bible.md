@@ -1777,6 +1777,17 @@ Both zones painted their solid tiles on the cool `"stone"` ramp (a blue-violet l
 
 Code-first and deterministic: only `assets/tiles/haar.png` and `assets/tiles/sunken.png` are regenerated. `tools/art/test_tilegen.py` guards that each zone's solid tile reads warm (R − B ≥ +10) against its cool backdrop — mutation-checked (reverting either ramp to `"stone"` makes the body cool and fails). Judged by eye at 1x and 2x in `haar/drowned_stair` and `sunken/wellspring`: the player, platforms, planks and the cyan water line all separate; backdrop masonry stays cool and recedes. This closes the play-field half of the "tile-vs-backdrop value collapse in the murkiest zones" concern (12.5, pass 513 is the backdrop half).
 
+### 12.23 Running bond in the solid play tiles (pass 526)
+
+Pass 525 broke the stamped-lattice read in the *backdrop* masonry with a running bond (12.14). The independent grade (pass 525) then read the same repetition one layer forward, in the *gameplay* solid tiles at play scale: a stacked stone/brick column reads as one 32 px tile copy-pasted down its length. This pass carries the running-bond / scatter-wear idea into the two painted masonry painters so a solid field stops marching on the 32 px grid.
+
+The factory already scatters a FULL-solid field across four variants, each painted with a fresh seed (`TilesetFactory.ground`, 12.8), but the variants only differed in *shade*, not in where the lattice fell, so every tile placed its joints and courses at the same positions and a column still lined up:
+
+- **`paint_bricks`** (gym, trials; hearthroot's tiles are PixelLab art and are untouched) now gives the brick lattice a per-tile vertical phase (`voff`) and a per-course horizontal jitter on top of the half-brick alternation, both keyed to the seed. Across the scattered variants the courses and the vertical joints land at different places in each tile, so the field reads as organic coursed masonry instead of an aligned grid with a joint at every tile edge.
+- **`paint_spring`** (sunken) made its wavy strata from the local x and the seed, so the wave phase jumped at every tile boundary and the strata broke into hard vertical seams — the clearest "stacked column" offender. The wave now wraps seamlessly across the tile width (both sine terms complete a whole number of cycles over `T`; the seed only shifts their phase), so a tile's left and right edges always match and the limestone strata flow across neighbours as one continuous bed.
+
+Code-first and deterministic: only `assets/tiles/gym.png`, `assets/tiles/trials.png` and `assets/tiles/sunken.png` are regenerated. No `.gd` or gameplay change — the tiles are solid-field art behind the actors, so hazards, foes and telegraphs (separate sprites) are untouched. `tools/art/test_tilegen.py` gains two mutation-checked guards: `paint_bricks` does not stack its vertical joints at a fixed x across seeds, and `paint_spring` is horizontally seamless (its left and right edge columns match). Judged by eye at 1x and 2x in a scattered solid field: the trials bond steps between blocks with no tile seam, and the sunken strata run on across the field with the vertical break lines gone.
+
 ---
 
 ## 13. Asset Production Plan
