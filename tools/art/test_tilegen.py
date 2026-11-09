@@ -89,6 +89,23 @@ def test_the_dither_is_noise_not_a_rigid_grid():
         assert rate < 0.9, f"shift {shift}: {rate:.2f} of pixels repeat — reads as a grid, not grain"
 
 
+def test_masonry_shade_lays_a_running_bond_not_a_column_grid():
+    # The mid column/pier fields (sunken, vorrhallow) and the far brick fields draw
+    # their stones with masonry_shade. It used to key on (x // cell, y // cell), so
+    # every cell boundary fell on the same vertical line for every row — same-value
+    # stones stacked into straight columns and the field read as one stamped lattice
+    # (independent grade, pass 504). A running bond shifts each course horizontally,
+    # so no single x carries a shade transition on more than a fraction of rows.
+    cell, seed, span = 16, 560, 16 * 40
+    rows = [[tg.masonry_shade(x, y, seed, "night-0", "night-1", "stone-2", cell)
+             for x in range(span)] for y in range(16 * 40)]
+    n = len(rows)
+    peak = max(sum(1 for r in rows if r[x] != r[x - 1]) / n for x in range(1, span))
+    # Running bond holds the peak near 0.15; reverting to the aligned grid
+    # (dropping the per-course offset) pushes it to ~0.48 and fails.
+    assert peak < 0.30, f"a vertical seam carries transitions on {peak:.2f} of rows — reads as a stacked column grid, not a bond"
+
+
 def _moss_indices(seed, light="leaf", top=5):
     """Every (x, y, shade-index) of `light` painted by one cap_moss tile."""
     img = tg.Image.new("RGBA", (tg.T, tg.T), tg.CLEAR)
