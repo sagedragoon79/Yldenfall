@@ -138,6 +138,74 @@ def test_cap_moss_varies_per_tile():
     assert max(means) - min(means) >= 1.0, f"per-tile brightness barely moves: {min(means):.2f}..{max(means):.2f}"
 
 
+def _moss_top_clear(seed, sculpt):
+    """How many top-row (y==0) columns a cap_moss tile leaves transparent."""
+    img = tg.Image.new("RGBA", (tg.T, tg.T), tg.CLEAR)
+    tg.cap_moss(img, 0, 0, seed, 0, tg.T, "leaf", None, 4, sculpt)
+    return sum(1 for x in range(tg.T) if img.getpixel((x, 0))[3] == 0)
+
+
+def test_cap_moss_sculpt_carves_the_silhouette():
+    # The sculpted crown (heartwood / haar) carves dips the flat cap never had,
+    # so the ledge top is not a razor-straight shelf. Across seeds the sculpted
+    # tile leaves strictly more top-row pixels transparent than the flat one.
+    # (Dropping the `crown` carve makes the two equal and fails here.)
+    more = 0
+    for seed in range(11, 11 + 12):
+        if _moss_top_clear(seed, True) > _moss_top_clear(seed, False):
+            more += 1
+    assert more >= 10, f"the sculpted crown carves more top-row dips on {more}/12 seeds"
+
+
+def test_cap_moss_sculpt_is_a_deeper_fringe():
+    # The muted sculpt runs the upper fringe a shade deeper (less neon), so the
+    # grass trim reads closer to the dressed-stone lip. The mean leaf shade of a
+    # sculpted tile is lower (darker) than the flat one. (Dropping `mute` ties
+    # them and fails here.)
+    lower = 0
+    for seed in range(11, 11 + 12):
+        flat = _moss_indices(seed, top=4)
+        scu = tg.Image.new("RGBA", (tg.T, tg.T), tg.CLEAR)
+        tg.cap_moss(scu, 0, 0, seed, 0, tg.T, "leaf", None, 4, True)
+        names = {v[:3]: k for k, v in tg.PAL.items()}
+        svals = []
+        for x in range(tg.T):
+            for y in range(tg.T):
+                px = scu.getpixel((x, y))
+                if px[3] == 0:
+                    continue
+                nm = names.get(px[:3])
+                if nm and nm.rsplit("-", 1)[0] == "leaf":
+                    svals.append(int(nm.rsplit("-", 1)[1]))
+        fmean = sum(k for _, _, k in flat) / len(flat)
+        if svals and sum(svals) / len(svals) < fmean:
+            lower += 1
+    assert lower >= 10, f"the sculpted fringe is deeper than the flat one on {lower}/12 seeds"
+
+
+def _wood_shades(seed, ramp="bark"):
+    img = tg.Image.new("RGBA", (tg.T, tg.T), tg.CLEAR)
+    tg.paint_wood(img, 0, 0, seed, ramp)
+    names = {v[:3]: k for k, v in tg.PAL.items()}
+    seen = {}
+    for x in range(tg.T):
+        for y in range(tg.T):
+            nm = names.get(img.getpixel((x, y))[:3])
+            if nm and nm.rsplit("-", 1)[0] == ramp:
+                seen[int(nm.rsplit("-", 1)[1])] = seen.get(int(nm.rsplit("-", 1)[1]), 0) + 1
+    return seen
+
+
+def test_paint_wood_has_surface_value_variation():
+    # The wood face must span several shades with no single shade swamping it, so
+    # it reads as mottled heartwood, not a flat grain field. (Removing the patch
+    # term collapses it toward two shades and fails the spread or the dominance.)
+    seen = _wood_shades(11)
+    assert len(seen) >= 3, f"the wood face spans >=3 shades, got {sorted(seen)}"
+    total = sum(seen.values())
+    assert max(seen.values()) / total < 0.80, "no single wood shade swamps the face"
+
+
 def _build_atlas(zone="gym"):
     """Builds `zone`'s atlas into a temp dir and returns the PIL image."""
     import tempfile

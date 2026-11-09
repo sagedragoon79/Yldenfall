@@ -1600,7 +1600,7 @@ The green (or, for water zones, cyan) fringe on the top of every ground tile and
 - **A value ramp down each blade.** Only the taller, lit blades carry the brightest shade on their very tip; the body steps down shade by shade to a **dark root line** where the grass meets the soil, so the fringe has top-light and a shadowed base rather than a uniform top row.
 - **Per-tile variation.** Each tile takes a value shift (lush / normal / sparse, roughly 45% / 35% / 20%) from its seed, so a run of ground tiles reads as patches of deeper and brighter grass instead of one continuous stripe. A per-blade jitter deepens the odd column within a tile.
 
-Code-first and deterministic: only the eight moss-capped tilesets change, no art is repainted, and `tools/art/test_tilegen.py` guards the ramp, the root line and the per-tile shift.
+Code-first and deterministic: only the eight moss-capped tilesets change, no art is repainted, and `tools/art/test_tilegen.py` guards the ramp, the root line and the per-tile shift. **Sculpted variant (pass 520):** Heartwood and Haar carry `cap_sculpt`, which carves an uneven crown and runs the fringe a shade deeper to pull those procedural flat-tile zones toward the painterly zones — see 12.19.
 
 ### 12.8 Tileset variants (grid banding)
 
@@ -1739,6 +1739,15 @@ The independent grade (pass 515) still read two fields as one repeated stamp: th
 **Hearthroot skyline (`hearthroot_far`).** Each distant house picks one of several roof silhouettes — a rounded arch, a triangular gable, a crenellated battlement parapet, or a stepped gable — with a per-house peak height, and some carry a chimney and a varied window stride. A row of houses now reads as a varied drowned-town skyline rather than the same arch copied across. Backdrop only, behind the play field and under the atmosphere haze (12.5); the masonry body and weathered courses of 12.14 are unchanged.
 
 Code-first and deterministic; only `assets/tiles/spires.png` and `assets/bg/hearthroot_far.png` are regenerated. `tools/art/test_tilegen.py` guards the inlay sparsity (mean gold under 2% of the field), the seed-keyed course scale (the full-mortar-row count varies across seeds), and the roof-style variety (mutation-checked).
+
+### 12.19 Zone style cohesion: the procedural flat-tile zones (pass 520)
+
+The independent grade (pass 515) read the zones as two different games: the PixelLab-textured painterly zones (Hearthroot's Market and Plaza, `PIXELLAB_SETS`) against the procedural **flat-tile** zones **Heartwood** (`paint_wood`) and **Haar** (`paint_limb`), whose grade note called them "flat cartoon tile-grass with straight-shelf platform tops." Both named zones are pulled toward the painterly bar, procedurally (no PixelLab spend, so it ships unattended):
+
+- **A sculpted mossy crown (`cap_moss`, the new `sculpt` flag).** The flat cap left the tile's opaque top row intact between blades, so every ledge top read as one razor-straight shelf. The sculpted cap carves a one-world-pixel dip between tufts, in clumps of a few columns, while tall blades keep their height and stand proud — so a run of ledge tops reads as an uneven crown. The upper fringe also runs a shade deeper (`mute`), pulling the neon grass trim toward the dressed-stone lip of the painterly zones. Only Heartwood and Haar carry `cap_sculpt`; the other six moss-capped zones keep the flat cap of 12.7 unchanged.
+- **A mottled wood face (`paint_wood`).** The face was one flat grain field. It now carries a low-frequency value patch (roughly 6×6 render-pixel cells lift or drop a broad region a shade) and the odd dark fleck, so the heartwood reads as mottled bark with surface value variation like the masonry zones, not a dead-flat wall. `paint_wood` feeds Heartwood directly and Haar through `paint_limb`, so the two named zones change and no other.
+
+Combat reads as before (judged by eye at 1x/2x in `heartwood/entrance` and `haar/marsh_road`: the hero, platforms, grubs, pickups and telegraphs still pop; the patches are low-contrast within the dark bark). Code-first and deterministic; only `assets/tiles/heartwood.png` and `assets/tiles/haar.png` are regenerated. `tools/art/test_tilegen.py` guards the sculpted crown (carves more top-row dips than the flat cap), the muted fringe (deeper than the flat cap) and the wood face's value spread (≥3 shades, no single shade over 80%), all mutation-checked.
 
 ---
 
