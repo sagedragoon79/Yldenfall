@@ -506,7 +506,16 @@ ZONES = {
               "under": "bark-1", "outline": "night-0", "cap_sculpt": True},
     "tower": {"painter": paint_plates, "ramp": "stone", "cap": "girder", "light": "leaf", "glow": None,
               "under": "night-1", "outline": "night-0"},
-    "haar": {"painter": paint_limb, "ramp": "stone", "cap": "moss", "light": "leaf", "glow": "gold-5", "cap_top": 3,
+    # haar and sunken play-field tiles warm from the cool "stone" lavender to the
+    # warm "umber" ramp (pass 524). The independent grade (pass 505) read these two
+    # murkiest zones as a low-contrast grey-green / grey-teal where the standable
+    # geometry merged into the cool backdrop and mist. Pass 513 receded the mist;
+    # this separates the play field by HUE: both painters already describe a warm
+    # material (paint_limb "old bone", paint_spring "pale limestone"), so the warm
+    # umber body reads as lit bone / travertine against each zone's cool backdrop,
+    # while the mist, backdrop masonry, cool night outline/shadow (night-0/night-1)
+    # and the moss/sky caps stay cool — a temperature split the eye reads instantly.
+    "haar": {"painter": paint_limb, "ramp": "umber", "cap": "moss", "light": "leaf", "glow": "gold-5", "cap_top": 3,
              "under": "night-1", "outline": "night-0", "cap_sculpt": True},
     "boughs": {"painter": paint_bough, "ramp": "bark", "cap": "moss", "light": "leaf", "glow": None, "cap_top": 6,
                  "under": "bark-2", "outline": "night-0"},
@@ -514,8 +523,8 @@ ZONES = {
                  "under": "night-1", "outline": "night-0"},
     "evercrown": {"painter": paint_meteor, "ramp": "night", "cap": "moss", "light": "crystal", "glow": "sky-6", "cap_top": 4,
               "under": "night-0", "outline": "night-0"},
-    "sunken": {"painter": paint_spring, "ramp": "stone", "cap": "moss", "light": "sky", "glow": "sky-6", "cap_top": 3,
-               "under": "night-1", "outline": "night-0"},
+    "sunken": {"painter": paint_spring, "ramp": "umber", "cap": "moss", "light": "sky", "glow": "sky-6", "cap_top": 3,
+               "under": "night-1", "outline": "night-0"},  # warm limestone, pass 524 (see haar)
     # The Inner Rings' inner rings (pass 113): pale grey blocks with no moss and
     # no warmth, a place made of nothing but footholds.
     "trials": {"painter": paint_bricks, "ramp": "stone", "cap": "stone", "light": "stone", "glow": None,
