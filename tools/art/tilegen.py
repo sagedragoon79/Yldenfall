@@ -1598,7 +1598,22 @@ def evercrown_mid():
             wdt = max(D, int(w0 * (1 - t / ln)))
             sway = int(math.sin(t / (30 * D) + i) * 8 * D)
             for dx in range(wdt):
-                col = "night-1" if dx > wdt * 0.3 else "crystal-1"
+                # A lit stillglass tendril, not another dark rib: a crisp night-0
+                # silhouette edge, a crystal-2 glass body and a crystal-3 core
+                # highlight down the centre. The far wall's ribs are night-1 and
+                # crystal-1, so the nearer flesh reads a clear step brighter and
+                # outlined against it instead of camouflaging into it (the grade's
+                # 'ambiguous translucent blocks / mid tendrils unclear against the
+                # ribbed far wall', pass 503/520; design bible 12.20).
+                edge = min(dx, wdt - 1 - dx)
+                if wdt <= 2 * D:
+                    col = "crystal-2"
+                elif edge < D:
+                    col = "night-0"
+                elif edge < wdt * 0.42:
+                    col = "crystal-2"
+                else:
+                    col = "crystal-3"
                 if (t // (6 * D)) % 5 == 0 and dx == wdt // 2:
                     col = "ember-2"
                 put(img, x0 + sway + dx - wdt // 2, y, c(col))

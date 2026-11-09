@@ -704,6 +704,34 @@ def test_one_way_plank_rests_on_a_trestle_below_the_board():
         assert opaque > 0, f"{zone} plank has no trestle below the board (row >= {deep})"
 
 
+def _lum(col):
+    return 0.299 * col[0] + 0.587 * col[1] + 0.114 * col[2]
+
+
+def test_evercrown_mid_tendrils_read_against_the_ribbed_far_wall():
+    # The nearer stillglass tendrils used to be painted in the far wall's own two
+    # rib colours (night-1 / crystal-1), so they camouflaged into it (the grade's
+    # 'ambiguous translucent blocks / mid tendrils unclear against the ribbed far
+    # wall', pass 503/520, bible 12.20). They now carry a lit crystal body
+    # (crystal-2/-3) and a dark night-0 silhouette rim, a clear step brighter than
+    # the wall. (Reverting the body to night-1/crystal-1 drops crystal-2/-3 and the
+    # brightness margin, so this fails.)
+    mid = tg.evercrown_mid()
+    px = mid.load()
+    w, h = mid.size
+    cols = [px[x, y] for y in range(h) for x in range(w) if px[x, y][3] != 0]
+    present = set(cols)
+    for shade in ("crystal-2", "crystal-3", "night-0"):
+        assert tg.c(shade) in present, f"evercrown tendrils carry {shade}"
+    body = [col for col in cols if col in (tg.c("crystal-2"), tg.c("crystal-3"))]
+    assert body, "tendrils have a lit crystal body"
+    body_lum = sum(_lum(col) for col in body) / len(body)
+    wall_lum = max(_lum(tg.c("crystal-1")), _lum(tg.c("night-1")))
+    assert body_lum > wall_lum + 20, (
+        f"tendril body (lum {body_lum:.0f}) reads a clear step brighter than the far "
+        f"wall ribs (lum {wall_lum:.0f})")
+
+
 def main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for t in tests:
