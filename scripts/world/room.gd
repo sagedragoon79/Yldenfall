@@ -200,6 +200,15 @@ func build(text: String) -> void:
 	room_light.room = self
 	add_child(room_light)
 
+	# Volumetric light shafts raking down the open air (design bible 12.17), drawn
+	# behind the tiles so solid geometry occludes them and in front of the backdrop.
+	var shaft := LightShaft.new()
+	shaft.name = "LightShaft"
+	shaft.zone = zone
+	shaft.room_size = Vector2(size_tiles * TILE)
+	shaft.seed = id.hash()
+	add_child(shaft)
+
 	# Which cells look like ground, so each wall tile can match its neighbours.
 	var amber := _amber_on()
 	for y in grid.size():
