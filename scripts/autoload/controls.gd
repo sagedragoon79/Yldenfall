@@ -4,6 +4,10 @@ extends Node
 ## key and its first pad button (pass 365).
 
 const DEADZONE := 0.35
+## Pad bindings answer every pad. An event made in code belongs to device 0
+## unless told otherwise, so a pad Windows numbered 1 (behind a Razer keypad or
+## any other joystick-like device) was ignored in play.
+const ANY_PAD := -1
 ## What the Controls page calls each pad button (Xbox names; a pad's own glyphs
 ## would come with art).
 const PAD_NAMES := {
@@ -60,15 +64,18 @@ func restore_defaults() -> void:
 			InputMap.action_add_event(action, ev)
 		for button: JoyButton in spec.get("buttons", []):
 			var jb := InputEventJoypadButton.new()
+			jb.device = ANY_PAD
 			jb.button_index = button
 			InputMap.action_add_event(action, jb)
 		if spec.has("axis"):
 			var jm := InputEventJoypadMotion.new()
+			jm.device = ANY_PAD
 			jm.axis = spec["axis"][0]
 			jm.axis_value = spec["axis"][1]
 			InputMap.action_add_event(action, jm)
 		if spec.has("trigger"):
 			var jt := InputEventJoypadMotion.new()
+			jt.device = ANY_PAD
 			jt.axis = spec["trigger"]
 			jt.axis_value = 1.0
 			InputMap.action_add_event(action, jt)
@@ -138,6 +145,7 @@ func rebind_button(action: String, button: int) -> void:
 			InputMap.action_erase_event(action, ev)
 			break
 	var jb := InputEventJoypadButton.new()
+	jb.device = ANY_PAD
 	jb.button_index = button as JoyButton
 	var events := InputMap.action_get_events(action)
 	InputMap.action_erase_events(action)
