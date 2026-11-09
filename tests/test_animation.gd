@@ -472,3 +472,28 @@ func test_the_delvers_pick_pogo_reaches_under_the_feet_and_plays_out() -> void:
 	await frames(30)
 	check(p.visual.anim != "strike_down", "and then gives way (%s)" % p.visual.anim)
 	GameState.new_game()
+
+
+## Bible 12.24 (pass 527): floor spikes read on any floor. A near-white rim/tip carries
+## them over the dark zones (haar, evercrown) the grade flagged; a dark silhouette carries
+## them over pale ones. All four tones stay on the master palette.
+func test_floor_spikes_read_on_any_floor_and_stay_on_palette() -> void:
+	var allowed := {}
+	for line in FileAccess.get_file_as_string("res://art/palette/master.gpl").split("\n"):
+		var parts := line.replace("\t", " ").strip_edges().split(" ", false)
+		if parts.size() >= 3 and parts[0].is_valid_int():
+			allowed[Color8(int(parts[0]), int(parts[1]), int(parts[2])).to_rgba32()] = true
+	var tones := {"SILHOUETTE": Spikes.SILHOUETTE, "FACE": Spikes.FACE, "RIM": Spikes.RIM, "BASE": Spikes.BASE}
+	var off: Array[String] = []
+	for tone in tones:
+		var col: Color = tones[tone]
+		if not allowed.has(Color(col.r, col.g, col.b, 1.0).to_rgba32()):
+			off.append("%s %s" % [tone, col.to_html(false)])
+	check(off.is_empty(), "every spike tone is on the master palette (off: %s)" % [off])
+	# A bright rim for dark floors, a dark silhouette for pale floors, and a wide spread
+	# between them so the hazard separates whatever it sits on.
+	var rim := Spikes.RIM.get_luminance()
+	var sil := Spikes.SILHOUETTE.get_luminance()
+	check(rim >= 0.80, "the spike rim/tip is near-white so it reads over a dark floor (%.2f)" % rim)
+	check(sil <= 0.30, "the spike silhouette is dark so it reads over a pale floor (%.2f)" % sil)
+	check(rim - sil >= 0.55, "the spike carries a wide value spread so it never sinks into its floor (%.2f)" % (rim - sil))
