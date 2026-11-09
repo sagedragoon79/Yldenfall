@@ -1759,6 +1759,14 @@ The independent grade (pass 520) read the one-way platform (`-`) as "copy-pasted
 
 Collision is untouched — this is texture-only on the plank tile (`TilesetFactory.ONE_WAY`), so the jump-through behaviour is unchanged. Combat reads as before (judged by eye at 1x/2x in `haar/drowned_stair`, `heartwood/amber_falls`, `tower/bat_belfry`, `spires/broken_shrine`, `sunken/drowned_aqueduct`, `evercrown/drift_well`: the plank pops against each backdrop and foes, pickups and telegraphs still pop against the plank). Code-first and deterministic; the ten procedural zone atlases are regenerated (hearthroot's is not). `tools/art/test_tilegen.py` guards the per-zone material (the graded trio's planks differ; each board's dominant ramp matches its `PLANK` spec) and the trestle (opaque pixels below the former stub depth), all mutation-checked.
 
+### 12.21 Evercrown tendrils read against the ribbed far wall (pass 523)
+
+The independent grade (pass 503, carried in pass 520's "Next") read the Evercrown's nearer stillglass tendrils (`evercrown_mid`) as "ambiguous translucent blocks" — they did not separate from the ribbed far wall behind them. The cause was colour: `evercrown_mid` painted each tendril's cross-section in the far wall's own two rib shades (`night-1` body, `crystal-1` core), so a nearer tendril had the same value and hue as the dark ribs it hung in front of and camouflaged into them; only the cyan bulb at each tip read.
+
+The tendril cross-section is now a lit, outlined glass form, not another dark rib: a one-world-pixel `night-0` silhouette rim on each edge, a `crystal-2` body, and a `crystal-3` core highlight down the centre (the ember bead and cyan bulb tip are unchanged). Those body shades are a clear luminance step brighter than the wall's `crystal-1`/`night-1` ribs (≈73–101 vs ≈46), and the dark rim gives the tendril a crisp silhouette, so the nearer flesh reads forward of the wall — the atmospheric-perspective cue the grade's depth-collapse notes keep asking for. The tendrils stay magenta stillglass, consistent with the zone's crystal and the guardians' stillglass growths (8.7).
+
+Code-first and deterministic: only `assets/bg/evercrown_mid.png` is regenerated, the `mid` layer sits behind the play field (atmosphere `desat` 0.3 / `fade` 0.24, bible 12.5), and nothing gameplay-facing changes, so combat is untouched by construction. `tools/art/test_tilegen.py` guards that the tendrils carry `crystal-2`, `crystal-3` and a `night-0` rim and that the body luminance reads a clear step above the far wall's ribs — mutation-checked (reverting the body to `night-1`/`crystal-1` drops the bright shades and fails).
+
 ---
 
 ## 13. Asset Production Plan
