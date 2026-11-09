@@ -297,7 +297,10 @@ def crystal_vein(img, ox, oy, seed):
 
 
 def paint_wood(img, ox, oy, seed, ramp):
-    """Living wood: long vertical grain in fine strands, low contrast, the odd knot."""
+    """Living wood: long vertical grain in fine strands, the odd knot, and broad
+    patches of lighter and darker heartwood so the face carries surface value
+    variation (pass 520, pulling heartwood and haar toward the painterly zones'
+    mottled stone) instead of reading as one flat grain field."""
     for x in range(T):
         base = 1 if hash2(x // 3, 0, seed) > 0.4 else 2
         phase = hash2(x, 1, seed) * 32
@@ -312,7 +315,17 @@ def paint_wood(img, ox, oy, seed, ramp):
                 col = min(col, 1)
             elif x % 12 == 1 and hash2(x, y // 4, seed) > 0.5:
                 col = min(col + 1, 3)
-            img.putpixel((ox + x, oy + y), c(f"{ramp}-{max(col, 0)}"))
+            # A low-frequency patch (roughly 6x6-render-pixel cells) lifts or
+            # drops a broad region a shade, breaking the flat grain field.
+            pv = hash2(x // 6, y // 6, seed + 13)
+            if pv > 0.80:
+                col += 1
+            elif pv < 0.17:
+                col -= 1
+            # The odd dark fleck, like the grain pits of the masonry zones.
+            elif hash2(x, y, seed + 4) > 0.975:
+                col -= 1
+            img.putpixel((ox + x, oy + y), c(f"{ramp}-{min(max(col, 0), 3)}"))
     if hash2(seed, 7, 3) > 0.82:
         # A knot: a dark eye in a lighter ring of grain.
         kx, ky = 8 + int(hash2(seed, 1, 5) * 14), 8 + int(hash2(seed, 2, 5) * 14)
@@ -371,11 +384,18 @@ def paint_bough(img, ox, oy, seed, ramp):
                 img.putpixel((ox + cx + dx, oy + cy + dy), c("leaf-5" if dy < 1 else "leaf-4"))
 
 
-def cap_moss(img, ox, oy, seed, x0, x1, light="leaf", glow=None, top=5):
+def cap_moss(img, ox, oy, seed, x0, x1, light="leaf", glow=None, top=5, sculpt=False):
     """A ragged cap of moss over the top edge: blades of uneven height whose
     tips catch the light, a body that deepens shade by shade into a dark root
     line where it meets the ground, and a per-tile value shift so a run of
-    ground tiles never paints one flat bright band."""
+    ground tiles never paints one flat bright band.
+
+    ``sculpt`` (pass 520, the procedural flat-tile zones heartwood and haar):
+    carves a dip of a world pixel between tufts so a run of ledge tops reads as
+    an uneven mossy crown rather than one razor-straight shelf, and runs the
+    upper fringe a shade deeper so the bright grass trim reads as a shaded lip
+    closer to the dressed-stone zones (the pass-515 "flat cartoon tile-grass
+    with straight-shelf platform tops" zone-cohesion defect)."""
     def shade(k):
         return c(f"{light}-{max(0, top - k)}")
     # A per-tile value shift (lush / normal / sparse patches) breaks the uniform
@@ -389,15 +409,23 @@ def cap_moss(img, ox, oy, seed, x0, x1, light="leaf", glow=None, top=5):
         # Only taller, lit blades catch the brightest shade on their very tip.
         tip_lit = blade and hash2(x, 8, seed) > 0.5
         col_jit = 1 if hash2(x, 4, seed) > 0.78 else 0  # the odd deeper blade
+        # A sculpted crown dips one world pixel between tufts, in clumps of a few
+        # columns; tall blades keep their full height and stand proud of the dips.
+        # A muted upper fringe pulls the neon grass toward a dressed, shaded lip.
+        crown = 1 if (sculpt and not blade and hash2(x // 3, 2, seed) > 0.5) else 0
+        mute = 1 if sculpt else 0
         for y in range(depth):
+            if y < crown:
+                img.putpixel((ox + x, oy + y), CLEAR)  # carve the dip in the silhouette
+                continue
             if y == 0 and blade == 0 and hash2(x, 7, seed) > 0.6:
                 continue  # a ragged top
             if y == 0 and tip_lit:
                 k = 0               # a lit tip, the only truly bright pixels
             elif y <= 1:
-                k = 1               # upper blade
+                k = 1 + mute        # upper blade
             elif y < depth - 3:
-                k = 2 if (x + y) % 4 else 1   # mid body, mostly a shade down
+                k = (2 if (x + y) % 4 else 1) + mute   # mid body, mostly a shade down
             elif y < depth - 1:
                 k = 3               # lower body, in shadow
             else:
@@ -475,11 +503,11 @@ ZONES = {
     "hearthroot": {"painter": paint_bricks, "ramp": "stone", "cap": "stone", "light": "leaf", "glow": None,
               "under": "stone-1", "outline": "night-0"},
     "heartwood": {"painter": paint_wood, "ramp": "bark", "cap": "moss", "light": "leaf", "glow": "sky-6", "cap_top": 4,
-              "under": "bark-1", "outline": "night-0"},
+              "under": "bark-1", "outline": "night-0", "cap_sculpt": True},
     "tower": {"painter": paint_plates, "ramp": "stone", "cap": "girder", "light": "leaf", "glow": None,
               "under": "night-1", "outline": "night-0"},
     "haar": {"painter": paint_limb, "ramp": "stone", "cap": "moss", "light": "leaf", "glow": "gold-5", "cap_top": 3,
-             "under": "night-1", "outline": "night-0"},
+             "under": "night-1", "outline": "night-0", "cap_sculpt": True},
     "boughs": {"painter": paint_bough, "ramp": "bark", "cap": "moss", "light": "leaf", "glow": None, "cap_top": 6,
                  "under": "bark-2", "outline": "night-0"},
     "vorrhallow": {"painter": paint_drowned, "ramp": "stone", "cap": "moss", "light": "sky", "glow": "crystal-6", "cap_top": 4,
@@ -534,7 +562,8 @@ def paint_tile(img, ox, oy, mask, zone, seed):
         x0 = 0 if mask & W else D
         x1 = T if mask & E else T - D
         if z["cap"] == "moss":
-            cap_moss(img, ox, oy, seed, x0, x1, z["light"], z["glow"], z.get("cap_top", 5))
+            cap_moss(img, ox, oy, seed, x0, x1, z["light"], z["glow"], z.get("cap_top", 5),
+                     z.get("cap_sculpt", False))
         elif z["cap"] == "girder":
             cap_girder(img, ox, oy, seed, x0, x1, ramp)
         else:
