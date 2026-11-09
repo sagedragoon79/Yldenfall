@@ -1788,6 +1788,18 @@ The factory already scatters a FULL-solid field across four variants, each paint
 
 Code-first and deterministic: only `assets/tiles/gym.png`, `assets/tiles/trials.png` and `assets/tiles/sunken.png` are regenerated. No `.gd` or gameplay change — the tiles are solid-field art behind the actors, so hazards, foes and telegraphs (separate sprites) are untouched. `tools/art/test_tilegen.py` gains two mutation-checked guards: `paint_bricks` does not stack its vertical joints at a fixed x across seeds, and `paint_spring` is horizontally seamless (its left and right edge columns match). Judged by eye at 1x and 2x in a scattered solid field: the trials bond steps between blocks with no tile seam, and the sunken strata run on across the field with the vertical break lines gone.
 
+### 12.24 Floor spikes read with a double rim (pass 527)
+
+The independent grade (pass 525) flagged dark-on-dark hazard readability: the floor spikes (`Spikes`) sit dark on dark floors and are easy to miss. They are the clearest offender in the dark zones — the Haar and the Evercrown — where a near-black floor swallowed their pale-grey body. (The thorn bulb, the other static floor hazard, is already a bright red glowing pod and reads fine.)
+
+A hazard must read on *every* floor it is placed on, light and dark alike, so a single value shift cannot fix it — brightening the spike for the Haar glares it over the pale heartwood, darkening it for the heartwood hides it in the Haar. The fix is a **double rim** that carries on any backdrop:
+
+- a dark iron **silhouette** (`2f2c3a`) and a contact shadow at the base carry the shape over a *pale* floor;
+- a near-white steel **rim** down the leading edge and a hot **tip** cap (`ece8ed`) carry it over a *dark* floor — the bright line the eye finds in the Haar and the Evercrown;
+- a mid-steel **lit face** (`867ba2`) between them.
+
+The old spike used two off-palette tones (`b9b4c4` / `6f6982`); all four new tones are master-palette (the neutral ramp), so the hazard is now on the ramp as well as readable. Pure `_draw` art on the `Spikes` sprite: the collision shape, the pogo behaviour and the geometry are untouched, so there is no gameplay or readability change to the actor layer. A mutation-checked guard (`test_floor_spikes_read_on_any_floor_and_stay_on_palette`) holds every tone on the master palette and the rim–silhouette value spread wide (rim ≥ 0.80, silhouette ≤ 0.30, spread ≥ 0.55), so a revert to a flat mid-grey fails. Judged by eye at 1x and 3x in `haar/fog_cut`: before, a dim grey row sinking into the floor; after, a crisp line of lit metal teeth.
+
 ---
 
 ## 13. Asset Production Plan
