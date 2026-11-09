@@ -113,11 +113,19 @@ def masonry_courses(top, bottom, seed, spacing):
 def masonry_shade(x, y, seed, dark, body, light, cell=16):
     """A per-stone shade for a masonry field: most cells draw ``body``, a few drop
     to ``dark`` or lift to ``light``, keyed by a coarse ``cell`` grid so adjacent
-    stones differ in value and the field stops reading as one flat colour."""
-    h = hash2(x // cell, y // cell, seed)
+    stones differ in value and the field stops reading as one flat colour.
+
+    The stones are laid in a running bond: every course shifts horizontally — half
+    a stone on alternate rows, plus a per-course jitter — so same-value stones (and
+    the recessed dark ones) never stack into the straight vertical columns that
+    made the mid column/pier fields read as one stamped lattice (independent grade,
+    passes 497/502/504; bible 12.14)."""
+    row = y // cell
+    off = (row % 2) * (cell // 2) + int(hash2(row, 5, seed) * cell)
+    h = hash2((x + off) // cell, row, seed)
     if h > 0.93:
         return light
-    if h < 0.16:
+    if h < 0.12:
         return dark
     return body
 
