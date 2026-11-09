@@ -782,6 +782,69 @@ def test_haar_and_sunken_play_tiles_read_warm_against_their_cool_backdrop():
             f"cool backdrop (haze R-B -24)")
 
 
+def _scatter_seed(cx, cy):
+    # Mirror TilesetFactory.ground(): four FULL variants (base tile + row-7 cols
+    # 0-2) scattered across a solid field by a per-cell hash.
+    full_idx = tg.blob_masks().index(255)
+    h = abs((cx * 73856093) ^ (cy * 19349663))
+    k = h % 4
+    return (11 + full_idx) if k == 0 else 201 + (k - 1)
+
+
+def test_paint_bricks_does_not_stack_its_vertical_joints_across_a_field():
+    # The independent grade (pass 525) read the gameplay brick columns as one 32 px
+    # tile copy-pasted down a pier. paint_bricks now carries a per-tile vertical
+    # phase and a per-course horizontal jitter (running bond, bible 12.23), so the
+    # vertical joints no longer land at the same x in every scattered tile. Over a
+    # tall scattered field, no single interior pixel column is a vertical colour
+    # edge (a joint) in most of its rows. The tile-seam columns (x % T == 0) are
+    # skipped: adjacent atlas tiles are independent there, so an edge is inherent
+    # and not the stacking the fix targets. Mutation: dropping the vertical phase
+    # and the horizontal jitter (the old fixed half-brick bond) re-aligns the
+    # interior joints (peak ~0.52) and fails.
+    cols, rows = 6, 16
+    img = tg.Image.new("RGBA", (cols * tg.T, rows * tg.T), tg.CLEAR)
+    for cy in range(rows):
+        for cx in range(cols):
+            tg.paint_bricks(img, cx * tg.T, cy * tg.T, _scatter_seed(cx, cy), "stone")
+    W, H = img.size
+    peak = 0.0
+    for x in range(1, W):
+        if x % tg.T == 0:
+            continue
+        edges = sum(1 for y in range(H)
+                    if img.getpixel((x, y))[:3] != img.getpixel((x - 1, y))[:3])
+        peak = max(peak, edges / H)
+    assert peak < 0.45, f"brick joints still stack into a column (peak interior edge share {peak:.2f})"
+
+
+def _spring_lum_col(seed, x):
+    img = tg.Image.new("RGBA", (tg.T, tg.T), tg.CLEAR)
+    tg.paint_spring(img, 0, 0, seed, "umber")
+    return [sum(img.getpixel((x, y))[:3]) / 3.0 for y in range(tg.T)]
+
+
+def test_paint_spring_strata_wrap_across_the_tile_width():
+    # paint_spring made its wavy strata from the local x and the seed, so the wave
+    # phase jumped at every tile edge and the sunken limestone broke into hard
+    # vertical seams (pass 525 grade, bible 12.23). The wave now wraps over the
+    # tile width, so a tile's right edge flows into its own left edge. The mean
+    # luminance step across that wrap seam (col T-1 -> col 0) is no worse than a
+    # typical interior step. Mutation: the old x+seed wave makes the wrap seam jump
+    # far past the interior baseline and fails.
+    for seed in (201, 202, 203):
+        left, right = _spring_lum_col(seed, 0), _spring_lum_col(seed, tg.T - 1)
+        seam = sum(abs(a - b) for a, b in zip(left, right)) / tg.T
+        interior = 0.0
+        for x in (tg.T // 4, tg.T // 2, 3 * tg.T // 4):
+            a, b = _spring_lum_col(seed, x), _spring_lum_col(seed, x - 1)
+            interior += sum(abs(p - q) for p, q in zip(a, b)) / tg.T
+        interior /= 3.0
+        assert seam <= interior * 1.6 + 6.0, (
+            f"sunken strata do not wrap (seed {seed}): wrap seam {seam:.1f} vs "
+            f"interior step {interior:.1f}")
+
+
 def main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for t in tests:

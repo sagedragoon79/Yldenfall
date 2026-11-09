@@ -132,15 +132,28 @@ def masonry_shade(x, y, seed, dark, body, light, cell=16):
 
 def paint_bricks(img, ox, oy, seed, ramp):
     """Masonry: rows of 8x4 world-pixel bricks offset per row, lit from the top
-    left, with a one-render-pixel mortar line and a grain of tiny pits."""
+    left, with a one-render-pixel mortar line and a grain of tiny pits.
+
+    Running bond (design bible 12.23): the brick lattice carries a per-tile
+    vertical phase (``voff``) and a per-course horizontal jitter on top of the
+    half-brick alternation, both keyed to ``seed``. The factory scatters this
+    painter's variants across a solid field (each a fresh seed), so these phases
+    land the courses and the vertical joints at different places in every tile —
+    the field stops reading as one stamped 32 px lattice marching down a column
+    (independent grade pass 525; the play-scale companion to the pass-525
+    backdrop running bond, bible 12.14)."""
     bw, bh = 8 * D, 4 * D
+    voff = int(hash2(0, 3, seed) * bh)       # whole lattice shifts up per tile
     for y in range(T):
+        yy = y + voff
         for x in range(T):
-            row = y // bh
-            sx = x + (row % 2) * (bw // 2)
+            row = yy // bh
+            # Half-brick alternation plus a per-course horizontal jitter, so the
+            # vertical joints do not stack at the same x in every scattered tile.
+            sx = x + (row % 2) * (bw // 2) + int(hash2(row, 6, seed) * bw)
             bx = sx // bw
             by = row
-            lx, ly = sx % bw, y % bh
+            lx, ly = sx % bw, yy % bh
             shade = 3 if hash2(bx, by, seed) > 0.45 else 2
             if hash2(bx, by, seed + 9) > 0.92:
                 shade = 4
@@ -269,10 +282,20 @@ def paint_meteor(img, ox, oy, seed, ramp):
 def paint_spring(img, ox, oy, seed, ramp):
     """The Sunken Spring: pale limestone laid down by the spring itself over an
     age, in wavy strata like the rims of terraced pools, pocked with pores, a
-    blue-green mineral stain bleeding along some layers."""
+    blue-green mineral stain bleeding along some layers.
+
+    The strata wave wraps seamlessly across the tile width (design bible 12.23):
+    both sine terms complete a whole number of cycles over ``T`` and ``seed``
+    only shifts their phase, so a tile's left and right edges always match. Laid
+    side by side across a solid field the strata flow on instead of breaking into
+    the hard vertical tile seams the independent grade read as stacked, copy-
+    pasted stone columns (pass 525; the play-scale companion to the backdrop
+    running bond)."""
+    p1 = hash2(seed, 1, 7) * math.tau
+    p2 = hash2(seed, 2, 7) * math.tau
     for y in range(T):
         for x in range(T):
-            wave = math.sin((x + seed * 3) / (5.0 * D)) * 1.5 * D + math.sin((x + seed) / (2.3 * D)) * 0.6 * D
+            wave = math.sin(math.tau * x / T + p1) * 1.5 * D + math.sin(math.tau * 2 * x / T + p2) * 0.6 * D
             layer = int((y + wave) // (5 * D))
             ly = (y + wave) % (5 * D)
             shade = 4 if hash2(layer, seed, seed + 2) > 0.5 else 3
