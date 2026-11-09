@@ -732,6 +732,39 @@ def test_evercrown_mid_tendrils_read_against_the_ribbed_far_wall():
         f"wall ribs (lum {wall_lum:.0f})")
 
 
+def _solid_body_warmth(zone):
+    """Mean (R - B) of a fully-solid interior tile for `zone`: positive is warm,
+    negative cool. Covers the whole tile (body, sides, outline, cap)."""
+    img = tg.Image.new("RGBA", (tg.T, tg.T), tg.CLEAR)
+    tg.paint_tile(img, 0, 0, 255, zone, 101)
+    rs = bs = n = 0
+    for y in range(tg.T):
+        for x in range(tg.T):
+            p = img.getpixel((x, y))
+            if p[3] == 0:
+                continue
+            rs += p[0]
+            bs += p[2]
+            n += 1
+    return (rs - bs) / n
+
+
+def test_haar_and_sunken_play_tiles_read_warm_against_their_cool_backdrop():
+    # The independent grade (pass 505) read haar and sunken as a low-contrast
+    # grey-green / grey-teal where the play field merged into the backdrop and mist.
+    # Pass 524 warms their solid tiles from the cool "stone" lavender to "umber", so
+    # the standable geometry (paint_limb "old bone", paint_spring "pale limestone")
+    # reads warm against each zone's cool backdrop. Backdrop.ZONE_HAZE for both is
+    # cool (haar Color8(74,84,98) and sunken Color8(56,62,80), each R-B = -24), so a
+    # warm play tile is a clear temperature split. (Reverting either ramp to "stone"
+    # makes the body cool, R-B negative, and fails this.)
+    for zone in ("haar", "sunken"):
+        warmth = _solid_body_warmth(zone)
+        assert warmth >= 10.0, (
+            f"{zone} play tile reads warm (R-B {warmth:+.1f} >= +10) against its "
+            f"cool backdrop (haze R-B -24)")
+
+
 def main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for t in tests:
