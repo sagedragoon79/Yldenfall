@@ -1730,6 +1730,16 @@ Tested, not the pixels: `tests/test_light_shaft.gd` holds the beam count to its 
 
 This leaves only **rim light on figures** open from Sean's lighting/depth request, parked for a watched session (12.12), and the grade's own **empty band above the far layer** (12.15), likewise parked.
 
+### 12.18 Varied ashlar and distant rooflines (pass 519)
+
+The independent grade (pass 515) still read two fields as one repeated stamp: the **Spires brick** (the Carillon ashlar gameplay tileset, `paint_shrine`) and the **Hearthroot background buildings** (the distant houses of `hearthroot_far`). Both are the recurring "repeated stamp" defect (passes 497/502/504/514/515), on the two surfaces the masonry sweep (12.14) and the tileset variants (12.8) had not reached — one play-surface tileset, one painted backdrop skyline.
+
+**Spires ashlar (`paint_shrine`).** The ashlar now keys its course scale to the seed — block width 10–14 and height 5–7 render cells, from `hash2(seed, …)` — so the factory's scattered row-7 variants (12.8), each a fresh seed, read as differently-coursed masonry instead of one scale repeating. A weathered stone here and there drops a shade, giving the field block-scale value variation, and the gold inlay is now rare (threshold 0.82, roughly one block in five) and keyed per block, so it reads as scattered accents rather than a gold groove marching across every course — the strongest "stamp" signal. Pale-ashlar colour, outlines and the masonry caps/slopes are unchanged, so combat reads over it as before (verified by eye at 1x/2x in `spires/broken_shrine`: the wall reads as weathered masonry, the cherry pickup, platforms and shrine still pop).
+
+**Hearthroot skyline (`hearthroot_far`).** Each distant house picks one of several roof silhouettes — a rounded arch, a triangular gable, a crenellated battlement parapet, or a stepped gable — with a per-house peak height, and some carry a chimney and a varied window stride. A row of houses now reads as a varied drowned-town skyline rather than the same arch copied across. Backdrop only, behind the play field and under the atmosphere haze (12.5); the masonry body and weathered courses of 12.14 are unchanged.
+
+Code-first and deterministic; only `assets/tiles/spires.png` and `assets/bg/hearthroot_far.png` are regenerated. `tools/art/test_tilegen.py` guards the inlay sparsity (mean gold under 2% of the field), the seed-keyed course scale (the full-mortar-row count varies across seeds), and the roof-style variety (mutation-checked).
+
 ---
 
 ## 13. Asset Production Plan

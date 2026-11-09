@@ -513,6 +513,64 @@ def test_dark_far_fields_dress_their_sky():
     )
 
 
+def _shrine_tile(seed):
+    from PIL import Image
+
+    img = Image.new("RGBA", (tg.T, tg.T), (0, 0, 0, 0))
+    tg.paint_shrine(img, 0, 0, seed, "stone")
+    return img
+
+
+def test_shrine_gold_inlay_is_sparse():
+    # The Spires ashlar's gold inlay is a rare, scattered accent, never a groove
+    # marching across every course — the regular gold cadence read as a repeated
+    # stamp (independent grade pass 515: "Spires brick field reads as one repeated
+    # stamp", bible 12.8). (Lowering the inlay threshold back toward the old 0.62
+    # gilds far more blocks and fails this.)
+    gold = {tg.c("gold-4"), tg.c("gold-5")}
+    seeds = range(200, 224)
+    total = 0.0
+    for seed in seeds:
+        img = _shrine_tile(seed)
+        g = sum(1 for y in range(tg.T) for x in range(tg.T) if img.getpixel((x, y)) in gold)
+        total += g / (tg.T * tg.T)
+    mean = total / len(list(seeds))
+    assert mean < 0.02, f"Spires gold inlay is not sparse: {mean:.4f} of the field"
+
+
+def test_shrine_course_scale_varies_with_seed():
+    # The ashlar block scale is keyed to the seed, so the factory's scattered row-7
+    # variants (each a fresh seed) read as differently-coursed masonry rather than
+    # one stamp. A full mortar course (ly == bh-1) paints the whole row stone-1, so
+    # the number of such rows in a tile tracks its course height — and that count
+    # must not be constant across seeds. (A fixed bh makes every seed draw the same
+    # course density and fails this.)
+    stone1 = tg.c("stone-1")
+    counts = set()
+    for seed in range(200, 224):
+        img = _shrine_tile(seed)
+        rows = 0
+        for y in range(tg.T):
+            if sum(1 for x in range(tg.T) if img.getpixel((x, y)) == stone1) > 0.8 * tg.T:
+                rows += 1
+        counts.add(rows)
+    assert len(counts) >= 2, f"Spires course scale does not vary with the seed: {counts}"
+
+
+def test_hearthroot_houses_vary_rooflines():
+    # The distant Hearthroot houses pick among several roof silhouettes (arch,
+    # gable, battlement, stepped) and some carry a chimney, so a row of houses stops
+    # reading as the same arch copied across (independent grade pass 515:
+    # "Hearthroot background buildings are the same two silhouettes"). (Collapsing
+    # the roofline back to the single sine arch drops these and fails this.)
+    import inspect
+
+    src = inspect.getsource(tg.hearthroot_far)
+    for style in ("gable", "battlement", "stepped"):
+        assert f'"{style}"' in src, f"hearthroot_far no longer draws a {style} roof"
+    assert "chimney" in src.lower(), "hearthroot_far no longer draws chimneys"
+
+
 def main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for t in tests:
