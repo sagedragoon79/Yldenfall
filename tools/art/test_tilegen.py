@@ -639,6 +639,71 @@ def test_hearthroot_houses_vary_rooflines():
     assert "chimney" in src.lower(), "hearthroot_far no longer draws chimneys"
 
 
+# --- One-way plank material and support (bible 12.20, pass 521) ----------------
+def _one_way_tile(zone):
+    """The one-way plank tile (atlas col 0, row 6) for `zone`."""
+    return _tile(_build_atlas(zone), 0, 6)
+
+
+def _ramp_of(px):
+    """The master-palette ramp family nearest in RGB to an opaque pixel."""
+    best = min(tg.PAL, key=lambda n: sum((tg.PAL[n][i] - px[i]) ** 2 for i in range(3)))
+    return best.rsplit("-", 1)[0]
+
+
+def _dominant_board_ramp(zone):
+    """The ramp family most of a zone's plank BOARD (its top 6 world px) is painted
+    in, ignoring the dark grooves and night-0 outline."""
+    from collections import Counter
+    t = _one_way_tile(zone)
+    px = t.load()
+    counts = Counter()
+    for y in range(3, 6 * tg.D):  # the board body, below the catch-light rows
+        for x in range(tg.T):
+            r, g, b, a = px[x, y]
+            if a == 0:
+                continue
+            fam = _ramp_of((r, g, b))
+            if fam != "night":  # skip the groove/outline shadow
+                counts[fam] += 1
+    return counts.most_common(1)[0][0] if counts else None
+
+
+def test_one_way_plank_differs_across_the_graded_trio():
+    # The grade (pass 520) named heartwood, haar and spires as sharing one copy-
+    # pasted plank. Each now carries its own material, so the three tiles differ.
+    # (Reverting paint_one_way to the hardcoded single `bark` board makes all three
+    # byte-identical and fails this.)
+    planks = {z: _one_way_tile(z) for z in ("heartwood", "haar", "spires")}
+    pairs = [("heartwood", "haar"), ("haar", "spires"), ("heartwood", "spires")]
+    for a, b in pairs:
+        assert _differ(planks[a], planks[b]), f"{a} and {b} planks are distinct materials"
+
+
+def test_one_way_plank_board_uses_its_zone_material():
+    # Each plank's board is painted in its zone's own wood/stone ramp, not one
+    # shared bark. (Hardcoding `wood = "bark"` turns haar's board bark, not umber,
+    # and spires' bark, not ochre, so the dominant ramp no longer matches the spec
+    # and this fails.)
+    for zone in ("heartwood", "haar", "spires", "evercrown", "tower"):
+        want = tg.PLANK[zone]["wood"]
+        got = _dominant_board_ramp(zone)
+        assert got == want, f"{zone} plank board is {got!r}, expected its {want!r} material"
+
+
+def test_one_way_plank_rests_on_a_trestle_below_the_board():
+    # The stub bracket became a drawn trestle whose legs reach into the lower half
+    # of the tile, so the ledge reads as carried, not floating. Opaque pixels must
+    # appear below the old bracket depth (10 world px). (Dropping the leg-drawing
+    # loop leaves nothing that deep and fails this.)
+    deep = 11 * tg.D  # render row below the former stub (which stopped at 10*D)
+    for zone in ("heartwood", "haar", "sunken", "evercrown"):
+        t = _one_way_tile(zone)
+        px = t.load()
+        opaque = sum(1 for y in range(deep, tg.T) for x in range(tg.T) if px[x, y][3] != 0)
+        assert opaque > 0, f"{zone} plank has no trestle below the board (row >= {deep})"
+
+
 def main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for t in tests:
