@@ -23,6 +23,41 @@ func test_roomlight_falloff_fades_from_centre_to_edge() -> void:
 	check(RoomLight.falloff(0.5) < 1.0 and RoomLight.falloff(0.5) > 0.0, "the pool is partway lit at its half radius")
 
 
+func test_roomlight_pool_peaks_at_its_source() -> void:
+	# The shaped pool is still full brightness at the source (nx = ny = 0), so the
+	# centre adds exactly colour * peak and the readability cap (12.10) is unchanged
+	# — the shaping bends where the light falls, not how bright the source is.
+	check_near(RoomLight.shaped_alpha(0.0, 0.0), 1.0, 0.0001, "full brightness at the source")
+
+
+func test_roomlight_pool_casts_down_not_up() -> void:
+	# A lantern or glow-mushroom casts its pool onto the ground below, not up into the
+	# empty air above: at the same distance the pool is brighter below the source than
+	# above it, so it reads as light hitting a surface, not a floating disc.
+	for d: float in [0.3, 0.5, 0.7]:
+		var below := RoomLight.shaped_alpha(0.0, d)
+		var above := RoomLight.shaped_alpha(0.0, -d)
+		check(below > above + 0.01, "the pool is brighter below the source than above (%.1f)" % d)
+
+
+func test_roomlight_pool_tightens_above_the_source() -> void:
+	# Above the source the glow reaches far less far than a plain symmetric disc would,
+	# so it stops reading as a blob glowing equally in every direction.
+	for d: float in [0.3, 0.4, 0.6]:
+		check(RoomLight.shaped_alpha(0.0, -d) < RoomLight.falloff(d) - 0.01,
+			"the upward reach is tighter than a plain circle (%.1f)" % d)
+
+
+func test_roomlight_pool_widens_across_the_floor() -> void:
+	# Where the pool lands it spreads sideways: at equal distance from the source, a
+	# point out across the floor stays lit where a point straight down has faded, so
+	# the cast pool reads as wider than it is deep (the ground spread). Mutation-
+	# checked: with no ground spread the sideways point is the dimmer of the two.
+	var across := RoomLight.shaped_alpha(0.6, 0.3) ## out across the floor
+	var down := RoomLight.shaped_alpha(0.0, 0.67) ## straight down, same distance
+	check(across > down + 0.01, "the pool spreads wider across the floor than straight down")
+
+
 func test_roomlight_no_pool_blows_out() -> void:
 	# Both pool brightnesses (a group source at the cap, a decor glow below it) stay
 	# at or under the readability cap, so a pool only ever tints the scene.
