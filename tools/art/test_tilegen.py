@@ -432,6 +432,87 @@ def test_flagged_backdrop_fields_use_weathered_courses():
         )
 
 
+def _mote_count(img, x0, y0, x1, y1, floor):
+    """Pixels in a box whose RGB sum exceeds `floor` — the motes/glows far_motes lit."""
+    n = 0
+    for x in range(x0, x1, 2):
+        for y in range(y0, y1, 2):
+            if sum(img.getpixel((x, y))[:3]) > floor:
+                n += 1
+    return n
+
+
+def test_far_motes_lift_the_dark_sky():
+    # far_motes dresses a dark far sky with faint depth (design bible 12.15): over a
+    # flat near-black field it adds a scatter of brighter motes and soft glows, so
+    # the far backdrop reads as atmosphere with particles, not one dead dark band.
+    # (A no-op far_motes — drawing nothing — fails this.)
+    from PIL import Image
+    import random as _r
+
+    base = tg.c("night-0")
+    img = Image.new("RGBA", (tg.BG_W, tg.BG_H), base)
+    before = _mote_count(img, 0, 0, tg.BG_W, tg.BG_H, sum(base[:3]) + 8)
+    tg.far_motes(img, _r.Random(1), ["sky-3", "gold-3", "sky-4"], glows=5)
+    after = _mote_count(img, 0, 0, tg.BG_W, tg.BG_H, sum(base[:3]) + 8)
+    assert before == 0, "the bare night-0 field has no lit pixels before"
+    assert after > 150, f"far_motes barely lit the dark sky: {after} pixels"
+
+
+def test_far_motes_are_biased_to_the_top():
+    # The motes weight to the upper far sky — where a tall room shows only backdrop —
+    # so the depth lands in the band that read as dead, not down in the structured
+    # lower sky. (Dropping the top-weighting spreads them evenly and fails this.)
+    from PIL import Image
+    import random as _r
+
+    base = tg.c("night-0")
+    img = Image.new("RGBA", (tg.BG_W, tg.BG_H), base)
+    tg.far_motes(img, _r.Random(4), ["sky-3", "gold-4", "sky-4"], glows=6)
+    floor = sum(base[:3]) + 8
+    top = _mote_count(img, 0, 0, tg.BG_W, tg.BG_H // 2, floor)
+    bottom = _mote_count(img, 0, tg.BG_H // 2, tg.BG_W, tg.BG_H, floor)
+    assert top > bottom, f"motes are not top-weighted: top {top} vs bottom {bottom}"
+
+
+def test_far_motes_spare_a_bright_feature():
+    # The motes are gated to dark pixels, so they never speck over a lit backdrop
+    # feature (a glowing fungus, a window). The upper sky — where the motes
+    # concentrate — is filled bright here, so a working gate leaves it untouched.
+    # (Removing the dark gate lets the top-weighted motes land on it and fails this.)
+    from PIL import Image
+    import random as _r
+
+    img = Image.new("RGBA", (tg.BG_W, tg.BG_H), tg.c("night-0"))
+    bright = tg.c("gold-6")
+    for x in range(tg.BG_W):
+        for y in range(tg.BG_H // 2):
+            img.putpixel((x, y), bright)
+    tg.far_motes(img, _r.Random(9), ["sky-3", "gold-3", "sky-4"], glows=6)
+    changed = 0
+    for x in range(0, tg.BG_W, 2):
+        for y in range(0, tg.BG_H // 2, 2):
+            if img.getpixel((x, y))[:3] != bright[:3]:
+                changed += 1
+    assert changed == 0, f"far_motes drew over the bright upper sky in {changed} spots"
+
+
+def test_dark_far_fields_dress_their_sky():
+    # Every shipped dark-sky far layer calls far_motes so its far sky gets depth; the
+    # daylit boughs canopy is deliberately left out (a bright sky needs no motes).
+    import inspect
+
+    for name in (
+        "heartwood_far", "hearthroot_far", "tower_far", "haar_far", "vorrhallow_far",
+        "evercrown_far", "sunken_far", "trials_far", "spires_far",
+    ):
+        src = inspect.getsource(getattr(tg, name))
+        assert "far_motes(" in src, f"{name} no longer dresses its far sky with depth"
+    assert "far_motes(" not in inspect.getsource(tg.boughs_far), (
+        "boughs is a daylit canopy and should not get dark-sky motes"
+    )
+
+
 def main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for t in tests:
