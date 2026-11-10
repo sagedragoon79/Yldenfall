@@ -1643,11 +1643,11 @@ Still open from Sean's lighting/depth request after this pass: **rim light on fi
 
 The back layers (far, mid) recede *behind* the play field; this adds the layer that passes *in front* of it — the dark near-ground silhouette that frames the bottom of the view and slides past as the player walks, the depth cue Blasphemous and The Last Faith lean on. This is the "dark foreground silhouette layers that pass in front of the camera" part of Sean's 2026-11-07 lighting/depth request.
 
-`tools/art/tilegen.py` paints one `<zone>_fore.png` per shipped zone (`FORE_KIND`): a near-black silhouette (`night-0` body, a faint `night-1` top rim) of the zone's own material — **ferns** (Heartwood, the High Boughs), **reeds** with cattails (the Haar, the Sunken Spring), **crystal shards** (the Evercrown, Vorrhallow), **rock rubble** (the Tower, the Trials) and **timber posts** (Hearthroot, the Spires) — rising from a solid ground band. The canvas is otherwise transparent, and the shapes keep to the bottom third, so the centre of the screen stays clear. The band and protrusions are drawn slightly see-through (alphas 242 / 206), so a telegraph behind a reed still reads.
+`tools/art/tilegen.py` paints one `<zone>_fore.png` per shipped zone (`FORE_KIND`): a near-black silhouette (`night-0` body, a faint `night-1` top rim) of the zone's own material — **ferns** (Heartwood, the High Boughs), **reeds** with cattails (the Haar, the Sunken Spring), **crystal shards** (the Evercrown, Vorrhallow), **rock rubble** (the Tower, the Trials) and **timber posts** (Hearthroot, the Spires) — rising from a solid ground band (the band only backs their roots: since pass 528 it sits just below the view, 12.25). The canvas is otherwise transparent, and the shapes keep to the bottom third, so the centre of the screen stays clear. The band and protrusions are drawn slightly see-through (alphas 242 / 206), so a telegraph behind a reed still reads.
 
 `Backdrop.fore_layer(zone)` builds it as a `Parallax2D` drawn in front of the play field:
 
-- **Near and in front.** It scrolls faster than the camera horizontally (`FORE_SCROLL.x` = 1.5), so it reads as close and slides past, and is locked to the camera vertically (`FORE_SCROLL.y` = 1), so the ground band always frames the view bottom with no gap. Its `z_index` is an absolute `FORE_Z` (5, with `z_as_relative` off so the backdrop node's own `z_index` −50 does not drag it back) — above the atmosphere overlays (fog, motes, rain at 4) and every actor and projectile (≤ 3), so it is the nearest thing on screen.
+- **Near and in front.** It scrolls faster than the camera horizontally (`FORE_SCROLL.x` = 1.5), so it reads as close and slides past, and is locked to the camera vertically (`FORE_SCROLL.y` = 0, and `Backdrop.fore_offset` seats the art's ground line on the view's bottom edge), so the silhouettes always rise from the bottom of the view. (It was 1 until pass 528, which pinned the layer to the world instead: see 12.25.) Its `z_index` is an absolute `FORE_Z` (5, with `z_as_relative` off so the backdrop node's own `z_index` −50 does not drag it back) — above the atmosphere overlays (fog, motes, rain at 4) and every actor and projectile (≤ 3), so it is the nearest thing on screen.
 - **No haze.** Unlike the receding back layers it carries no atmosphere material: a near foreground is sharp and dark, not greyed into the distance.
 - **Only where art exists.** A zone with no `<zone>_fore.png` (the gym, any new zone) gets no layer and draws as before.
 
@@ -1704,7 +1704,7 @@ Applied to the nine dark-sky far layers (`heartwood`, `hearthroot`, `tower`, `ha
 
 Combat is untouched by construction: the motes live on the far parallax layer, behind the play field and under the atmosphere haze. Tested, not the pixels: `tools/art/test_tilegen.py` holds `far_motes` to lifting a dark field, weighting to the top, and sparing a bright feature (mutation-checked, local). Judged by eye at 1x in Heartwood (`deep_roots`) and the Haar (`drowned_stair`), where the far sky now carries drifting specks and distant glows.
 
-**Still open — the empty band above the far layer.** This dresses the far sky *where the far layer draws*; it does not fill the band *above* the far layer in the very tallest rooms (the grade's "letterbox"). The far layer is 480 px tall and the parallax anchors its content to the lower view, so above it the view falls through to the clear colour. Every tested way to back that band from behind (a plain node, a canvas layer, a taller or extra sprite) is occluded or culled in this project's SubViewport/parallax setup; only a screen-space overlay *in front of* the play field reaches it, and that would risk covering high platforms and flying foes — a combat-readability call best made in a watched session, not an unattended loop pass. Parked alongside rim light on figures (12.12) and a second foreground band (12.11).
+**Closed in pass 528 (12.25): the band was the foreground layer, not a gap in the backdrop.** The diagnosis below was wrong: nothing drawn behind the play field reached the band because the foreground's opaque ground strip lay in front of it. Kept for the record. ~~Still open — the empty band above the far layer.~~ This dresses the far sky *where the far layer draws*; it does not fill the band *above* the far layer in the very tallest rooms (the grade's "letterbox"). The far layer is 480 px tall and the parallax anchors its content to the lower view, so above it the view falls through to the clear colour. Every tested way to back that band from behind (a plain node, a canvas layer, a taller or extra sprite) is occluded or culled in this project's SubViewport/parallax setup; only a screen-space overlay *in front of* the play field reaches it, and that would risk covering high platforms and flying foes — a combat-readability call best made in a watched session, not an unattended loop pass. Parked alongside rim light on figures (12.12) and a second foreground band (12.11).
 
 ### 12.16 Drift pockets as columns of light (pass 517)
 
@@ -1799,6 +1799,23 @@ A hazard must read on *every* floor it is placed on, light and dark alike, so a 
 - a mid-steel **lit face** (`867ba2`) between them.
 
 The old spike used two off-palette tones (`b9b4c4` / `6f6982`); all four new tones are master-palette (the neutral ramp), so the hazard is now on the ramp as well as readable. Pure `_draw` art on the `Spikes` sprite: the collision shape, the pogo behaviour and the geometry are untouched, so there is no gameplay or readability change to the actor layer. A mutation-checked guard (`test_floor_spikes_read_on_any_floor_and_stay_on_palette`) holds every tone on the master palette and the rim–silhouette value spread wide (rim ≥ 0.80, silhouette ≤ 0.30, spread ≥ 0.55), so a revert to a flat mid-grey fails. Judged by eye at 1x and 3x in `haar/fog_cut`: before, a dim grey row sinking into the floor; after, a crisp line of lit metal teeth.
+
+### 12.25 The foreground is locked to the camera; no black band (pass 528)
+
+Sean's note (2026-11-09, on the Haar Wyrm): "There is a dark band of nearly opaque black that goes across the top and bottom of the screen, even when you travel up and down from screen to screen." It was the foreground silhouette layer (12.11), in every zone.
+
+The cause was one number. A `Parallax2D` axis with no repeat sits at `screen_offset * (1 - scroll_scale)`: scale 1 pins the layer to the **world**, scale 0 pins it to the **camera**. `FORE_SCROLL.y` was 1 on the belief that 1 meant "locked", so the foreground art sat at world y 0..480 in every room, with its solid ground strip (alpha 242, `night-0`) at world y 344..480:
+
+- in a one-screen room it showed as a 16 px black strip along the bottom of the screen, over the floor;
+- in any taller room it lay as a 136 px near-opaque black band across the room, at the bottom of the first screen and the top of the second, **in front of** the platforms, pickups and foes there (it draws at `FORE_Z`, above everything). This is also the "letterbox" and the "crushed-black upper band" the independent grades of passes 515 and 525 reported, and why pass 516 found that nothing drawn behind the play field could fill it.
+
+The rule now:
+
+- `FORE_SCROLL.y` = 0: the layer follows the camera vertically at every height of every room.
+- `Backdrop.fore_offset(view_height)` seats the art's ground line (`FORE_GROUND`, world y 344 in the art) exactly on the bottom edge of the view, measured each frame, so it holds at the normal framing (360) and in a wide room (450). The silhouettes (reeds, ferns, crystals, rubble, posts) rise from the screen edge; the solid strip under them stays off screen and only guarantees there is never a gap under their roots.
+- **No opaque band may cross the play field.** Anything drawn in front of the actors must be thin, see-through and confined to the bottom edge; a solid strip of any height inside the view is a defect.
+
+`tests/test_backdrop.gd` drives a real backdrop through camera heights 0, 8, 360 and 1234 at both framings and checks the band's top stays on the view's bottom edge (`test_fore_ground_band_stays_off_screen_at_any_camera_height`; reverting the scale to 1, or putting the 16 px strip back, fails it), and checks `FORE_GROUND` against the painted art.
 
 ---
 
