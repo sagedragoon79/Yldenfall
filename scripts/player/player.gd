@@ -19,6 +19,14 @@ const WARD_SOUND := "ward"
 ## A guard held with too little MP to pay for a blow breaks (pass 242).
 const GUARD_BREAK_SOUND := "guard_break"
 const BODY_SIZE := Vector2(12, 40)
+## A crouch's low cut (bible 6.15): as long as a side slash, this tall, along the floor.
+const LOW_SLASH_HEIGHT := 18.0
+## How high above the feet a crouched cast or Rune Dagger leaves (px), low
+## enough to meet a crawler. Standing, a bolt leaves at CAST_HEIGHT and a
+## dagger at THROW_HEIGHT.
+const LOW_SHOT_HEIGHT := 10.0
+const CAST_HEIGHT := 24.0
+const THROW_HEIGHT := 22.0
 
 # Collision layers (see docs/architecture.md).
 const LAYER_WORLD := 1
@@ -190,6 +198,14 @@ var attack_kind := ""
 var combo_index := 0
 var is_heavy_swing := false
 var is_blocking := false
+## Crouched (bible 6.15): Down held on the ground. The body is
+## `tuning.crouch_height` tall, so a blow above it passes over.
+var crouching := false
+## Crouched under something too low to stand in (a blow slid you under it):
+## you creep at `tuning.crouch_creep_speed` until there is room.
+var crouch_pinned := false
+var _body_shape: RectangleShape2D
+var _body_node: CollisionShape2D
 var is_drinking: bool:
 	get: return _drink_timer > 0.0
 var has_double_jump := true
@@ -350,6 +366,8 @@ func _ready() -> void:
 	shape.shape = rect
 	shape.position = Vector2(0, -BODY_SIZE.y * 0.5)
 	add_child(shape)
+	_body_shape = rect
+	_body_node = shape
 
 	visual = PlayerVisual.new()
 	visual.player = self
@@ -446,6 +464,7 @@ func _physics_process(delta: float) -> void:
 		input.end_frame()
 		return
 	_update_wall_contact(on_floor)
+	_update_crouch(on_floor)
 	_update_block()
 	_update_drink(delta, on_floor)
 	_try_drop_through(on_floor)
@@ -510,6 +529,9 @@ func _physics_process(delta: float) -> void:
 		_process_attack_hits()
 
 	if velocity.x != 0.0 and not is_attacking and not is_dashing and not is_wall_sliding and not is_blocking and input.move_x != 0:
+		facing = input.move_x
+	elif crouching and input.move_x != 0 and not is_attacking and not is_blocking:
+		# Crouched, left and right turn you where you are (bible 6.15).
 		facing = input.move_x
 
 	_apply_corner_correction(delta)
@@ -701,6 +723,10 @@ func _apply_wall_slide() -> void:
 
 func _horizontal_step(delta: float, on_floor: bool) -> void:
 	var target := input.move_x * tuning.run_speed * tuning.speed_fraction(input.tilt)
+	var held_low := crouching and on_floor
+	if held_low:
+		# A crouch holds still and only turns; pinned under a low roof it creeps.
+		target = input.move_x * tuning.crouch_creep_speed if crouch_pinned else 0.0
 	if is_drinking:
 		target = 0.0
 	elif is_blocking:
@@ -720,8 +746,10 @@ func _horizontal_step(delta: float, on_floor: bool) -> void:
 					_spawn_run_dust()
 		else:
 			accel = tuning.ground_decel
-		if input.move_x != 0 and absf(velocity.x) < 10.0:
+		if input.move_x != 0 and absf(velocity.x) < 10.0 and not held_low:
 			_spawn_run_dust()
+		if held_low and not crouch_pinned:
+			accel = tuning.ground_decel
 	else:
 		accel = tuning.air_accel if input.move_x != 0 else tuning.air_decel
 
@@ -738,6 +766,9 @@ func _try_jump() -> void:
 	if _jump_buffer_timer <= 0.0:
 		return
 	if _coyote_timer > 0.0:
+		# A jump stands you up first; under a roof too low to stand in, it waits.
+		if not try_stand():
+			return
 		_do_jump()
 	elif abilities.glove and (wall_dir != 0 or _wall_coyote_timer > 0.0):
 		_do_wall_jump(wall_dir if wall_dir != 0 else _last_wall_dir)
@@ -843,6 +874,7 @@ func _try_grab_ladder(on_floor: bool) -> bool:
 	if probe == Vector2.INF or not room.is_ladder_at(probe):
 		return false
 	on_ladder = true
+	_set_crouch(false)
 	_ladder_x = room.ladder_x(probe)
 	_ladder_top = room.ladder_top(probe)
 	velocity = Vector2.ZERO
@@ -993,6 +1025,9 @@ func _try_dash(on_floor: bool) -> void:
 		return
 	if not on_floor and air_dash_charges <= 0:
 		return
+	if not try_stand():
+		# Pinned under a low roof: the press waits in its buffer for room.
+		return
 	_dash_buffer_timer = 0.0
 	if not on_floor:
 		air_dash_charges -= 1
@@ -1073,6 +1108,13 @@ func _try_attack(on_floor: bool) -> void:
 		_swing_damage = roundi(slash_damage * blade_mult() * down_strike_mult)
 		_attack_timer = tuning.down_strike_active
 		_attack_cooldown = tuning.attack_cooldown
+	elif crouching and on_floor:
+		# The crouch's one low cut (bible 6.15): no combo, no finisher.
+		attack_kind = "low"
+		combo_index = 0
+		_combo_timer = 0.0
+		_attack_timer = tuning.slash_active
+		_attack_cooldown = combat.combo_cooldowns[0]
 	elif input.up:
 		attack_kind = "up"
 		combo_index = 0
@@ -1183,10 +1225,14 @@ func _attack_rect() -> Rect2:
 		"thrust":
 			# A long, low point: farther than a cut, half its height.
 			size = Vector2(THRUST_LENGTH + reach_bonus, SLASH_SIZE.y * 0.5 + arc_bonus * 0.5)
-			center = Vector2(facing * (BODY_SIZE.x * 0.5 + size.x * 0.5), -BODY_SIZE.y * 0.55)
+			center = Vector2(facing * (BODY_SIZE.x * 0.5 + size.x * 0.5), -body_height() * 0.55)
+		"low":
+			# Along the floor, from the feet up (bible 6.15).
+			size = Vector2(SLASH_SIZE.x + reach_bonus, LOW_SLASH_HEIGHT + arc_bonus * 0.5)
+			center = Vector2(facing * (BODY_SIZE.x * 0.5 + 16 + reach_bonus * 0.5), -size.y * 0.5)
 		_:
 			size = SLASH_SIZE + Vector2(reach_bonus, arc_bonus)
-			center = Vector2(facing * (BODY_SIZE.x * 0.5 + 16 + reach_bonus * 0.5), -BODY_SIZE.y * 0.55)
+			center = Vector2(facing * (BODY_SIZE.x * 0.5 + 16 + reach_bonus * 0.5), -body_height() * 0.55)
 	return Rect2(global_position + center - size * 0.5, size)
 
 
@@ -1212,7 +1258,7 @@ func _process_attack_hits() -> void:
 			cut = true
 			continue
 		if collider.has_method("take_hit"):
-			var dir := Vector2(facing, 0) if attack_kind in ["side", "thrust"] else Vector2(0, 1 if attack_kind == "down" else -1)
+			var dir := Vector2(facing, 0) if attack_kind in ["side", "thrust", "low"] else Vector2(0, 1 if attack_kind == "down" else -1)
 			# A foe in its opening (a parry stagger, or a boss's own window, Enemy.punishable).
 			var open: bool = collider.has_method("punishable") and collider.punishable()
 			var damage := _swing_damage
@@ -1250,7 +1296,7 @@ func _process_attack_hits() -> void:
 		Feel.rumble(0.3, 0.2 if is_heavy_swing else 0.0, 0.08)
 		if cut:
 			Sfx.play("hit", 0.08, 2.0 if is_heavy_swing else 0.0)
-		if attack_kind in ["side", "thrust"]:
+		if attack_kind in ["side", "thrust", "low"]:
 			velocity.x = -facing * (combat.turned_blade_push if _blade_turned else tuning.slash_recoil)
 			# A thrust's lunge stops at what it strikes; it doesn't carry you into it.
 			_thrust_lunge = false
@@ -1320,7 +1366,60 @@ func _query_rect(rect: Rect2, mask: int) -> Array:
 
 
 func body_rect() -> Rect2:
-	return Rect2(global_position + Vector2(-BODY_SIZE.x * 0.5, -BODY_SIZE.y), BODY_SIZE)
+	var h := body_height()
+	return Rect2(global_position + Vector2(-BODY_SIZE.x * 0.5, -h), Vector2(BODY_SIZE.x, h))
+
+
+## How tall the body is now: `BODY_SIZE.y`, or `tuning.crouch_height` crouched.
+func body_height() -> float:
+	return tuning.crouch_height if crouching else BODY_SIZE.y
+
+
+# --- Crouch (bible 6.15) -------------------------------------------------------
+
+## Down held on the ground crouches. Letting go, leaving the ground, a jump, a
+## dash or a guard stands you up, when there is room overhead. In water or
+## mid-dash you never crouch, and taking hold of a ladder stands you up.
+func _update_crouch(on_floor: bool) -> void:
+	var guarding := has_shield and input.block_held and not guard_broken
+	var want := on_floor and input.down and not swimming and not is_dashing and not guarding
+	if want and not crouching:
+		_set_crouch(true)
+		visual.squash_for("crouch")
+		Sfx.play("crouch", 0.08, -6.0)
+	elif not want and crouching:
+		try_stand()
+	crouch_pinned = crouching and not want
+
+
+## Stands up if crouched and there is room overhead. True when standing.
+func try_stand() -> bool:
+	if not crouching:
+		return true
+	if not can_stand():
+		return false
+	_set_crouch(false)
+	return true
+
+
+## Whether a crouched body has room overhead to stand up in.
+func can_stand() -> bool:
+	if not crouching:
+		return true
+	return not test_move(global_transform, Vector2(0, -(BODY_SIZE.y - tuning.crouch_height)))
+
+
+## Sets the body's height. The feet stay where they are; the top moves.
+func _set_crouch(on: bool) -> void:
+	if crouching == on:
+		return
+	crouching = on
+	if not on:
+		crouch_pinned = false
+	if _body_shape:
+		var h := body_height()
+		_body_shape.size = Vector2(BODY_SIZE.x, h)
+		_body_node.position = Vector2(0, -h * 0.5)
 
 
 # --- Collision helpers ----------------------------------------------------------
@@ -1471,7 +1570,7 @@ func _update_block() -> void:
 		_parry_timer = combat.parry_window
 	if not input.block_held:
 		guard_broken = false
-	is_blocking = input.block_held and not guard_broken and not is_dashing and not is_attacking and not is_drinking
+	is_blocking = input.block_held and not guard_broken and not is_dashing and not is_attacking and not is_drinking and try_stand()
 
 
 func _update_drink(delta: float, on_floor: bool) -> void:
@@ -1580,7 +1679,7 @@ func throw_dagger() -> void:
 	d.damage = roundi(RuneDagger.DAMAGE * melee_mult)
 	d.dir = Vector2.UP if input.up else Vector2(facing, 0)
 	get_parent().add_child(d)
-	d.global_position = global_position + Vector2(facing * 10, -22)
+	d.global_position = global_position + Vector2(facing * 10, -(LOW_SHOT_HEIGHT if crouching else THROW_HEIGHT))
 	rune_dagger = d
 	throws += 1
 	visual.squash_for("throw")
@@ -1600,7 +1699,8 @@ func _try_cast() -> void:
 	_cast_cooldown = combat.cast_cooldown
 	for bolt in Spells.cast_all(equipped_spell, self):
 		get_parent().add_child(bolt)
-		bolt.global_position = global_position + Vector2(facing * 12, -24)
+		# Crouched, a bolt leaves low, along the floor (bible 6.15).
+		bolt.global_position = global_position + Vector2(facing * 12, -(LOW_SHOT_HEIGHT if crouching else CAST_HEIGHT))
 	visual.squash_for("cast")
 	Sfx.play("cast")
 
@@ -2062,6 +2162,7 @@ func teleport(pos: Vector2) -> void:
 	global_position = pos
 	velocity = Vector2.ZERO
 	on_ladder = false
+	_set_crouch(false)
 	_dash_timer = 0.0
 	_attack_timer = 0.0
 	_drink_timer = 0.0

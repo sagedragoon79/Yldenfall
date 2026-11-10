@@ -27,7 +27,11 @@ CLIPS = (("idle.png", "idle"), ("run.png", "run"), ("walk.png", "walk"), ("jump.
          ("pogo.png", "pogo"), ("delvers_pick_swing.png", "swing"), ("slash1.png", "slash1"),
          ("slash2.png", "slash2"), ("slash3.png", "slash3"), ("slash_up.png", "slash_up"),
          ("dash.png", "dash"), ("wall.png", "wall"), ("hurt.png", "hurt"), ("death.png", "death"),
-         ("drink.png", "drink"), ("cast.png", "cast"), ("throw.png", "lthrow_l1"), ("throw_up.png", "lthrow_up_l1"))
+         ("drink.png", "drink"), ("cast.png", "cast"), ("throw.png", "lthrow_l1"), ("throw_up.png", "lthrow_up_l1"),
+         # The crouch (design bible 6.15): its held pose and its one low cut. No set has them yet
+         # (the placeholder squats the idle until the 128 px hero's art), so they pack as they land;
+         # add "crouch" and "crouch_slash" to the set's art/autosprite/manifest.json entry then.
+         ("crouch.png", "crouch"), ("crouch_slash.png", "crouch_slash"))
 SETS = ("base", "leather", "riveted", "plate", "battle", "battle_helm")
 
 # The bare elf and the armor tiers (character states of Sean's elf, design bible 13.5), each with

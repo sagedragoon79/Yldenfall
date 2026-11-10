@@ -120,6 +120,14 @@ extends Resource
 @export var ladder_snap := 240.0
 @export var ladder_regrab := 0.25
 
+@export_group("Crouch")
+## The crouch (bible 6.15): Down held on the ground drops the body to
+## crouch_height (px; standing it is 40), so a blow above that passes over. A
+## crouch holds still and only turns; crouch_creep_speed is the creep a body
+## pinned under a roof too low to stand in moves at, so it is never stuck.
+@export var crouch_height := 26.0
+@export var crouch_creep_speed := 40.0
+
 @export_group("Damage")
 @export var hurt_invuln := 0.8
 

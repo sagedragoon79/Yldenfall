@@ -488,6 +488,10 @@ func blade_rect() -> Rect2:
 		"up":
 			size = Player.UP_SLASH_SIZE
 			center = Vector2(0, -body_size.y - 14)
+		"low":
+			# A crouch's low cut, echoed along the floor (bible 6.15).
+			size = Vector2(Player.SLASH_SIZE.x, Player.LOW_SLASH_HEIGHT)
+			center = Vector2(facing * (body_size.x * 0.5 + 16), -size.y * 0.5)
 		_:
 			size = Player.SLASH_SIZE
 			center = Vector2(facing * (body_size.x * 0.5 + 16), -body_size.y * 0.55)

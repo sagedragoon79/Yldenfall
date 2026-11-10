@@ -1591,6 +1591,12 @@ def main():
     out[:k] = out[:k] * fade + raw[n:n + k] * (1 - fade)
     save("falls_pour", out, 0.3)
 
+    # The crouch (bible 6.15): a short, soft rustle of cloak and leather as the
+    # hero drops low, quieter than a footstep. Last, so the fixed seed leaves
+    # every sound above it as it was.
+    d = 0.09
+    save("crouch", lowpass(noise(d), slide(1800, 500, d)) * env(int(RATE * d), 0.004, 2.2), 0.35)
+
 
 if __name__ == "__main__":
     main()

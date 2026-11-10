@@ -81,8 +81,10 @@ func sees_level(off: Vector2) -> bool:
 func _think(delta: float) -> void:
 	_cooldown -= delta
 	var off := player_offset()
-	# In the strike the bite does the harm (parryable), not the touch.
-	contact_damage = 0 if state == "strike" else TOUCH_DAMAGE
+	# In the strike the bite does the harm (parryable), not the touch. Gliding
+	# back it is harmless too (bible 6.15): a strike ducked under is not paid
+	# for with a scrape as it passes back over you.
+	contact_damage = 0 if state in ["strike", "return"] else TOUCH_DAMAGE
 	match state:
 		"float":
 			_swung += delta
@@ -97,7 +99,9 @@ func _think(delta: float) -> void:
 		"coil":
 			velocity = Vector2.ZERO
 			if off.x != INF:
-				var want := clampf(center().y + off.y, home.y - SWING, home.y + SWING)
+				# It draws its head level with yours (bible 6.15), so on the
+				# ground a crouch ducks the strike; on a ladder you can't.
+				var want := clampf(center().y + player_head_offset().y, home.y - SWING, home.y + SWING)
 				velocity.y = clampf((want - global_position.y) / maxf(delta, 0.001), -COIL_TRACK, COIL_TRACK)
 			face_player()
 			if state_time >= WINDUP:
