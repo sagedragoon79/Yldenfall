@@ -12,6 +12,9 @@ extends Node
 ##   --focus=npc:ID|boss with --hero's box: crop around that NPC or the room's boss instead
 ##   --scale=N           scale the saved image by N (nearest), after any crop
 ##   --invulnerable      keep the hero at full health so nothing interrupts the shot
+##   --spark=X,Y[,...]   throw a hit spark at world X,Y (along +x) --spark-age=N frames
+##                       before the shot (default 3); words after it: "heavy", "left",
+##                       "up", "down", and "hero" (X,Y are from the hero's feet)
 
 var _args := {}
 var _frames := 0
@@ -33,7 +36,10 @@ func _process(_delta: float) -> void:
 	var p = _game.get("player")
 	if _args.has("invulnerable") and p != null:
 		p.hp = p.max_hp
-	if _frames < int(_args.get("frames", "50")):
+	var at_frame := int(_args.get("frames", "50"))
+	if _args.has("spark") and _frames == at_frame - int(_args.get("spark-age", "3")):
+		_throw_spark(String(_args["spark"]).split(","))
+	if _frames < at_frame:
 		return
 	set_process(false)
 	var img: Image
@@ -76,3 +82,22 @@ func _focus(what: String) -> Node2D:
 			if n is Npc and n.npc_id == what.trim_prefix("npc:"):
 				return n
 	return null
+
+
+func _throw_spark(v: PackedStringArray) -> void:
+	var dir := Vector2.RIGHT
+	var size := 1.0
+	var at := Vector2(float(v[0]), float(v[1]))
+	for w in v.slice(2):
+		match w:
+			"hero":
+				var p = _game.get("player")
+				if p != null:
+					at += (p as Node2D).global_position
+			"heavy": size = Player.HEAVY_SPARK
+			"left": dir = Vector2.LEFT
+			"up": dir = Vector2.UP
+			"down": dir = Vector2.DOWN
+	var room := get_tree().get_first_node_in_group("room")
+	if room != null:
+		HitSpark.spawn(room, at, dir, size)

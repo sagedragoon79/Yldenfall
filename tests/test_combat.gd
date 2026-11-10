@@ -792,7 +792,7 @@ func test_a_hit_sparks_where_the_blade_meets_the_foe() -> void:
 	var swing := p._attack_rect().grow(1.0)
 	check(swing.has_point(spark.global_position), "inside the swing, where it meets the foe (%s)" % spark.global_position)
 	check(spark.global_position.x <= dummy.global_position.x + 0.5, "on the near side of the foe")
-	await frames(int(HitSpark.LIFE * 60.0) + 4)
+	await frames(int(spark.life * 60.0) + 4)
 	check(_find(room, HitSpark) == null, "and is gone in a blink")
 	# The third hit of the combo is the heavy one: a bigger spark.
 	await frames(30)
@@ -807,8 +807,41 @@ func test_a_hit_sparks_where_the_blade_meets_the_foe() -> void:
 			big = c
 	check(p.is_heavy_swing and big != null and big.size == Player.HEAVY_SPARK, "the heavy finisher sparks bigger")
 	await frames(3)
-	var count := room.get_children().filter(func(c: Node) -> bool: return c is HitSpark).size()
+	# The second cut's spark may still be falling; the heavy swing throws one of its own.
+	var count := room.get_children().filter(func(c: Node) -> bool:
+		return c is HitSpark and c.size == Player.HEAVY_SPARK).size()
 	check(count == 1, "one spark per foe per swing (%d)" % count)
+
+
+func test_the_hit_spark_plays_the_vfx_sheet() -> void:
+	# Pass 529: the kept look is the PixelLab VFX-tool sheet, light and heavy, drawn at
+	# the game's detail and turned with the swing without breaking a pixel.
+	check(HitSpark.SHEET_SHIPPED and HitSpark.uses_sheet(), "the sheet is the shipped look")
+	var room := make_room(ARENA)
+	await frames(2)
+	var light := HitSpark.spawn(room, Vector2(80, 80), Vector2.RIGHT)
+	var heavy := HitSpark.spawn(room, Vector2(80, 80), Vector2.LEFT, Player.HEAVY_SPARK)
+	var sheet := HitSpark.load_sheet(HitSpark.SHEET)
+	var big := HitSpark.load_sheet(HitSpark.HEAVY_SHEET)
+	check(sheet.frames.size() == 7 and big.frames.size() == 7, "seven frames each")
+	check(is_equal_approx(float(sheet.fps), 24.0), "at 24 fps (%s)" % sheet.fps)
+	check(light._sheet.frames == sheet.frames and heavy._sheet.frames == big.frames,
+			"a light hit plays the light sheet, the heavy finisher the heavy one")
+	var span: Vector2 = (sheet.frames[0] as Texture2D).get_size() / HitSpark.DENSITY
+	check(span.x >= 40.0 and span.x <= 64.0, "the light sheet spans a hit's width in world pixels (%s)" % span)
+	check(HitSpark.DENSITY == float(GameCamera.DETAIL), "drawn at the game's detail")
+	check(is_equal_approx(light.life, 7.0 / 24.0), "it lives one run of the sheet (%s)" % light.life)
+	check(light.frame() == 0, "it opens on the flash")
+	await frames(9)
+	check(light.frame() >= 3 and light.frame() <= 4, "and opens into the ring and the spray (%d)" % light.frame())
+	await frames(int(light.life * 60.0))
+	check(not is_instance_valid(light) and not is_instance_valid(heavy), "then both are gone")
+	# The code look stays as the fallback.
+	HitSpark.trial = "code"
+	var code := HitSpark.spawn(room, Vector2(80, 80), Vector2.RIGHT)
+	check(code._sheet.is_empty() and code.life == HitSpark.LIFE and code.frame() == -1, "the code look is the fallback")
+	HitSpark.trial = ""
+	code.queue_free()
 
 
 func test_a_miss_throws_no_spark() -> void:

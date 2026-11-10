@@ -1,0 +1,209 @@
+{
+ "frames": [
+  {
+   "filename": "yldenfall-blade-hit-spark 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 102,
+    "h": 65
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 102,
+    "h": 65
+   },
+   "sourceSize": {
+    "w": 102,
+    "h": 65
+   },
+   "pivot": {
+    "x": 0.27450980392156865,
+    "y": 0.46153846153846156
+   },
+   "duration": 42
+  },
+  {
+   "filename": "yldenfall-blade-hit-spark 1.png",
+   "frame": {
+    "x": 102,
+    "y": 0,
+    "w": 102,
+    "h": 65
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 102,
+    "h": 65
+   },
+   "sourceSize": {
+    "w": 102,
+    "h": 65
+   },
+   "pivot": {
+    "x": 0.27450980392156865,
+    "y": 0.46153846153846156
+   },
+   "duration": 42
+  },
+  {
+   "filename": "yldenfall-blade-hit-spark 2.png",
+   "frame": {
+    "x": 204,
+    "y": 0,
+    "w": 102,
+    "h": 65
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 102,
+    "h": 65
+   },
+   "sourceSize": {
+    "w": 102,
+    "h": 65
+   },
+   "pivot": {
+    "x": 0.27450980392156865,
+    "y": 0.46153846153846156
+   },
+   "duration": 42
+  },
+  {
+   "filename": "yldenfall-blade-hit-spark 3.png",
+   "frame": {
+    "x": 0,
+    "y": 65,
+    "w": 102,
+    "h": 65
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 102,
+    "h": 65
+   },
+   "sourceSize": {
+    "w": 102,
+    "h": 65
+   },
+   "pivot": {
+    "x": 0.27450980392156865,
+    "y": 0.46153846153846156
+   },
+   "duration": 42
+  },
+  {
+   "filename": "yldenfall-blade-hit-spark 4.png",
+   "frame": {
+    "x": 102,
+    "y": 65,
+    "w": 102,
+    "h": 65
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 102,
+    "h": 65
+   },
+   "sourceSize": {
+    "w": 102,
+    "h": 65
+   },
+   "pivot": {
+    "x": 0.27450980392156865,
+    "y": 0.46153846153846156
+   },
+   "duration": 42
+  },
+  {
+   "filename": "yldenfall-blade-hit-spark 5.png",
+   "frame": {
+    "x": 204,
+    "y": 65,
+    "w": 102,
+    "h": 65
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 102,
+    "h": 65
+   },
+   "sourceSize": {
+    "w": 102,
+    "h": 65
+   },
+   "pivot": {
+    "x": 0.27450980392156865,
+    "y": 0.46153846153846156
+   },
+   "duration": 42
+  },
+  {
+   "filename": "yldenfall-blade-hit-spark 6.png",
+   "frame": {
+    "x": 0,
+    "y": 130,
+    "w": 102,
+    "h": 65
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 102,
+    "h": 65
+   },
+   "sourceSize": {
+    "w": 102,
+    "h": 65
+   },
+   "pivot": {
+    "x": 0.27450980392156865,
+    "y": 0.46153846153846156
+   },
+   "duration": 42
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "yldenfall-blade-hit-spark.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 306,
+   "h": 195
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 28,
+   "y": 30
+  },
+  "frameTags": [
+   {
+    "name": "yldenfall-blade-hit-spark",
+    "from": 0,
+    "to": 6,
+    "direction": "forward"
+   }
+  ]
+ }
+}
