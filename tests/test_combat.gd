@@ -859,6 +859,67 @@ func test_the_hit_spark_plays_the_vfx_sheet() -> void:
 	code.queue_free()
 
 
+func test_the_slash_smear_plays_the_vfx_sheet() -> void:
+	# Pass 535: the swing's smear is a PixelLab VFX-tool sheet, light and heavy, drawn at
+	# the game's detail. It opens on a long edge (no late tip), mirrors and turns with
+	# the cut, and the thrust keeps its code streak.
+	check(SlashFx.SHEET_SHIPPED and SlashFx.uses_sheet(), "the sheet is the shipped look")
+	var sheet := HitSpark.load_sheet(SlashFx.SHEET)
+	var big := HitSpark.load_sheet(SlashFx.HEAVY_SHEET)
+	check(sheet.frames.size() == 3 and big.frames.size() == 3, "three frames each")
+	check(is_equal_approx(float(sheet.fps), 30.0), "at 30 fps (%s)" % sheet.fps)
+	check(SlashFx.DENSITY == float(GameCamera.DETAIL), "drawn at the game's detail")
+	for pair: Array in [[sheet, 28.0, 44.0], [big, 38.0, 56.0]]:
+		var used := (pair[0].frames[0] as Texture2D).get_image().get_used_rect().size / SlashFx.DENSITY
+		check(used.y >= pair[1] and used.y <= pair[2], "the first frame is already a long edge (%s)" % used)
+	var room := make_room(ARENA)
+	var p := make_player(room, Vector2i(3, 6))
+	await frames(6)
+	p.input.attack_pressed = true
+	await frames(1)
+	p.input.attack_pressed = false
+	var fx: SlashFx = null
+	for c in p.get_children():
+		if c is SlashFx:
+			fx = c
+	check(fx != null, "a swing plays a smear")
+	if fx == null:
+		return
+	check(fx._sheet.frames == sheet.frames, "a light cut plays the light sheet")
+	check(is_equal_approx(fx.life, 3.0 / 30.0), "it lives one run of the sheet (%s)" % fx.life)
+	check(fx.frame() <= 1, "it opens on the edge (%d)" % fx.frame())
+	await frames(int(fx.life * 60.0) + 2)
+	check(not is_instance_valid(fx), "then it is gone")
+	# Placement: a side cut mirrors when facing left, the back cut reverses the sweep,
+	# the up and down cuts turn a quarter; the scale is whole sheet pixels.
+	var cuts := {}
+	for c: Array in [["side", 1, 1], ["side", -1, 1], ["side", 1, 2], ["up", 1, 1], ["down", 1, 1]]:
+		var s := SlashFx.new()
+		s.setup(c[0], c[1], c[2])
+		cuts["%s%d%d" % c] = s.placement()
+		s.free()
+	check(cuts["side11"].x.x > 0.0 and cuts["side-11"].x.x < 0.0, "a left-facing cut mirrors the sheet")
+	check(cuts["side11"].y.y > 0.0 and cuts["side12"].y.y < 0.0, "the back cut sweeps the other way")
+	check(is_equal_approx(cuts["up11"].get_rotation(), -PI / 2.0)
+			and is_equal_approx(cuts["down11"].get_rotation(), PI / 2.0), "up and down cuts turn a quarter")
+	check(is_equal_approx(absf(cuts["side11"].get_scale().x), 0.5), "two sheet pixels to a world pixel")
+	var heavy := SlashFx.new()
+	heavy.setup("side", 1, 3, true)
+	check(heavy._sheet.frames == big.frames, "the heavy finisher plays the heavy sheet")
+	heavy.free()
+	var thrust := SlashFx.new()
+	thrust.setup("thrust", 1, 0, true)
+	check(thrust._sheet.is_empty() and thrust.frame() == -1, "the thrust keeps its code streak")
+	thrust.free()
+	# The code look stays as the fallback.
+	SlashFx.trial = "code"
+	var code := SlashFx.new()
+	code.setup("side", 1)
+	check(code._sheet.is_empty() and code.life == SlashFx.LIFE, "the code look is the fallback")
+	code.free()
+	SlashFx.trial = ""
+
+
 func test_a_miss_throws_no_spark() -> void:
 	var room := make_room(ARENA)
 	var p := make_player(room, Vector2i(3, 6))

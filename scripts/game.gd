@@ -107,6 +107,7 @@ func _ready() -> void:
 	World.sheet_rain_trial = _args.has("sheet-rain")
 	# Trial (pass 529): force the code or the sheet hit spark for a capture.
 	HitSpark.trial = String(_args.get("spark-look", ""))
+	SlashFx.trial = String(_args.get("slash-look", ""))
 
 	view = SubViewport.new()
 	view.size = (BASE_SIZE + Vector2i(MARGIN, MARGIN) * 2) * GameCamera.DETAIL
