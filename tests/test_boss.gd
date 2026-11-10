@@ -992,7 +992,7 @@ func test_gloamweaver_defeat_gives_the_lantern_key() -> void:
 const SPRING_ROOM := "haar/spring_of_haar"
 
 
-## The Haar Spring with the arena awake: [world, arena, hydra].
+## The Haar Spring with the hydra out and fighting: [world, arena, hydra].
 func _hydra_world() -> Array:
 	var w := make_world({}, SPRING_ROOM)
 	w.player.max_hp = 9999
@@ -1002,285 +1002,267 @@ func _hydra_world() -> Array:
 	w.player.teleport(cell_feet(7, 19))
 	await _until(func() -> bool: return arena.fighting, 30)
 	var z := get_tree_boss() as HaarWyrm
-	await frames(3)
+	await frames(2)
+	z.skip_intro()
+	await _until(func() -> bool: return z.state == "fight", 240)
 	return [w, arena, z]
 
 
-func _basins(w: World) -> Array:
-	var out := []
-	for c in w.room.get_children():
-		if c is DryBasin:
-			out.append(c)
-	return out
+func _intakes(w: World) -> Array:
+	return w.room.get_children().filter(func(c: Node) -> bool: return c is HydraIntake)
+
+
+## A Deluge bolt flown at `intake` from `side` (1 east of it, -1 west).
+func _bolt_at(w: World, intake: HydraIntake, side: int) -> void:
+	var bolt := TorrentBolt.new()
+	bolt.velocity = Vector2(-side * 300.0, 0)
+	w.room.add_child(bolt)
+	bolt.global_position = intake.global_position + Vector2(side * 40.0, 0)
+	await frames(12)
 
 
 func test_spring_of_haar_wakes_the_hydra() -> void:
-	var setup := await _hydra_world()
-	var w: World = setup[0]
-	var arena: BossArena = setup[1]
-	var z: HaarWyrm = setup[2]
+	var w := make_world({}, SPRING_ROOM)
+	w.player.max_hp = 9999
+	w.player.hp = 9999
+	await frames(3)
+	var arena := _arena(w)
+	w.player.teleport(cell_feet(7, 19))
+	await _until(func() -> bool: return arena.fighting, 30)
+	var z := get_tree_boss() as HaarWyrm
+	await frames(3)
 	check(arena.boss_id == "haar_wyrm" and z != null, "walking into the spring wakes the Haar Wyrm")
 	check(Music.track == "haar_wyrm", "the fight plays his own theme (%s)" % Music.track)
-	check(_basins(w).size() == 3, "three dry tanks feed the spring (%d)" % _basins(w).size())
-	for b: DryBasin in _basins(w):
-		check(b.flag_id == "" and not b.filled, "an arena tank starts dry and keeps no flag")
-	check(z.heads.size() == 4 and z.heads[3].coiled, "three heads out, a fourth hidden in the coil")
+	check(z.heads.size() == 3, "three heads (%d)" % z.heads.size())
+	for h in z.heads:
+		check(h.mode == "hidden" and not h.active, "each head waits in the dark tunnel, out of reach")
+	check(z.cistern != null and z.cistern.level == 0, "the great cistern stands dry")
+	var intakes := _intakes(w)
+	check(intakes.size() == 3, "three intakes feed it (%d)" % intakes.size())
+	var heights := {}
+	for i: HydraIntake in intakes:
+		heights[roundi(i.global_position.y)] = true
+	check(heights.size() == 3, "at three heights (%s)" % [heights.keys()])
 	var spring: Spring = null
 	for c in w.room.get_children():
 		if c is Spring:
 			spring = c
-	check(spring != null and spring.spring_id == "haar", "the Haar Spring lies under the coil")
-	await frames(2)
+	check(spring != null and spring.spring_id == "haar", "the Haar Spring rises in the cistern")
 	check(not spring.is_in_group("interactable"), "and can't be cleared while he lives")
+
+
+func test_the_hydra_shows_its_eyes_before_its_heads() -> void:
+	var w := make_world({}, SPRING_ROOM)
+	w.player.max_hp = 9999
+	w.player.hp = 9999
+	await frames(3)
+	var arena := _arena(w)
+	w.player.teleport(cell_feet(7, 19))
+	await _until(func() -> bool: return arena.fighting, 30)
+	var z := get_tree_boss() as HaarWyrm
+	check(z.state == "intro", "it begins with the intro")
+	var out_before := false
+	var frames_run := 0
+	while z.state == "intro" and frames_run < 600:
+		await frames(1)
+		frames_run += 1
+		if z._intro_t < HaarWyrm.EMERGE_AT[0] - 0.05:
+			for h in z.heads:
+				if h.mode != "hidden":
+					out_before = true
+	check(not out_before, "no head comes out before the three pairs of eyes and the breathing")
+	check(HaarWyrm.EYES_AT[0] < HaarWyrm.EYES_AT[1] and HaarWyrm.EYES_AT[1] < HaarWyrm.EYES_AT[2] and HaarWyrm.EYES_AT[2] < HaarWyrm.SNORTS_AT[0], "the eyes open one pair at a time, then it breathes")
+	check(HaarWyrm.EMERGE_AT[0] < HaarWyrm.EMERGE_AT[1] and HaarWyrm.EMERGE_AT[1] < HaarWyrm.EMERGE_AT[2], "the heads come out one after another")
+	check(z.state == "fight" and frames_run / 60.0 >= HaarWyrm.INTRO_TIME - 0.1, "the fight begins after the whole reveal (%.1f s)" % (frames_run / 60.0))
+	for h in z.heads:
+		check(h.active and h.mode != "hidden", "every head is out and can be struck")
+	check(GameState.flag(HaarWyrm.SEEN_FLAG), "a second try skips the darkness")
 
 
 func test_haar_wyrm_telegraphs_are_fair() -> void:
 	var z := HaarWyrm.new()
-	for ph in [1, 2, 3]:
-		z.phase = ph
-		for t: float in [HaarWyrm.BITE_TELL, HaarWyrm.BREATH_TELL]:
-			check(z.tell(t) >= Enemy.MIN_TELEGRAPH, "phase %d tell %.2f s is at least %.2f s" % [ph, z.tell(t), Enemy.MIN_TELEGRAPH])
+	for t: float in [HaarWyrm.PLUME_TELL, HaarWyrm.GEYSER_TELL, HaarWyrm.FOG_TELL]:
+		check(z.tell(t) >= Enemy.MIN_TELEGRAPH, "tell %.2f s is at least %.2f s" % [z.tell(t), Enemy.MIN_TELEGRAPH])
+	check(HaarWyrm.FOG_TELL >= 2.5, "the fog's wind-up is long, the time to get water in (%.1f s)" % HaarWyrm.FOG_TELL)
+	check(HaarWyrm.GEYSER_TELL - HaarWyrm.GEYSER_LOCK >= Enemy.MIN_TELEGRAPH and HaarWyrm.GEYSER_LOCK >= Enemy.MIN_TELEGRAPH, "the geyser aims, then locks long enough to leave the line")
 	z.free()
 
 
-func test_only_the_solid_head_takes_damage() -> void:
+func test_each_round_ends_with_the_fog() -> void:
 	var setup := await _hydra_world()
 	var z: HaarWyrm = setup[2]
-	await _until(func() -> bool: return z.state == "fight", 180)
-	var solid := z.heads[z.solid_index]
-	var haar := z.heads[(z.solid_index + 1) % 3]
-	check(solid.solid and solid.active and solid.collision_layer != 0, "one head is solid and can be struck")
-	check(not haar.solid and haar.collision_layer == 0, "the others are mist the blade passes through")
-	var hp0 := z.hp
-	haar.take_hit(10, Vector2.RIGHT)
-	check(z.hp == hp0, "a blow on a steam head does nothing")
-	solid.take_hit(10, Vector2.RIGHT)
-	check(z.hp == hp0 - 10, "a blow on the solid head hurts him (%d)" % (hp0 - z.hp))
-	z._turn = HaarWyrm.SOLID_TIME
-	solid.set_mode("idle")
-	var i0 := z.solid_index
-	var turned := await _until(func() -> bool: return z.solid_index != i0, 30)
-	check(turned and not solid.solid and z.heads[z.solid_index].solid, "the heads take turns being solid")
+	var firsts := {}
+	for s in 24:
+		z.rng.seed = s
+		z._new_round()
+		check(z.order.size() == 3, "a round has a breath from each head")
+		check(z.heads[z.order[2]].breath == HydraHead.FOG, "the fog always comes third")
+		firsts[z.heads[z.order[0]].breath] = true
+	check(firsts.has(HydraHead.PLUME) and firsts.has(HydraHead.GEYSER), "the plume and the geyser trade places at random (%s)" % [firsts.keys()])
 
 
-func test_haar_wyrm_bites_then_lies_open() -> void:
+func test_a_head_holds_at_half_until_doused() -> void:
 	var setup := await _hydra_world()
-	var w: World = setup[0]
 	var z: HaarWyrm = setup[2]
-	await _until(func() -> bool: return z.state == "fight", 180)
-	var h := z.heads[z.solid_index]
-	z._breath = -100.0
-	w.player.teleport(Vector2(h.global_position.x + 30.0, w.player.global_position.y))
-	var tell_frames := 0
-	var down := false
-	for i in 240:
-		await frames(1)
-		if h.mode == "rear":
-			tell_frames += 1
-		if h.mode == "down":
-			down = true
-			break
-	check(tell_frames / 60.0 >= Enemy.MIN_TELEGRAPH, "the head rears for at least %.2f s before it bites (%d frames)" % [Enemy.MIN_TELEGRAPH, tell_frames])
-	check(down and h.global_position.y > HaarWyrm.SOLID_Y + 40.0, "it strikes low and lies where it bit (y %.0f)" % h.global_position.y)
-	check(w.player.hp < 9999, "the bite lands on a player standing still")
+	var h := z.head_for(HydraHead.PLUME)
+	for i in 20:
+		h.take_hit(12, Vector2.RIGHT)
+	check(h.hp == HaarWyrm.HEAD_FLOOR, "its hot scales hold it at %d (%d)" % [HaarWyrm.HEAD_FLOOR, h.hp])
+	check(z.hp == HaarWyrm.HEAD_HP * 2 + HaarWyrm.HEAD_FLOOR, "the bar is the three heads together (%d)" % z.hp)
+	h.weak = true
+	h.take_hit(12, Vector2.RIGHT)
+	check(h.hp == HaarWyrm.HEAD_FLOOR - 12, "doused, it takes the blow (%d)" % h.hp)
 
 
-func test_steam_breath_vents_along_the_floor() -> void:
+func test_an_intake_takes_deluge_only_into_its_mouth() -> void:
 	var setup := await _hydra_world()
 	var w: World = setup[0]
 	var z: HaarWyrm = setup[2]
-	await _until(func() -> bool: return z.state == "fight", 180)
-	z._breath = HaarWyrm.BREATH_EVERY
-	var breath: SteamBreath = null
+	var intake: HydraIntake = _intakes(w)[0]
+	await _bolt_at(w, intake, -intake.facing)
+	check(z.cistern.level == 0, "a bolt into the back of the pipe only splashes")
+	await _bolt_at(w, intake, intake.facing)
+	check(z.cistern.level == 1 and intake.flowing, "a bolt into the mouth sends a third down (%d)" % z.cistern.level)
+	await _bolt_at(w, intake, intake.facing)
+	check(z.cistern.level == 1, "the same intake gives no more until its water is gone")
+
+
+func test_a_full_cistern_douses_the_last_breather_then_the_rage_boils_it_dry() -> void:
+	var setup := await _hydra_world()
+	var w: World = setup[0]
+	var z: HaarWyrm = setup[2]
+	var geyser := z.head_for(HydraHead.GEYSER)
+	geyser.hp = HaarWyrm.HEAD_FLOOR
+	z.attacker = null
+	z.last_breather = geyser
+	z._to("gap")
+	for i: HydraIntake in _intakes(w):
+		i.douse()
+	check(z.cistern.full(), "three intakes fill it")
+	await frames(2)
+	check(z.step == "weak" and geyser.weak, "the head that breathed last is doused and weak (%s)" % z.step)
+	geyser.take_hit(20, Vector2.RIGHT)
+	check(geyser.hp == HaarWyrm.HEAD_FLOOR - 20, "and falls below half (%d)" % geyser.hp)
+	z.step_time = HaarWyrm.WEAK_TIME
+	await frames(2)
+	check(z.step == "rage" and not geyser.weak, "then the hydra rages")
+	await _until(func() -> bool: return not z.cistern.boiling, 200)
+	check(z.cistern.level == 0, "and boils the cistern dry")
+	for i: HydraIntake in _intakes(w):
+		check(not i.flowing, "every intake opens again")
+	await _until(func() -> bool: return z.step == "gap", 200)
+	check(z.order.size() == 3, "a new round begins")
+
+
+func test_a_doused_head_dies_and_the_rest_quicken() -> void:
+	var setup := await _hydra_world()
+	var z: HaarWyrm = setup[2]
+	var plume := z.head_for(HydraHead.PLUME)
+	var before := z.tell(HaarWyrm.GEYSER_TELL)
+	z.attacker = null
+	z._weaken(plume)
+	plume.hp = 5
+	plume.take_hit(12, Vector2.RIGHT)
+	check(plume.dead and plume.mode == "limp" and not plume.active, "the head dies and hangs limp")
+	check(z.phase == 2, "the fight turns (phase %d)" % z.phase)
+	check(z.tell(HaarWyrm.GEYSER_TELL) < before, "the others quicken")
+	await _until(func() -> bool: return z.step == "gap", 400)
+	check(not z.order.has(plume.index) and z.order.size() == 2, "and a dead head breathes no more (%s)" % [z.order])
+
+
+## Forces head `breath_id` to wind up its breath now.
+func _force(z: HaarWyrm, breath_id: String) -> HydraHead:
+	var h := z.head_for(breath_id)
+	z.attacker = null
+	z.order = [h.index]
+	z._to("gap")
+	z.step_time = 99.0
+	return h
+
+
+func test_the_plume_rolls_the_floor_and_rides_the_rim() -> void:
+	var setup := await _hydra_world()
+	var w: World = setup[0]
+	var z: HaarWyrm = setup[2]
+	var h := _force(z, HydraHead.PLUME)
+	var plume: SteamBreath = null
 	var tell_frames := 0
 	for i in 200:
 		await frames(1)
-		for h in z.heads:
-			if h.mode == "breath_tell":
-				tell_frames += 1
-				break
+		if h.mode == "tell":
+			tell_frames += 1
 		for c in w.room.get_children():
 			if c is SteamBreath:
-				breath = c
-		if breath != null:
+				plume = c
+		if plume != null:
 			break
-	check(breath != null, "a steam head bellows a gout of steam")
+	check(plume != null, "the plume head vents its cloud")
 	check(tell_frames / 60.0 >= Enemy.MIN_TELEGRAPH, "after a tell of at least %.2f s (%d frames)" % [Enemy.MIN_TELEGRAPH, tell_frames])
-	check(absf(breath.ground_y - z.arena.end.y) < 1.0, "it vents along the floor")
-	var x0 := breath.global_position.x
-	await frames(10)
-	check(absf(breath.global_position.x - x0) > 10.0, "and moves")
+	check(absf(plume.global_position.y - z.ground_at(plume.global_position.x)) < 1.0, "it lies on the ground")
+	await frames(90)
+	check(plume.rect().size.y < 72.0, "never taller than a jump clears (%.0f)" % plume.rect().size.y)
+	var t := float(Room.TILE)
+	check(z.ground_at((HaarWyrm.CISTERN_COLS.x + 4) * t) == HaarWyrm.CISTERN_ROWS.x * t, "and it rides over the cistern's rim")
 
 
-## The bellow is slow (about 95 px/s), narrow at the mouth and widening as it
-## rolls, and long-lived enough to cross a lane.
-func test_steam_breath_is_slow_and_billows() -> void:
-	var b := SteamBreath.new()
-	arena.add_child(b)
-	b.ground_y = 300.0
-	b.dir = 1.0
-	b.left = -2000.0
-	b.right = 2000.0
-	b.global_position = Vector2(0.0, 300.0)
-	var w0 := b.rect().size.x
-	await frames(60)
-	var moved := b.global_position.x
-	check(moved > 80.0 and moved < 115.0, "it vents at about 95 px/s (moved %.0f in a second)" % moved)
-	check(b.rect().size.x > w0 + 6.0, "and billows wider as it rolls (%.0f -> %.0f px)" % [w0, b.rect().size.x])
-	b.queue_free()
-	var reach := SteamBreath.LIFE * SteamBreath.SPEED
-	check(reach > 2.0 * HaarWyrm.LANE, "its run (%.0f px over %.1f s) crosses more than a lane" % [reach, SteamBreath.LIFE])
-
-
-## It is dodged by a jump (it stays under a single jump's apex) and by standing
-## up on the tank walls (it rolls below).
-func test_steam_breath_is_dodged_by_a_jump_or_the_walls() -> void:
-	var b := SteamBreath.new()
-	arena.add_child(b)
-	b.ground_y = 400.0
-	b._time = SteamBreath.LIFE  # fully billowed: its tallest
-	b.global_position = Vector2(100.0, 400.0)
-	var tall := b.rect().size.y
-	check(tall <= 48.0, "even fully billowed the gout is at most 48 px tall (%.0f)" % tall)
-	check(tall < 72.0, "under a single jump's 72 px apex (movement_tuning), so a jump clears it")
-	# A player standing on a tank wall, above the floor, is clear of it.
-	var feet := 400.0 - 56.0
-	var body := Rect2(100.0 - 6.0, feet - 40.0, 12.0, 40.0)
-	check(not b.rect().intersects(body), "a player up on the tank wall is above the gout")
-	b.queue_free()
-
-
-## In phase 2, the tank that fills douses the head over it: it goes out with a
-## last puff of steam.
-func test_a_doused_head_goes_out_with_a_puff() -> void:
+func test_the_geyser_fires_a_locked_straight_line() -> void:
 	var setup := await _hydra_world()
 	var w: World = setup[0]
 	var z: HaarWyrm = setup[2]
-	await _until(func() -> bool: return z.state == "fight", 180)
-	z.hp = roundi(z.max_hp * 0.61)
-	z.heads[z.solid_index].take_hit(10, Vector2.RIGHT)
-	check(z.phase == 2, "below 60%% he enters phase 2 (%d hp)" % z.hp)
-	var basins := _basins(w)
-	basins[0].douse()
-	var ok := await _until(func() -> bool: return z.head_over(basins[0]).doused, 120)
-	check(ok, "the head over the filled tank is doused once it fills")
-	var h := z.head_over(basins[0])
-	check(h.puff > 0.0, "and goes out with a last puff of steam (%.2f)" % h.puff)
+	var h := _force(z, HydraHead.GEYSER)
+	await _until(func() -> bool: return h.mode == "tell" and h.mode_time >= z.tell(HaarWyrm.GEYSER_TELL) - HaarWyrm.GEYSER_LOCK + 0.05, 200)
+	var locked := h.aim
+	w.player.teleport(w.player.global_position + Vector2(200, 0))
+	var jet: HydraGeyser = null
+	for i in 60:
+		await frames(1)
+		for c in w.room.get_children():
+			if c is HydraGeyser:
+				jet = c
+		if jet != null:
+			break
+	check(jet != null, "the geyser head fires its jet")
+	if jet == null:
+		return
+	check(jet.dir.is_equal_approx(locked), "along the line it locked, not where you went")
+	await frames(6)
+	var l1 := jet.length()
+	await frames(6)
+	check(jet.length() >= l1, "it shoots out from the jaws rather than appearing whole")
+	check(jet.touches(Rect2(jet.mouth + jet.dir * 20.0 - Vector2(2, 2), Vector2(4, 4))), "one width all along its line")
+	var off := Rect2(jet.mouth + jet.dir.orthogonal() * 60.0, Vector2(4, 4))
+	check(not jet.touches(off), "and a step out of the line is safe")
 
 
-func test_fourth_head_shows_only_when_the_tanks_are_full() -> void:
+func test_the_thermal_fog_spares_only_the_water() -> void:
 	var setup := await _hydra_world()
 	var w: World = setup[0]
 	var z: HaarWyrm = setup[2]
-	await _until(func() -> bool: return z.state == "fight", 180)
-	z.hp = roundi(z.max_hp * 0.61)
-	z.heads[z.solid_index].take_hit(10, Vector2.RIGHT)
-	check(z.phase == 2, "below 60%% he enters phase 2 (%d hp)" % z.hp)
-	for i in 3:
-		check(not z.heads[i].solid, "head %d turns to haar" % i)
-	var h4 := z.heads[3]
-	await frames(30)
-	check(h4.coiled and h4.collision_layer == 0, "the fourth head stays hidden while the tanks are dry")
-	var basins := _basins(w)
-	for i in 2:
-		basins[i].douse()
-	await frames(80)
-	check(h4.coiled, "two full tanks are not enough")
-	basins[2].douse()
-	var out := await _until(func() -> bool: return not h4.coiled and h4.solid, 120)
-	check(out and h4.collision_layer != 0, "with all three full, the fourth head comes out solid")
-	var hp0 := z.hp
-	h4.take_hit(10, Vector2.RIGHT)
-	check(z.hp == hp0 - 10, "and can be struck")
-	for b: DryBasin in basins:
-		check(w.room.is_one_way_at(Vector2(b.x0 * Room.TILE + 4, b.water_row * Room.TILE + 4)), "each tank's raft stands")
-
-
-func test_each_full_tank_douses_its_head() -> void:
-	# Playtest: phase 2 gave no sign that the tanks were the way on.
-	var setup := await _hydra_world()
-	var w: World = setup[0]
-	var z: HaarWyrm = setup[2]
-	await _until(func() -> bool: return z.state == "fight", 180)
-	z.hp = roundi(z.max_hp * 0.61)
-	z.heads[z.solid_index].take_hit(10, Vector2.RIGHT)
-	await frames(2)
-	var basins := _basins(w)
-	for b: DryBasin in basins:
-		check(b.beckon, "in phase 2 each dry tank shimmers")
-	var heads := {}
-	for b: DryBasin in basins:
-		heads[z.head_over(b)] = true
-	check(heads.size() == 3, "each tank has its own head above it")
-	# A real Deluge bolt from the floor beside the first tank fills it.
+	# Hold the hydra's round still: only the fog acts.
+	z.order.clear()
+	z.attacker = null
+	z.step = "hold"
 	var p := w.player
-	p.abilities.torrent = true
-	p.equipped_spell = "torrent"
-	p.mp = p.max_mp
-	p.teleport(cell_feet(7, 19))
-	await frames(10)
-	p.facing = 1
-	p.input.spell_pressed = true
-	await frames(1)
-	p.input.spell_pressed = false
-	var first: DryBasin = basins[0]
-	for b: DryBasin in basins:
-		if b.x0 < first.x0:
-			first = b
-	var full := await _until(func() -> bool: return first.filled and first.level >= 1.0, 120)
-	check(full, "a Deluge cast from the floor fills the nearest tank")
-	var h := z.head_over(first)
-	var doused := await _until(func() -> bool: return h.doused, 10)
-	check(doused and not first.beckon, "and douses the head over it, and stops shimmering")
-	check(z.rest_point(h).y > HaarWyrm.HAAR_Y + 20.0, "the doused head hangs low")
-	var others := 0
-	for i in 3:
-		if z.heads[i] != h and not z.heads[i].doused:
-			others += 1
-	check(others == 2, "the other two heads are untouched")
-	# A doused head never breathes.
-	for i in 3:
-		if z.heads[i] != h:
-			z.heads[i].set_mode("breath")
-	z._breath = HaarWyrm.BREATH_EVERY
-	await frames(2)
-	check(h.mode != "breath_tell", "a doused head doesn't breathe (%s)" % h.mode)
-	z.hp = roundi(z.max_hp * 0.31)
-	for b: DryBasin in basins:
-		b.douse()
-	await _until(func() -> bool: return not z.heads[3].coiled, 200)
-	z.heads[3].take_hit(10, Vector2.RIGHT)
-	check(z.phase == 3, "phase 3 begins")
-	for i in 3:
-		check(not z.heads[i].doused, "head %d shakes off the water in phase 3" % i)
-
-
-func test_phase_three_floods_the_floor() -> void:
-	var setup := await _hydra_world()
-	var w: World = setup[0]
-	var z: HaarWyrm = setup[2]
-	await _until(func() -> bool: return z.state == "fight", 180)
-	z.phase = 2
-	z.hp = roundi(z.max_hp * 0.31)
-	for b in _basins(w):
-		b.douse()
-	await _until(func() -> bool: return not z.heads[3].coiled, 200)
-	z.heads[3].take_hit(10, Vector2.RIGHT)
-	check(z.phase == 3 and z.flood != null, "below 30%% the spring floods the arena")
-	check(z.heads[3].coiled and z.heads[z.solid_index].solid, "the fourth head sinks and the three take turns again")
-	var full := await _until(func() -> bool: return z.flood.level >= 1.0, 200)
-	check(full and absf(z.ground_y() - (z.arena.end.y - 4 * Room.TILE)) < 1.0, "the water rises to the tanks' rims")
-	z._breath = -100.0
-	z._turn = -100.0
-	w.player.teleport(cell_feet(4, 19))
-	var hp0 := w.player.hp
-	await frames(70)
-	check(w.player.hp < hp0, "standing on the flooded floor hurts")
-	w.player.teleport(cell_feet(30, 15))
-	await frames(70)
-	var hp1 := w.player.hp
-	await frames(70)
-	check(w.player.hp == hp1, "a raft keeps you clear of the water")
+	var fog := HydraFog.new()
+	fog.bounds = z.arena
+	fog.cistern = z.cistern
+	w.room.add_child(fog)
+	var hp0 := p.hp
+	await frames(60)
+	check(p.hp < hp0, "out of the water the fog burns you (%d)" % (hp0 - p.hp))
+	fog.queue_free()
+	_intakes(w)[0].douse()
+	p.teleport(Vector2(z.cistern.inside.get_center().x, z.cistern.inside.end.y))
+	await frames(4)
+	check(z.cistern.shelters(p), "standing in a third of water shelters you")
+	var fog2 := HydraFog.new()
+	fog2.bounds = z.arena
+	fog2.cistern = z.cistern
+	w.room.add_child(fog2)
+	var hp1 := p.hp
+	await frames(roundi((HydraFog.FILL + HydraFog.BURN) * 60.0) + 6)
+	check(p.hp == hp1, "and the heat never reaches you there")
+	check(z.cistern.level == 0, "but it boils that third away")
 
 
 func test_haar_wyrm_defeat_gives_the_fall_seed() -> void:
@@ -1288,11 +1270,12 @@ func test_haar_wyrm_defeat_gives_the_fall_seed() -> void:
 	var w: World = setup[0]
 	var arena: BossArena = setup[1]
 	var z: HaarWyrm = setup[2]
-	await _until(func() -> bool: return z.state == "fight", 180)
-	z.phase = 3
-	z.hp = 1
-	z.heads[z.solid_index].take_hit(5, Vector2.RIGHT)
-	check(z.state == "dying", "the last blow ends him")
+	for h in z.heads:
+		h.hp = 1
+		h.weak = true
+	for h in z.heads:
+		h.take_hit(5, Vector2.RIGHT)
+	check(z.state == "dying", "the last head's death ends him")
 	var gone := await _until(func() -> bool: return GameState.flag("boss:haar_wyrm"), 600)
 	check(gone, "the Haar Wyrm is marked beaten")
 	check((GameState.data.rings as Array).has("fall"), "the Fall Seed is the player's")
@@ -1314,11 +1297,11 @@ func test_haar_wyrm_defeat_gives_the_fall_seed() -> void:
 	check(GameState.flag("spring:haar"), "clearing it restores the Haar Spring")
 	w._enter(SPRING_ROOM)
 	await frames(3)
-	var full := 0
-	for b in _basins(w):
-		if b.filled:
-			full += 1
-	check(full == 3, "the tanks stay full once he is beaten")
+	var full := false
+	for c in w.room.get_children():
+		if c is HydraCistern:
+			full = c.full()
+	check(full, "the cistern stays full once he is beaten")
 
 
 # --- Snapcrown, the Devouring Bloom (bible 8.5) ---------------------------------
@@ -4709,7 +4692,7 @@ func test_every_guardians_numbers_are_written_in_bible_8() -> void:
 		var marks := []
 		for p: float in c["PHASES"]:
 			marks.append("%d%%" % roundi(p * 100.0))
-		check(cells[1] == ", ".join(marks), "%s's phase marks: the bible says %s, the script %s" % [name, cells[1], ", ".join(marks)])
+		check(cells[1] == (", ".join(marks) if not marks.is_empty() else "none"), "%s's phase marks: the bible says %s, the script %s" % [name, cells[1], ", ".join(marks)])
 		var tells := []
 		for k: String in c:
 			# TELL_SEEN is how much of her a tell shows; a _P2 or _P3 tell is a
@@ -4734,7 +4717,8 @@ func test_every_guardians_numbers_are_written_in_bible_8() -> void:
 			named += 1
 			check(n >= 2 and n - 2 < phases.size() and absi(pct - roundi(phases[n - 2] * 100.0)) <= 1,
 				"%s says phase %d starts below %s, and the script at %s" % [sec, n, said, phases])
-	check(named >= 14, "the guardians' sections name their phase marks (%d)" % named)
+	# 12 since the Haar Wyrm turns by its heads, not by marks (8.4, 2026-11-09).
+	check(named >= 12, "the guardians' sections name their phase marks (%d)" % named)
 	# The totals the note gives, and 10.1's purse range.
 	var note := eight.get_slice("**What a guardian pays (pass 380).**", 1).get_slice("\n\n", 0)
 	var lord: int = GameState.RANK_XP[GameState.RANK_XP.size() - 1]
@@ -4788,7 +4772,8 @@ func test_every_guardians_bar_shows_its_phase_marks() -> void:
 		var rect: Rect2 = bar.rect
 		var marks: Array = boss.PHASES
 		var ticks: Array = bar.ticks
-		var ok: bool = ticks.size() == marks.size() and marks.size() >= 1
+		# The Haar Wyrm has no health marks: it turns as each head dies (8.4).
+		var ok: bool = ticks.size() == marks.size() and (marks.size() >= 1 or id == "haar_wyrm")
 		for i in mini(ticks.size(), marks.size()):
 			ok = ok and float(marks[i]) > 0.0 and float(marks[i]) < 1.0 and is_equal_approx(float(ticks[i]), rect.position.x + roundf(rect.size.x * float(marks[i])))
 			ok = ok and float(ticks[i]) > rect.position.x and float(ticks[i]) < rect.end.x
@@ -4972,11 +4957,17 @@ func test_every_guardian_opens_with_its_reveal() -> void:
 			n += 1
 		GameState.banner.disconnect(listen)
 		var seconds := n / 60.0
-		shortest = minf(shortest, seconds)
-		longest = maxf(longest, seconds)
 		check(cards.size() >= 1 and cards[0] == [String(boss.DISPLAY_NAME), String(boss.EPITHET)], "%s: under its name card (%s)" % [id, cards])
 		check(cards.size() == 1, "%s: shown once" % id)
-		check(seconds >= 1.2 - 0.05 and seconds <= 2.4 + 0.05, "%s: a reveal of %.2f s" % [id, seconds])
+		if id == "haar_wyrm":
+			# The written exception (bible 8.4, Sean 2026-11-09): the hydra's first
+			# sight is its whole reveal, eyes and all; a retry is the short one.
+			check(absf(seconds - HaarWyrm.INTRO_TIME) <= 0.1, "%s: its first reveal is the whole %.1f s (%.2f s)" % [id, HaarWyrm.INTRO_TIME, seconds])
+			check(HaarWyrm.INTRO_TIME - HaarWyrm.INTRO_SEEN_FROM <= 2.4 + 0.05, "%s: and a retry's is %.1f s" % [id, HaarWyrm.INTRO_TIME - HaarWyrm.INTRO_SEEN_FROM])
+		else:
+			shortest = minf(shortest, seconds)
+			longest = maxf(longest, seconds)
+			check(seconds >= 1.2 - 0.05 and seconds <= 2.4 + 0.05, "%s: a reveal of %.2f s" % [id, seconds])
 		check(int(boss.get("hp")) == hp0, "%s: no blow lands during it (%d of %d)" % [id, int(boss.get("hp")), hp0])
 		check(w.player.hp == 99999, "%s: and it strikes no one at the door" % id)
 		Feel.reset()
@@ -5313,6 +5304,16 @@ func test_a_guardians_banner_reads_in_real_time_at_every_game_speed() -> void:
 # --- Pass 490: the spell guardians at the slowest Game speed ------------------
 
 ## Presses the real Spell button facing right and waits up to 4 s for `done`.
+## Deluge cast by the real Spell button from in front of `intake`'s mouth.
+func _cast_into(p: Player, intake: HydraIntake) -> bool:
+	p.mp = p.max_mp
+	p.teleport(intake.global_position + Vector2(intake.facing * 40.0, 24.0))
+	p.facing = -intake.facing
+	await press_for_real(p, ["spell"])
+	release_for_real(["spell"])
+	return await _until(func() -> bool: return intake.flowing, 60)
+
+
 func _cast_until(p: Player, done: Callable) -> bool:
 	p.mp = p.max_mp
 	p.facing = 1
@@ -5345,31 +5346,34 @@ func _watch_death_blow(label: String) -> void:
 
 func test_the_spell_guardians_fall_to_the_buttons_at_the_slowest_game_speed() -> void:
 	Feel.set_game_speed(0.7)
-	# The Haar Wyrm: Deluge fills his three tanks and brings the fourth head out.
+	# The Haar Wyrm: Deluge into each of the cistern's three intakes douses a head.
 	var setup := await _hydra_world()
 	var w: World = setup[0]
 	var z: HaarWyrm = setup[2]
-	await _until(func() -> bool: return z.state == "fight", 300)
-	z.hp = roundi(z.max_hp * 0.61)
-	z.heads[z.solid_index].take_hit(10, Vector2.RIGHT)
-	check(z.phase == 2, "the Haar Wyrm: phase 2 at 70%")
+	z.attacker = null
+	z.order.clear()
+	z.last_breather = z.head_for(HydraHead.GEYSER)
+	z._to("gap")
+	z.step_time = -999.0
 	var p := w.player
 	p.abilities.torrent = true
 	GameState.data.abilities.torrent = true
 	p.equipped_spell = "torrent"
-	for b: DryBasin in _basins(w):
-		p.teleport(cell_feet(b.x0 - 1, b.water_row - 1))
+	for i: HydraIntake in _intakes(w):
 		# Past the 0.35 s cooldown, which is 0.5 s at 70% (a press inside it
 		# casts nothing, bible 5.3, pass 442).
 		await frames(40)
-		var full := await _cast_until(p, func() -> bool: return b.filled)
-		check(full, "the Haar Wyrm: the Spell button fills the tank at %d with Deluge at 70%%" % b.x0)
-	var h4 := z.heads[3]
-	var out := await _until(func() -> bool: return not h4.coiled and h4.solid, 300)
-	check(out, "the Haar Wyrm: with all three full, the fourth head comes out at 70%")
-	z.hp = 1
+		var ran := await _cast_into(p, i)
+		check(ran, "the Haar Wyrm: the Spell button sends Deluge into the intake at y %.0f at 70%%" % i.global_position.y)
+	var g := z.head_for(HydraHead.GEYSER)
+	var weak := await _until(func() -> bool: return z.step == "weak", 120)
+	check(weak and g.weak, "the Haar Wyrm: the full cistern douses the head that breathed last at 70%")
+	for h in z.heads:
+		if h != g:
+			h.kill()
+	g.hp = 1
 	Feel.hitstop_enabled = true
-	h4.take_hit(5, Vector2.RIGHT)
+	g.take_hit(5, Vector2.RIGHT)
 	check(z.state == "dying", "the Haar Wyrm: the last blow ends him")
 	await _watch_death_blow("the Haar Wyrm")
 	Feel.hitstop_enabled = false
@@ -5420,11 +5424,14 @@ func test_a_guardians_death_blow_is_heard_at_every_game_speed() -> void:
 		var w: World = setup[0]
 		var z: HaarWyrm = setup[2]
 		await _until(func() -> bool: return z.state == "fight", 300)
-		z.phase = 3
-		z.hp = 1
+		for h in z.heads:
+			if h.index > 0:
+				h.kill()
+		z.heads[0].hp = 1
+		z.heads[0].weak = true
 		Sfx.recent.clear()
 		Feel.hitstop_enabled = true
-		z.heads[z.solid_index].take_hit(5, Vector2.RIGHT)
+		z.heads[0].take_hit(5, Vector2.RIGHT)
 		check(Sfx.recent.count("hydra_roar") == 1 and Feel.is_frozen(), "%s: the roar goes off on the blow, inside the freeze (%s)" % [label, Sfx.recent])
 		var heard: Array[String] = []
 		heard.append_array(Sfx.recent)

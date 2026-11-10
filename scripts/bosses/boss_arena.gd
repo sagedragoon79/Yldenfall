@@ -78,6 +78,9 @@ func _ready() -> void:
 ## music (pass 99; Durgan's first frame cost about 140 ms).
 func warm() -> void:
 	warmed = true
+	if boss_id == "haar_wyrm" and defeated_before() and room != null:
+		# The Haar Spring's cistern stays full for good once he is beaten.
+		HaarWyrm.build_cistern(room, true)
 	if boss_id == "" or defeated_before():
 		return
 	if Sheet.exists(boss_id):
@@ -132,7 +135,9 @@ func _track_phases() -> void:
 	# when the fight changes, and not again when its health catches up (pass 252).
 	var own = boss.get("phase")
 	if own is int:
-		crossed = clampi(maxi(crossed, own - 1), 0, marks.size())
+		# A boss with no health marks turns by its own phase alone (the Haar
+		# Wyrm's turns as each head dies): up to two breaks.
+		crossed = clampi(maxi(crossed, own - 1), 0, marks.size() if not marks.is_empty() else 2)
 	if crossed > phases_passed:
 		phases_passed = crossed
 		Sfx.play("phase_break", 0.0, 3.0)
@@ -185,11 +190,11 @@ func _start() -> void:
 			boss = r
 			r.defeated.connect(_on_defeated)
 		"haar_wyrm":
-			# The hydra lies coiled around the spring on its shelf in the middle.
+			# The hydra lies in the tunnel's mouth behind the cistern, in the middle.
 			var z := HaarWyrm.new()
 			var w := float(room.size_tiles.x * Room.TILE)
 			z.arena = Rect2(Room.TILE, 4 * Room.TILE, w - 2 * Room.TILE, 16 * Room.TILE)
-			z.position = Vector2(w * 0.5, 9 * Room.TILE - 10)
+			z.position = Vector2(w * 0.5, 10 * Room.TILE)
 			boss = z
 			z.defeated.connect(_on_defeated)
 		"snapcrown":
