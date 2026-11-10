@@ -24,13 +24,13 @@ the Boughs' green it washes out to a pale smudge by its third frame.
 
 Two effects made in the VFX tool from one `arc` layer with the `slash` profile (a swing that whips:
 the head eases across the sweep, the tail chases and crumbles), centred on the cut's centre and
-sweeping 144 degrees down the front, 30 fps, at density 2 (two sheet pixels to a world pixel), and
+sweeping 132 degrees down the front (from -84 degrees, so it stops above the feet), 30 fps, at density 2 (two sheet pixels to a world pixel), and
 saved to Sean's My effects on pixellab.ai ("Yldenfall slash smear", "Yldenfall heavy slash smear"):
 
-- `assets/vfx/slash_smear.png` (72x104 frames): radius 42, 12 px thick, a cream ramp
+- `assets/vfx/slash_smear.png` (72x104 frames): radius 42, 9 px thick, a cream ramp
   (`#6e4e30` to white) matching the code smear's `f6eed2`.
-- `assets/vfx/heavy_smear.png` (84x128 frames): radius 54, 18 px thick, the code's warmer heavy
-  colour (`ffe9a8`).
+- `assets/vfx/heavy_smear.png` (84x128 frames): radius 54, 13 px thick (128 degrees), a paler
+  cream ramp (`#6e5236` to white) than the code's heavy `ffe9a8`.
 
 The tool's first frame is always the small tip of the edge, and its last is empty. In the first
 capture the tip made the cut read a frame late next to the code arc, which shows a full band at
@@ -68,6 +68,13 @@ frames old, code and sheet side by side.
 
 The sheet won, so `SHEET_SHIPPED` is true.
 
+**Retuned after the independent grade.** The grade taken this pass (below) caught one heavy-finisher
+frame and called the smear a fat, flat banana-yellow crescent reaching from the floor. The first
+export was 12 px thick (18 heavy) on a gold heavy ramp, sweeping 144 degrees to the feet. Both were
+re-exported in place (same My effects entries): 9 px (13 heavy), the heavy one on a paler cream ramp,
+the sweep starting higher and ending above the feet. Re-shot in both zones at 1x and 2x: a slim pale
+blade stroke that still reads on green and blue-grey.
+
 Noticed and left as it is: the near-black foreground stalks (bible 12.11) cross the smear where one
 stands in front of the cut, as they do the hit spark.
 
@@ -86,6 +93,19 @@ cut's flip fails it (1).
 
 Bible: 6.7's particle line describes the sheet smear after the hit spark, and 13.3's VFX list counts
 three effects from the VFX tool.
+
+## Independent grade
+
+Eleven screenshots (eight zones at play scale, two swing frames, the Hearthroot arms shop) to a
+separate agent with no hints: **4.6 / 10** against Hollow Knight (Art and cohesion 4.5, Environments
+4.0, Characters and foes 5.5, Combat readability 3.5, UI and menus 5.5, Atmosphere and lighting 5.0),
+level with pass 529's 4.6. Ranked defects: the foreground silhouettes stand over the play layer and
+read as black bars; the swing smear did not match the swing (too fat and yellow, at full height while
+the sword was still raised; retuned above, the timing against the hero's windup stays queued);
+rooms are empty boxes of floating planks with no supports; placeholder-looking set pieces (the red
+orb columns in the Spires, the grey sign slabs, flat liquid and crystal shapes); and the hero's detail
+density and the flat glow-disc lighting do not hold together with the tiles. The defects are queued
+on the workbench.
 
 ## Rubric (design bible 15.3)
 
