@@ -66,6 +66,50 @@ func test_a_shop_answers_the_real_controller() -> void:
 	check(bible.contains("`test_a_shop_answers_the_real_controller`"), "the bible names the test")
 
 
+## Pass 532 (bible 12, the gold counter): the pass-529 grade saw a shop's
+## footer say "Gold 5000" over a HUD that said 4968. The HUD's counter rolls
+## toward the purse, and it rolled on, from nothing, after a load and under an
+## open shop. It now starts on the purse and shows the exact sum while a menu
+## pauses the game, so the two readouts never disagree.
+func test_the_huds_gold_agrees_with_the_shops_footer() -> void:
+	var w := make_world(_town({}, ["npc: 8, 19, arms_dealer"]), "test/town", cell_feet(8, 19))
+	var p := w.player
+	p.input = PlayerInput.new()
+	p.gold = 500
+	var menu := ListMenu.new()
+	arena.add_child(menu)
+	var hud := GameHud.new()
+	hud.player = p
+	# As under the Game node, which keeps running while the world is paused (game.gd).
+	hud.process_mode = Node.PROCESS_MODE_ALWAYS
+	arena.add_child(hud)
+	await frames(1)
+	check(int(hud.get("_shown_gold")) == 500, "the counter starts on the purse, not rolling up from 0 (%.0f)" % hud.get("_shown_gold"))
+	await frames(2)
+	p.gold += 100
+	await frames(1)
+	var rolling: float = hud.get("_shown_gold")
+	check(rolling > 500.0 and rolling < 600.0, "gold found in play still rolls up (%.0f)" % rolling)
+	await _tap_for_real("move_up")
+	check(menu.is_open and arena.get_tree().paused, "Up at the arms dealer opens his shop")
+	check(int(hud.get("_shown_gold")) == 600, "with the shop open the counter shows the whole purse at once (%.0f)" % hud.get("_shown_gold"))
+	await frames(int(ListMenu.INPUT_GRACE * 60.0) + 2)
+	await _tap_for_real("jump")
+	var foot: String = menu.get("_footer").call()
+	check(p.gold == 200 and foot == "Gold 200", "the Wayfarer's Sword is bought and the footer says so (%s)" % foot)
+	check(int(hud.get("_shown_gold")) == p.gold, "and the HUD beside it says the same, not a sum still rolling down (%.0f)" % hud.get("_shown_gold"))
+	await _tap_for_real("dash")
+	check(not menu.is_open and not arena.get_tree().paused, "Dash leaves the shop")
+	check(is_equal_approx(GameHud.shown_gold_after(-1.0, 750, 0.016, false), 750.0), "an unseen counter takes the purse as it is")
+	check(is_equal_approx(GameHud.shown_gold_after(100.0, 750, 0.016, true), 750.0), "a paused one shows the exact sum")
+	var step := GameHud.shown_gold_after(100.0, 750, 0.016, false)
+	check(step > 100.0 and step < 750.0, "a running one rolls (%.1f)" % step)
+	menu.free()
+	hud.free()
+	var bible := FileAccess.get_file_as_string("res://docs/design-bible.md")
+	check(bible.contains("`test_the_huds_gold_agrees_with_the_shops_footer`"), "the bible names the test")
+
+
 func test_once_only_stock_sells_out() -> void:
 	var w := make_world(_town(), "test/town")
 	var p := w.player

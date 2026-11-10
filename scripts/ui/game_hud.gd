@@ -30,7 +30,8 @@ var player: Player
 const BANNER_TIME := 3.2
 const TOAST_TIME := 2.2
 
-var _shown_gold := 0.0
+## The gold the counter shows; below 0 until it first sees the purse.
+var _shown_gold := -1.0
 var _banner_title := ""
 var _banner_sub := ""
 var _banner_t := 0.0
@@ -82,9 +83,19 @@ func _process(delta: float) -> void:
 			hurt = maxf(hurt, Feel.flash_scale)
 		_last_hp = player.hp
 	if player:
-		# The counter rolls up toward the real total, like an arcade score.
-		_shown_gold = move_toward(_shown_gold, player.gold, maxf(40.0, absf(player.gold - _shown_gold) * 6.0) * delta)
+		_shown_gold = shown_gold_after(_shown_gold, player.gold, delta, get_tree().paused)
 	queue_redraw()
+
+
+## The counter rolls toward the real total, like an arcade score (design bible
+## 12, the gold counter, pass 532). It starts on the purse itself (`shown` below
+## 0: a loaded save does not roll up from nothing), and while the tree is paused
+## it shows the exact sum, since a shop or the pause menu then prints that sum
+## beside it.
+static func shown_gold_after(shown: float, gold: int, delta: float, paused: bool) -> float:
+	if shown < 0.0 or paused:
+		return float(gold)
+	return move_toward(shown, gold, maxf(40.0, absf(gold - shown) * 6.0) * delta)
 
 
 func _draw() -> void:
@@ -116,7 +127,7 @@ func _draw() -> void:
 	# Gold.
 	var gp := origin + Vector2(player.flask_max * 9 + 6, 28)
 	_draw_coin(gp + Vector2(3, 5))
-	PixelFont.draw(self, gp + Vector2(10, 9), str(int(_shown_gold)), 10, GOLD, OUTLINE)
+	PixelFont.draw(self, gp + Vector2(10, 9), str(int(maxf(_shown_gold, 0.0))), 10, GOLD, OUTLINE)
 	if _glass_shown():
 		_draw_glass(origin + Vector2(row_w - 8, 27))
 	_draw_ointment(origin + Vector2(0, 42))
