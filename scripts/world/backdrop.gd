@@ -79,6 +79,13 @@ const FORE_Z := 5
 ## The y, in the art's world pixels, where the solid ground band starts and the
 ## silhouettes root (tools/art/tilegen.py: FORE_FLOOR - FORE_BAND, over D).
 const FORE_GROUND := 344.0
+## The tallest a silhouette rises above FORE_GROUND, in world pixels (mirrors
+## tools/art/tilegen.py FORE_MAX_RISE; design bible 12.29). Kept to a low fringe
+## so the layer never stands over the play layer as a column of black bars.
+const FORE_MAX_RISE := 36.0
+## How far the silhouettes lean toward the zone's fog colour (haze_for), so the
+## nearest layer reads as near air in the zone's own tint, not flat black (12.29).
+const FORE_TINT := 0.55
 ## The height of the view at the normal framing (GameCamera.view_size.y), in world pixels.
 const VIEW_HEIGHT := 360.0
 ## The foreground thins in front of actors (design bible 12.26): the groups whose
@@ -155,16 +162,19 @@ static func fore_layer(a_zone: String) -> Parallax2D:
 	sprite.scale = SIZE / sprite.texture.get_size()
 	sprite.centered = false
 	sprite.position = fore_offset(VIEW_HEIGHT)
-	sprite.material = fore_material()
+	sprite.material = fore_material(haze_for(a_zone))
 	layer.add_child(sprite)
 	return layer
 
 
 ## The foreground's reveal material (design bible 12.26): no holes until
-## _process feeds the actors in view.
-static func fore_material() -> ShaderMaterial:
+## _process feeds the actors in view. It leans the art toward the zone's fog
+## colour `haze` by FORE_TINT (12.29).
+static func fore_material(haze: Color = HAZE) -> ShaderMaterial:
 	var mat := ShaderMaterial.new()
 	mat.shader = FORE_SHADER
+	mat.set_shader_parameter("haze", haze)
+	mat.set_shader_parameter("tint", FORE_TINT)
 	mat.set_shader_parameter("size", SIZE)
 	mat.set_shader_parameter("keep", REVEAL_KEEP)
 	mat.set_shader_parameter("soft", REVEAL_SOFT)
@@ -214,6 +224,13 @@ static func reveal_mask(uv: Vector2, holes: Array[Vector4], size: Vector2 = SIZE
 		var out_d := Vector2(maxf(du - h.z, 0.0), maxf(dv - h.w, 0.0))
 		m = maxf(m, 1.0 - smoothstep(0.0, soft, out_d.length()))
 	return m
+
+
+## The colour the foreground shader draws for one source pixel `src` before the
+## reveal: its rgb leaned toward the fog colour `haze` by `tint`. Mirrors
+## shaders/fore_reveal.gdshader exactly, so the tests can drive its maths.
+static func fore_color(src: Color, haze: Color, tint: float = FORE_TINT) -> Color:
+	return Color(lerpf(src.r, haze.r, tint), lerpf(src.g, haze.g, tint), lerpf(src.b, haze.b, tint), src.a)
 
 
 ## The boxes of the actors the view shows (REVEAL_GROUPS), nearest to the view's
