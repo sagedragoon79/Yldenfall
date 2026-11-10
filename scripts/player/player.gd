@@ -1232,7 +1232,7 @@ func _process_attack_hits() -> void:
 				Sfx.play(BLOODLET_SOUND, 0.06, -4.0)
 			hit_something = true
 			if collider is Node2D:
-				HitSpark.spawn(get_parent(), _contact_point(rect, collider), dir, HEAVY_SPARK if is_heavy_swing else 1.0)
+				HitSpark.spawn(get_parent(), _contact_point(rect, collider, dir), dir, HEAVY_SPARK if is_heavy_swing else 1.0)
 			if attack_kind == "up" and rising_cut and collider.has_method("launch"):
 				collider.launch()
 			if collider.is_in_group("enemy"):
@@ -1258,10 +1258,33 @@ func _process_attack_hits() -> void:
 		_attack_timer = 0.0
 
 
-## Where a swing meets what it hits: the target's middle, pulled inside the swing.
-func _contact_point(rect: Rect2, target: Node2D) -> Vector2:
+## Where a swing meets what it hits: the target's near edge, where the blade bites, pulled
+## inside the swing (pass 530; it was the target's middle, so the flash covered the foe).
+func _contact_point(rect: Rect2, target: Node2D, dir := Vector2.ZERO) -> Vector2:
 	var c: Vector2 = target.center() if target.has_method("center") else Vector2(target.global_position.x, rect.get_center().y)
+	if dir != Vector2.ZERO:
+		c -= dir.normalized() * minf(_half_extent(target, dir), SPARK_EDGE_MAX)
 	return c.clamp(rect.position, rect.end)
+
+
+## The furthest a spark is moved from a foe's middle toward its edge (a guardian's middle
+## can be far inside a broad body; the blade still bites near the swing).
+const SPARK_EDGE_MAX := 14.0
+
+
+## Half a target's box along `dir`, from its first rectangle or capsule shape (0 if none).
+static func _half_extent(target: Node, dir: Vector2) -> float:
+	for c in target.get_children():
+		if c is CollisionShape2D and c.shape != null:
+			var size := Vector2.ZERO
+			if c.shape is RectangleShape2D:
+				size = (c.shape as RectangleShape2D).size
+			elif c.shape is CapsuleShape2D:
+				var cap := c.shape as CapsuleShape2D
+				size = Vector2(cap.radius * 2.0, cap.height)
+			if size != Vector2.ZERO:
+				return absf(size.x * 0.5 * dir.normalized().x) + absf(size.y * 0.5 * dir.normalized().y)
+	return 0.0
 
 
 func _pogo_bounce() -> void:
@@ -1743,6 +1766,7 @@ func _riposte(foe: Node2D) -> void:
 	add_child(fx)
 	foe.take_hit(roundi(heavy_damage * blade_mult()), Vector2(facing, 0) * 1.8)
 	var at: Vector2 = foe.center() if foe.has_method("center") else foe.global_position
+	at.x -= facing * minf(_half_extent(foe, Vector2.RIGHT), SPARK_EDGE_MAX)
 	HitSpark.spawn(get_parent(), at, Vector2(facing, 0), HEAVY_SPARK)
 	Sfx.play("heavy", 0.05)
 	ripostes += 1

@@ -792,6 +792,10 @@ func test_a_hit_sparks_where_the_blade_meets_the_foe() -> void:
 	var swing := p._attack_rect().grow(1.0)
 	check(swing.has_point(spark.global_position), "inside the swing, where it meets the foe (%s)" % spark.global_position)
 	check(spark.global_position.x <= dummy.global_position.x + 0.5, "on the near side of the foe")
+	# Pass 530: on the foe's near edge, where the blade bites, not over its middle (the
+	# dummy's box is 18 wide), unless the swing's reach stops short of that edge.
+	var edge := maxf(dummy.global_position.x - 9.0, swing.position.x + 1.0)
+	check(absf(spark.global_position.x - edge) <= 1.5, "on the foe's near edge (%s, edge %s)" % [spark.global_position.x, edge])
 	await frames(int(spark.life * 60.0) + 4)
 	check(_find(room, HitSpark) == null, "and is gone in a blink")
 	# The third hit of the combo is the heavy one: a bigger spark.
@@ -832,6 +836,17 @@ func test_the_hit_spark_plays_the_vfx_sheet() -> void:
 	check(HitSpark.DENSITY == float(GameCamera.DETAIL), "drawn at the game's detail")
 	check(is_equal_approx(light.life, 7.0 / 24.0), "it lives one run of the sheet (%s)" % light.life)
 	check(light.frame() == 0, "it opens on the flash")
+	# Pass 530: the flash is a small hot star at the blade tip, not a disc over the foe.
+	for pair: Array in [[sheet, 16.0, 120], [big, 24.0, 220]]:
+		var img := (pair[0].frames[0] as Texture2D).get_image()
+		var used := img.get_used_rect().size / HitSpark.DENSITY
+		var solid := 0
+		for y in img.get_height():
+			for x in img.get_width():
+				if img.get_pixel(x, y).a > 0.8:
+					solid += 1
+		check(maxf(used.x, used.y) <= pair[1] and solid / (HitSpark.DENSITY * HitSpark.DENSITY) <= pair[2],
+				"the opening flash stays small (%s across, %d solid world pixels)" % [used, solid / 4])
 	await frames(9)
 	check(light.frame() >= 3 and light.frame() <= 4, "and opens into the ring and the spray (%d)" % light.frame())
 	await frames(int(light.life * 60.0))
