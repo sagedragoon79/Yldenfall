@@ -119,14 +119,25 @@ def masonry_shade(x, y, seed, dark, body, light, cell=16):
     a stone on alternate rows, plus a per-course jitter — so same-value stones (and
     the recessed dark ones) never stack into the straight vertical columns that
     made the mid column/pier fields read as one stamped lattice (independent grade,
-    passes 497/502/504; bible 12.14)."""
-    row = y // cell
+    passes 497/502/504; bible 12.14).
+
+    Each accent stone is a brick, ``cell`` wide and half as tall, and it is drawn
+    as a deliberate shape rather than a flat square of another value (bible 12.27):
+    a lighter stone stands proud, its face lit with its shadow along its foot and
+    its right side; a darker one is a recess (a slot window or a missing stone),
+    shadowed inside with a lit sill along its foot. The flat squares read as
+    "random 'missing pixel' blocks" in the tower, Vorrhallow and Hearthroot ruins
+    (independent grade, pass 529)."""
+    bh = max(2, cell // 2)
+    row = y // bh
     off = (row % 2) * (cell // 2) + int(hash2(row, 5, seed) * cell)
-    h = hash2((x + off) // cell, row, seed)
-    if h > 0.93:
-        return light
-    if h < 0.12:
-        return dark
+    sx = x + off
+    h = hash2(sx // cell, row, seed)
+    ly, lx = y % bh, sx % cell
+    if h > 0.93:  # a proud stone: lit face, shadow along its foot and right side
+        return dark if (ly == bh - 1 or lx == cell - 1) else light
+    if h < 0.12:  # a recess: shadowed inside, a lit sill along its foot
+        return light if ly == bh - 1 else dark
     return body
 
 

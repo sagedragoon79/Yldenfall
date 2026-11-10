@@ -495,6 +495,54 @@ def test_masonry_shade_is_mostly_body():
     assert counts["stone-2"] / total < 0.12, f"light stone is {counts['stone-2'] / total:.2f} — too busy"
 
 
+def _accent_field(seed=560, cell=16, w=640, h=480):
+    """A masonry_shade field with sentinel names: D(ark), B(ody), L(ight)."""
+    return [[tg.masonry_shade(x, y, seed, "D", "B", "L", cell) for x in range(w)] for y in range(h)]
+
+
+def test_proud_stones_are_bricks_with_a_shadowed_foot():
+    # The accent stones used to be flat squares a shade lighter or darker than the
+    # body, with no edge of their own, which the pass-529 grade read as random
+    # "missing pixel" blocks in the tower, Vorrhallow and Hearthroot ruins (bible
+    # 12.27). A proud stone is now a brick half as tall as it is wide, its lit face
+    # ending on a shadow along its foot. (Reverting to the flat square fails: its
+    # light runs are a whole cell tall and end on the body.)
+    cell = 16
+    f = _accent_field(cell=cell)
+    runs = 0
+    for x in range(len(f[0])):
+        y = 1
+        while y < len(f) - 1:
+            if f[y][x] == "L" and f[y - 1][x] != "L":
+                n = 0
+                while y + n < len(f) and f[y + n][x] == "L":
+                    n += 1
+                if n >= 3 and y + n < len(f):
+                    runs += 1
+                    assert n <= cell // 2, f"a lit stone {n} px tall at x={x} — a square, not a brick"
+                    assert f[y + n][x] == "D", f"a lit stone at x={x} ends on {f[y + n][x]}, not its shadow"
+                y += max(n, 1)
+            else:
+                y += 1
+    assert runs > 50, f"only {runs} proud stones in the field"
+
+
+def test_recessed_stones_carry_a_lit_sill():
+    # A darker stone is a recess (a slot window or a missing stone): dark inside
+    # with a lit sill along its foot, so it reads as an opening and not a hole in
+    # the picture. Many lit pixels sit right under a dark one. (Dropping the sill
+    # leaves the recess flat dark and the share falls to a few percent.)
+    f = _accent_field()
+    lit = sill = 0
+    for y in range(1, len(f)):
+        for x in range(len(f[0])):
+            if f[y][x] == "L":
+                lit += 1
+                if f[y - 1][x] == "D":
+                    sill += 1
+    assert sill / lit > 0.15, f"only {sill / lit:.2f} of the lit pixels are sills under a recess"
+
+
 def test_flagged_backdrop_fields_use_weathered_courses():
     # Every brick/column/pier field the grade called a "regular mortar lattice"
     # (passes 497/502/504) now draws its courses through masonry_courses (jittered,
