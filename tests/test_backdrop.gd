@@ -229,6 +229,49 @@ func test_fore_ground_line_matches_the_painted_art() -> void:
 		check_near(first_solid / per_world, Backdrop.FORE_GROUND, 0.5, "%s: the solid band starts at FORE_GROUND" % zone)
 
 
+func test_fore_silhouettes_stay_a_low_fringe() -> void:
+	# The grade of pass 535: posts, reeds and thorn stalks up to 128 px tall stood
+	# over the play layer as vertical black bars. Every zone's foreground now rises
+	# at most FORE_MAX_RISE above its ground line (design bible 12.29).
+	for zone: String in Backdrop.ZONE_HAZE:
+		var path := Backdrop.DIR + "%s_fore.png" % zone
+		if not ResourceLoader.exists(path):
+			continue
+		var img := (load(path) as Texture2D).get_image()
+		var per_world := float(img.get_height()) / Backdrop.SIZE.y
+		var top := -1
+		for y in img.get_height():
+			for x in img.get_width():
+				if img.get_pixel(x, y).a > 0.05:
+					top = y
+					break
+			if top >= 0:
+				break
+		check(top >= 0, "%s: the foreground art is not empty" % zone)
+		var rise := Backdrop.FORE_GROUND - top / per_world
+		check(rise <= Backdrop.FORE_MAX_RISE + 0.5,
+			"%s: the silhouettes rise %.1f px, no more than FORE_MAX_RISE" % [zone, rise])
+
+
+func test_fore_leans_toward_the_zone_fog() -> void:
+	# The silhouettes lean toward the zone's own fog colour (12.29), so the nearest
+	# layer reads as near air in the zone's tint instead of flat black.
+	check(Backdrop.FORE_TINT > 0.0 and Backdrop.FORE_TINT < 1.0, "the tint is partial")
+	for zone: String in ["haar", "spires", "evercrown"]:
+		var fl := Backdrop.fore_layer(zone)
+		var mat := (fl.get_child(0) as Sprite2D).material as ShaderMaterial
+		check(mat.get_shader_parameter("haze") == Backdrop.haze_for(zone), "%s: the shader gets the zone's fog" % zone)
+		check_near(float(mat.get_shader_parameter("tint")), Backdrop.FORE_TINT, 0.0001, "%s: and the tint" % zone)
+		fl.free()
+	var black := Color(0.06, 0.05, 0.1, 0.7)
+	var haze := Backdrop.haze_for("haar")
+	var out := Backdrop.fore_color(black, haze)
+	check_near(out.a, black.a, 0.0001, "the tint keeps the art's alpha")
+	var d_before := Vector3(black.r - haze.r, black.g - haze.g, black.b - haze.b).length()
+	var d_after := Vector3(out.r - haze.r, out.g - haze.g, out.b - haze.b).length()
+	check_near(d_after, d_before * (1.0 - Backdrop.FORE_TINT), 0.0001, "it moves the colour FORE_TINT of the way to the fog")
+
+
 func test_fore_layer_builds_in_front_for_a_zone_with_art() -> void:
 	# A zone with a <zone>_fore.png gets a foreground Parallax2D: absolute high z
 	# (z_as_relative false, so the backdrop's own z_index -50 doesn't drag it back),

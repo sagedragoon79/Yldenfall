@@ -340,6 +340,17 @@ def test_foreground_is_a_dark_silhouette():
         assert m["maxch"] < 70, f"{z}: brightest channel {m['maxch']} is too light for a silhouette"
 
 
+def test_foreground_stays_a_low_fringe():
+    # The grade of pass 535: posts and reeds up to 128 px tall stood over the play
+    # layer as black bars. No silhouette rises more than FORE_MAX_RISE world pixels
+    # above the band (bible 12.29; Backdrop.FORE_MAX_RISE mirrors it).
+    base = tg.FORE_FLOOR - tg.FORE_BAND
+    for z in tg.FORE_KIND:
+        bbox = tg.foreground(z).getchannel("A").getbbox()
+        rise = (base - bbox[1]) / tg.D
+        assert rise <= tg.FORE_MAX_RISE, f"{z}: silhouettes rise {rise:.1f} px, over {tg.FORE_MAX_RISE}"
+
+
 def _ridge(zone):
     """One zone's ridge image (bible 12.12) and its silhouette measurements: the
     first opaque y per column (the crest line), the sky clear above, the band at

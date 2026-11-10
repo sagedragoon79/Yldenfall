@@ -1826,20 +1826,26 @@ FORE_KIND = {
     "haar": "reed", "sunken": "reed",
     "evercrown": "crystal", "vorrhallow": "crystal",
     "tower": "rubble", "trials": "rubble",
-    "hearthroot": "post", "spires": "post",
+    "hearthroot": "fence", "spires": "fence",
 }
 FORE_BODY = "night-0"  # the darkest night shade: an unlit near-black silhouette
 FORE_RIM = "night-1"   # one step up, a faint top/leading edge so a shape reads
 FORE_FLOOR = 360 * D   # the view bottom in canvas pixels (bible: BASE_SIZE.y)
 FORE_BAND = 16 * D     # solid ground strip above the floor line
-BAND_A, PART_A, RIM_A = 242, 206, 224  # band / protrusion / rim alphas (see-through foreground)
+BAND_A, PART_A, RIM_A = 242, 176, 196  # band / protrusion / rim alphas (see-through foreground)
+BAND_RIM_A = 224  # the band's own top rim stays solid enough to mark FORE_GROUND
+# The tallest a silhouette may rise above the band (world pixels; Backdrop.FORE_MAX_RISE).
+# The grade of pass 535: posts and reeds up to 128 px tall stood over the play layer
+# as black bars. The view's bottom 36 px is the ground the hero stands on when the
+# camera rests (bible 12.29), so the silhouettes now stay a low fringe below that line.
+FORE_MAX_RISE = 36
 
 
 def _fore_fill(img):
     """The solid ground band, from the floor line down past the view bottom."""
     top = FORE_FLOOR - FORE_BAND
     for y in range(top, BG_H):
-        col = c(FORE_RIM, RIM_A) if y < top + D else c(FORE_BODY, BAND_A)
+        col = c(FORE_RIM, BAND_RIM_A) if y < top + D else c(FORE_BODY, BAND_A)
         for x in range(BG_W):
             put(img, x, y, col)
 
@@ -1863,48 +1869,48 @@ def _fore_fern(img, x, base, rng):
     spread = rng.randint(10, 20) * D
     for _ in range(rng.randint(3, 6)):
         cx = x + rng.randint(0, spread)
-        h = rng.randint(40, 108) * D
-        w = rng.choice([3, 4, 5]) * D
+        h = rng.randint(14, 34) * D
+        w = rng.choice([2, 3]) * D
         lean = rng.randint(-10, 10) * D
         _fore_stalk(img, cx, base, h, w, lean, False)
-        for j in range(4 * D, h, 10 * D):  # leaflets off the frond
+        for j in range(4 * D, h - 3 * D, 7 * D):  # leaflets off the frond
             t = j / h
             lx, ly = cx + int(lean * t), base - j
             d = rng.choice([-1, 1])
-            for m in range(rng.randint(3, 7) * D):
+            for m in range(rng.randint(3, 6) * D):
                 put(img, lx + d * m, ly + m // 2, c(FORE_BODY, PART_A))
-    return spread + rng.randint(12, 26) * D
+    return spread + rng.randint(16, 34) * D
 
 
 def _fore_reed(img, x, base, rng):
     spread = rng.randint(8, 16) * D
     for _ in range(rng.randint(2, 4)):
         cx = x + rng.randint(0, spread)
-        h = rng.randint(60, 128) * D
-        lean = rng.randint(-8, 8) * D
-        _fore_stalk(img, cx, base, h, rng.choice([2, 3]) * D, lean, False)
-        if rng.random() < 0.6:  # a cattail tip
-            tx, ty = cx + int(lean * 0.85), base - h + rng.randint(8, 16) * D
-            for dy in range(-6 * D, 6 * D):
-                for dx in range(-2 * D, 3 * D):
-                    if (dx / (2.5 * D)) ** 2 + (dy / (6.0 * D)) ** 2 <= 1.0:
+        h = rng.randint(18, 36) * D
+        lean = rng.randint(-6, 6) * D
+        _fore_stalk(img, cx, base, h, 2 * D, lean, False)
+        if rng.random() < 0.5:  # a cattail tip, hung below the stalk's end
+            tx, ty = cx + int(lean * 0.85), base - h + rng.randint(6, 9) * D
+            for dy in range(-4 * D, 4 * D):
+                for dx in range(-2 * D, 2 * D):
+                    if (dx / (1.6 * D)) ** 2 + (dy / (4.0 * D)) ** 2 <= 1.0:
                         put(img, tx + dx, ty + dy, c(FORE_BODY, PART_A))
-    return spread + rng.randint(10, 22) * D
+    return spread + rng.randint(16, 32) * D
 
 
 def _fore_crystal(img, x, base, rng):
     spread = rng.randint(10, 18) * D
     for _ in range(rng.randint(2, 4)):
         cx = x + rng.randint(0, spread)
-        h = rng.randint(34, 88) * D
-        w = rng.randint(8, 16) * D
-        _fore_stalk(img, cx, base, h, w, rng.randint(-6, 6) * D, True)
-    return spread + rng.randint(12, 22) * D
+        h = rng.randint(12, 34) * D
+        w = rng.randint(6, 12) * D
+        _fore_stalk(img, cx, base, h, w, rng.randint(-5, 5) * D, True)
+    return spread + rng.randint(18, 32) * D
 
 
 def _fore_rubble(img, x, base, rng):
     span = rng.randint(24, 46) * D
-    peak = rng.randint(20, 54) * D
+    peak = rng.randint(10, 26) * D
     steps = rng.randint(4, 7)
     pts = [rng.randint(peak // 3, peak) for _ in range(steps + 1)]
     for i in range(span):
@@ -1919,26 +1925,37 @@ def _fore_rubble(img, x, base, rng):
     return span + rng.randint(8, 18) * D
 
 
-def _fore_post(img, x, base, rng):
-    w = rng.randint(6, 11) * D
-    h = rng.randint(55, 118) * D
-    lean = rng.randint(-3, 3) * D
-    for i in range(h):
-        t = i / h
-        y = base - i
-        x0 = x + int(lean * t)
-        for dx in range(w):
-            put(img, x0 + dx, y, c(FORE_BODY, PART_A))
-        put(img, x0, y, c(FORE_RIM, RIM_A))
-        put(img, x0 + w - 1, y, c(FORE_RIM, RIM_A))
-    for dx in range(w):  # a flat cap rim
-        put(img, x + int(lean) + dx, base - h, c(FORE_RIM, RIM_A))
-    return w + rng.randint(26, 50) * D
+def _fore_fence(img, x, base, rng):
+    """A run of short timber stubs joined by a sagging rail (Hearthroot, the
+    Spires): low and broken, so it never stands over the play layer as a bar."""
+    stubs = rng.randint(2, 4)
+    gap = rng.randint(12, 20) * D
+    tops = []
+    for k in range(stubs):
+        sx = x + k * gap
+        w = rng.choice([3, 4]) * D
+        h = rng.randint(12, 30) * D
+        lean = rng.randint(-2, 2) * D
+        for i in range(h):
+            t = i / h
+            x0 = sx + int(lean * t)
+            for dx in range(w):
+                put(img, x0 + dx, base - i, c(FORE_BODY, PART_A))
+            put(img, x0, base - i, c(FORE_RIM, RIM_A))
+        tops.append((sx + int(lean) + w // 2, base - h))
+    for (ax, ay), (bx, by) in zip(tops, tops[1:]):  # the rail sags between stubs
+        rail_y = max(ay, by) + 3 * D
+        for px in range(ax, bx + 1):
+            f = (px - ax) / max(1, bx - ax)
+            sag = int(4 * D * 4 * f * (1 - f))
+            for dy in range(D):
+                put(img, px, rail_y + sag + dy, c(FORE_BODY, PART_A))
+    return (stubs - 1) * gap + rng.randint(40, 70) * D
 
 
 FORE_SHAPE = {
     "fern": _fore_fern, "reed": _fore_reed, "crystal": _fore_crystal,
-    "rubble": _fore_rubble, "post": _fore_post,
+    "rubble": _fore_rubble, "fence": _fore_fence,
 }
 
 

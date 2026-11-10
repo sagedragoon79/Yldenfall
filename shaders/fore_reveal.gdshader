@@ -5,7 +5,8 @@ shader_type canvas_item;
 // feeds the actors' boxes each frame as `holes`: (centre u, centre v, half width,
 // half height), the centre in the art's UV and the half sizes in world pixels.
 // The layer repeats sideways every `size.x`, so the hole's distance wraps in u.
-// The maths mirror Backdrop.reveal_mask() exactly, which the tests drive.
+// The maths mirror Backdrop.reveal_mask() and Backdrop.fore_color() exactly,
+// which the tests drive.
 
 const int MAX_HOLES = 16;
 
@@ -17,6 +18,10 @@ uniform vec2 size = vec2(640.0, 480.0);
 uniform float keep : hint_range(0.0, 1.0) = 0.2;
 // The soft edge around each box, in world pixels.
 uniform float soft = 8.0;
+// The zone's fog colour the near-black silhouettes lean toward (design bible
+// 12.29), and how far, so they read as near air rather than black bars.
+uniform vec4 haze : source_color = vec4(0.17, 0.15, 0.25, 1.0);
+uniform float tint : hint_range(0.0, 1.0) = 0.0;
 
 void fragment() {
 	vec4 col = texture(TEXTURE, UV);
@@ -31,5 +36,5 @@ void fragment() {
 		vec2 out_d = max(vec2(du, dv) - h.zw, vec2(0.0));
 		m = max(m, 1.0 - smoothstep(0.0, soft, length(out_d)));
 	}
-	COLOR = vec4(col.rgb, col.a * mix(1.0, keep, m));
+	COLOR = vec4(mix(col.rgb, haze.rgb, tint), col.a * mix(1.0, keep, m));
 }
