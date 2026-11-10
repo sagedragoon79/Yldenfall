@@ -165,14 +165,68 @@ func test_the_murkiest_zones_are_eased_toward_neutral() -> void:
 
 func test_fore_scroll_reads_as_near_and_in_front() -> void:
 	# The foreground silhouette (design bible 12.11) scrolls faster than the camera
-	# horizontally, so it reads as near and slides past; it is locked vertically
-	# (scale 1), so its band always frames the view bottom with no gap. Its z sits
-	# above the atmosphere overlays (fog/motes/rain at 4) and every actor (<= 3),
-	# so it is the nearest thing on screen.
+	# horizontally, so it reads as near and slides past; it is locked to the camera
+	# vertically. On a Parallax2D axis with no repeat, scale 0 is the camera lock
+	# (scale 1 pins the layer to the world, the pass 528 band). Its z sits above the
+	# atmosphere overlays (fog/motes/rain at 4) and every actor (<= 3), so it is the
+	# nearest thing on screen.
 	check(Backdrop.FORE_SCROLL.x > 1.0, "the foreground scrolls faster than the camera (near, in front)")
-	check(is_equal_approx(Backdrop.FORE_SCROLL.y, 1.0), "it is locked to the camera vertically, so the band never gaps")
+	check(is_zero_approx(Backdrop.FORE_SCROLL.y), "it is locked to the camera vertically (scale 0, not 1)")
 	check(Backdrop.FORE_Z > 4, "it draws in front of the fog, motes and rain overlays")
 	check(Backdrop.FORE_Z > 3, "it draws in front of every actor and projectile")
+
+
+func test_fore_ground_band_stays_off_screen_at_any_camera_height() -> void:
+	# Sean's note (pass 528): "a dark band of nearly opaque black across the top and
+	# bottom of the screen, even when you travel up and down from screen to screen".
+	# The foreground's solid ground band was pinned to world y 344..480, so it lay
+	# across every room taller than a screen, in front of its platforms. Wherever the
+	# camera is and however it is framed, the band's top must now sit on the bottom
+	# edge of the view (the silhouettes rise from the edge; the band stays below it).
+	var vp := arena.get_viewport()
+	var before := vp.canvas_transform
+	var backdrop := Backdrop.new()
+	arena.add_child(backdrop)
+	backdrop.set_zone("haar")
+	var fore: Parallax2D = null
+	for layer: Parallax2D in backdrop.get_children():
+		if layer.z_index == Backdrop.FORE_Z and not layer.z_as_relative:
+			fore = layer
+	check(fore != null, "the haar backdrop has a foreground layer")
+	if fore != null:
+		var sprite := fore.get_child(0) as Sprite2D
+		# The normal framing (zoom 2) and a wide room's (zoom 1.6), at the top of a
+		# room, one screen down, and deep in a tall shaft.
+		for zoom: float in [2.0, 1.6]:
+			for cam_top: float in [0.0, 8.0, 360.0, 1234.0]:
+				vp.canvas_transform = Transform2D(0.0, Vector2(zoom, zoom), 0.0, Vector2(-96.0, -cam_top) * zoom)
+				backdrop._process(0.0)
+				var view_height := vp.get_visible_rect().size.y / zoom
+				var band_top := fore.global_position.y + sprite.position.y + Backdrop.FORE_GROUND
+				check_near(band_top - cam_top, view_height, 0.01,
+					"zoom %.1f, camera top %d: the ground band starts at the view's bottom edge" % [zoom, cam_top])
+	vp.canvas_transform = before
+	backdrop.queue_free()
+
+
+func test_fore_ground_line_matches_the_painted_art() -> void:
+	# FORE_GROUND mirrors tools/art/tilegen.py (FORE_FLOOR - FORE_BAND): the first
+	# fully solid row of every zone's foreground art, in world pixels.
+	for zone: String in ["haar", "heartwood", "spires", "evercrown", "tower"]:
+		var tex := load(Backdrop.DIR + "%s_fore.png" % zone) as Texture2D
+		var img := tex.get_image()
+		var per_world := float(img.get_height()) / Backdrop.SIZE.y
+		var first_solid := -1
+		for y in img.get_height():
+			var solid := true
+			for x in range(0, img.get_width(), 16):
+				if img.get_pixel(x, y).a < 0.8:
+					solid = false
+					break
+			if solid:
+				first_solid = y
+				break
+		check_near(first_solid / per_world, Backdrop.FORE_GROUND, 0.5, "%s: the solid band starts at FORE_GROUND" % zone)
 
 
 func test_fore_layer_builds_in_front_for_a_zone_with_art() -> void:

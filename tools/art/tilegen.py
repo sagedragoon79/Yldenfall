@@ -1777,9 +1777,10 @@ def gym_far():
 # A near-black silhouette band hugging the bottom of the view, drawn by Backdrop
 # as a fast horizontal-parallax layer in front of the play field. Mostly
 # transparent so the centre of the screen stays clear for combat; the shapes
-# differ by zone material so each foreground belongs to its world. The band is
-# anchored to the view bottom (world y 360, the base framing height) and painted
-# down past it, because Backdrop locks this layer vertically to the camera.
+# differ by zone material so each foreground belongs to its world. The solid band
+# only backs the protrusion roots: Backdrop locks this layer vertically to the
+# camera and seats the band's top (FORE_FLOOR - FORE_BAND, Backdrop.FORE_GROUND)
+# on the view's bottom edge, so the band itself stays off screen (bible 12.25).
 FORE_KIND = {
     "heartwood": "fern", "boughs": "fern",
     "haar": "reed", "sunken": "reed",

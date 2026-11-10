@@ -62,16 +62,29 @@ const OFFSET := Vector2(0, -60)
 ## material (ferns, reeds, crystals, rubble, posts; tools/art/tilegen.py paints
 ## <zone>_fore.png) drawn in front of the play field. It scrolls FASTER than the
 ## camera horizontally (x > 1) so it reads as near and slides past as the player
-## walks, and is locked to the camera vertically (y = 1) so the silhouette band
-## always frames the bottom of the view with no gap. The art is anchored to the
-## view bottom, so the layer draws from the camera top with no vertical offset.
-const FORE_SCROLL := Vector2(1.5, 1.0)
+## walks, and is locked to the camera vertically so the silhouettes always rise
+## from the bottom edge of the view.
+##
+## A Parallax2D axis with no repeat sits at `screen_offset * (1 - scroll_scale)`:
+## scale 1 pins it to the WORLD, scale 0 pins it to the CAMERA. The vertical scale
+## was 1 until pass 528, which left the art's solid ground band fixed at world
+## y 344..480: a 16 px black strip along the bottom of a one-screen room, and a
+## near-opaque black band 136 px tall across every taller room (Sean's note, and
+## the grade's "letterbox"), in front of its platforms and foes.
+const FORE_SCROLL := Vector2(1.5, 0.0)
 ## An absolute z above the atmosphere overlays (fog/motes/rain sit at 4) and every
 ## actor and projectile (<= 3), so the foreground is the nearest thing on screen.
 const FORE_Z := 5
-const FORE_OFFSET := Vector2(0, 0)
+## The y, in the art's world pixels, where the solid ground band starts and the
+## silhouettes root (tools/art/tilegen.py: FORE_FLOOR - FORE_BAND, over D).
+const FORE_GROUND := 344.0
+## The height of the view at the normal framing (GameCamera.view_size.y), in world pixels.
+const VIEW_HEIGHT := 360.0
 
 var zone := ""
+## The foreground layer of the current zone, or null (see _process).
+var _fore: Parallax2D
+
 
 
 func _ready() -> void:
@@ -102,9 +115,9 @@ func set_zone(next: String) -> void:
 		sprite.material = atmos_material(suffix, haze_for(zone))
 		layer.add_child(sprite)
 		add_child(layer)
-	var fore := fore_layer(zone)
-	if fore != null:
-		add_child(fore)
+	_fore = fore_layer(zone)
+	if _fore != null:
+		add_child(_fore)
 
 
 ## The foreground silhouette layer for a zone (design bible 12.11), or null when
@@ -127,9 +140,17 @@ static func fore_layer(a_zone: String) -> Parallax2D:
 	# Painted at the render density (design bible 12.1): scale back to world pixels.
 	sprite.scale = SIZE / sprite.texture.get_size()
 	sprite.centered = false
-	sprite.position = FORE_OFFSET
+	sprite.position = fore_offset(VIEW_HEIGHT)
 	layer.add_child(sprite)
 	return layer
+
+
+## Where the foreground art sits below the top of a view `view_height` world
+## pixels tall: its ground line lands exactly on the view's bottom edge, so the
+## silhouettes rise from the edge and the solid band under them (which only backs
+## their roots) stays off screen at any framing — the normal 360 or a wide room's 450.
+static func fore_offset(view_height: float) -> Vector2:
+	return Vector2(0, view_height - FORE_GROUND)
 
 
 ## The distance-fog colour a zone's layers recede into: its ZONE_HAZE entry, or
@@ -173,8 +194,13 @@ static func haze_color(src: Color, desat: float, fade: float, haze: Color) -> Co
 
 ## Parallax2D reads the camera scroll in render pixels, which is GameCamera.DETAIL
 ## times too far once the camera zooms, so the layers get it in world pixels.
+## The foreground is then seated on the bottom edge of whatever the view shows.
 func _process(_delta: float) -> void:
-	var t := get_viewport().get_canvas_transform()
+	var vp := get_viewport()
+	var t := vp.get_canvas_transform()
 	var offset := -t.origin / t.get_scale()
 	for layer in get_children():
 		(layer as Parallax2D).screen_offset = offset
+	if _fore != null and is_instance_valid(_fore) and _fore.get_child_count() > 0:
+		var view_height := vp.get_visible_rect().size.y / t.get_scale().y
+		(_fore.get_child(0) as Sprite2D).position = fore_offset(view_height)
