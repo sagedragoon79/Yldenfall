@@ -1643,7 +1643,7 @@ Still open from Sean's lighting/depth request after this pass: **rim light on fi
 
 The back layers (far, mid) recede *behind* the play field; this adds the layer that passes *in front* of it — the dark near-ground silhouette that frames the bottom of the view and slides past as the player walks, the depth cue Blasphemous and The Last Faith lean on. This is the "dark foreground silhouette layers that pass in front of the camera" part of Sean's 2026-11-07 lighting/depth request.
 
-`tools/art/tilegen.py` paints one `<zone>_fore.png` per shipped zone (`FORE_KIND`): a near-black silhouette (`night-0` body, a faint `night-1` top rim) of the zone's own material — **ferns** (Heartwood, the High Boughs), **reeds** with cattails (the Haar, the Sunken Spring), **crystal shards** (the Evercrown, Vorrhallow), **rock rubble** (the Tower, the Trials) and **timber posts** (Hearthroot, the Spires) — rising from a solid ground band (the band only backs their roots: since pass 528 it sits just below the view, 12.25). The canvas is otherwise transparent, and the shapes keep to the bottom third, so the centre of the screen stays clear. The band and protrusions are drawn slightly see-through (alphas 242 / 206), so a telegraph behind a reed still reads.
+`tools/art/tilegen.py` paints one `<zone>_fore.png` per shipped zone (`FORE_KIND`): a near-black silhouette (`night-0` body, a faint `night-1` top rim) of the zone's own material — **ferns** (Heartwood, the High Boughs), **reeds** with cattails (the Haar, the Sunken Spring), **crystal shards** (the Evercrown, Vorrhallow), **rock rubble** (the Tower, the Trials) and **timber posts** (Hearthroot, the Spires) — rising from a solid ground band (the band only backs their roots: since pass 528 it sits just below the view, 12.25). The canvas is otherwise transparent, and the shapes keep to the bottom third, so the centre of the screen stays clear. The band and protrusions are drawn slightly see-through (alphas 242 / 206), so a telegraph behind a reed still reads. Since pass 531 the silhouettes also thin to a ghost wherever they pass in front of an actor (12.26).
 
 `Backdrop.fore_layer(zone)` builds it as a `Parallax2D` drawn in front of the play field:
 
@@ -1816,6 +1816,16 @@ The rule now:
 - **No opaque band may cross the play field.** Anything drawn in front of the actors must be thin, see-through and confined to the bottom edge; a solid strip of any height inside the view is a defect.
 
 `tests/test_backdrop.gd` drives a real backdrop through camera heights 0, 8, 360 and 1234 at both framings and checks the band's top stays on the view's bottom edge (`test_fore_ground_band_stays_off_screen_at_any_camera_height`; reverting the scale to 1, or putting the 16 px strip back, fails it), and checks `FORE_GROUND` against the painted art.
+
+### 12.26 The foreground thins in front of actors (pass 531)
+
+The independent grade of pass 529: the near-black foreground posts cut across the play layer and cover actors; in the Hearthroot market they sliced through all four shopkeepers and the hero. Because the foreground slides past at 1.5x the camera (12.11), no fixed placement of the silhouettes can keep them off a person, so the layer gives way instead.
+
+- **Where.** Every frame, `Backdrop` gathers the actors the view shows (the groups `player`, `npc`, `enemy` and `boss`; townspeople join `npc` in `Npc._ready`), at most `MAX_HOLES` (16), nearest the view's centre first. Each actor's box is its first rectangle or capsule collision shape, or `PERSON_BOX` (24 by 46, standing on its feet) for a townsperson, grown by `REVEAL_PAD` (4 px).
+- **How.** `shaders/fore_reveal.gdshader` on the foreground sprite multiplies the silhouettes' alpha down to `REVEAL_KEEP` (0.2) inside each box, easing back to full over `REVEAL_SOFT` (8 px) outside it. A faint ghost of the post stays, so the layer still reads as one continuous near band; the actor reads clearly through it. The art repeats sideways every 640 px, so a hole's distance wraps across the seam. `Backdrop.reveal_mask` mirrors the shader's maths for the tests.
+- **Not shops.** Only actors are revealed. A post crossing a shop front or a wall is ordinary depth; one crossing a person hides what the player needs to read.
+
+`tests/test_backdrop.gd`: `test_the_reveal_mask_thins_only_around_an_actor` (full inside, soft edge, untouched beyond, wraps at the seam), `test_actor_box_measures_the_collision_shape_or_a_person`, and `test_the_foreground_thins_in_front_of_actors_in_view`, which drives a real Hearthroot backdrop at three camera positions and checks the hole lands on a townsperson and not on a foe off screen.
 
 ---
 
