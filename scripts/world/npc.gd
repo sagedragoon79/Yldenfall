@@ -18,6 +18,7 @@ var _look := {}
 
 func _ready() -> void:
 	super()
+	add_to_group("npc")
 	info = GameData.npc(npc_id)
 	_look = info.get("look", {})
 	prompt_height = 50.0

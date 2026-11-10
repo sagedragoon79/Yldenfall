@@ -6,6 +6,7 @@ extends Node2D
 
 const DIR := "res://assets/bg/"
 const ATMOS_SHADER := preload("res://shaders/atmosphere.gdshader")
+const FORE_SHADER := preload("res://shaders/fore_reveal.gdshader")
 ## Layer suffix -> scroll speed relative to the camera. Insertion order is also
 ## draw order (back to front): far sits furthest back and scrolls slowest, the
 ## ridge sits between, mid is nearest. The ridge (design bible 12.12) is a
@@ -80,6 +81,19 @@ const FORE_Z := 5
 const FORE_GROUND := 344.0
 ## The height of the view at the normal framing (GameCamera.view_size.y), in world pixels.
 const VIEW_HEIGHT := 360.0
+## The foreground thins in front of actors (design bible 12.26): the groups whose
+## members it reveals, how much of a silhouette is left in front of one, the
+## padding around each actor's box and the soft edge beyond it (world pixels), and
+## how many actors at most (the nearest to the view's centre; mirrors
+## MAX_HOLES in shaders/fore_reveal.gdshader).
+const REVEAL_GROUPS := ["player", "npc", "enemy", "boss"]
+const REVEAL_KEEP := 0.2
+const REVEAL_PAD := 4.0
+const REVEAL_SOFT := 8.0
+const MAX_HOLES := 16
+## An actor's box when it has no collision shape to measure (a townsperson, whose
+## origin is its feet): about a person's width and height.
+const PERSON_BOX := Rect2(-12, -46, 24, 46)
 
 var zone := ""
 ## The foreground layer of the current zone, or null (see _process).
@@ -141,8 +155,85 @@ static func fore_layer(a_zone: String) -> Parallax2D:
 	sprite.scale = SIZE / sprite.texture.get_size()
 	sprite.centered = false
 	sprite.position = fore_offset(VIEW_HEIGHT)
+	sprite.material = fore_material()
 	layer.add_child(sprite)
 	return layer
+
+
+## The foreground's reveal material (design bible 12.26): no holes until
+## _process feeds the actors in view.
+static func fore_material() -> ShaderMaterial:
+	var mat := ShaderMaterial.new()
+	mat.shader = FORE_SHADER
+	mat.set_shader_parameter("size", SIZE)
+	mat.set_shader_parameter("keep", REVEAL_KEEP)
+	mat.set_shader_parameter("soft", REVEAL_SOFT)
+	mat.set_shader_parameter("hole_count", 0)
+	return mat
+
+
+## An actor's box in world pixels: its first rectangle or capsule collision shape
+## (the hero, a foe), or PERSON_BOX at its feet (a townsperson), grown by REVEAL_PAD.
+static func actor_box(actor: Node2D) -> Rect2:
+	var box := Rect2(actor.global_position + PERSON_BOX.position, PERSON_BOX.size)
+	for c in actor.get_children():
+		if c is CollisionShape2D and c.shape != null:
+			var sz := Vector2.ZERO
+			if c.shape is RectangleShape2D:
+				sz = (c.shape as RectangleShape2D).size
+			elif c.shape is CapsuleShape2D:
+				var cap := c.shape as CapsuleShape2D
+				sz = Vector2(cap.radius * 2.0, cap.height)
+			if sz != Vector2.ZERO:
+				var centre: Vector2 = (c as CollisionShape2D).global_position
+				box = Rect2(centre - sz * 0.5, sz)
+				break
+	return box.grow(REVEAL_PAD)
+
+
+## The holes for the foreground sprite `sprite`, one per actor box in `boxes`:
+## (centre u, centre v, half width, half height), the centre in the art's UV and the
+## half sizes in world pixels, as shaders/fore_reveal.gdshader reads them.
+static func holes_for(sprite: Sprite2D, boxes: Array[Rect2]) -> Array[Vector4]:
+	var out: Array[Vector4] = []
+	var to_local := sprite.get_global_transform().affine_inverse()
+	var tex_size := sprite.texture.get_size()
+	for b in boxes:
+		var uv := (to_local * b.get_center()) / tex_size
+		out.append(Vector4(uv.x, uv.y, b.size.x * 0.5, b.size.y * 0.5))
+	return out
+
+
+## How much of the foreground is thinned at `uv` (0 none, 1 full) by `holes`.
+## Mirrors shaders/fore_reveal.gdshader exactly, so the tests can drive its maths.
+static func reveal_mask(uv: Vector2, holes: Array[Vector4], size: Vector2 = SIZE, soft: float = REVEAL_SOFT) -> float:
+	var m := 0.0
+	for h in holes:
+		var du := absf(fposmod(uv.x - h.x + 0.5, 1.0) - 0.5) * size.x
+		var dv := absf(uv.y - h.y) * size.y
+		var out_d := Vector2(maxf(du - h.z, 0.0), maxf(dv - h.w, 0.0))
+		m = maxf(m, 1.0 - smoothstep(0.0, soft, out_d.length()))
+	return m
+
+
+## The boxes of the actors the view shows (REVEAL_GROUPS), nearest to the view's
+## centre first, at most MAX_HOLES.
+func _actor_boxes(view: Rect2) -> Array[Rect2]:
+	var found: Array = []
+	var seen := {}
+	for g: String in REVEAL_GROUPS:
+		for n in get_tree().get_nodes_in_group(g):
+			if seen.has(n) or not (n is Node2D) or not (n as Node2D).is_visible_in_tree():
+				continue
+			seen[n] = true
+			var b := actor_box(n as Node2D)
+			if view.intersects(b):
+				found.append([b.get_center().distance_squared_to(view.get_center()), b])
+	found.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
+	var out: Array[Rect2] = []
+	for f in found.slice(0, MAX_HOLES):
+		out.append(f[1])
+	return out
 
 
 ## Where the foreground art sits below the top of a view `view_height` world
@@ -202,5 +293,14 @@ func _process(_delta: float) -> void:
 	for layer in get_children():
 		(layer as Parallax2D).screen_offset = offset
 	if _fore != null and is_instance_valid(_fore) and _fore.get_child_count() > 0:
-		var view_height := vp.get_visible_rect().size.y / t.get_scale().y
-		(_fore.get_child(0) as Sprite2D).position = fore_offset(view_height)
+		var view_size := vp.get_visible_rect().size / t.get_scale()
+		var sprite := _fore.get_child(0) as Sprite2D
+		sprite.position = fore_offset(view_size.y)
+		# Thin the silhouettes in front of the actors in view (design bible 12.26).
+		var holes := holes_for(sprite, _actor_boxes(Rect2(offset, view_size)))
+		var mat := sprite.material as ShaderMaterial
+		if mat != null:
+			var packed: Array[Vector4] = holes.duplicate()
+			packed.resize(MAX_HOLES)
+			mat.set_shader_parameter("holes", packed)
+			mat.set_shader_parameter("hole_count", holes.size())

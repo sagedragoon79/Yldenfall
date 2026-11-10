@@ -243,8 +243,118 @@ func test_fore_layer_builds_in_front_for_a_zone_with_art() -> void:
 	check(fl.ignore_camera_scroll, "it takes its offset from Backdrop, like the back layers")
 	var sprite := fl.get_child(0) as Sprite2D
 	check(sprite != null and sprite.texture != null, "it shows the zone's silhouette art")
-	check(sprite.material == null, "the near foreground is not hazed like the receding back layers")
+	var mat := sprite.material as ShaderMaterial
+	check(mat != null and mat.shader == Backdrop.FORE_SHADER,
+		"it carries the reveal shader (12.26), not the haze of the receding back layers")
 	fl.free()
+
+
+func test_the_reveal_mask_thins_only_around_an_actor() -> void:
+	# The grade (pass 529): near-black foreground posts sliced through the market's
+	# shopkeepers and the hero. The foreground thins in a soft box around each actor
+	# (design bible 12.26); the mask mirrors shaders/fore_reveal.gdshader.
+	var holes: Array[Vector4] = [Vector4(0.5, 0.5, 10.0, 20.0)]
+	var px := Vector2(1.0, 1.0) / Backdrop.SIZE  # one world pixel in UV
+	check_near(Backdrop.reveal_mask(Vector2(0.5, 0.5), holes), 1.0, 0.001, "full at the actor's centre")
+	check_near(Backdrop.reveal_mask(Vector2(0.5, 0.5) + Vector2(9.5, 19.5) * px, holes), 1.0, 0.001,
+		"full anywhere inside the box")
+	var mid := Backdrop.reveal_mask(Vector2(0.5, 0.5) + Vector2(10.0 + Backdrop.REVEAL_SOFT * 0.5, 0.0) * px, holes)
+	check(mid > 0.05 and mid < 0.95, "it fades out over the soft edge, not at a hard line")
+	check_near(Backdrop.reveal_mask(Vector2(0.5, 0.5) + Vector2(10.0 + Backdrop.REVEAL_SOFT + 1.0, 0.0) * px, holes),
+		0.0, 0.001, "untouched beyond the soft edge")
+	check_near(Backdrop.reveal_mask(Vector2(0.5, 0.1), holes), 0.0, 0.001, "untouched above the actor")
+	check_near(Backdrop.reveal_mask(Vector2(0.5, 0.5), [] as Array[Vector4]), 0.0, 0.001, "no actors, no holes")
+	# The layer repeats sideways every SIZE.x, so a hole near one edge of the art
+	# thins the other edge of the next copy too.
+	var seam: Array[Vector4] = [Vector4(2.0 * px.x, 0.5, 10.0, 20.0)]
+	check_near(Backdrop.reveal_mask(Vector2(1.0 - 4.0 * px.x, 0.5), seam), 1.0, 0.001, "the hole wraps across the seam")
+	check(Backdrop.REVEAL_KEEP > 0.0 and Backdrop.REVEAL_KEEP <= 0.3,
+		"a ghost of the silhouette is left in front of an actor, faint enough to see the actor through")
+
+
+func test_actor_box_measures_the_collision_shape_or_a_person() -> void:
+	var foe := Node2D.new()
+	foe.position = Vector2(100, 200)
+	var cs := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(20, 30)
+	cs.shape = rect
+	cs.position = Vector2(0, -15)
+	foe.add_child(cs)
+	arena.add_child(foe)
+	var b := Backdrop.actor_box(foe)
+	check(b.is_equal_approx(Rect2(90, 170, 20, 30).grow(Backdrop.REVEAL_PAD)), "a foe's box is its shape, padded")
+	var person := Node2D.new()
+	person.position = Vector2(300, 304)
+	arena.add_child(person)
+	var pb := Backdrop.actor_box(person)
+	check(pb.is_equal_approx(Rect2(Vector2(300, 304) + Backdrop.PERSON_BOX.position, Backdrop.PERSON_BOX.size).grow(Backdrop.REVEAL_PAD)),
+		"a townsperson's box stands on its feet")
+	check(pb.end.y > 304.0 and pb.position.y < 304.0 - 40.0, "it covers the person from the feet to the head")
+
+
+func test_the_foreground_thins_in_front_of_actors_in_view() -> void:
+	# Wired end to end: Backdrop._process finds the actors in view and the shader's
+	# holes land on them wherever the parallax has slid the repeating art.
+	var vp := arena.get_viewport()
+	var before := vp.canvas_transform
+	var backdrop := Backdrop.new()
+	arena.add_child(backdrop)
+	backdrop.set_zone("hearthroot")
+	var keeper := Node2D.new()
+	keeper.add_to_group("npc")
+	arena.add_child(keeper)
+	var far_foe := Node2D.new()
+	far_foe.add_to_group("enemy")
+	arena.add_child(far_foe)
+	var sprite := backdrop._fore.get_child(0) as Sprite2D
+	var mat := sprite.material as ShaderMaterial
+	for cam_left: float in [0.0, 333.0, 1500.0]:
+		keeper.position = Vector2(cam_left + 200.0, 300.0)
+		far_foe.position = Vector2(cam_left + 2000.0, 300.0)  # well outside the view
+		vp.canvas_transform = Transform2D(0.0, Vector2(2, 2), 0.0, Vector2(-cam_left, -200.0) * 2.0)  # view y 200..380
+		# Count against the actors already in the tree (a hidden actor is skipped).
+		keeper.visible = false
+		backdrop._process(0.0)
+		var baseline := int(mat.get_shader_parameter("hole_count"))
+		keeper.visible = true
+		backdrop._process(0.0)
+		var count := int(mat.get_shader_parameter("hole_count"))
+		check(count == mini(baseline + 1, Backdrop.MAX_HOLES),
+			"camera at %d: one more hole, for the townsperson in view (not the foe off screen)" % cam_left)
+		var holes: Array[Vector4] = []
+		for h: Vector4 in mat.get_shader_parameter("holes"):
+			holes.append(h)
+		holes.resize(count)
+		# Where the townsperson's chest falls on the art, measured independently of
+		# holes_for: its offset from the sprite's origin in world pixels, over SIZE.
+		var chest := keeper.global_position + Vector2(0, -24)
+		var uv := (chest - sprite.global_position) / Backdrop.SIZE
+		check_near(Backdrop.reveal_mask(uv, holes), 1.0, 0.001,
+			"camera at %d: the silhouettes are thinned over the townsperson" % cam_left)
+		var foe_uv := (far_foe.global_position + Vector2(0, -24) - sprite.global_position) / Backdrop.SIZE
+		check_near(Backdrop.reveal_mask(foe_uv, holes), 0.0, 0.001,
+			"camera at %d: the foe off screen opens no hole (its spot on the repeating art stays whole)" % cam_left)
+		if baseline == 0:
+			check_near(Backdrop.reveal_mask(uv + Vector2(0.25, 0.0), holes), 0.0, 0.001,
+				"camera at %d: and left whole a quarter screen away" % cam_left)
+	# More actors than holes: the nearest to the view's centre win.
+	for i in Backdrop.MAX_HOLES + 4:
+		var n := Node2D.new()
+		n.add_to_group("enemy")
+		n.position = Vector2(1500.0 + 10.0 * i, 300.0)
+		arena.add_child(n)
+	backdrop._process(0.0)
+	check(int(mat.get_shader_parameter("hole_count")) == Backdrop.MAX_HOLES, "the holes are capped at MAX_HOLES")
+	vp.canvas_transform = before
+	backdrop.queue_free()
+
+
+func test_townspeople_join_the_npc_group() -> void:
+	var n := Npc.new()
+	n.npc_id = "merchant"
+	arena.add_child(n)
+	check(n.is_in_group("npc"), "a townsperson is in the npc group, so the foreground reveals it")
 
 
 func test_fore_layer_absent_without_art() -> void:
