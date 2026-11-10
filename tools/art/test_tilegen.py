@@ -893,6 +893,76 @@ def test_paint_spring_strata_wrap_across_the_tile_width():
             f"interior step {interior:.1f}")
 
 
+def _fill_busyness(zone, seed):
+    """The share of neighbouring pixel pairs (right and below, wrapping) in one
+    zone's full interior tile that change colour, and the share of pixels that
+    differ from all four neighbours (single-pixel static)."""
+    T = tg.T
+    img = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+    tg.paint_tile(img, 0, 0, 255, zone, seed)
+    px = lambda x, y: img.getpixel((x % T, y % T))[:3]
+    diff = iso = 0
+    for y in range(T):
+        for x in range(T):
+            p = px(x, y)
+            n = [px(x + 1, y), px(x - 1, y), px(x, y + 1), px(x, y - 1)]
+            diff += (p != n[0]) + (p != n[2])
+            iso += all(p != q for q in n)
+    return diff / (2 * T * T), iso / (T * T)
+
+
+def test_graded_play_fill_is_calm():
+    # The independent grade (pass 529) read the play tiles' interior fill as noisy
+    # high-frequency texture: static-like dirt in the Haar and the Heartwood,
+    # zig-zag strata in the Sunken, busy cobble in the Evercrown. Pass 534 rebuilt
+    # those painters from long, flat marks (bible 12.28). Over the full tile and its
+    # scattered variants, fewer than 23% of neighbouring pixel pairs change colour
+    # (the old painters ran 26% to 33%) and almost no pixel stands alone. (Restoring
+    # the old wood grain, strata or small cells fails the share.)
+    for zone in ("haar", "heartwood", "sunken", "evercrown"):
+        seeds = (11 + tg.blob_masks().index(255), 201, 202, 203)
+        edge = sum(_fill_busyness(zone, s)[0] for s in seeds) / len(seeds)
+        iso = sum(_fill_busyness(zone, s)[1] for s in seeds) / len(seeds)
+        assert edge < 0.23, f"{zone} fill is busy: {edge:.3f} of neighbour pairs change"
+        assert iso < 0.01, f"{zone} fill has single-pixel static: {iso:.3f}"
+
+
+def test_wood_strands_run_on_from_tile_to_tile():
+    # With the noise gone, a strand layout drawn per tile cut a hard seam across
+    # every tile row of the Heartwood walls. The strands now share one layout
+    # (WOOD_STRANDS), so the bottom row of one tile matches the top row of the
+    # next over most columns; only grain lines and knots break it. (Keying the
+    # layout on the tile's seed again drops the match to about half.)
+    T = tg.T
+    for a, b in ((201, 202), (57, 203), (101, 211)):
+        top = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+        low = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+        tg.paint_wood(top, 0, 0, a, "bark")
+        tg.paint_wood(low, 0, 0, b, "bark")
+        same = sum(top.getpixel((x, T - 1)) == low.getpixel((x, 0)) for x in range(T))
+        assert same / T >= 0.75, f"wood strands break at the tile seam ({a}->{b}): {same}/{T}"
+
+
+def test_evercrown_cells_join_across_tile_edges():
+    # The broad Evercrown cells (pass 534) were first drawn per tile, so every
+    # one-tile ledge broke into the same cut-off cells every 32 px. The cells now
+    # wrap over the tile (two across, two down, the points outside the tile copied
+    # from the cells inside it) and share one layout (MEAT_CELLS), so any two
+    # tiles meet with their seams joined (checked by eye on the drift_well ledges).
+    # Held as: tiles of different seeds draw the same cells and differ only in the
+    # rare pores. (Keying the cell centres on the seed again drops the agreement
+    # to about half.)
+    T = tg.T
+    for a, b in ((201, 202), (57, 203), (101, 221)):
+        ia = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+        ib = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+        tg.paint_meteor(ia, 0, 0, a, "night")
+        tg.paint_meteor(ib, 0, 0, b, "night")
+        same = sum(ia.getpixel((x, y)) == ib.getpixel((x, y)) for x in range(T) for y in range(T))
+        assert same / (T * T) >= 0.95, (
+            f"evercrown tiles {a} and {b} draw different cells ({same}/{T * T} agree)")
+
+
 def main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for t in tests:

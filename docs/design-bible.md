@@ -1845,6 +1845,18 @@ The independent grade of pass 529 read "random square 'missing pixel' blocks" in
 
 Every backdrop that shares the helper changes: `tower_far`, `hearthroot_far`, `vorrhallow_far`, `vorrhallow_mid` and `sunken_mid`. The play tiles are untouched. Held by `test_proud_stones_are_bricks_with_a_shadowed_foot` and `test_recessed_stones_carry_a_lit_sill` in `tools/art/test_tilegen.py` (each fails when its half is reverted). Judged by eye at 1x and 2x in `tower/foot`, `vorrhallow/drowned_nave`, `hearthroot/market` and `sunken/source_hall`.
 
+### 12.28 Calm play-tile fill: long marks, few values (pass 534)
+
+The independent grade of pass 529 read the interior fill of four zones' play tiles as noisy, high-frequency texture: static-like dirt in the Heartwood and the Haar, zig-zag strata in the Sunken, busy cobble in the Evercrown. About a third of all neighbouring pixel pairs changed colour, against a quarter in the calmer masonry zones. A fill is the largest surface on screen, so its noise competed with the actors and the lit cap for the eye.
+
+The rule: **a play tile's interior is drawn in long, flat marks of two or three values, and the lit cap carries the light.** No single-pixel flecks or pores; a detail is a run, a band or a shape.
+
+- **Wood** (`paint_wood`, the Heartwood; `paint_limb`, the Haar on top of it): vertical strands 4 to 9 render pixels wide, alternating two values with a dark seam between them, and a few long grain lines or highlights (6 to 20 pixels) laid down them. The strand layout is the same in every tile (`WOOD_STRANDS`), so a strand runs on unbroken into the tile below; the seed varies only the grain lines and the rare knot. The Haar's lichen patches are solid.
+- **Limestone** (`paint_spring`, the Sunken): two layers per tile, a flat body under a one-pixel lit top and over a one-pixel shadow, a wave of one world pixel, and the blue-green stain as long runs along a layer's foot. The layer values alternate by layer, not by tile, so the strata run across a whole wall.
+- **Grown cells** (`paint_meteor`, the Evercrown): two cells across and two down each tile, one flat body value, a lit rim along each cell's upper side and a seam one world pixel wide. The cells wrap over the tile and share one layout (`MEAT_CELLS`), so a run of one-tile ledges joins into one grown mass. The cyan pores are rare.
+
+Only the four atlases change (`assets/tiles/haar.png`, `heartwood.png`, `sunken.png`, `evercrown.png`); the backdrops do not use these painters. Held by `test_graded_play_fill_is_calm` (under 23% of neighbour pairs change and almost no pixel stands alone; the old painters ran 26% to 33%), `test_wood_strands_run_on_from_tile_to_tile` and `test_evercrown_cells_join_across_tile_edges` in `tools/art/test_tilegen.py`. Judged by eye at 1x and 2x in `haar/fog_cut`, `heartwood/amberlee`, `sunken/drowned_aqueduct` and `evercrown/drift_well` (`shots/terrain-fill/`).
+
 ---
 
 ## 13. Asset Production Plan
