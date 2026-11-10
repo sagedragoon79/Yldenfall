@@ -1,7 +1,8 @@
 class_name TorrentBolt
 extends Node2D
 ## The Deluge spell: a fast water bolt. Damages enemies, splashes on walls, and
-## calls `douse()` on anything in the "water_target" group (fire seals, basins).
+## calls `douse()` on anything in the "water_target" group (fire seals, basins),
+## or `take_water(bolt)` where the side it flies in from matters.
 
 const SIZE := Vector2(12, 8)
 const LIFE := 1.2
@@ -36,6 +37,12 @@ func _physics_process(delta: float) -> void:
 	var hits := Query.rect(get_world_2d(), area, mask)
 	# Water targets first: a basin overlaps its own walls.
 	for c: Variant in hits:
+		if c.is_in_group("water_target") and c.has_method("take_water"):
+			# A target that cares which way the water flies (the Haar Spring's
+			# intakes take a bolt only into the mouth).
+			c.take_water(self)
+			_splash()
+			return
 		if c.is_in_group("water_target") and c.has_method("douse"):
 			c.douse()
 			_splash()

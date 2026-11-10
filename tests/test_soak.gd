@@ -295,9 +295,9 @@ func test_widow_fight_soak_stays_lean() -> void:
 	await frames(2)
 
 
-## the Haar Wyrm through all three phases, 30 seconds against a mashing player who
-## can't die: breaths, bites, the fourth head and the flood clean up after
-## themselves, and a frame stays well inside the 60 fps budget.
+## the Haar Wyrm, 30 seconds against a mashing player who can't die: the plume,
+## the geyser, the thermal fog, a full cistern and the rage that boils it dry
+## clean up after themselves, and a frame stays well inside the 60 fps budget.
 func test_hydra_fight_soak_stays_lean() -> void:
 	var w := make_world({}, "haar/spring_of_haar", cell_feet(7, 19))
 	w.player.max_hp = 99999
@@ -307,8 +307,7 @@ func test_hydra_fight_soak_stays_lean() -> void:
 	check(boss != null, "the Haar Wyrm wakes")
 	if boss == null:
 		return
-	boss.max_hp = 99999
-	boss.hp = 99999
+	boss.skip_intro()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 23
 	var hold := {"move": 0, "down": 0, "up": 0, "jump": 0, "block": 0}
@@ -317,18 +316,20 @@ func test_hydra_fight_soak_stays_lean() -> void:
 	var total_usec := 0
 	var slowest := 0
 	var modes := {}
+	var steps := {}
 	const FIGHT_FRAMES := 1800
 	for f in FIGHT_FRAMES:
 		_mash(w.player, rng, hold)
-		# Phase 2 a third of the way in (the tanks filled), phase 3 at two thirds.
-		if f == FIGHT_FRAMES / 3 and boss.phase == 1:
-			_push_to_mark(boss, HaarWyrm.PHASES[0])
+		# From halfway in, the cistern is kept filling until a head is doused and
+		# the hydra rages (the fog may boil a third away first).
+		if f >= FIGHT_FRAMES / 2 and not steps.has("rage"):
 			for c in w.room.get_children():
-				if c is DryBasin:
+				if c is HydraIntake and not c.flowing:
 					c.douse()
-		if f == FIGHT_FRAMES * 2 / 3 and boss.phase == 2:
-			_push_to_mark(boss, HaarWyrm.PHASES[1])
-			check(boss.phase == 3, "the push at two thirds floods the arena (hp %d of %d)" % [boss.hp, boss.max_hp])
+		# The mashing blade never ends it: each head heals before it can die.
+		for h in boss.heads:
+			if h.hp < HaarWyrm.HEAD_FLOOR - 20:
+				h.hp = HaarWyrm.HEAD_HP
 		var t0 := Time.get_ticks_usec()
 		await frames(1)
 		var dt := Time.get_ticks_usec() - t0
@@ -336,13 +337,14 @@ func test_hydra_fight_soak_stays_lean() -> void:
 		slowest = maxi(slowest, dt)
 		for h in boss.heads:
 			modes[h.mode] = true
+		steps[boss.step] = true
 		peak = maxi(peak, _count_nodes(w))
 	var avg_ms := total_usec / 1000.0 / FIGHT_FRAMES
 	print("  Hydra soak: %.2f ms a frame on average, slowest %.1f ms, nodes %d -> %d, modes %s" % [avg_ms, slowest / 1000.0, start_nodes, peak, modes.keys()])
 	check(peak < start_nodes + 60, "effects never pile up (%d -> %d nodes)" % [start_nodes, peak])
 	check(avg_ms < 16.6, "a frame averages under the 60 fps budget (%.2f ms)" % avg_ms)
-	check(boss.phase == 3 and is_instance_valid(boss.flood), "the soak reached the flood")
-	check(modes.has("breath") and modes.has("emerge"), "breaths and the fourth head were soaked too")
+	check(modes.has("breathe") and modes.has("sag"), "every head breathed and sagged (%s)" % [modes.keys()])
+	check(steps.has("weak") and steps.has("rage"), "the full cistern doused a head and the hydra raged (%s)" % [steps.keys()])
 	w.queue_free()
 	await frames(2)
 

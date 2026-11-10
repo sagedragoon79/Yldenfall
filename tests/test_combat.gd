@@ -2161,7 +2161,7 @@ func test_a_foe_hits_as_hard_as_its_zone_is_deep() -> void:
 var sheet_bosses := [
 	[Gnarlmaw, "heartwood", [SapClump]], [Durgan, "tower", [Rubble]],
 	[Foreman, "tower", [Rubble]], [Gloamweaver, "haar", []],
-	[HagMatriarch, "haar", [MireGrasp]], [HaarWyrm, "haar", [SteamBreath]],
+	[HagMatriarch, "haar", [MireGrasp]], [HaarWyrm, "haar", [SteamBreath, HydraGeyser]],
 	[Snapcrown, "boughs", [SeedShot]], [BarkCaptain, "boughs", []],
 	[Skyrend, "spires", [StormStrike, HarpyFeather]],
 	[ThaneVorrund, "vorrhallow", [CrystalShard, Shockwave, CrystalSpike]],

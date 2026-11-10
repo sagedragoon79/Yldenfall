@@ -279,17 +279,17 @@ func test_act_two_state_survives_a_save_round_trip() -> void:
 	check(GameState.has_ability("boots") and GameState.has_ability("torrent"), "the Featherstep Boots and Deluge survive")
 	var found := {}
 	for stop: Array in [["haar/lantern_landing", MistCurtain], ["haar/marsh_road", FireSeal], ["haar/dry_cistern", DryBasin],
-			["haar/spring_of_haar", DryBasin]]:
+			["haar/spring_of_haar", HydraCistern]]:
 		w._enter(stop[0])
 		await frames(2)
 		for c in w.room.get_children():
 			if is_instance_of(c, stop[1]):
-				var open: bool = c.parted if c is MistCurtain else (c.doused if c is FireSeal else c.filled)
+				var open: bool = c.parted if c is MistCurtain else (c.doused if c is FireSeal else (c.full() if c is HydraCistern else c.filled))
 				found[stop[0]] = found.get(stop[0], true) and open
 	check(found.get("haar/lantern_landing", false), "the bound fog stays parted")
 	check(found.get("haar/marsh_road", false), "the fire seal stays out")
 	check(found.get("haar/dry_cistern", false), "the cistern stays full")
-	check(found.get("haar/spring_of_haar", false), "the hydra's tanks stay full")
+	check(found.get("haar/spring_of_haar", false), "the hydra's cistern stays full")
 	check(_arena_quiet(w), "and the Haar Wyrm doesn't come back")
 	w._enter("haar/lampwick_causeway")
 	await frames(2)

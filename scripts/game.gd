@@ -88,6 +88,7 @@ var camera: GameCamera:
 	get: return world.camera if world else null
 
 var _args := {}
+var _cistern_filled := false
 var _frames := 0
 
 
@@ -398,6 +399,14 @@ func _process(_delta: float) -> void:
 		tanks.sort_custom(func(a: DryBasin, b: DryBasin) -> bool: return a.x0 < b.x0)
 		for i in mini(int(_args["fill-tanks"]), tanks.size()):
 			(tanks[i] as DryBasin).douse()
+
+	if _args.has("fill-tanks") and not _cistern_filled:
+		# Screenshots: the Haar Spring's cistern, an intake at a time, once it is built.
+		var intakes := get_tree().get_nodes_in_group("hydra_intake")
+		if not intakes.is_empty():
+			_cistern_filled = true
+			for i in mini(int(_args["fill-tanks"]), intakes.size()):
+				(intakes[i] as HydraIntake).douse()
 	if _args.has("boss-hp"):
 		var boss := get_tree().get_first_node_in_group("boss")
 		if boss is Gnarlmaw and boss.state == "intro":
@@ -405,9 +414,11 @@ func _process(_delta: float) -> void:
 		elif boss is Durgan and boss.state == "intro":
 			boss.set_health_fraction(float(_args["boss-hp"]))
 		elif boss is HaarWyrm and boss.state == "intro" and boss.hp == HaarWyrm.MAX_HP:
-			boss.hp = roundi(HaarWyrm.MAX_HP * float(_args["boss-hp"]))
-			boss._check_phase()
-			boss._check_phase()
+			# Each head to that share of its health.
+			boss.hp = 0
+			for h: HydraHead in boss.heads:
+				h.hp = roundi(HaarWyrm.HEAD_HP * float(_args["boss-hp"]))
+				boss.hp += h.hp
 		elif boss is Skyrend and boss.state == "intro" and boss.hp == Skyrend.MAX_HP:
 			boss.hp = roundi(Skyrend.MAX_HP * float(_args["boss-hp"]))
 			boss._check_phase()
