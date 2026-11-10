@@ -1,0 +1,106 @@
+{
+ "frames": [
+  {
+   "filename": "slash_smear 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 104
+   },
+   "pivot": {
+    "x": 0.19444444444444445,
+    "y": 0.5
+   },
+   "duration": 33
+  },
+  {
+   "filename": "slash_smear 1.png",
+   "frame": {
+    "x": 72,
+    "y": 0,
+    "w": 72,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 104
+   },
+   "pivot": {
+    "x": 0.19444444444444445,
+    "y": 0.5
+   },
+   "duration": 33
+  },
+  {
+   "filename": "slash_smear 2.png",
+   "frame": {
+    "x": 144,
+    "y": 0,
+    "w": 72,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 72,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 72,
+    "h": 104
+   },
+   "pivot": {
+    "x": 0.19444444444444445,
+    "y": 0.5
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "yldenfall-slash-smear.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 216,
+   "h": 104
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 14,
+   "y": 52
+  },
+  "frameTags": [
+   {
+    "name": "yldenfall-slash-smear",
+    "from": 0,
+    "to": 2,
+    "direction": "forward"
+   }
+  ],
+  "note": "Trimmed in pass 535 to the peak, tail and crumble frames (the tool's first frame is a small tip, its last is empty)."
+ }
+}

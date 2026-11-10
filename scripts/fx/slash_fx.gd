@@ -1,6 +1,22 @@
 class_name SlashFx
 extends Node2D
 ## The smear arc for a sword swing or Delver's Pick down-strike. Follows the player.
+##
+## Two looks (pass 535, bible 6.7): the code-drawn arcs below, or a PixelLab VFX-tool
+## sheet (assets/vfx/slash_smear.png, heavy_smear.png: a cream crescent whose edge whips
+## down the front of the swing and crumbles from the tail, 5 frames at 30 fps). The sheet
+## is drawn for a side cut facing right, sweeping top to bottom; the other cuts mirror or
+## quarter-turn it, which keeps every pixel whole. The thrust keeps its code streak.
+## SHEET_SHIPPED holds the kept decision; --slash-look=code|sheet forces one for a capture.
+
+## The kept decision after the pass-535 trial (see docs/loop/pass-535.md).
+const SHEET_SHIPPED := true
+## Forced look for a capture or a test: "" follows SHEET_SHIPPED, else "code" or "sheet".
+static var trial := ""
+const SHEET := "res://assets/vfx/slash_smear"
+const HEAVY_SHEET := "res://assets/vfx/heavy_smear"
+## Two sheet pixels to a world pixel (GameCamera.DETAIL), like the hit spark.
+const DENSITY := 2.0
 
 const LIFE := 0.12
 const COLOR := Color("f6eed2")
@@ -14,6 +30,14 @@ var _heavy := false
 var _life := LIFE
 ## Scales the smear for a bigger blade (the Dwarvish Broad Sword's arc).
 var _size := 1.0
+## The sheet being played ({} for the code look): frames, pivot, fps.
+var _sheet := {}
+## How long this smear lives: LIFE for the code look, one run of the sheet for the sheet.
+var life := LIFE
+
+
+static func uses_sheet() -> bool:
+	return trial == "sheet" or (trial == "" and SHEET_SHIPPED)
 
 
 func setup(kind: String, facing: int, combo := 1, heavy := false, size := 1.0) -> void:
@@ -23,6 +47,18 @@ func setup(kind: String, facing: int, combo := 1, heavy := false, size := 1.0) -
 	_combo = combo
 	_heavy = heavy
 	z_index = 3
+	if kind != "thrust" and uses_sheet():
+		_sheet = HitSpark.load_sheet(HEAVY_SHEET if heavy else SHEET)
+		life = _sheet.frames.size() / float(_sheet.fps)
+		_life = life
+		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+
+
+## The sheet frame showing now (-1 for the code look).
+func frame() -> int:
+	if _sheet.is_empty():
+		return -1
+	return clampi(int((life - _life) * float(_sheet.fps)), 0, _sheet.frames.size() - 1)
 
 
 func _physics_process(delta: float) -> void:
@@ -33,6 +69,9 @@ func _physics_process(delta: float) -> void:
 
 
 func _draw() -> void:
+	if not _sheet.is_empty():
+		_draw_sheet()
+		return
 	var k := clampf(_life / LIFE, 0.0, 1.0)
 	if _kind == "thrust":
 		_draw_thrust(k)
@@ -64,6 +103,37 @@ func _draw() -> void:
 	var end := lerpf(from, to, sweep)
 	draw_arc(center, radius, from, end, 12, Color(HEAVY if _heavy else COLOR, k), width)
 	draw_arc(center, radius + 3.0, from, end, 12, Color(EDGE, k), 2.0)
+
+
+## The sheet's arc sweeps down the right of its pivot (the arc's centre). A side cut
+## facing left mirrors it; the up cut turns it a quarter back (over the head, left to
+## right) and the down cut a quarter on (under the feet, right to left). The second
+## combo hit runs the other way, so a chain still reads as back-and-forth cuts.
+func _draw_sheet() -> void:
+	draw_set_transform_matrix(placement())
+	draw_texture(_sheet.frames[frame()], -_sheet.pivot)
+	draw_set_transform_matrix(Transform2D.IDENTITY)
+
+
+## Where the sheet lands: its pivot (the arc's centre) moved to the cut's centre, turned
+## for an up or down cut, mirrored for a side cut facing left, flipped for the back cut.
+func placement() -> Transform2D:
+	var at := Vector2(_facing * 6, -22)
+	var turn := 0.0
+	var flip := Vector2.ONE
+	match _kind:
+		"up":
+			at = Vector2(0, -38)
+			turn = -PI / 2.0
+		"down":
+			at = Vector2(0, -6)
+			turn = PI / 2.0
+		_:
+			flip.x = float(_facing)
+	if _combo == 2:
+		# Flipping the sheet across its own sweep axis (before the turn) reverses the sweep.
+		flip.y = -1.0
+	return Transform2D(turn, flip * _size / DENSITY, 0.0, at)
 
 
 ## A Thrust: a straight streak of light from the hand to the point, thinning
