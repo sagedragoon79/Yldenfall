@@ -66,6 +66,10 @@ Mutations, each caught: blended iron tones (bake and outline tests), the light f
 (light and outline tests), an outline all round (outline test), a frozen surface and a stream that
 stops short (metal test), no glow on the edge (light test).
 
+Full suite: 13,427 checks passed. The first run failed 44 checks in five bible-reading tests because
+the edit script had written the bible back with Windows line endings in the working copy (the commit
+was LF); with the working copy back to LF those five pass. Edit files from Python in binary mode.
+
 Bible: 12.35 (the Smelter's crucible is a pixel prop).
 
 ## Rubric (design bible 15.3)
