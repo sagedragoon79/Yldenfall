@@ -1941,6 +1941,15 @@ The pass 540 grade listed the Evercrown's "hot-magenta platforms and chains" amo
 
 Hangers are sinew strands (night-5, night-3, ember-1; drawn like rope), and posts and braces are night-ramp tissue. Painted in whole world pixels. Judged by eye at 1x and 3x in `evercrown/veins` against the pass 541 build: the shelves keep their read as platforms against the violet backdrop while no longer the loudest colour in the room. `tools/art/test_tilegen.py` checks the palette (mostly night, a glaze of crystal, no hot crystal), the world-pixel grain, the unbroken lit top over shaded lobes, the outline and the seamless tile; `tests/test_plank_supports.gd` checks the sinew look.
 
+### 12.35 The Smelter's crucible is a pixel prop (pass 543)
+
+The pass 540 grade listed "the smelter's clean vector lava cauldron" among its flat single-fill props. The great crucible in `tower/smelter` (`Crucible`, `scripts/world/crucible.gd`) was smooth polygons in two iron tones, with a flat orange disc for the metal and five yellow ovals rolling on it. It is now painted in whole world pixels on master palette ramps, lit from the upper left like the rest of the game:
+
+- **Baked once** (`build_image`): the chains (face-on and edge-on links, lit on the left), the pot and its lugs, and the trough. The bowl is shaded as half an ellipsoid on four iron tones (stone-1 to stone-4, a stone-5 glint), with a narrow 2 x 2 ordered dither where tones meet, two hoops with a lit upper edge and rivets, and the metal's glow caught in bark-2 and bark-3 along the silhouette that faces the trough. A night-0 selective outline closes the shadow side and the underside and leaves the lit upper-left edge bare. The trough is two courses of dressed ash stone round a crusted channel, lit along its top.
+- **Live, on the same grain**: the molten surface is the heat ramp (bark-1 crust to gold-7 white heat), cooler at the iron's edge, under an irregular skin of crust that rolls; the stream is a wavering pixel column with a white-hot core, poured over the rim; the channel glows hottest where it lands. They step at 10 frames a second, like drawn frames.
+
+Judged by eye at 1x and 3x in `tower/smelter`. `tests/test_crucible.gd` checks the palette, that the bake holds only the crucible's own tones, the light, the selective outline, and that the metal rolls in palette steps and pours unbroken.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
