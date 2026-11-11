@@ -1096,6 +1096,10 @@ func _try_attack(on_floor: bool) -> void:
 	swing_count += 1
 	var fx := SlashFx.new()
 	fx.setup(attack_kind, facing, combo_index, is_heavy_swing, 1.0 + arc_bonus / SLASH_SIZE.y)
+	# The smear opens as the blade travels, not over the windup (pass 537). The
+	# sprite steps its clip once in this step already; the smear runs from the next.
+	var strike := PlayerVisual.strike_step(PlayerVisual.anim_for(self, "attack_" + attack_kind))
+	fx.wait_for_strike(strike[1], strike[0], get_physics_process_delta_time())
 	add_child(fx)
 	if is_heavy_swing:
 		visual.squash_for("heavy")

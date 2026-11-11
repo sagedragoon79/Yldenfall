@@ -60,6 +60,10 @@ const BLADE_LENGTH := 11.0
 ## ends (the recovery frames of a swing). A pogo's strike ends the moment it
 ## lands, so the Delver's Pick's blow plays out over the bounce.
 const FINISH := ["slash1", "slash2", "slash3", "slash_up", "strike_down", "cast", "throw", "throw_up"]
+## The frame of each swing clip where the blade travels (every hero sheet draws
+## its own blur of the blade there); the frames before it are the windup, with
+## the sword still raised or drawn back. The smear waits for it (pass 537).
+const STRIKE_FRAME := {"slash1": 1, "slash2": 1, "slash3": 2, "slash_up": 1}
 ## Poses an unfinished swing may play over.
 ## The speed share (MovementTuning.speed_fraction) at or under which moving is a walk.
 const WALK_POSE := 0.7
@@ -265,6 +269,28 @@ static func sheet_for(name: String) -> String:
 		if Sheet.exists(guard) and Sheet.has_anim(guard, name):
 			return guard
 	return body if Sheet.has_anim(body, name) else SHEET_NAME
+
+
+## Where a swing's blade travels in the sheet that plays `name`: [the sequence step
+## of its strike frame (STRIKE_FRAME), the clip's fps]; [0, 0.0] with no windup.
+static func strike_step(name: String) -> Array:
+	if not STRIKE_FRAME.has(name):
+		return [0, 0.0]
+	var held := sheet_for(name)
+	if not Sheet.has_anim(held, name):
+		return [0, 0.0]
+	var a: Dictionary = Sheet.get_sheet(held).animations[name]
+	var seq: Array = a.seq
+	for i in seq.size():
+		if int(seq[i]) >= int(STRIKE_FRAME[name]):
+			return [i, float(a.fps)]
+	return [0, 0.0]
+
+
+## Seconds from a swing's start to its strike frame; 0 for a clip with no windup.
+static func strike_time(name: String) -> float:
+	var s := strike_step(name)
+	return 0.0 if s[1] == 0.0 else s[0] / s[1]
 
 
 ## The frame of `name` shown at time `t`.

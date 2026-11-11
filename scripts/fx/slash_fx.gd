@@ -8,6 +8,8 @@ extends Node2D
 ## is drawn for a side cut facing right, sweeping top to bottom; the other cuts mirror or
 ## quarter-turn it, which keeps every pixel whole. The thrust keeps its code streak.
 ## SHEET_SHIPPED holds the kept decision; --slash-look=code|sheet forces one for a capture.
+## Since pass 537 a swing's smear waits for the blade to travel (wait_for_strike):
+## the hero's windup frames show no smear.
 
 ## The kept decision after the pass-535 trial (see docs/loop/pass-535.md).
 const SHEET_SHIPPED := true
@@ -34,6 +36,13 @@ var _size := 1.0
 var _sheet := {}
 ## How long this smear lives: LIFE for the code look, one run of the sheet for the sheet.
 var life := LIFE
+## The swing clip's windup (pass 537): the smear runs the clip's own clock, its fps
+## and the sequence step of its strike frame, and starts on the step the hero's
+## sprite reaches that frame, not while the sword is still raised. The same sum of
+## step deltas as PlayerVisual's anim_time lands on the same step.
+var _clip_fps := 0.0
+var _clip_strike := 0
+var _clip_time := 0.0
 
 
 static func uses_sheet() -> bool:
@@ -61,7 +70,26 @@ func frame() -> int:
 	return clampi(int((life - _life) * float(_sheet.fps)), 0, _sheet.frames.size() - 1)
 
 
+## Waits out a swing clip's windup: `strike` is the sequence step the blade travels
+## on at `fps`, and `clip_time` how far the clip has already played.
+func wait_for_strike(fps: float, strike: int, clip_time: float) -> void:
+	_clip_fps = fps
+	_clip_strike = strike
+	_clip_time = clip_time
+
+
+## True while the smear waits out the windup and draws nothing.
+func waiting() -> bool:
+	return _clip_strike > 0 and int(_clip_time * _clip_fps) < _clip_strike
+
+
 func _physics_process(delta: float) -> void:
+	if waiting():
+		_clip_time += delta
+		if not waiting():
+			# The blade travels: the smear's first frame shows this step.
+			queue_redraw()
+		return
 	_life -= delta
 	if _life <= 0.0:
 		queue_free()
@@ -69,6 +97,8 @@ func _physics_process(delta: float) -> void:
 
 
 func _draw() -> void:
+	if waiting():
+		return
 	if not _sheet.is_empty():
 		_draw_sheet()
 		return

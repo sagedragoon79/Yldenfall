@@ -888,7 +888,7 @@ func test_the_slash_smear_plays_the_vfx_sheet() -> void:
 	check(fx._sheet.frames == sheet.frames, "a light cut plays the light sheet")
 	check(is_equal_approx(fx.life, 3.0 / 30.0), "it lives one run of the sheet (%s)" % fx.life)
 	check(fx.frame() <= 1, "it opens on the edge (%d)" % fx.frame())
-	await frames(int(fx.life * 60.0) + 2)
+	await frames(int((PlayerVisual.strike_time("slash1") + fx.life) * 60.0) + 2)
 	check(not is_instance_valid(fx), "then it is gone")
 	# Placement: a side cut mirrors when facing left, the back cut reverses the sweep,
 	# the up and down cuts turn a quarter; the scale is whole sheet pixels.
@@ -918,6 +918,54 @@ func test_the_slash_smear_plays_the_vfx_sheet() -> void:
 	check(code._sheet.is_empty() and code.life == SlashFx.LIFE, "the code look is the fallback")
 	code.free()
 	SlashFx.trial = ""
+
+
+func test_the_smear_waits_for_the_blade_to_travel() -> void:
+	# Pass 537 (grade pass 535): the smear opened on the press, so a heavy frame showed a
+	# full crescent while the sword was still raised. Now it waits out the clip's windup
+	# and opens on the frame where the blade travels (the sheet's own blur of the blade).
+	check(is_equal_approx(PlayerVisual.strike_time("slash1"), 0.05)
+			and is_equal_approx(PlayerVisual.strike_time("slash2"), 0.05)
+			and is_equal_approx(PlayerVisual.strike_time("slash_up"), 0.05), "a light cut and the up cut wait one frame")
+	check(is_equal_approx(PlayerVisual.strike_time("slash3"), 0.1), "the heavy finisher waits its two-frame windup")
+	check(PlayerVisual.strike_time("strike_down") == 0.0, "the down strike has no windup")
+	var room := make_room(ARENA)
+	var p := make_player(room, Vector2i(3, 6))
+	await frames(6)
+	for cut: String in ["side", "up", "heavy"]:
+		p.input.up = cut == "up"
+		if cut == "heavy":
+			# The combo's last ground cut is the heavy finisher.
+			p.combo_index = p.ground_combo_length - 1
+			p._combo_timer = 1.0
+		p.input.attack_pressed = true
+		await frames(1)
+		p.input.attack_pressed = false
+		var fx: SlashFx = null
+		for c in p.get_children():
+			if c is SlashFx and is_instance_valid(c) and not c.is_queued_for_deletion():
+				fx = c
+		check(fx != null and fx.waiting(), "%s: the smear waits while the sword is drawn back" % cut)
+		if fx == null:
+			return
+		var strike: int = PlayerVisual.STRIKE_FRAME[p.visual.anim]
+		check(p.visual.frame < strike, "%s: the hero is in the windup (%d)" % [cut, p.visual.frame])
+		# Step by step, the smear's first frame and the sprite's strike frame land together.
+		var steps := 0
+		while fx.waiting() and p.visual.frame < strike and steps < 30:
+			await frames(1)
+			steps += 1
+		check(not fx.waiting() and p.visual.frame >= strike,
+				"%s: it opens on the step the blade travels, no sooner or later (step %d, frame %d of %s)"
+				% [cut, steps, p.visual.frame, p.visual.anim])
+		check(fx.frame() == 0, "%s: on its first frame" % cut)
+		check((cut == "heavy") == (p.visual.anim == "slash3"), "%s: played %s" % [cut, p.visual.anim])
+		await frames(40)
+	p.input.up = false
+	var thrust := SlashFx.new()
+	thrust.setup("thrust", 1, 0, true)
+	check(not thrust.waiting(), "the thrust's streak still shoots out at once")
+	thrust.free()
 
 
 func test_a_miss_throws_no_spark() -> void:
