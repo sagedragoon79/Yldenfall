@@ -14,6 +14,10 @@ const DOOR_CHARS := "123456789"
 const ZONE_SURFACES := {"gym": "stone", "hearthroot": "stone", "heartwood": "moss", "tower": "iron", "haar": "mud", "boughs": "plank", "spires": "stone", "vorrhallow": "stone", "evercrown": "moss", "sunken": "stone", "trials": "stone"}
 
 ## Room id: its path under res://levels without the extension, e.g. "hearthroot/gate".
+## Cells a thorn bulb can grow from (pass 540): ground, mud, cracked stone and
+## fake walls, which all look solid.
+const THORN_HOLDS := ["#", "u", "C", "%"]
+
 var id := ""
 var title := ""
 var zone := ""
@@ -587,7 +591,14 @@ func _place(ch: String, cell: Vector2i, grid: Array[String]) -> void:
 		"r":
 			_spawn(StrideSeed.new(), center)
 		"o":
-			_spawn(ThornBulb.new(), center)
+			var bulb := ThornBulb.new()
+			var wall := func(c: Vector2i) -> bool: return _char_at(grid, c) in THORN_HOLDS
+			bulb.anchor = ThornBulb.anchor_for(cell, wall)
+			if bulb.anchor != Vector2i.ZERO:
+				for d: Vector2i in ThornBulb.along(bulb.anchor):
+					if _char_at(grid, cell + d) == "o" and ThornBulb.anchor_for(cell + d, wall) == bulb.anchor:
+						bulb.links.append(d)
+			_spawn(bulb, center)
 		"C":
 			var block := CrackedBlock.new()
 			if zone != "gym" and zone != "":

@@ -1915,6 +1915,10 @@ The independent grade (pass 535) called the "identical grey sign slabs in most r
 
 Each look's inlay is its zone's accent (amber, bone, cyan, magenta). Every tone is a master palette value. The stele is about 25 to 32 px tall, so the read prompt floats at 32 px. Judged by eye at 1x and 2x in `spires/sky_steps`, `evercrown/veins`, `heartwood/sap_cistern` and `haar/marsh_road`. `tests/test_lore_tablet.gd` checks that every zone has a look in the palette, that every shape covers the panel, stands on the plinth and has a shaped top, and that a room's tablet takes its zone.
 
+### 12.32 Thorn bulbs grow from a bramble (pass 540)
+
+The pass 535 grade's other placeholder set piece was the "Spires red orb columns": the thorn bulbs (`o`) lining the Sky Steps shaft walls, each a flat red disc with six dark lines. `ThornBulb` (`scripts/world/thorn_bulb.gd`) now draws a pixel bramble bud: outlined, lit from the upper left on a four-step red ramp, with a pale glint, a glowing tip that pulses, and seven hooked thorns with bone-pale tips. The room grows each pod from a surface beside it (`ThornBulb.anchor_for`: a wall to the west or east first, then the floor, then the ceiling) on a short woody stem, and pods side by side on the same surface share one thorny bramble vine along it, so a column reads as a bramble climbing the wall. Alternate pods along a surface droop opposite ways (`TILT`, 0.45 rad), so a row never stands in step. A pod with nothing beside it floats free, thorned all round. The hitbox is unchanged (radius 6 at the cell's center) and the bud stays within it and its cell. Every tone is a master palette value. Judged by eye at 1x and 4x in `spires/sky_steps` (wall columns), `boughs/canopy_bridge` (a floor row) and `trials/thorns` (free pods). `tests/test_thorn_bulb.gd` checks the palette, the surface order, the bud's fit and facing, a room's links and unbroken vine, and that most of the game's bulbs are rooted and linked.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
