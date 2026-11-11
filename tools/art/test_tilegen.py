@@ -740,7 +740,7 @@ def _dominant_board_ramp(zone):
             if a == 0:
                 continue
             fam = _ramp_of((r, g, b))
-            if fam != "night":  # skip the groove/outline shadow
+            if fam != "night" or tg.PLANK[zone]["wood"] == "night":  # skip the groove/outline shadow
                 counts[fam] += 1
     return counts.most_common(1)[0][0] if counts else None
 
@@ -773,7 +773,9 @@ def test_one_way_plank_rests_on_a_trestle_below_the_board():
     # appear below the old bracket depth (10 world px). (Dropping the leg-drawing
     # loop leaves nothing that deep and fails this.)
     deep = 11 * tg.D  # render row below the former stub (which stopped at 10*D)
-    for zone in ("heartwood", "haar", "sunken", "evercrown"):
+    # (The Evercrown's shelf is grown, not built, since pass 542: tendrils, not a
+    # trestle, hang under it; test_evercrown_shelf_* cover it.)
+    for zone in ("heartwood", "haar", "sunken"):
         t = _one_way_tile(zone)
         px = t.load()
         opaque = sum(1 for y in range(deep, tg.T) for x in range(tg.T) if px[x, y][3] != 0)
@@ -1076,6 +1078,71 @@ def main():
         t()
         print(f"ok  {t.__name__}")
     print(f"\n{len(tests)} checks passed")
+
+
+# --- The Evercrown's grown shelf (bible 12.34, pass 542) -------------------------
+def _shelf():
+    t = _one_way_tile("evercrown")
+    return t, t.load()
+
+
+def test_evercrown_shelf_is_grown_from_the_zone_not_hot_stillglass():
+    # The grade (pass 540) read the old crystal-ramp board as a flat hot-magenta
+    # prop. The shelf is now night-ramp matter with only a glaze of crystal-3.
+    # (Restoring PLANK["evercrown"]["wood"] = "crystal" fails this.)
+    t, px = _shelf()
+    hot = {tg.c(f"crystal-{i}")[:3] for i in (4, 5, 6, 7)}
+    names = {tg.c(n)[:3]: n for n in tg.PAL}
+    seen = {}
+    for y in range(t.height):
+        for x in range(t.width):
+            p = px[x, y]
+            if p[3]:
+                assert p[:3] not in hot, f"hot stillglass at {x},{y}"
+                n = names[p[:3]].rsplit("-", 1)[0]
+                seen[n] = seen.get(n, 0) + 1
+    total = sum(seen.values())
+    assert seen.get("night", 0) > 0.7 * total, f"the shelf is mostly night matter: {seen}"
+    assert 0 < seen.get("crystal", 0) < 0.08 * total, f"crystal is only a glaze: {seen}"
+    assert seen.get("ember", 0) > 0, "sinew shows in the notches"
+
+
+def test_evercrown_shelf_sits_on_the_world_pixel_grain():
+    t, px = _shelf()
+    D = tg.D
+    for y in range(0, t.height, D):
+        for x in range(0, t.width, D):
+            block = {px[x + i, y + j] for i in range(D) for j in range(D)}
+            assert len(block) == 1, f"block {x},{y} is split: {block}"
+
+
+def test_evercrown_shelf_has_an_unbroken_lit_top_and_a_shadowed_underside():
+    # The top band runs the whole tile, so a run of shelves reads as one ledge;
+    # the top is lit and the underside closes in night-0, the top never does.
+    # (Shading the lobes from below, or outlining all round, fails this.)
+    t, px = _shelf()
+    W = tg.T // tg.D
+    top = [px[x * tg.D, 0] for x in range(W)]
+    assert all(p[3] for p in top), "the top band is unbroken"
+    assert tg.c("night-0") not in top, "no outline along the lit top"
+    lum_top = sum(_lum(p) for p in top) / W
+    skip = {tg.c(n)[:3] for n in ("night-0", "ember-1", "sky-4", "sky-6")}
+    under = [px[x * tg.D, y * tg.D] for x in range(W) for y in (2, 3, 4)
+             if px[x * tg.D, y * tg.D][3] and px[x * tg.D, y * tg.D][:3] not in skip]
+    assert lum_top > sum(_lum(p) for p in under) / len(under) + 20, "the top is lit, the lobes fall into shade"
+    for x in range(W):
+        col = [px[x * tg.D, y * tg.D] for y in range(6)]
+        body = [i for i, p in enumerate(col) if p[3] and p[:3] != tg.c("ember-1")[:3]]
+        if body:
+            assert col[body[-1]][:3] == tg.c("night-0")[:3], f"column {x} closes in night-0"
+
+
+def test_evercrown_shelf_tiles_seamlessly():
+    # Lobes sum to the tile width and the top band meets itself across the seam.
+    t, px = _shelf()
+    assert sum(tg.SHELF_SEGS) == tg.T // tg.D
+    for y in range(2):
+        assert px[0, y * tg.D] == px[t.width - 1, y * tg.D] or (px[0, y * tg.D][3] and px[t.width - 1, y * tg.D][3])
 
 
 if __name__ == "__main__":

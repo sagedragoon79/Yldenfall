@@ -692,8 +692,8 @@ def darken(img, ox, oy, steps):
 # from zone to zone, and the stub becomes a drawn trestle so the ledge reads as
 # built. `metal` gives the board a brighter catch-light (the iron Tower). The
 # families: warm wood (gym, heartwood, boughs), grey driftwood (haar, sunken),
-# pale stone (vorrhallow, trials, tower), dry timber (spires), stillglass
-# (evercrown). hearthroot's plank is PixelLab art (pixellab_tileset.atlas) and
+# pale stone (vorrhallow, trials, tower), dry timber (spires), and a grown
+# shelf (evercrown, 12.34: paint_grown_shelf). hearthroot's plank is PixelLab art (pixellab_tileset.atlas) and
 # does not use this painter.
 PLANK = {
     "gym": {"wood": "bark", "nail": "stone-5", "strut": "bark"},
@@ -705,7 +705,7 @@ PLANK = {
     "trials": {"wood": "ash", "nail": "ash-5", "strut": "ash"},
     "spires": {"wood": "ochre", "nail": "gold-5", "strut": "umber"},
     "tower": {"wood": "ash", "nail": "sky-5", "strut": "ash", "metal": True},
-    "evercrown": {"wood": "crystal", "nail": "sky-6", "strut": "crystal"},
+    "evercrown": {"wood": "night", "nail": "sky-6", "strut": "night", "grown": True},
     "hearthroot": {"wood": "bark", "nail": "gold-4", "strut": "bark"},
 }
 
@@ -716,6 +716,9 @@ def paint_one_way(img, ox, oy, zone):
     trestle below so the ledge reads as built, not floated. hearthroot's plank is
     PixelLab art and does not use this."""
     spec = PLANK.get(zone, PLANK["gym"])
+    if spec.get("grown"):
+        paint_grown_shelf(img, ox, oy, spec)
+        return
     wood, nail, strut = spec["wood"], spec["nail"], spec["strut"]
     metal = spec.get("metal", False)
     period = 8 * D
@@ -757,6 +760,97 @@ def paint_one_way(img, ox, oy, zone):
                 xx = (gx + (1 if sgn > 0 else 0) + sgn * k) % T
                 shade = "night-0" if k >= leg - 1 else f"{strut}-1"
                 img.putpixel((ox + xx, oy + y), c(shade))
+
+
+# The Evercrown's shelf (design bible 12.34, pass 542). Its plank was a stillglass
+# board in the hot crystal ramp, hung on crystal chains: the independent grade (pass
+# 540) read it as a flat single-fill magenta prop. It is now grown from the zone's
+# own matter: a row of rounded cell segments on the night ramp, lit from the upper
+# left, with sinew (ember-1) in the seams, a cyan pore in some segments, a thin
+# crystal glaze only on the lit rim, a night-0 outline under the shadow side, and
+# short tendrils hanging from its underside. Painted in whole world pixels.
+SHELF_SEGS = (7, 9)     # world px per segment; they sum to the tile so runs tile seamlessly
+SHELF_SEED = 542
+SHELF_LIGHT = (-0.55, -0.6, 0.58)   # from the upper left, toward the viewer
+
+
+def _shelf_px(img, ox, oy, wx, wy, col):
+    for dy in range(D):
+        for dx in range(D):
+            img.putpixel((ox + wx * D + dx, oy + wy * D + dy), c(col))
+
+
+def shelf_cells():
+    """{(wx, wy): name} for one tile of the grown shelf, in world pixels."""
+    ramp, pore = PLANK["evercrown"]["wood"], PLANK["evercrown"]["nail"]
+    lx, ly, lz = SHELF_LIGHT
+    ll = math.sqrt(lx * lx + ly * ly + lz * lz)
+    out = {}
+    body = set()
+    W = T // D
+    x0 = 0
+    for seg, w in enumerate(SHELF_SEGS):
+        # one lobe per segment, hanging under a continuous top: the shelf reads as
+        # one grown ledge with a lumpy underside, not a string of beads
+        cx, cy, rx, ry = x0 + (w - 1) / 2, 1.0, w / 2 + 0.4, 4.6
+        for wx in range(x0, x0 + w):
+            for wy in range(6):
+                nx, ny = (wx - cx) / rx, (wy - cy) / ry
+                if wy >= 2 and nx * nx + ny * ny > 1.0:
+                    continue
+                if wy == 0:
+                    col = f"{ramp}-5"
+                elif wy == 1:
+                    col = f"{ramp}-4"
+                else:
+                    nz = math.sqrt(max(0.0, 1.0 - nx * nx - ny * ny))
+                    lit = (nx * lx + max(ny, 0.0) * ly + nz * lz) / ll
+                    col = f"{ramp}-{4 if lit > 0.7 else 3 if lit > 0.35 else 2}"
+                out[(wx, wy)] = col
+                body.add((wx, wy))
+        # a short glaze of stillglass where the light first catches the lobe
+        gx = x0 + max(1, w // 3)
+        out[(gx, 0)] = "crystal-3"
+        if w > 7:
+            out[(gx + 1, 0)] = "crystal-3"
+        # a cyan pore in the wide lobe only, so a run doesn't dot a regular row
+        if w > 7:
+            px = x0 + w // 2 + 1
+            out[(px, 2)] = pore
+            out[(px, 3)] = "sky-4"
+        x0 += w
+    # sinew in the notches between the lobes
+    for wx in range(W):
+        for wy in range(2, 5):
+            if (wx, wy) not in body and (((wx - 1) % W, wy) in body or ((wx + 1) % W, wy) in body):
+                out[(wx, wy)] = "ember-1"
+    # selective outline: under the body and down its shaded right side only
+    for (wx, wy) in list(body):
+        below = (wx, wy + 1) in body
+        right = ((wx + 1) % W, wy) in body
+        if not below or (not right and wy >= 2):
+            out[(wx, wy)] = "night-0"
+    # one tendril per tile hangs from the wider lobe: a fleshy root that pales
+    # toward its tip, with a bead of cyan sap on the longer ones
+    x0 = SHELF_SEGS[0]
+    w = SHELF_SEGS[1]
+    wx = x0 + w // 2 - 1 + int(hash2(1, 0, SHELF_SEED + 1) * 3)
+    top = max(y for (bx, y) in body if bx == wx) + 1
+    n = 3 + int(hash2(1, 0, SHELF_SEED + 2) * 3)
+    for i in range(n):
+        out[(wx, top + i)] = f"{ramp}-2" if i < n - 1 else "crystal-2"
+    out[(wx, top + n)] = "sky-4"
+    # and a stub on the narrow lobe
+    sx = 2
+    stop = max(y for (bx, y) in body if bx == sx) + 1
+    out[(sx, stop)] = f"{ramp}-2"
+    out[(sx, stop + 1)] = "crystal-2"
+    return out
+
+
+def paint_grown_shelf(img, ox, oy, spec):
+    for (wx, wy), col in shelf_cells().items():
+        _shelf_px(img, ox, oy, wx, wy, col)
 
 
 def paint_amber(img, ox, oy):

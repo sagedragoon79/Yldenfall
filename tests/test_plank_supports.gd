@@ -142,3 +142,31 @@ func test_plank_a_room_builds_its_supports_behind_the_tiles() -> void:
 		check(holds.z_index < 0, "drawn behind the tiles")
 		check(_kinds(holds.supports) == ["hang", "hang"], "its run hangs from the ceiling: %s" % [_kinds(holds.supports)])
 		check(holds._look.hang == "rope", "the Spires hang theirs on rope")
+
+
+func test_plank_the_evercrown_hangs_its_grown_shelves_on_sinew() -> void:
+	# The Evercrown's shelves are grown (bible 12.34, pass 542): sinew, not the hot
+	# crystal chains (cd51c5, a736aa) the pass 540 grade called flat magenta.
+	var look: Dictionary = PlankSupports.LOOKS["evercrown"]
+	check(look.hang == "sinew", "the Evercrown hangs its shelves on sinew: %s" % look.hang)
+	var hot := ["cd51c5", "a736aa", "712b78"]
+	for k: String in ["lit", "mid", "dark"]:
+		check(not (look[k] in hot), "its %s tone is not hot stillglass: %s" % [k, look[k]])
+	for w: String in look.wood:
+		check(not (w in hot), "its tissue posts are not hot stillglass: %s" % w)
+	var room := Room.from_text("zone: evercrown
+---
+##########
+#........#
+#........#
+#..----..#
+#........#
+#........#
+#........#
+#........#
+#........#
+#........#
+##########")
+	arena.add_child(room)
+	var holds := room.get_node_or_null("PlankSupports") as PlankSupports
+	check(holds != null and holds._look.hang == "sinew", "an Evercrown room takes the sinew look")
