@@ -1950,6 +1950,17 @@ The pass 540 grade listed "the smelter's clean vector lava cauldron" among its f
 
 Judged by eye at 1x and 3x in `tower/smelter`. `tests/test_crucible.gd` checks the palette, that the bake holds only the crucible's own tones, the light, the selective outline, and that the metal rolls in palette steps and pours unbroken.
 
+### 12.36 Fire seals are one sheet of pixel fire (pass 544)
+
+The pass 540 grade listed "the Haar's orange blocks" among its flat single-fill props. They were the fire seals (`FireSeal`, `scripts/world/fire_seal.gd`, legend `Z`): every tile drew the same four rectangle tongues and a rune, so a column read as a stack of identical crates. Each tile now paints its part of one sheet of fire in whole world pixels on the heat ramp (red-1 to red-4, gold-4, gold-5 and gold-7, all master palette), stepped at 10 frames a second:
+
+- **One sheet**: the flame field is sampled in world coordinates and scrolls upward, so tiles that touch join without a seam and no two tiles are one stamp. Fire runs hotter the deeper it is from an open side.
+- **Edges only where open**: a side with no seal beside it is ragged, with a dark red fringe; a side joined to another seal is filled, so the Proving Scar's two-wide seal reads as one wall. Only a column's top licks above its tile, in tongues of its own height each frame, and only its foot stands on a bed of coals.
+- **A few runes**: every other tile down a seal's left edge carries one dark rune (red-0) from a set of three, ringed with gold that pulses.
+- **Doused**: the fire sinks while steam (stone-6, stone-7) rises; once out, only the column's foot keeps a low socket of ash.
+
+The collision, the burn, the light and the douse are unchanged. Judged by eye at 1x and 3x in `haar/marsh_road` and `evercrown/proving_scar`. `tests/test_fire_seal_art.gd` checks the palette, the seams, the ragged and joined sides, the heat, the motion, the runes and the ash.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
