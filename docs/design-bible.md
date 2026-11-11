@@ -1919,6 +1919,17 @@ Each look's inlay is its zone's accent (amber, bone, cyan, magenta). Every tone 
 
 The pass 535 grade's other placeholder set piece was the "Spires red orb columns": the thorn bulbs (`o`) lining the Sky Steps shaft walls, each a flat red disc with six dark lines. `ThornBulb` (`scripts/world/thorn_bulb.gd`) now draws a pixel bramble bud: outlined, lit from the upper left on a four-step red ramp, with a pale glint, a glowing tip that pulses, and seven hooked thorns with bone-pale tips. The room grows each pod from a surface beside it (`ThornBulb.anchor_for`: a wall to the west or east first, then the floor, then the ceiling) on a short woody stem, and pods side by side on the same surface share one thorny bramble vine along it, so a column reads as a bramble climbing the wall. Alternate pods along a surface droop opposite ways (`TILT`, 0.45 rad), so a row never stands in step. A pod with nothing beside it floats free, thorned all round. The hitbox is unchanged (radius 6 at the cell's center) and the bud stays within it and its cell. Every tone is a master palette value. Judged by eye at 1x and 4x in `spires/sky_steps` (wall columns), `boughs/canopy_bridge` (a floor row) and `trials/thorns` (free pods). `tests/test_thorn_bulb.gd` checks the palette, the surface order, the bud's fit and facing, a room's links and unbroken vine, and that most of the game's bulbs are rooted and linked.
 
+### 12.33 Sky islands are lit pixel props (pass 541)
+
+The pass 540 grade listed the Spires' "floating magenta triangle islands with one green line" first among its flat single-fill props. They are the sky islands of the Spires' middle parallax layer (`spires_mid` in `tools/art/tilegen.py`): each was a two-tone cone hatched at half-size atlas pixels under a one-tone strip of grass. `island()` now paints each one in whole world pixels (`block`, D x D) as a lit prop:
+
+- **Silhouette** (`island_cells`): built a column at a time, a rounded belly of earth under the lip and beneath it a main spur leaning off centre with two to four lesser spurs beside it, so the underside hangs in a ragged cluster of points and each island's shape comes from its own seed.
+- **Rock**: a cluster of chunky stones (a jittered Voronoi, flattened into slabs) shaded on a four-tone ramp (`ISLAND_ROCK`: crystal-3 rim, crystal-2 lit, crystal-1 mid, night-1 shadow), lit from the upper left. Each stone is lit on its upper-left face, the seams between stones are one step darker, and the right flank and the hanging spurs fall into shadow. A rim of light runs down the lit flank.
+- **Selective outline**: night-0 closes the shadow side and the underside only, never the lit flank.
+- **Grass lip** (`ISLAND_GRASS`, three leaf tones): a world pixel wider than the rock each side, its top ragged with standing blades, tufts hanging over both ends, moss strands down the rock's top, and roots dangling from the belly.
+
+The ruined towers on some islands (`ruined_spire`) follow the same grain and ramp: lit on the left, a shadow column and outline on the right, mortar courses, a broken crown and one warm window. Island positions are unchanged (the layer's random draws are kept). Every tone is a master palette value. Judged by eye at 1x and 4x in `spires/sky_steps` and `spires/fallen_bridge`. `tools/art/test_tilegen.py` checks the ramp and outline tones, the world-pixel grain, the light from the upper left, the selective outline and that islands differ and hang in more than one point.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
