@@ -12,6 +12,9 @@ const MAX_FALL := 500.0
 const FALL_MARGIN := 24.0
 ## Wind-ups shorter than this are unfair (design bible section 7).
 const MIN_TELEGRAPH := 0.35
+## How far above the hero's feet a head-height blow is aimed (bible 6.15): inside
+## a standing body (40 px), over a crouched one (26 px), so a crouch ducks it.
+const HEAD_HEIGHT := 36.0
 ## How long a body takes to break up after its death.
 const DISSOLVE := 0.45
 const DISSOLVE_SHADER := preload("res://shaders/dissolve.gdshader")
@@ -419,6 +422,15 @@ func player_offset() -> Vector2:
 	if p == null or p.dead:
 		return Vector2(INF, INF)
 	return p.global_position + Vector2(0, -20) - center()
+
+
+## From this foe's centre to the hero's head height (HEAD_HEIGHT above the
+## feet, standing or crouched): where a blow meant to be ducked is aimed.
+func player_head_offset() -> Vector2:
+	var p := player()
+	if p == null or p.dead:
+		return Vector2(INF, INF)
+	return p.global_position + Vector2(0, -HEAD_HEIGHT) - center()
 
 
 ## True while the enemy should be drawn white (hit flash or telegraph pulse).

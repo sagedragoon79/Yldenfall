@@ -2073,6 +2073,7 @@ func test_every_movement_number_is_written_where_it_belongs() -> void:
 		"6.10": ["glide_fall_speed", "glide_brake"],
 		"6.11": ["ladder_speed", "ladder_snap", "ladder_regrab"],
 		"6.12": ["sap_speed", "sap_jump"],
+		"6.15": ["crouch_height", "crouch_creep_speed"],
 	}
 	var bible := FileAccess.get_file_as_string("res://docs/design-bible.md")
 	var six := bible.get_slice("## 6. Movement", 1).get_slice("\n## 7. ", 0)
@@ -2784,3 +2785,256 @@ func test_a_press_in_hitstop_is_kept_once() -> void:
 	check(seen["slowmo jump tap"].y > 10.0, "a tap in slow motion is still a hop (%.1f px)" % seen["slowmo jump tap"].y)
 	var bible := FileAccess.get_file_as_string("res://docs/design-bible.md")
 	check(bible.contains("test_a_press_in_hitstop_is_kept_once"), "the bible names this test")
+
+
+# --- Crouch (bible 6.15) ----------------------------------------------------------
+
+## A walled box with a low roof over x 10 to 17: 32 px of room under it, enough
+## for a crouch (26) and not for a standing body (40).
+const LOW_ROOF := [
+	"##############################",
+	"#............................#",
+	"#............................#",
+	"#............................#",
+	"#............................#",
+	"#............................#",
+	"#............................#",
+	"#............................#",
+	"#............................#",
+	"#.........########...........#",
+	"#............................#",
+	"#............................#",
+	"##############################",
+]
+
+
+func test_crouch_numbers_match_bible_6_15() -> void:
+	var t := MovementTuning.new()
+	check(t.crouch_height == 26.0, "a crouched body is 26 px tall (6.15)")
+	check(t.crouch_creep_speed == 40.0, "pinned under a low roof, it creeps at 40 px/s (6.15)")
+	check(t.crouch_height < Player.BODY_SIZE.y, "lower than a standing body")
+	check(Enemy.HEAD_HEIGHT > t.crouch_height and Enemy.HEAD_HEIGHT < Player.BODY_SIZE.y,
+		"a head-height blow is aimed over a crouch and into a standing body")
+
+
+## Bible 6.15: Down held on the ground crouches. The body (and the hurtbox every
+## foe tests) drops to 26 px with the feet where they were. The run stops, and
+## left and right only turn you. Letting go stands you up.
+func test_down_on_the_ground_crouches_and_turns_in_place() -> void:
+	var room := make_room(FLAT)
+	var p := make_player(room, Vector2i(10, 11))
+	await _settle(p)
+	var feet := p.global_position.y
+	p.input.move_x = 1
+	await frames(20)
+	check(p.velocity.x > 100.0, "running first (vx %.0f)" % p.velocity.x)
+	p.input.down = true
+	await frames(1)
+	check(p.crouching, "Down on the ground crouches")
+	check_near(p.body_rect().size.y, 26.0, 0.01, "the hurtbox drops to the crouch")
+	check_near(p.body_rect().end.y, feet, 0.5, "with the feet where they were")
+	await frames(10)
+	check(absf(p.velocity.x) < 0.5, "the run stops under you (vx %.1f)" % p.velocity.x)
+	check(p.is_on_floor() and absf(p.global_position.y - feet) < 0.5, "still on the floor")
+	var x := p.global_position.x
+	p.input.move_x = -1
+	await frames(10)
+	check(p.facing == -1, "left turns you round")
+	check(absf(p.global_position.x - x) < 0.5, "without a step (moved %.1f px)" % (p.global_position.x - x))
+	p.input.move_x = 1
+	await frames(2)
+	check(p.facing == 1 and absf(p.global_position.x - x) < 0.5, "and right turns you back")
+	check(PlayerVisual.current_pose(p) == "crouch", "in the crouch pose")
+	p.input.move_x = 0
+	p.input.down = false
+	await frames(1)
+	check(not p.crouching and is_equal_approx(p.body_rect().size.y, Player.BODY_SIZE.y), "letting go stands you up")
+	# Never in the air: Down there is a fast fall.
+	p.input.jump_pressed = true
+	p.input.jump_held = true
+	await frames(6)
+	p.input.down = true
+	await frames(4)
+	check(not p.is_on_floor() and not p.crouching, "Down in the air never crouches")
+	p.input.jump_held = false
+	for i in 90:
+		await frames(1)
+		if p.is_on_floor():
+			break
+	await frames(1)
+	check(p.crouching, "and landing with Down held crouches")
+	room.free()
+
+
+## Bible 6.15: a jump, a dash or a guard stands you up and goes as usual.
+func test_a_jump_dash_or_guard_stands_you_up_from_a_crouch() -> void:
+	var room := make_room(FLAT)
+	var p := make_player(room, Vector2i(10, 11))
+	await _settle(p)
+	p.input.down = true
+	await frames(2)
+	check(p.crouching, "crouched")
+	p.input.jump_pressed = true
+	p.input.jump_held = true
+	await frames(1)
+	check(not p.crouching and p.velocity.y < -300.0, "Jump stands you up and jumps (vy %.0f)" % p.velocity.y)
+	p.input.jump_held = false
+	p.input.down = false
+	for i in 90:
+		await frames(1)
+		if p.is_on_floor():
+			break
+	await frames(15)
+	p.input.down = true
+	await frames(2)
+	p.input.dash_pressed = true
+	await frames(1)
+	check(not p.crouching and p.is_dashing, "Dash stands you up and dashes")
+	await frames(30)
+	check(p.crouching, "and Down still held crouches again once it ends")
+	p.input.block_pressed = true
+	p.input.block_held = true
+	await frames(1)
+	check(not p.crouching and p.is_blocking, "Block stands you up to guard")
+	p.input.block_held = false
+	await frames(1)
+	check(p.crouching, "and letting go of it with Down held crouches")
+	room.free()
+
+
+## Bible 6.15: crouched, Attack is one low cut along the floor (no combo, no
+## finisher), and a spell or a Rune Dagger leaves low, 10 px off the floor.
+func test_a_crouch_cuts_low_and_shoots_low() -> void:
+	var room := make_room(FLAT)
+	var p := make_player(room, Vector2i(10, 11))
+	await _settle(p)
+	var feet := p.global_position.y
+	p.input.down = true
+	await frames(2)
+	var kinds := []
+	var heavy := false
+	for i in 4:
+		p.input.attack_pressed = true
+		await frames(1)
+		kinds.append(p.attack_kind)
+		heavy = heavy or p.is_heavy_swing
+		var rect: Rect2 = p._attack_rect()
+		if i == 0:
+			check_near(rect.end.y, feet, 0.5, "the low cut runs along the floor")
+			check(rect.position.y >= feet - Player.LOW_SLASH_HEIGHT - 0.5, "and no higher than %.0f px" % Player.LOW_SLASH_HEIGHT)
+			check(rect.position.x > p.global_position.x, "in front of you")
+			check(PlayerVisual.current_pose(p) == "attack_low" and PlayerVisual.anim_for(p, "attack_low") == "slash1",
+				"drawn as the first slash, squat, until the crouch art lands")
+		await frames(30)
+	check(kinds == ["low", "low", "low", "low"], "every press is the low cut (%s)" % [kinds])
+	check(not heavy and p.combo_index == 0, "never a combo or a finisher")
+	check(p.crouching, "and you stay down through it")
+	# A spell leaves low.
+	p.abilities["torrent"] = true
+	p.equipped_spell = "torrent"
+	p.mp = p.max_mp
+	p.input.spell_pressed = true
+	await frames(1)
+	var bolt: TorrentBolt = null
+	for c in room.get_children():
+		if c is TorrentBolt:
+			bolt = c
+	check(bolt != null, "Deluge casts crouched")
+	if bolt:
+		check_near(bolt.global_position.y, feet - Player.LOW_SHOT_HEIGHT, 6.0, "and leaves 10 px off the floor")
+		bolt.free()
+	p.throw_dagger()
+	check_near(p.rune_dagger.global_position.y, feet - Player.LOW_SHOT_HEIGHT, 0.5, "a Rune Dagger leaves low too")
+	p.rune_dagger.free()
+	p.rune_dagger = null
+	# Standing, the dagger leaves at the chest as before.
+	p.input.down = false
+	await frames(40)
+	p.throw_dagger()
+	check_near(p.rune_dagger.global_position.y, feet - Player.THROW_HEIGHT, 0.5, "standing, the dagger leaves at the chest")
+	p.rune_dagger.free()
+	p.rune_dagger = null
+	room.free()
+
+
+## Bible 6.15: knocked under a roof too low to stand in, a crouch never sticks.
+## Let go of Down and you stay low, creeping at 40 px/s, and stand once clear.
+## A jump waits until there is room.
+func test_a_crouch_pinned_under_a_low_roof_creeps_out() -> void:
+	var room := make_room(LOW_ROOF)
+	var p := make_player(room, Vector2i(8, 11))
+	await _settle(p)
+	p.input.down = true
+	await frames(2)
+	check(p.crouching, "crouched beside the low roof")
+	# Slid in under it, as a blow's knockback would.
+	p.global_position.x = 13.5 * Room.TILE
+	await frames(2)
+	p.input.down = false
+	await frames(2)
+	check(p.crouching and p.crouch_pinned, "under the roof, letting go keeps you low")
+	check(not p.can_stand(), "there is no room to stand")
+	p.input.jump_pressed = true
+	p.input.jump_held = true
+	await frames(1)
+	check(p.is_on_floor() and p.velocity.y >= 0.0, "a jump waits for room")
+	p.input.jump_held = false
+	p.input.move_x = 1
+	await frames(20)
+	check_near(absf(p.velocity.x), MovementTuning.new().crouch_creep_speed, 1.0, "you creep toward the open")
+	for i in 240:
+		await frames(1)
+		if not p.crouching:
+			break
+	check(not p.crouching and p.global_position.x > 18.0 * Room.TILE - 1.0, "and stand once clear of it (x %.0f)" % p.global_position.x)
+	room.free()
+
+
+## Bible 6.15: the placeholder crouch squats the idle frame (and its hood, cape
+## and scarf, which hang from the frame's points) until the crouch art lands.
+func test_the_placeholder_crouch_squats_the_idle() -> void:
+	var room := make_room(FLAT)
+	var p := make_player(room, Vector2i(10, 11))
+	await _settle(p)
+	var neck := p.visual.neck_position().y
+	p.input.down = true
+	await frames(20)
+	check(p.visual.anim == "idle", "the crouch plays the idle (no crouch clip yet)")
+	check(p.visual.crouch_scale.distance_to(PlayerVisual.CROUCH_SHAPE) < 0.01, "squatted to the crouch shape (%s)" % p.visual.crouch_scale)
+	check(p.visual.neck_position().y > neck + 8.0, "and the neck drops with it (%.1f to %.1f)" % [neck, p.visual.neck_position().y])
+	p.input.down = false
+	await frames(20)
+	check(p.visual.crouch_scale.distance_to(Vector2.ONE) < 0.01, "standing, it rises back to its own shape")
+	room.free()
+
+
+## Bible 6.15: the crouch answers the real controller on every Down there is:
+## the arrow key, S, the d-pad and the left stick held straight down.
+func test_the_crouch_answers_keys_and_the_pad() -> void:
+	var room := make_room(FLAT)
+	var p := make_player(room, Vector2i(10, 11))
+	await _settle(p)
+	p.input = PlayerInput.new()
+	var downs := {
+		"the Down arrow": func(on: bool) -> void: _key(KEY_DOWN, on),
+		"S": func(on: bool) -> void: _key(KEY_S, on),
+		"the d-pad": func(on: bool) -> void: _pad(JOY_BUTTON_DPAD_DOWN, on),
+		"the stick": func(on: bool) -> void: _stick(90.0, -1.0 if on else 0.0),
+	}
+	for name: String in downs:
+		var press: Callable = downs[name]
+		press.call(true)
+		await frames(2)
+		check(p.crouching, "%s crouches" % name)
+		press.call(false)
+		await frames(2)
+		check(not p.crouching, "and letting go of %s stands you up" % name)
+	room.free()
+
+
+func _key(key: Key, down: bool) -> void:
+	var ev := InputEventKey.new()
+	ev.physical_keycode = key
+	ev.pressed = down
+	Input.parse_input_event(ev)
+	Input.flush_buffered_events()

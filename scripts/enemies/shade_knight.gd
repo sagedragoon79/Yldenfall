@@ -33,6 +33,13 @@ var _cool := 0.0
 var _battered := 0
 ## Which cut comes after the tell: "thrust" or "cut".
 var _next := "thrust"
+## His combo's second blow is a high cut at your head (bible 6.15): crouch under
+## it or parry it. A riposte's cut stays at the chest.
+var _high := false
+## The high cut's blade, measured up from his feet (px): from HIGH_CUT_TOP down
+## HIGH_CUT_HEIGHT, over a crouched hero (Player crouch 26 px) and through a standing one.
+const HIGH_CUT_TOP := 46.0
+const HIGH_CUT_HEIGHT := 18.0
 
 
 func _init() -> void:
@@ -115,6 +122,7 @@ func _open(tell: String, next: String) -> void:
 	velocity.x = 0.0
 	face_player()
 	_next = next
+	_high = tell == "cut_tell"
 	set_state(tell)
 	Sfx.play("swell", 0.15, -8.0)
 
@@ -131,7 +139,10 @@ func _strike(damage: int) -> void:
 func blade_rect() -> Rect2:
 	var c := center()
 	var w := BLADE_REACH + body_size.x * 0.5
-	return Rect2(c.x if facing > 0 else c.x - w, c.y - 14.0, w, 24.0)
+	var x := c.x if facing > 0 else c.x - w
+	if _high and state in ["cut_tell", "cut"]:
+		return Rect2(x, global_position.y - HIGH_CUT_TOP, w, HIGH_CUT_HEIGHT)
+	return Rect2(x, c.y - 14.0, w, 24.0)
 
 
 func _edge_ahead() -> bool:

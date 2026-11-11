@@ -24,4 +24,4 @@ func _process(_delta: float) -> void:
 	var on := func(k: String) -> String: return "ON " if a[k] else "off"
 	_label.text = "vel %4d,%4d   %s   combo %d\n" % [player.velocity.x, player.velocity.y, PlayerVisual.current_pose(player), player.combo_index] \
 		+ "F1 Glove %s  F2 Delver's Pick %s  F3 Featherstep Boots %s  F4 Elven Stride %s  F7 Deluge %s\n" % [on.call("glove"), on.call("delvers_pick"), on.call("boots"), on.call("stride"), on.call("torrent")] \
-		+ "Move: arrows/WASD  Jump: Space/Z  Attack: X  Dash: C  Block/parry: V  Spell: F  Potion: Q\nReset: R  Hide this: F6"
+		+ "Move: arrows/WASD  Crouch: Down  Jump: Space/Z  Attack: X  Dash: C  Block/parry: V  Spell: F  Potion: Q\nReset: R  Hide this: F6"

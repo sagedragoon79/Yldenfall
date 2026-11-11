@@ -59,7 +59,7 @@ const BLADE_LENGTH := 11.0
 ## Animations that hold on until they finish even when the action behind them
 ## ends (the recovery frames of a swing). A pogo's strike ends the moment it
 ## lands, so the Delver's Pick's blow plays out over the bounce.
-const FINISH := ["slash1", "slash2", "slash3", "slash_up", "strike_down", "cast", "throw", "throw_up"]
+const FINISH := ["slash1", "slash2", "slash3", "slash_up", "strike_down", "cast", "throw", "throw_up", "crouch_slash"]
 ## The frame of each swing clip where the blade travels (every hero sheet draws
 ## its own blur of the blade there); the frames before it are the windup, with
 ## the sword still raised or drawn back. The smear waits for it (pass 537).
@@ -67,7 +67,14 @@ const STRIKE_FRAME := {"slash1": 1, "slash2": 1, "slash3": 2, "slash_up": 1}
 ## Poses an unfinished swing may play over.
 ## The speed share (MovementTuning.speed_fraction) at or under which moving is a walk.
 const WALK_POSE := 0.7
-const OVERRIDABLE := ["idle", "walk", "run", "rise", "apex", "fall"]
+const OVERRIDABLE := ["idle", "walk", "run", "rise", "apex", "fall", "crouch"]
+## The crouch's own clips (bible 6.15): the held pose and its low cut. Until a
+## set has them, the crouch plays its idle (and the low cut its first slash)
+## drawn CROUCH_SHAPE squat, the placeholder until the 128 px hero's art.
+const CROUCH_CLIPS := ["crouch", "crouch_slash"]
+const CROUCH_SHAPE := Vector2(1.08, 0.66)
+## How fast the body sinks into the crouch and rises out of it, per second.
+const CROUCH_EASE := 30.0
 
 const DYE_SHADER := preload("res://shaders/cloak_dye.gdshader")
 ## The PixelLab sets draw the cloak in a key green and keep the purple hair; this
@@ -100,11 +107,14 @@ const SQUASH := {
 	"land": Vector2(1.25, 0.8), "dash": Vector2(1.3, 0.8), "pogo": Vector2(0.8, 1.2), "pod": Vector2(0.75, 1.25),
 	"glide": Vector2(1.2, 0.88), "stroke": Vector2(1.1, 0.9), "heavy": Vector2(1.2, 0.9), "thrust": Vector2(1.3, 0.85),
 	"throw": Vector2(1.06, 0.97), "cast": Vector2(1.1, 0.95), "parry": Vector2(1.15, 0.9),
+	"crouch": Vector2(1.12, 0.88),
 }
 ## How fast a squash eases back to the sprite's own shape, per second
 ## (1 - e^(-16t): over half of it in 3 frames, nearly all in 0.2 s).
 const SQUASH_RECOVERY := 16.0
 var squash_scale := Vector2.ONE
+## The placeholder crouch's squat (CROUCH_SHAPE), eased in and out.
+var crouch_scale := Vector2.ONE
 var pose := "idle"
 ## The animation playing, its time and the frame shown.
 var anim := "idle"
@@ -142,7 +152,9 @@ func flash_hurt() -> void:
 
 func _physics_process(delta: float) -> void:
 	squash_scale = squash_scale.lerp(Vector2.ONE, 1.0 - exp(-delta * SQUASH_RECOVERY))
-	scale = Vector2(look_dir(player) * squash_scale.x, squash_scale.y)
+	crouch_scale = crouch_scale.lerp(crouch_goal(), 1.0 - exp(-delta * CROUCH_EASE))
+	var shape := shape_scale()
+	scale = Vector2(look_dir(player) * shape.x, shape.y)
 	_blink_time -= delta
 	_red_time -= delta
 	visible = player.dead or not (_blink_time > 0.0 and _red_time <= 0.0 and int(_blink_time * 20.0) % 2 == 0)
@@ -202,6 +214,8 @@ static func current_pose(p: Player) -> String:
 		return "block"
 	if p.is_casting:
 		return "cast"
+	if p.crouching:
+		return "crouch"
 	if p.is_gliding:
 		# Feather Fall: the cloak-spread hang of the apex, held.
 		return "apex"
@@ -229,6 +243,10 @@ static func anim_for(p: Player, body_pose: String) -> String:
 			return "slash1"
 		"attack_up":
 			return "slash_up"
+		"attack_low":
+			return "crouch_slash" if Sheet.has_anim(sheet_for("crouch_slash"), "crouch_slash") else "slash1"
+		"crouch":
+			return "crouch" if Sheet.has_anim(sheet_for("crouch"), "crouch") else "idle"
 		"attack_down":
 			return "strike_down"
 		"climb":
@@ -298,6 +316,19 @@ static func frame_at(name: String, t: float) -> int:
 	return Sheet.frame_at(SHEET_NAME, name, t)
 
 
+## The sprite's shape now: the move's squash times the crouch's squat.
+func shape_scale() -> Vector2:
+	return squash_scale * crouch_scale
+
+
+## The squat the sprite eases toward: CROUCH_SHAPE while crouched on a clip
+## not drawn crouching (the placeholder), else its own shape.
+func crouch_goal() -> Vector2:
+	if player.crouching and not anim in CROUCH_CLIPS:
+		return CROUCH_SHAPE
+	return Vector2.ONE
+
+
 func finished() -> bool:
 	return Sheet.finished(sheet, anim, anim_time)
 
@@ -323,7 +354,8 @@ func neck_position() -> Vector2:
 
 ## A frame point (relative to the feet, facing right) in world space.
 func point(p: Vector2) -> Vector2:
-	return global_position + Vector2(p.x * look_dir(player) * squash_scale.x, p.y * squash_scale.y)
+	var shape := shape_scale()
+	return global_position + Vector2(p.x * look_dir(player) * shape.x, p.y * shape.y)
 
 
 ## Draws one frame of the sheet (or its flat silhouette, tinted) with the feet at the origin.

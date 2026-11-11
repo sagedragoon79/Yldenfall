@@ -118,6 +118,11 @@ func _draw() -> void:
 			center = Vector2(0, -6)
 			from = deg_to_rad(20)
 			to = deg_to_rad(160)
+		"low":
+			# A crouch's cut (bible 6.15): a flat sweep along the floor.
+			center = Vector2(_facing * 6, -4)
+			from = deg_to_rad(-40) if _facing > 0 else deg_to_rad(220)
+			to = deg_to_rad(5) if _facing > 0 else deg_to_rad(175)
 		_:
 			center = Vector2(_facing * 6, -22)
 			from = deg_to_rad(-70) if _facing > 0 else deg_to_rad(250)

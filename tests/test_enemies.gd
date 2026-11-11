@@ -2902,3 +2902,82 @@ func test_mothling_plays_an_animation_for_every_state() -> void:
 	m.global_position = Vector2(200, 40)
 	await frames(3)
 	_plays_every_state(m, "mothling", ["rise", "hover", "windup", "dive"], "windup", "fly")
+
+
+## Bible 6.15: the Shade Knight's combo is a thrust at the chest, then a high
+## cut at the head. A crouch ducks the cut but not the thrust; standing, both land.
+func test_a_crouch_ducks_the_shade_knights_high_cut_but_not_his_thrust() -> void:
+	for crouched: bool in [true, false]:
+		var room := _room_with({Vector2i(22, 6): "e"})
+		var p := make_player(room, Vector2i(3, 6))
+		p.max_hp = 9999
+		p.hp = 9999
+		var k: ShadeKnight = _find(room, ShadeKnight)
+		await frames(3)
+		p.teleport(Vector2(k.global_position.x - 40.0, 7 * 16))
+		p.input.down = crouched
+		var hp := p.hp
+		var after_thrust := -1
+		var high_rect := Rect2()
+		for i in 200:
+			await frames(1)
+			if k.state == "cut_tell" and after_thrust < 0:
+				after_thrust = p.hp
+				# Fresh from the thrust's blow, and back in his reach.
+				p._invuln_timer = 0.0
+				p.teleport(Vector2(k.global_position.x + k.facing * 40.0, 7 * 16))
+			if k.state == "cut":
+				high_rect = k.blade_rect()
+			if k.state == "winded":
+				break
+		var who := "crouched" if crouched else "standing"
+		check(after_thrust >= 0 and after_thrust < hp, "%s, the thrust lands (%d)" % [who, hp - after_thrust])
+		if crouched:
+			check(p.crouching, "still crouched")
+			check(p.hp == after_thrust, "and the high cut passes over the crouch (%d)" % (after_thrust - p.hp))
+			check(high_rect.end.y < p.global_position.y - MovementTuning.new().crouch_height, "the cut's blade runs above a crouched head")
+		else:
+			check(p.hp < after_thrust, "and the high cut lands on a standing hero (%d)" % (after_thrust - p.hp))
+		room.free()
+		await frames(1)
+
+
+## Bible 6.15: a Silt Adder draws its head level with yours, so its strike along
+## that level goes over a hero crouched on the ground, and glides back harmless.
+## Standing, the same strike bites.
+func test_a_crouch_ducks_the_silt_adders_strike() -> void:
+	for crouched: bool in [true, false]:
+		var room := make_room(WIDE)
+		var p := make_player(room, Vector2i(6, 6))
+		p.max_hp = 9999
+		p.hp = 9999
+		p.has_shield = false
+		p.input.down = crouched
+		await frames(10)
+		var feet := p.global_position
+		var n := SiltAdder.new()
+		room.add_child(n)
+		n.global_position = feet + Vector2(64, -Enemy.HEAD_HEIGHT)
+		n.home = n.global_position
+		n._phase = 0.0
+		var hp := p.hp
+		var struck := false
+		var lowest := -INF
+		for i in 300:
+			p.global_position.x = feet.x
+			await frames(1)
+			if n.state == "strike":
+				struck = true
+				lowest = maxf(lowest, n.bite_rect().end.y)
+			if struck and n.state == "float":
+				break
+		var who := "crouched" if crouched else "standing"
+		check(struck, "%s: it strikes" % who)
+		if crouched:
+			check(p.crouching, "the hero stayed crouched")
+			check(p.hp == hp, "and the strike and the glide back pass over the crouch (%d)" % (hp - p.hp))
+			check(lowest < feet.y - MovementTuning.new().crouch_height, "the bite runs above a crouched head (%.1f)" % (feet.y - lowest))
+		else:
+			check(p.hp < hp, "and it bites a standing hero (%d)" % (hp - p.hp))
+		room.free()
+		await frames(1)
