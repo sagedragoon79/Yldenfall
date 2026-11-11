@@ -1870,6 +1870,16 @@ Held by `test_fore_silhouettes_stay_a_low_fringe` and `test_fore_leans_toward_th
 
 ---
 
+### 12.30 Every plank is held up (pass 538)
+
+The independent grade (pass 535) read rooms as "empty boxes of unsupported floating planks." The plank tile's trestle (12.20) stays inside its own cell, so a run of `-` planks in open air still hung on nothing. `PlankSupports` (`scripts/world/plank_supports.gd`) now gives every run of `-` planks a support that reaches real structure, planned from the room grid when the room loads:
+
+- **A knee brace** where a run's end butts against a wall that continues below it: a diagonal strut from the wall, a tile below the board, up to the plank's underside. A run of 3 tiles or fewer braced at one end needs nothing else; a run braced at both ends needs nothing else.
+- **Posts** down to footing (a floor or another plank) when it is at most 4 tiles below the plank's end.
+- Otherwise **hangers** up to the first solid cell or plank above, one inset 4 px from each end of the run (a lone cell hangs from its middle). A hanger taken from a plank above is fixed under that plank's board, not below its trestle. Rope in the timber and water zones (the gym, the Heartwood, the High Boughs, the Haar, the Spires), chain in the stone, iron and glass ones (Hearthroot, the Sunken Spring, Vorrhallow, the Trials, the Tower, the Evercrown), each in its zone's tones; posts and braces in the plank's own strut timber. A hanger with nothing above it within 22 tiles runs 5 tiles up and fades into the dark, as if hung from beyond the view.
+
+The layer draws once per room load behind the tiles (z -1, like the ladders), so the board sits over the hanger's foot and actors pass in front; collision is untouched. Ladder tops, drowned boardwalks and hidden planks are not given supports (the ladder carries its own plank; the others are deliberate). Judged by eye at 1x and 2x in `spires/sky_steps`, `tower/bat_belfry`, `haar/drowned_stair`, `heartwood/amber_falls`, `evercrown/drift_well` and `sunken/drowned_aqueduct`: the planks read as hung, propped or braced, and foes and pickups still pop in front of the thin supports. `tests/test_plank_supports.gd` checks each rule and that every plank run in the game is held up.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

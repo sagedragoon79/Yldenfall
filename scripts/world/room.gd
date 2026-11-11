@@ -30,6 +30,8 @@ var sheen: OnyxSheen
 var doors := {}
 
 var _one_way := {}
+## Cells of the room's `-` planks (not ladder tops, boardwalks or hidden planks), for `PlankSupports`.
+var _planks := {}
 var _secret_cells := {}
 ## Time-locked water cells (legend `f`), gathered into Waterfalls after the grid.
 var _falls := {}
@@ -263,6 +265,13 @@ func build(text: String) -> void:
 	shade.name = "EdgeShade"
 	add_child(shade)
 	shade.setup(_solid_look, size_tiles)
+
+	# What holds each plank run up: a brace, a post or hangers (design bible 12.30).
+	if not _planks.is_empty():
+		var holds := PlankSupports.new()
+		holds.name = "PlankSupports"
+		add_child(holds)
+		holds.setup(zone, _planks, _solid_look, size_tiles)
 
 	var found := Room.scan_doors(grid)
 	for spec: String in lists.get("door", []):
@@ -532,6 +541,7 @@ func _place(ch: String, cell: Vector2i, grid: Array[String]) -> void:
 		"-":
 			tiles.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.ONE_WAY)
 			_one_way[cell] = true
+			_planks[cell] = true
 		"\"":
 			_ladders[cell] = true
 			if cell.y == 0 or grid[cell.y - 1].substr(cell.x, 1) != "\"":
