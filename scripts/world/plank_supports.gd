@@ -32,7 +32,7 @@ const BOARD := 3.0
 ## a plank above is fixed here, not below that plank's trestle.
 const BOARD_UNDER := 5.0
 
-## Per-zone support look. `hang` is rope or chain; `lit`, `mid`, `dark` are the
+## Per-zone support look. `hang` is rope, chain or sinew (a strand drawn like rope); `lit`, `mid`, `dark` are the
 ## hanger's three tones; `wood` the post and brace timber (lit, mid, dark), in
 ## the plank's own strut ramp (tilegen PLANK) so the support reads as the same
 ## build as the board it carries.
@@ -47,7 +47,9 @@ const LOOKS := {
 	"vorrhallow": {"hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"]},
 	"trials": {"hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"]},
 	"tower": {"hang": "chain", "lit": "aca1ba", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"]},
-	"evercrown": {"hang": "chain", "lit": "cd51c5", "mid": "a736aa", "dark": "421e48", "wood": ["a736aa", "712b78", "421e48"]},
+	# The Evercrown's shelves are grown, not built (bible 12.34, pass 542): they hang on
+	# sinew strands (night-5, night-3, ember-1), not hot crystal chains.
+	"evercrown": {"hang": "sinew", "lit": "af92c9", "mid": "5d4997", "dark": "501623", "wood": ["8265b8", "5d4997", "2c2541"]},
 }
 
 ## The plan, one Dictionary per support: {kind: "brace", "post" or "hang", ...}.
