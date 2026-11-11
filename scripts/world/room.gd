@@ -306,6 +306,7 @@ func build(text: String) -> void:
 			var cell := Vector2i(int(parts[0]), int(parts[1]))
 			if not tablets.has(cell):
 				tablets[cell] = LoreTablet.new()
+				(tablets[cell] as LoreTablet).zone = zone
 				_spawn(tablets[cell], Vector2(cell.x * TILE + TILE * 0.5, (cell.y + 1) * TILE))
 			(tablets[cell] as LoreTablet).add_variant(parts[2])
 
