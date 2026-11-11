@@ -119,14 +119,25 @@ def masonry_shade(x, y, seed, dark, body, light, cell=16):
     a stone on alternate rows, plus a per-course jitter — so same-value stones (and
     the recessed dark ones) never stack into the straight vertical columns that
     made the mid column/pier fields read as one stamped lattice (independent grade,
-    passes 497/502/504; bible 12.14)."""
-    row = y // cell
+    passes 497/502/504; bible 12.14).
+
+    Each accent stone is a brick, ``cell`` wide and half as tall, and it is drawn
+    as a deliberate shape rather than a flat square of another value (bible 12.27):
+    a lighter stone stands proud, its face lit with its shadow along its foot and
+    its right side; a darker one is a recess (a slot window or a missing stone),
+    shadowed inside with a lit sill along its foot. The flat squares read as
+    "random 'missing pixel' blocks" in the tower, Vorrhallow and Hearthroot ruins
+    (independent grade, pass 529)."""
+    bh = max(2, cell // 2)
+    row = y // bh
     off = (row % 2) * (cell // 2) + int(hash2(row, 5, seed) * cell)
-    h = hash2((x + off) // cell, row, seed)
-    if h > 0.93:
-        return light
-    if h < 0.12:
-        return dark
+    sx = x + off
+    h = hash2(sx // cell, row, seed)
+    ly, lx = y % bh, sx % cell
+    if h > 0.93:  # a proud stone: lit face, shadow along its foot and right side
+        return dark if (ly == bh - 1 or lx == cell - 1) else light
+    if h < 0.12:  # a recess: shadowed inside, a lit sill along its foot
+        return light if ly == bh - 1 else dark
     return body
 
 
@@ -250,64 +261,80 @@ def paint_drowned(img, ox, oy, seed, ramp):
             img.putpixel((ox + x, oy + y), c(col))
 
 
+MEAT_CELLS = 3
+
+
 def paint_meteor(img, ox, oy, seed, ramp):
     """the Evercrown, the inside of the Everbloom: organic stone grown in rounded cells
     like a honeycomb of scar tissue, black-violet, with blood-red sinew in the
-    seams and the odd pore of alien cyan light."""
-    cell = 7 * D
+    seams and the odd pore of alien cyan light.
+
+    Calm fill (design bible 12.28, pass 534): the cells are broad (two per tile, not
+    three) and wrap across tile edges, each a flat body of one value with a lit rim only
+    along its upper side, under a seam one world pixel wide. The older small cells
+    with a bright blob at every centre read as "busy cobble" (independent grade,
+    pass 529)."""
+    # The cells wrap: two across and two down each tile, their centres keyed to
+    # the zone (MEAT_CELLS), not the tile, so every tile meets its neighbours
+    # with the seams joined and a run of ledge tiles reads as one grown mass.
+    n = 2
+    cell = T // n
     pts = []
-    for gy in range(-1, T // cell + 2):
-        for gx in range(-1, T // cell + 2):
-            pts.append(((gx + hash2(gx, gy, seed + 1)) * cell, (gy + hash2(gx, gy, seed + 2)) * cell, gx, gy))
+    for gy in range(-1, n + 1):
+        for gx in range(-1, n + 1):
+            wx, wy = gx % n, gy % n
+            pts.append(((gx + 0.2 + 0.6 * hash2(wx, wy, MEAT_CELLS + 1)) * cell,
+                        (gy + 0.2 + 0.6 * hash2(wx, wy, MEAT_CELLS + 2)) * cell, wx, wy))
     for y in range(T):
         for x in range(T):
-            d = sorted(((x - px) ** 2 + (y - py) ** 2, gx, gy) for px, py, gx, gy in pts)
+            d = sorted(((x - px) ** 2 + (y - py) ** 2, gx, gy, py) for px, py, gx, gy in pts)
             d1, d2 = math.sqrt(d[0][0]), math.sqrt(d[1][0])
-            gx, gy = d[0][1], d[0][2]
+            gx, gy, py = d[0][1], d[0][2], d[0][3]
             edge = d2 - d1
-            shade = 3 if hash2(gx, gy, seed + 3) > 0.5 else 2
+            shade = 2  # one flat body; the lit rims and seams give the form
             if edge < 1.0 * D:
-                col = "ember-1" if hash2(gx + gy, 0, seed + 4) > 0.55 else f"{ramp}-1"
-            elif edge < 2.0 * D:
-                col = f"{ramp}-{shade - 1}"
-            elif d1 < 2.0 * D:
-                col = f"{ramp}-{shade + 1}"
+                col = "ember-1" if hash2(gx + gy, 0, MEAT_CELLS + 4) > 0.55 else f"{ramp}-1"
+            elif edge < 2.0 * D and y < py:
+                col = f"{ramp}-{shade + 1}"   # the lit upper rim of the cell
             else:
                 col = f"{ramp}-{shade}"
-            if d1 < 1.0 * D and hash2(gx, gy, seed + 6) > 0.8:
+            if d1 < 1.0 * D and hash2(gx, gy, seed + 6) > 0.95:
                 col = "sky-6"
             img.putpixel((ox + x, oy + y), c(col))
 
 
 def paint_spring(img, ox, oy, seed, ramp):
     """The Sunken Spring: pale limestone laid down by the spring itself over an
-    age, in wavy strata like the rims of terraced pools, pocked with pores, a
-    blue-green mineral stain bleeding along some layers.
+    age, in gently waving strata like the rims of terraced pools, a blue-green
+    mineral stain bleeding along some layers.
 
     The strata wave wraps seamlessly across the tile width (design bible 12.23):
-    both sine terms complete a whole number of cycles over ``T`` and ``seed``
-    only shifts their phase, so a tile's left and right edges always match. Laid
-    side by side across a solid field the strata flow on instead of breaking into
-    the hard vertical tile seams the independent grade read as stacked, copy-
-    pasted stone columns (pass 525; the play-scale companion to the backdrop
-    running bond)."""
+    the sine completes a whole number of cycles over ``T`` and ``seed`` only
+    shifts its phase, so a tile's left and right edges always match. Laid side by
+    side across a solid field the strata flow on instead of breaking into hard
+    vertical tile seams (pass 525).
+
+    Calm fill (design bible 12.28, pass 534): two broad layers per tile, each a
+    flat body under a one-pixel lit top and over a one-pixel shadow line, a wave of
+    one world pixel, and the stain as long runs along a layer's foot. The older
+    thin layers with a two-pixel wave, a pore scatter and stain flecks read as
+    "zig-zag strata" static (independent grade, pass 529)."""
     p1 = hash2(seed, 1, 7) * math.tau
-    p2 = hash2(seed, 2, 7) * math.tau
+    lh = 8 * D
     for y in range(T):
         for x in range(T):
-            wave = math.sin(math.tau * x / T + p1) * 1.5 * D + math.sin(math.tau * 2 * x / T + p2) * 0.6 * D
-            layer = int((y + wave) // (5 * D))
-            ly = (y + wave) % (5 * D)
-            shade = 4 if hash2(layer, seed, seed + 2) > 0.5 else 3
-            if ly < D:
+            wave = math.sin(math.tau * x / T + p1) * 1.0 * D
+            layer = int((y + wave) // lh)
+            ly = (y + wave) % lh
+            shade = 4 if layer % 2 == 0 else 3
+            if ly < 1:
                 col = f"{ramp}-{shade + 1}"
-            elif ly > 4 * D:
-                col = f"{ramp}-{shade - 2}"
+            elif ly >= lh - 1:
+                col = f"{ramp}-{shade - 1}"
             else:
                 col = f"{ramp}-{shade}"
-            if hash2(x // D, y // D, seed + 5) > 0.93:
-                col = f"{ramp}-{shade - 2}"   # a pore
-            if hash2(layer, 7, seed + 9) > 0.7 and ly > 3 * D and hash2(x // (2 * D), layer, seed) > 0.35:
+            if (hash2(layer, 7, seed + 9) > 0.55 and lh - 1 - D <= ly < lh - 1
+                    and hash2(x // (6 * D), layer, seed) > 0.3):
                 col = "sky-3"                  # the spring's mineral stain
             img.putpixel((ox + x, oy + y), c(col))
 
@@ -327,37 +354,50 @@ def crystal_vein(img, ox, oy, seed):
         x = max(1, min(T - 2, x))
 
 
+WOOD_STRANDS = 5
+
+
 def paint_wood(img, ox, oy, seed, ramp):
-    """Living wood: long vertical grain in fine strands, the odd knot, and broad
-    patches of lighter and darker heartwood so the face carries surface value
-    variation (pass 520, pulling heartwood and haar toward the painterly zones'
-    mottled stone) instead of reading as one flat grain field."""
+    """Living wood: broad vertical strands of two values, long grain lines running
+    down them, a long highlight here and there, and the odd knot.
+
+    Calm fill (design bible 12.28, pass 534): every mark is long. A strand is 4 to
+    9 render pixels wide and one flat value; a grain line or a highlight runs
+    6 to 20 pixels down; there are no single-pixel flecks. The older face mixed a
+    fine sine grain, a 6-pixel patch grid and random flecks, and read as "static-
+    like dirt" in the Heartwood and the Haar (independent grade, pass 529). The
+    strands still give the face three values with none swamping it (pass 520)."""
+    # Strands: walk across the tile in runs of 4..9 columns, alternating value.
+    # The layout is the same in every tile (WOOD_STRANDS, not ``seed``), so a
+    # strand runs on unbroken from one tile to the one below it; the seed varies
+    # only the grain lines, highlights and knots laid over it.
+    strand = []
+    k = 0
+    while len(strand) < T:
+        w = 4 + int(hash2(WOOD_STRANDS, len(strand), 18) * 6)
+        strand += [(k % 2, len(strand))] * w
+        k += 1
     for x in range(T):
-        base = 1 if hash2(x // 3, 0, seed) > 0.4 else 2
-        phase = hash2(x, 1, seed) * 32
+        val, start = strand[x]
+        base = 2 if val else 1
+        edge = x == start and x > 0              # a dark seam between strands
         for y in range(T):
-            n = math.sin((y + phase) * 0.2)
             col = base
-            if n > 0.9 and base == 2 and x % 3 == 1:
-                col = 3
-            elif n < -0.85:
-                col = base - 1
-            if x % 12 == 0:
-                col = min(col, 1)
-            elif x % 12 == 1 and hash2(x, y // 4, seed) > 0.5:
-                col = min(col + 1, 3)
-            # A low-frequency patch (roughly 6x6-render-pixel cells) lifts or
-            # drops a broad region a shade, breaking the flat grain field.
-            pv = hash2(x // 6, y // 6, seed + 13)
-            if pv > 0.80:
-                col += 1
-            elif pv < 0.17:
-                col -= 1
-            # The odd dark fleck, like the grain pits of the masonry zones.
-            elif hash2(x, y, seed + 4) > 0.975:
-                col -= 1
-            img.putpixel((ox + x, oy + y), c(f"{ramp}-{min(max(col, 0), 3)}"))
-    if hash2(seed, 7, 3) > 0.82:
+            if edge:
+                col = 0 if base == 1 else 1
+            img.putpixel((ox + x, oy + y), c(f"{ramp}-{col}"))
+    # Long grain lines a shade darker, and the odd long highlight a shade lighter.
+    for i in range(6):
+        gx = int(hash2(seed, i, 19) * T)
+        y0 = int(hash2(seed, i, 20) * T)
+        length = 6 * D + int(hash2(seed, i, 21) * 7 * D)
+        lift = hash2(seed, i, 22) > 0.6
+        for y in range(y0, min(T, y0 + length)):
+            nm = img.getpixel((ox + gx, oy + y))
+            here = 2 if nm[:3] == c(f"{ramp}-2")[:3] else 1
+            col = min(here + 1, 3) if lift else max(here - 1, 0)
+            img.putpixel((ox + gx, oy + y), c(f"{ramp}-{col}"))
+    if hash2(seed, 7, 3) > 0.92:  # rare: the few interior tiles repeat a lot
         # A knot: a dark eye in a lighter ring of grain.
         kx, ky = 8 + int(hash2(seed, 1, 5) * 14), 8 + int(hash2(seed, 2, 5) * 14)
         for dy in range(-3, 4):
@@ -383,7 +423,7 @@ def paint_limb(img, ox, oy, seed, ramp):
             cx, cy = int(hash2(seed, k, 13) * (T - 6)) + 3, int(hash2(seed, k, 14) * (T - 6)) + 3
             for dy in range(-2, 3):
                 for dx in range(-3, 4):
-                    if abs(dx) + abs(dy) <= 3 and hash2(cx + dx, cy + dy, seed) > 0.25:
+                    if abs(dx) + abs(dy) <= 3:
                         img.putpixel((ox + cx + dx, oy + cy + dy), c("leaf-1" if dy > 0 else "leaf-2"))
 
 
@@ -1786,20 +1826,26 @@ FORE_KIND = {
     "haar": "reed", "sunken": "reed",
     "evercrown": "crystal", "vorrhallow": "crystal",
     "tower": "rubble", "trials": "rubble",
-    "hearthroot": "post", "spires": "post",
+    "hearthroot": "fence", "spires": "fence",
 }
 FORE_BODY = "night-0"  # the darkest night shade: an unlit near-black silhouette
 FORE_RIM = "night-1"   # one step up, a faint top/leading edge so a shape reads
 FORE_FLOOR = 360 * D   # the view bottom in canvas pixels (bible: BASE_SIZE.y)
 FORE_BAND = 16 * D     # solid ground strip above the floor line
-BAND_A, PART_A, RIM_A = 242, 206, 224  # band / protrusion / rim alphas (see-through foreground)
+BAND_A, PART_A, RIM_A = 242, 176, 196  # band / protrusion / rim alphas (see-through foreground)
+BAND_RIM_A = 224  # the band's own top rim stays solid enough to mark FORE_GROUND
+# The tallest a silhouette may rise above the band (world pixels; Backdrop.FORE_MAX_RISE).
+# The grade of pass 535: posts and reeds up to 128 px tall stood over the play layer
+# as black bars. The view's bottom 36 px is the ground the hero stands on when the
+# camera rests (bible 12.29), so the silhouettes now stay a low fringe below that line.
+FORE_MAX_RISE = 36
 
 
 def _fore_fill(img):
     """The solid ground band, from the floor line down past the view bottom."""
     top = FORE_FLOOR - FORE_BAND
     for y in range(top, BG_H):
-        col = c(FORE_RIM, RIM_A) if y < top + D else c(FORE_BODY, BAND_A)
+        col = c(FORE_RIM, BAND_RIM_A) if y < top + D else c(FORE_BODY, BAND_A)
         for x in range(BG_W):
             put(img, x, y, col)
 
@@ -1823,48 +1869,48 @@ def _fore_fern(img, x, base, rng):
     spread = rng.randint(10, 20) * D
     for _ in range(rng.randint(3, 6)):
         cx = x + rng.randint(0, spread)
-        h = rng.randint(40, 108) * D
-        w = rng.choice([3, 4, 5]) * D
+        h = rng.randint(14, 34) * D
+        w = rng.choice([2, 3]) * D
         lean = rng.randint(-10, 10) * D
         _fore_stalk(img, cx, base, h, w, lean, False)
-        for j in range(4 * D, h, 10 * D):  # leaflets off the frond
+        for j in range(4 * D, h - 3 * D, 7 * D):  # leaflets off the frond
             t = j / h
             lx, ly = cx + int(lean * t), base - j
             d = rng.choice([-1, 1])
-            for m in range(rng.randint(3, 7) * D):
+            for m in range(rng.randint(3, 6) * D):
                 put(img, lx + d * m, ly + m // 2, c(FORE_BODY, PART_A))
-    return spread + rng.randint(12, 26) * D
+    return spread + rng.randint(16, 34) * D
 
 
 def _fore_reed(img, x, base, rng):
     spread = rng.randint(8, 16) * D
     for _ in range(rng.randint(2, 4)):
         cx = x + rng.randint(0, spread)
-        h = rng.randint(60, 128) * D
-        lean = rng.randint(-8, 8) * D
-        _fore_stalk(img, cx, base, h, rng.choice([2, 3]) * D, lean, False)
-        if rng.random() < 0.6:  # a cattail tip
-            tx, ty = cx + int(lean * 0.85), base - h + rng.randint(8, 16) * D
-            for dy in range(-6 * D, 6 * D):
-                for dx in range(-2 * D, 3 * D):
-                    if (dx / (2.5 * D)) ** 2 + (dy / (6.0 * D)) ** 2 <= 1.0:
+        h = rng.randint(18, 36) * D
+        lean = rng.randint(-6, 6) * D
+        _fore_stalk(img, cx, base, h, 2 * D, lean, False)
+        if rng.random() < 0.5:  # a cattail tip, hung below the stalk's end
+            tx, ty = cx + int(lean * 0.85), base - h + rng.randint(6, 9) * D
+            for dy in range(-4 * D, 4 * D):
+                for dx in range(-2 * D, 2 * D):
+                    if (dx / (1.6 * D)) ** 2 + (dy / (4.0 * D)) ** 2 <= 1.0:
                         put(img, tx + dx, ty + dy, c(FORE_BODY, PART_A))
-    return spread + rng.randint(10, 22) * D
+    return spread + rng.randint(16, 32) * D
 
 
 def _fore_crystal(img, x, base, rng):
     spread = rng.randint(10, 18) * D
     for _ in range(rng.randint(2, 4)):
         cx = x + rng.randint(0, spread)
-        h = rng.randint(34, 88) * D
-        w = rng.randint(8, 16) * D
-        _fore_stalk(img, cx, base, h, w, rng.randint(-6, 6) * D, True)
-    return spread + rng.randint(12, 22) * D
+        h = rng.randint(12, 34) * D
+        w = rng.randint(6, 12) * D
+        _fore_stalk(img, cx, base, h, w, rng.randint(-5, 5) * D, True)
+    return spread + rng.randint(18, 32) * D
 
 
 def _fore_rubble(img, x, base, rng):
     span = rng.randint(24, 46) * D
-    peak = rng.randint(20, 54) * D
+    peak = rng.randint(10, 26) * D
     steps = rng.randint(4, 7)
     pts = [rng.randint(peak // 3, peak) for _ in range(steps + 1)]
     for i in range(span):
@@ -1879,26 +1925,37 @@ def _fore_rubble(img, x, base, rng):
     return span + rng.randint(8, 18) * D
 
 
-def _fore_post(img, x, base, rng):
-    w = rng.randint(6, 11) * D
-    h = rng.randint(55, 118) * D
-    lean = rng.randint(-3, 3) * D
-    for i in range(h):
-        t = i / h
-        y = base - i
-        x0 = x + int(lean * t)
-        for dx in range(w):
-            put(img, x0 + dx, y, c(FORE_BODY, PART_A))
-        put(img, x0, y, c(FORE_RIM, RIM_A))
-        put(img, x0 + w - 1, y, c(FORE_RIM, RIM_A))
-    for dx in range(w):  # a flat cap rim
-        put(img, x + int(lean) + dx, base - h, c(FORE_RIM, RIM_A))
-    return w + rng.randint(26, 50) * D
+def _fore_fence(img, x, base, rng):
+    """A run of short timber stubs joined by a sagging rail (Hearthroot, the
+    Spires): low and broken, so it never stands over the play layer as a bar."""
+    stubs = rng.randint(2, 4)
+    gap = rng.randint(12, 20) * D
+    tops = []
+    for k in range(stubs):
+        sx = x + k * gap
+        w = rng.choice([3, 4]) * D
+        h = rng.randint(12, 30) * D
+        lean = rng.randint(-2, 2) * D
+        for i in range(h):
+            t = i / h
+            x0 = sx + int(lean * t)
+            for dx in range(w):
+                put(img, x0 + dx, base - i, c(FORE_BODY, PART_A))
+            put(img, x0, base - i, c(FORE_RIM, RIM_A))
+        tops.append((sx + int(lean) + w // 2, base - h))
+    for (ax, ay), (bx, by) in zip(tops, tops[1:]):  # the rail sags between stubs
+        rail_y = max(ay, by) + 3 * D
+        for px in range(ax, bx + 1):
+            f = (px - ax) / max(1, bx - ax)
+            sag = int(4 * D * 4 * f * (1 - f))
+            for dy in range(D):
+                put(img, px, rail_y + sag + dy, c(FORE_BODY, PART_A))
+    return (stubs - 1) * gap + rng.randint(40, 70) * D
 
 
 FORE_SHAPE = {
     "fern": _fore_fern, "reed": _fore_reed, "crystal": _fore_crystal,
-    "rubble": _fore_rubble, "post": _fore_post,
+    "rubble": _fore_rubble, "fence": _fore_fence,
 }
 
 

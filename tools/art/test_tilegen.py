@@ -340,6 +340,17 @@ def test_foreground_is_a_dark_silhouette():
         assert m["maxch"] < 70, f"{z}: brightest channel {m['maxch']} is too light for a silhouette"
 
 
+def test_foreground_stays_a_low_fringe():
+    # The grade of pass 535: posts and reeds up to 128 px tall stood over the play
+    # layer as black bars. No silhouette rises more than FORE_MAX_RISE world pixels
+    # above the band (bible 12.29; Backdrop.FORE_MAX_RISE mirrors it).
+    base = tg.FORE_FLOOR - tg.FORE_BAND
+    for z in tg.FORE_KIND:
+        bbox = tg.foreground(z).getchannel("A").getbbox()
+        rise = (base - bbox[1]) / tg.D
+        assert rise <= tg.FORE_MAX_RISE, f"{z}: silhouettes rise {rise:.1f} px, over {tg.FORE_MAX_RISE}"
+
+
 def _ridge(zone):
     """One zone's ridge image (bible 12.12) and its silhouette measurements: the
     first opaque y per column (the crest line), the sky clear above, the band at
@@ -493,6 +504,54 @@ def test_masonry_shade_is_mostly_body():
             total += 1
     assert counts["night-1"] / total > 0.6, f"body is only {counts['night-1'] / total:.2f} of the field"
     assert counts["stone-2"] / total < 0.12, f"light stone is {counts['stone-2'] / total:.2f} — too busy"
+
+
+def _accent_field(seed=560, cell=16, w=640, h=480):
+    """A masonry_shade field with sentinel names: D(ark), B(ody), L(ight)."""
+    return [[tg.masonry_shade(x, y, seed, "D", "B", "L", cell) for x in range(w)] for y in range(h)]
+
+
+def test_proud_stones_are_bricks_with_a_shadowed_foot():
+    # The accent stones used to be flat squares a shade lighter or darker than the
+    # body, with no edge of their own, which the pass-529 grade read as random
+    # "missing pixel" blocks in the tower, Vorrhallow and Hearthroot ruins (bible
+    # 12.27). A proud stone is now a brick half as tall as it is wide, its lit face
+    # ending on a shadow along its foot. (Reverting to the flat square fails: its
+    # light runs are a whole cell tall and end on the body.)
+    cell = 16
+    f = _accent_field(cell=cell)
+    runs = 0
+    for x in range(len(f[0])):
+        y = 1
+        while y < len(f) - 1:
+            if f[y][x] == "L" and f[y - 1][x] != "L":
+                n = 0
+                while y + n < len(f) and f[y + n][x] == "L":
+                    n += 1
+                if n >= 3 and y + n < len(f):
+                    runs += 1
+                    assert n <= cell // 2, f"a lit stone {n} px tall at x={x} — a square, not a brick"
+                    assert f[y + n][x] == "D", f"a lit stone at x={x} ends on {f[y + n][x]}, not its shadow"
+                y += max(n, 1)
+            else:
+                y += 1
+    assert runs > 50, f"only {runs} proud stones in the field"
+
+
+def test_recessed_stones_carry_a_lit_sill():
+    # A darker stone is a recess (a slot window or a missing stone): dark inside
+    # with a lit sill along its foot, so it reads as an opening and not a hole in
+    # the picture. Many lit pixels sit right under a dark one. (Dropping the sill
+    # leaves the recess flat dark and the share falls to a few percent.)
+    f = _accent_field()
+    lit = sill = 0
+    for y in range(1, len(f)):
+        for x in range(len(f[0])):
+            if f[y][x] == "L":
+                lit += 1
+                if f[y - 1][x] == "D":
+                    sill += 1
+    assert sill / lit > 0.15, f"only {sill / lit:.2f} of the lit pixels are sills under a recess"
 
 
 def test_flagged_backdrop_fields_use_weathered_courses():
@@ -843,6 +902,76 @@ def test_paint_spring_strata_wrap_across_the_tile_width():
         assert seam <= interior * 1.6 + 6.0, (
             f"sunken strata do not wrap (seed {seed}): wrap seam {seam:.1f} vs "
             f"interior step {interior:.1f}")
+
+
+def _fill_busyness(zone, seed):
+    """The share of neighbouring pixel pairs (right and below, wrapping) in one
+    zone's full interior tile that change colour, and the share of pixels that
+    differ from all four neighbours (single-pixel static)."""
+    T = tg.T
+    img = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+    tg.paint_tile(img, 0, 0, 255, zone, seed)
+    px = lambda x, y: img.getpixel((x % T, y % T))[:3]
+    diff = iso = 0
+    for y in range(T):
+        for x in range(T):
+            p = px(x, y)
+            n = [px(x + 1, y), px(x - 1, y), px(x, y + 1), px(x, y - 1)]
+            diff += (p != n[0]) + (p != n[2])
+            iso += all(p != q for q in n)
+    return diff / (2 * T * T), iso / (T * T)
+
+
+def test_graded_play_fill_is_calm():
+    # The independent grade (pass 529) read the play tiles' interior fill as noisy
+    # high-frequency texture: static-like dirt in the Haar and the Heartwood,
+    # zig-zag strata in the Sunken, busy cobble in the Evercrown. Pass 534 rebuilt
+    # those painters from long, flat marks (bible 12.28). Over the full tile and its
+    # scattered variants, fewer than 23% of neighbouring pixel pairs change colour
+    # (the old painters ran 26% to 33%) and almost no pixel stands alone. (Restoring
+    # the old wood grain, strata or small cells fails the share.)
+    for zone in ("haar", "heartwood", "sunken", "evercrown"):
+        seeds = (11 + tg.blob_masks().index(255), 201, 202, 203)
+        edge = sum(_fill_busyness(zone, s)[0] for s in seeds) / len(seeds)
+        iso = sum(_fill_busyness(zone, s)[1] for s in seeds) / len(seeds)
+        assert edge < 0.23, f"{zone} fill is busy: {edge:.3f} of neighbour pairs change"
+        assert iso < 0.01, f"{zone} fill has single-pixel static: {iso:.3f}"
+
+
+def test_wood_strands_run_on_from_tile_to_tile():
+    # With the noise gone, a strand layout drawn per tile cut a hard seam across
+    # every tile row of the Heartwood walls. The strands now share one layout
+    # (WOOD_STRANDS), so the bottom row of one tile matches the top row of the
+    # next over most columns; only grain lines and knots break it. (Keying the
+    # layout on the tile's seed again drops the match to about half.)
+    T = tg.T
+    for a, b in ((201, 202), (57, 203), (101, 211)):
+        top = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+        low = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+        tg.paint_wood(top, 0, 0, a, "bark")
+        tg.paint_wood(low, 0, 0, b, "bark")
+        same = sum(top.getpixel((x, T - 1)) == low.getpixel((x, 0)) for x in range(T))
+        assert same / T >= 0.75, f"wood strands break at the tile seam ({a}->{b}): {same}/{T}"
+
+
+def test_evercrown_cells_join_across_tile_edges():
+    # The broad Evercrown cells (pass 534) were first drawn per tile, so every
+    # one-tile ledge broke into the same cut-off cells every 32 px. The cells now
+    # wrap over the tile (two across, two down, the points outside the tile copied
+    # from the cells inside it) and share one layout (MEAT_CELLS), so any two
+    # tiles meet with their seams joined (checked by eye on the drift_well ledges).
+    # Held as: tiles of different seeds draw the same cells and differ only in the
+    # rare pores. (Keying the cell centres on the seed again drops the agreement
+    # to about half.)
+    T = tg.T
+    for a, b in ((201, 202), (57, 203), (101, 221)):
+        ia = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+        ib = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+        tg.paint_meteor(ia, 0, 0, a, "night")
+        tg.paint_meteor(ib, 0, 0, b, "night")
+        same = sum(ia.getpixel((x, y)) == ib.getpixel((x, y)) for x in range(T) for y in range(T))
+        assert same / (T * T) >= 0.95, (
+            f"evercrown tiles {a} and {b} draw different cells ({same}/{T * T} agree)")
 
 
 def main():

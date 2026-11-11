@@ -15,6 +15,9 @@ extends Node
 ##   --spark=X,Y[,...]   throw a hit spark at world X,Y (along +x) --spark-age=N frames
 ##                       before the shot (default 3); words after it: "heavy", "left",
 ##                       "up", "down", and "hero" (X,Y are from the hero's feet)
+##   --slash=KIND[,...]  play the hero's swing smear (KIND side, up or down)
+##                       --slash-age=N frames before the shot (default 2); words after
+##                       it: "heavy", "left" (face left), "back" (the second combo cut)
 
 var _args := {}
 var _frames := 0
@@ -39,6 +42,8 @@ func _process(_delta: float) -> void:
 	var at_frame := int(_args.get("frames", "50"))
 	if _args.has("spark") and _frames == at_frame - int(_args.get("spark-age", "3")):
 		_throw_spark(String(_args["spark"]).split(","))
+	if _args.has("slash") and _frames == at_frame - int(_args.get("slash-age", "2")):
+		_play_slash(String(_args["slash"]).split(","))
 	if _frames < at_frame:
 		return
 	set_process(false)
@@ -101,3 +106,14 @@ func _throw_spark(v: PackedStringArray) -> void:
 	var room := get_tree().get_first_node_in_group("room")
 	if room != null:
 		HitSpark.spawn(room, at, dir, size)
+
+
+func _play_slash(v: PackedStringArray) -> void:
+	var p = _game.get("player")
+	if p == null:
+		return
+	var facing := -1 if v.has("left") else 1
+	(p as Player).facing = facing
+	var fx := SlashFx.new()
+	fx.setup(v[0], facing, 2 if v.has("back") else 1, v.has("heavy"))
+	(p as Node2D).add_child(fx)
