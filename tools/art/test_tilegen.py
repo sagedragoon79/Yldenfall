@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Guards for the backdrop gradient (bible 12.6), the moss cap (bible 12.7), the
-tileset variant row (bible 12.8), the foreground silhouette (bible 12.11) and the
-distant ridge layer (bible 12.12).
+tileset variant row (bible 12.8), the foreground silhouette (bible 12.11), the
+distant ridge layer (bible 12.12) and the Spires' sky islands (bible 12.33).
 
 These cover the pure tilegen helpers that shape every far layer's sky (so the
 moire dot-grid the independent grade flagged at passes 497/500/501 stays fixed)
@@ -972,6 +972,102 @@ def test_evercrown_cells_join_across_tile_edges():
         same = sum(ia.getpixel((x, y)) == ib.getpixel((x, y)) for x in range(T) for y in range(T))
         assert same / (T * T) >= 0.95, (
             f"evercrown tiles {a} and {b} draw different cells ({same}/{T * T} agree)")
+
+
+
+# --- Sky islands (design bible 12.33) ---------------------------------------------------
+
+def _island_image(cx=300, cy=200, w=160, seed=3):
+    import random as _r
+    img = tg.Image.new("RGBA", (tg.BG_W, tg.BG_H), tg.CLEAR)
+    tg.island(img, cx * tg.D, cy * tg.D, w * tg.D, _r.Random(seed))
+    return img
+
+
+def _island_pixels(img):
+    return {(x, y): img.getpixel((x, y)) for x in range(0, tg.BG_W) for y in range(0, tg.BG_H)
+            if img.getpixel((x, y))[3]}
+
+
+def test_island_is_shaded_on_a_ramp_not_one_fill():
+    # The pass 540 grade called the Spires' sky islands "flat single-fill props":
+    # a magenta cone with one green line. The rock is now a four-tone ramp plus an
+    # outline, the grass three tones, every one a master palette value. (Painting
+    # the rock in one tone fails the count.)
+    px = _island_pixels(_island_image())
+    names = {n for n, v in tg.PAL.items()}
+    used = {next(n for n in names if tg.PAL[n][:3] == col[:3]) for col in set(px.values())}
+    rock = used & set(tg.ISLAND_ROCK)
+    assert rock == set(tg.ISLAND_ROCK), f"the rock uses only {sorted(rock)}"
+    assert tg.ISLAND_LINE in used, "no outline"
+    assert set(tg.ISLAND_GRASS) <= used, f"the grass lip uses only {sorted(used & set(tg.ISLAND_GRASS))}"
+
+
+def test_island_keeps_the_world_pixel_grain():
+    # The old island was hatched at half-size atlas pixels; the prop is now painted
+    # in whole world pixels (D x D blocks), like the rest of the game.
+    img = _island_image()
+    D = tg.D
+    for (x, y) in _island_pixels(img):
+        bx, by = x - x % D, y - y % D
+        assert img.getpixel((bx, by)) == img.getpixel((x, y)), f"a half pixel at {x},{y}"
+
+
+def test_island_is_lit_from_the_upper_left():
+    # Light falls from the upper left: the rock's left half is brighter than its
+    # right, and its top band brighter than its hanging spurs. (Swapping the
+    # light to the right fails the first; dropping the depth term the second.)
+    px = _island_pixels(_island_image())
+    rock = {p: c for p, c in px.items() if c[:3] in {tg.PAL[n][:3] for n in tg.ISLAND_ROCK}}
+    xs = sorted(x for x, _ in rock)
+    ys = sorted(y for _, y in rock)
+    xm, ym = xs[len(xs) // 2], ys[0] + (ys[-1] - ys[0]) // 3
+
+    def lum(sel):
+        v = [sum(c[:3]) for p, c in rock.items() if sel(p)]
+        return sum(v) / max(1, len(v))
+    assert lum(lambda p: p[0] < xm) > lum(lambda p: p[0] >= xm) + 10, "the left flank is not the lit one"
+    assert lum(lambda p: p[1] < ym) > lum(lambda p: p[1] >= ym) + 10, "the spurs are as bright as the top"
+
+
+def test_island_outline_is_selective():
+    # The dark outline closes the shadow side and the underside, not the lit
+    # flank: almost every rock pixel with open sky to its right is outline, while
+    # most with open sky to its left are a lit tone. (A full outline all round
+    # fails the second.)
+    px = _island_pixels(_island_image())
+    D = tg.D
+    line = tg.PAL[tg.ISLAND_LINE][:3]
+    rock = {tg.PAL[n][:3] for n in tg.ISLAND_ROCK} | {line}
+    drawn = {(x // D, y // D) for (x, y) in px}  # open sky is undrawn, not moss
+    cells = {(x // D, y // D): c[:3] for (x, y), c in px.items() if c[:3] in rock}
+    right = [c for (x, y), c in cells.items() if (x + 1, y) not in drawn]
+    left = [c for (x, y), c in cells.items() if (x - 1, y) not in drawn and (x, y + 1) in cells]
+    assert len(right) > 20 and len(left) > 10
+    assert sum(c == line for c in right) / len(right) > 0.9, "the shadow side is not outlined"
+    assert sum(c == line for c in left) / len(left) < 0.3, "the lit flank is outlined"
+
+
+def test_islands_are_not_one_stamp():
+    # Each island's silhouette comes from its own seed: a belly and a cluster of
+    # spurs, so two islands of one width differ, and the underside hangs in more
+    # than one point. (Dropping the lesser spurs fails the point count.)
+    a = tg.island_cells(300 * tg.D, 200 * tg.D, 160 * tg.D, 120 * tg.D, 11)
+    b = tg.island_cells(300 * tg.D, 200 * tg.D, 160 * tg.D, 120 * tg.D, 12)
+    assert a != b, "two seeds drew the same island"
+    for cells in (a, b):
+        bottoms = {}
+        for x, y in cells:
+            bottoms[x] = max(bottoms.get(x, y), y)
+        def side(x, a, b):
+            return [bottoms[v] for v in range(x + a, x + b + 1) if v in bottoms] or [0]
+        # A tip is the deepest column within three of it and hangs at least four world
+        # pixels below a column within eight on each side, so a bump of noise on the
+        # sloping belly is not a spur.
+        tips = [x for x in sorted(bottoms) if bottoms[x] - 200 > 10
+                and bottoms[x] == max(side(x, -3, 3)) and bottoms.get(x + 1, 0) < bottoms[x]
+                and bottoms[x] - min(side(x, -8, -1)) >= 4 and bottoms[x] - min(side(x, 1, 8)) >= 4]
+        assert len(tips) >= 2, f"the underside hangs in only {len(tips)} point(s)"
 
 
 def main():

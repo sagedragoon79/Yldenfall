@@ -1486,18 +1486,165 @@ def lightning(img, x, y0, y1, rng, col="gold-7", glow="crystal-6"):
                 put(img, ax + (bx - ax) * t / max(n, 1), ay + (by - ay) * t / max(n, 1), c(glow))
 
 
-def island(img, cx, cy, w, rng, top="leaf-3", rock="stone-2", dark="stone-1"):
-    """A floating sky island: a grassy lip and a rocky cone hanging beneath."""
+def block(img, wx, wy, col):
+    """Fills one world pixel (a D x D block) at world-pixel coordinates wx, wy, so a
+    painted prop keeps the game's pixel grain instead of half-size atlas pixels."""
+    for dy in range(D):
+        for dx in range(D):
+            put(img, wx * D + dx, wy * D + dy, col)
+
+
+ISLAND_ROCK = ("crystal-3", "crystal-2", "crystal-1", "night-1")  # rim, lit, mid, shadow
+ISLAND_LINE = "night-0"
+ISLAND_GRASS = ("leaf-3", "leaf-2", "leaf-1")  # tip, blade, root
+
+
+def island_cells(cx, cy, w, depth, seed):
+    """The silhouette of a sky island on the world-pixel grid: {(x, y): k}, k the
+    cell's depth below the lip (0 to 1). Built a column at a time: a rounded belly
+    of earth under the lip, and beneath it a main point of rock leaning off
+    centre with two to four lesser points beside it, so the underside is a ragged
+    cluster of hanging spurs and no two islands are the same triangle."""
+    rng = random.Random(seed)
+    x0, y0 = int(cx) // D, int(cy) // D
+    half, rows = max(5, w // (2 * D)), max(8, depth // D)
+    spurs = [(rng.uniform(-0.25, 0.25), rng.uniform(0.18, 0.3), 1.0)]
+    for _ in range(rng.randint(2, 4)):
+        spurs.append((rng.uniform(-0.75, 0.75), rng.uniform(0.08, 0.18), rng.uniform(0.35, 0.7)))
+    cells = {}
+    for x in range(x0 - half, x0 + half + 1):
+        u = (x - x0) / half
+        belly = 0.32 * max(0.0, 1 - abs(u) ** 2) ** 0.7
+        drop = belly
+        for at, wd, ht in spurs:
+            a = 1 - abs(u - at) / wd
+            if a > 0:
+                drop = max(drop, belly + (ht - belly) * a ** 1.6)
+        drop *= 1 + 0.08 * (hash2(x, 0, seed) - 0.5)
+        bottom = max(1, int(rows * drop))
+        if abs(u) > 0.92:
+            bottom = min(bottom, 2)  # a rounded shoulder under the lip's ends
+        for j in range(bottom):
+            cells[(x, y0 + j)] = j / rows
+    return cells
+
+
+def _stones(cells, seed, size=8):
+    """Splits the rock into chunky stones (a jittered Voronoi), returning for each
+    cell its stone's centre and whether it sits on a seam between two stones."""
+    xs = [x for x, _ in cells]
+    ys = [y for _, y in cells]
+    centres = []
+    for gy in range(min(ys) // size - 1, max(ys) // size + 2):
+        for gx in range(min(xs) // size - 1, max(xs) // size + 2):
+            centres.append((gx * size + hash2(gx, gy, seed) * size, gy * size + hash2(gy, gx, seed + 9) * size))
+    out = {}
+    for (x, y) in cells:
+        best = sorted(((x - a) ** 2 + ((y - b) * 1.9) ** 2, (a, b)) for a, b in centres)[:2]
+        (d1, c1), (d2, _) = best
+        out[(x, y)] = (c1, d2 ** 0.5 - d1 ** 0.5 < 0.8)
+    return out
+
+
+def island(img, cx, cy, w, rng, rock=ISLAND_ROCK, line=ISLAND_LINE, grass=ISLAND_GRASS):
+    """A floating sky island (design bible 12.33), painted on the world-pixel grid
+    as a lit pixel prop, not one flat fill: its rock is a cluster of chunky stones
+    shaded on a four-tone ramp lit from the upper left (each stone lit on its
+    upper-left face, seams one step darker, the right flank and the hanging spurs
+    in shadow), closed by a dark selective outline on its shadow side and
+    underside only. A three-tone grass lip caps it, blades poke above, tufts and
+    moss hang over its edges and roots dangle from its belly."""
     depth = int(w * rng.uniform(0.6, 0.9))
-    for y in range(int(cy), int(cy + depth)):
-        k = (y - cy) / depth
-        half = w * 0.5 * (1 - k) ** 1.4 * (1 + 0.15 * math.sin(y * 0.3 + cx))
-        for x in range(int(cx - half), int(cx + half)):
-            col = dark if x > cx + half * 0.3 or (x + y) % 7 == 0 else rock
-            put(img, x, y, c(col))
-    for x in range(int(cx - w * 0.5), int(cx + w * 0.5)):
-        for y in range(int(cy - 2 * D), int(cy + D)):
-            put(img, x, y, c(top))
+    seed = int(cx) * 7919 + int(cy)
+    loc = random.Random(seed + 1)
+    cells = island_cells(cx, cy, w, depth, seed)
+    stones = _stones(cells, seed)
+    y0 = int(cy) // D
+    xs = [x for x, _ in cells]
+    lo, hi = min(xs), max(xs)
+    tones = (rock[0], rock[1], rock[2], rock[3], line)
+    for (x, y), k in cells.items():
+        out_l = (x - 1, y) not in cells
+        out_r = (x + 1, y) not in cells
+        out_d = (x, y + 1) not in cells
+        if out_r or out_d:
+            block(img, x, y, c(line))  # the selective outline: shadow side and underside
+            continue
+        (sx, sy), seam = stones[(x, y)]
+        u = (sx - lo) / max(1, hi - lo)
+        v = u * 0.7 + min(1.0, (sy - y0) / 10.0) * 0.35 + k * 0.45
+        level = 1 if v < 0.55 else 2 if v < 1.0 else 3
+        if seam:
+            level = min(3, level + 1)  # a seam between stones, one step darker
+        elif (x - sx) + (y - sy) * 1.3 < -2.2 and level < 3:
+            level -= 1  # the stone's lit upper-left face
+        if out_l:
+            level = 0 if k < 0.25 else min(level, 1)  # a rim of light down the lit flank
+        block(img, x, y, c(tones[max(0, level)]))
+    # The grass lip: a three-tone cap a pixel wider than the rock, its top ragged.
+    tip, blade, root = grass
+    for x in range(lo - 1, hi + 2):
+        h = hash2(x, 0, seed)
+        block(img, x, y0 - 2, c(tip if h > 0.35 else blade))
+        block(img, x, y0 - 1, c(blade if h > 0.15 else tip))
+        block(img, x, y0, c(root))
+        if hash2(x, 1, seed) > 0.7:
+            block(img, x, y0 - 3, c(tip))  # a blade standing up
+            if hash2(x, 2, seed) > 0.75:
+                block(img, x, y0 - 4, c(blade))
+    # Tufts hanging over both ends of the lip, and moss down the rock's top.
+    for edge in (lo - 1, hi + 1):
+        for d in range(loc.randint(2, 4)):
+            block(img, edge, y0 + 1 + d, c(blade if d < 1 else root))
+    for x in range(lo + 1, hi):
+        if hash2(x, 3, seed) > 0.78:
+            for d in range(1, 1 + loc.randint(1, 3)):
+                if (x, y0 + d) in cells and (x + 1, y0 + d) in cells:
+                    block(img, x, y0 + d, c(blade if d == 1 else root))
+    # Roots dangling from the belly between the spurs, darkening as they fall.
+    bottoms = {}
+    for (x, y) in cells:
+        bottoms[x] = max(bottoms.get(x, y), y)
+    belly = sorted(x for x in bottoms if lo + 2 < x < hi - 2)
+    for _ in range(loc.randint(2, 4)):
+        x = loc.choice(belly)
+        y = bottoms[x]
+        ln = loc.randint(3, 8)
+        for t in range(1, ln):
+            if t == ln // 2:
+                x += loc.choice([-1, 1])
+            block(img, x, y + t, c(root if t < ln // 2 else line))
+
+
+def ruined_spire(img, sx, base, sh):
+    """A ruined tower on an island, on the world-pixel grid: lit on its left, a
+    shadow column and outline on its right, mortar courses, a broken crown of
+    battlements and one warm window."""
+    x0, top, bot = int(sx) // D - 5, (int(base) - int(sh)) // D, int(base) // D - 2
+    rim, lit, midt, shade = ISLAND_ROCK
+    for y in range(top, bot):
+        crown = y < top + 5
+        for i in range(10):
+            if crown and (i // 3) % 2:
+                continue  # a broken crown of battlements
+            if i == 9 or y == top or (crown and i % 3 == 2):
+                col = ISLAND_LINE
+            elif i == 0:
+                col = rim
+            elif i < 4:
+                col = lit
+            elif i < 7:
+                col = midt
+            else:
+                col = shade
+            if (y - top) % 4 == 3 and 0 < i < 9 and hash2(i, y, 3) > 0.3:
+                col = shade if col != shade else ISLAND_LINE  # a mortar course
+            block(img, x0 + i, y, c(col))
+    wy = top + int((bot - top) * 0.4)
+    for dy in range(2):
+        block(img, x0 + 4, wy + dy, c("gold-6"))
+    block(img, x0 + 5, wy, c("gold-4"))
+    block(img, x0 + 5, wy + 1, c(ISLAND_LINE))
 
 
 def spires_far():
@@ -1528,15 +1675,10 @@ def spires_mid():
         cx = (i + rng.uniform(0.1, 0.9)) * BG_W / 6
         cy = rng.randrange(140, 400) * D
         w = rng.randrange(50, 110) * D
-        island(img, cx, cy, w, rng, top="leaf-2", rock="crystal-2", dark="night-1")
+        island(img, cx, cy, w, rng)
         if rng.random() > 0.5:
             sx, sh = cx + rng.uniform(-0.2, 0.2) * w, rng.randrange(40, 90) * D
-            for y in range(int(cy - sh), int(cy)):
-                for x in range(int(sx - 5 * D), int(sx + 5 * D)):
-                    if y < cy - sh + 10 * D and (x // (3 * D)) % 2:
-                        continue  # a broken crown of battlements
-                    put(img, x, y, c("night-1" if x > sx + 2 * D else "crystal-2"))
-            put(img, sx, cy - sh * 0.6, c("gold-6"))
+            ruined_spire(img, sx, cy, sh)
     return img
 
 
