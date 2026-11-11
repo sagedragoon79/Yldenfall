@@ -1880,6 +1880,18 @@ The independent grade (pass 535) read rooms as "empty boxes of unsupported float
 
 The layer draws once per room load behind the tiles (z -1, like the ladders), so the board sits over the hanger's foot and actors pass in front; collision is untouched. Ladder tops, drowned boardwalks and hidden planks are not given supports (the ladder carries its own plank; the others are deliberate). Judged by eye at 1x and 2x in `spires/sky_steps`, `tower/bat_belfry`, `haar/drowned_stair`, `heartwood/amber_falls`, `evercrown/drift_well` and `sunken/drowned_aqueduct`: the planks read as hung, propped or braced, and foes and pickups still pop in front of the thin supports. `tests/test_plank_supports.gd` checks each rule and that every plank run in the game is held up.
 
+### 12.31 Every zone carves its own lore stele (pass 539)
+
+The independent grade (pass 535) called the "identical grey sign slabs in most rooms" a placeholder set piece: one flat 18x20 grey card stood in 112 rooms. `LoreTablet` (`scripts/world/lore_tablet.gd`) now draws a stele in its room's zone look, on a plinth one pixel wider each side than the stone, with the runes (pass 512) in a recessed panel lit along its foot:
+
+- **Round-topped arch**: root-wood in the Heartwood, moss-green stone in the High Boughs, both with a moss cap; plain slate in the gym.
+- **Sloping waystone** with a chip broken from its top and a crack below it, moss-capped umber stone: the Haar.
+- **Gabled stele**: ochre in the Spires, slate in the Tower and the Trials.
+- **Dwarf runestone** with a raised crown and an overhanging cornice banded in metal: bronze under the Hearthroot, sea-blue in the Sunken Spring, crystal magenta in Vorrhallow.
+- **Crystal shard** tapering to a lit cyan tip: the Evercrown.
+
+Each look's inlay is its zone's accent (amber, bone, cyan, magenta). Every tone is a master palette value. The stele is about 25 to 32 px tall, so the read prompt floats at 32 px. Judged by eye at 1x and 2x in `spires/sky_steps`, `evercrown/veins`, `heartwood/sap_cistern` and `haar/marsh_road`. `tests/test_lore_tablet.gd` checks that every zone has a look in the palette, that every shape covers the panel, stands on the plinth and has a shaped top, and that a room's tablet takes its zone.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
