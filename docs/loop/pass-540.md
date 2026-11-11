@@ -78,12 +78,23 @@ Bible: 12.32 (thorn bulbs grow from a bramble).
 
 Weighted: 98.85.
 
-GRADE
+## Independent grade
+
+Pass 540 is the fifth since the last grade. Eleven screenshots (nine zones at play scale with the HUD,
+a swing frame in the Hornet Gallery, the Hearthroot arms shop) went to a separate agent with no hints.
+**5.3 / 10**, up from 4.6 at pass 535: Art and cohesion 5.0, Environments 4.8, Characters and foes
+6.2, Combat readability 5.0, UI and menus 5.0, Atmosphere and lighting 5.6. Its top defects, now in
+the queue: rooms read as one template (left-edge spawn beside a stele, plank lattices, an empty
+middle); flat single-fill props (the Spires' magenta islands, the Evercrown's magenta platforms, the
+smelter's vector cauldron, the Haar's orange blocks); repeating tile stripes and grids, and the thorn
+column on the Sky Steps walls still repeats one stamp; banded ring light pools; a small, low-contrast
+hero; thin UI (a shop with no icons, a one-rectangle minimap, stray black bars in the shop shot).
 
 ## Next
 
-Pass 541: the art loop stays **gated** on Sean (three guardian bases wait). Next from the pass 535
-grade's placeholder set pieces: the flat Heartwood grotto liquid, the Evercrown's flat cyan diamonds
-and the Haar's orange glyph blocks; then the dressed mid-ground. The VFX-tool trials continue on the
+Pass 541: the art loop stays **gated** on Sean (three guardian bases wait). Next, the pass 540
+grade's flat single-fill props (the Spires' magenta islands, the Evercrown's magenta platforms and
+cyan diamonds, the smelter cauldron, the Haar's orange blocks), then its stray black bars in the shop
+and the one-template rooms. The VFX-tool trials continue on the
 dash afterimage, then the enemy death dissolve. Rim light on figures and the Boughs painterly clash
 stay parked for a watched session.
