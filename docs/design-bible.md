@@ -578,6 +578,68 @@ So a hit costs about a mask from the first root to the Everbloom, and what grows
 
 ---
 
+### 5.6 The gear rework (approved by Sean 2026-11-13; not built)
+
+**Status.** This section is the approved plan. Sections 5.1 to 5.5, 9 and 10.2 above and below still describe the game as built, and their tests still hold them to the code. Each part of this plan replaces its as-built text in the pull request that builds it. The working proposal, with its history, is the Claude Doc "Yldenfall gear rework proposal".
+
+**Why.** The hero had four drawn body sets, and every blade was drawn into every set's attack clips, so each new clip (the crouch, 6.15) multiplied by sets and blades, and Sean's per-set PixelLab states drifted from one another. One body removes both problems, and a new ring, gem or relic then costs an icon, a data row and tuning, with no animation. The model is the gear of Castlevania: Symphony of the Night.
+
+**The hero's look.** One 128 px hero (12.1), hood down so the hair colour always shows, for the whole game. Only three things change on screen: the weapon and the shield, each a separate layer placed on the hand or arm every frame, and the cloak's two key colours (body and accent). The armor is drawn once, in ash grey with umber leather, and gems tint it. Head gear, neck, rings and relics are icons in the menu only. A hidden unique look (a one-off special suit) may come later; one look is finished first.
+
+**Slots.** Ten kinds, thirteen places. Every item has fixed, hand-set stats; nothing is rolled. Some are bought, some found, some dropped.
+
+| Slot | Count | What it changes | Shows |
+|------|-------|-----------------|-------|
+| Weapon | 1 | Damage, reach, speed, arc. Swords only at first: a new family needs its own attack clips | Yes |
+| Shield | 1 | Armor, plus a defensive ability on some (reflect or absorb a share of fire or lightning; a caster's shield with light armor and a magic boost). Never a direct boost to physical attack | Yes |
+| Armor | 1 | The imbued armor: a picture with gem sockets | Tint |
+| Head | 1 | Circlets, all magic-themed: lower mana costs, stronger spells | No |
+| Neck | 1 | One rule (for example, mana on a hit) | No |
+| Ring | 2 | Attack and odd bonuses (10% more flask healing, a 10% chance to chill on a hit). Never resistances | No |
+| Relic | 1 | Alters one signature ability (longer dash, slower wall slide, stronger flask). Works only once that ability is owned | No |
+| Cloak | 1 | One piece of utility (a spectral cloak that lesser ghosts and undead ignore until you attack; a cloak that slows your fall). One shape; each has its own default colour pair, which dyes change | Colours |
+| Projectile | 1 | The thrown weapon on the throw button | In flight |
+| Belt | 3 | On-use items, cycled | In use |
+
+Signature items (the Climbing Glove, the Featherstep Boots, the Elven Stride, the Delver's Pick and the like) take no slot. They sit in an Abilities section of the menu, always on. Feather Fall (6.10) leaves the skill tree and becomes a cloak.
+
+**The imbued armor.** The elven king opens an old vault at the start and gives the hero one suit that can be imbued, which is why a sword-and-shield fighter can also cast. It is old and muted, with a small armor value and no other bonus, and it is never replaced. It has one socket at the start; the elven smith adds a second and the dwarven smith a third.
+
+| Gem line | Gives | Tiers | Tint family |
+|----------|-------|-------|-------------|
+| Armor | Less damage from every hit | 4 (taking the prices and places of today's four armors; the Drowned Warden's secret gives the top one) | Grey to bright steel |
+| Warding | Resistance to one kind of magic | 3 per kind: 25%, 50%, 75% | The element's colour |
+| Hardiness | The chance one condition does not take hold | 3 per condition: 25%, 50%, 75% | Its own muted family |
+
+- At most one Armor gem. Any other combination is allowed.
+- Warding from all sockets adds up to 100% at most, and so does Hardiness, each with its own 100%. A hero can be immune to one kind of magic, never to all of them.
+- A Hardiness gem stops the condition, never the damage of the hit that carries it. Only gems give resistance.
+- The first socket sets the armor's tint. The second and third each add a small accent.
+- A gem can be set into an empty socket anywhere. A smith pulls and swaps gems for no gold, and every gem is kept. Away from a smith, pulling a gem that a shop sells destroys it. A unique gem, one no shop sells, cannot be pulled there: a message says it cannot be freed without a smith's craft.
+
+**Damage kinds and conditions.** Every attack gets a kind: physical, fire, ice or lightning, with a fifth (blight or shadow) held for Vorrhallow and the Evercrown. The Haar Wyrm's steam and the fire seals are the first fire. Conditions grow from poison alone to four: poison, burn (damage over time, put out by water), chill (slower movement) and curse (no flask). Foes use them by zone, so each zone suggests a gem setup. The shields' warding against sorcery folds into the kinds, and the damage balance sheet (5.5) is redone with them.
+
+**The projectile slot.** Thrown weapons only, no bows. Each kind has a carried count with a cap (for example 20 daggers, 5 vials), raised by one late upgrade. The Rune Dagger is the exception: it returns to the hand and never runs out, it is the weakest per hit, and it grows through a small skill section of its own. Kinds: straight throwers (daggers, darts, stones), arcing throwers (axes) and vials that break where they land (holy water, poison, oil, a swarm, other area effects). Anything thrown at a foe lives here. The existing throw clip is tried for all of them first; one overhand clip is added only if axes and vials look wrong.
+
+**The belt.** Three places for single-use items used on yourself or set down: tonics, cures for conditions, a light, charges set against a wall to open a secret (cap 3). One button cycles, another uses. The Sapflask keeps its own button, so healing never depends on the belt. The Barkbalm and the Amber Draught move onto the belt.
+
+**Levels and skills (direction only; the design comes later).** The 16 named ranks become levels. A level-up is a moment: a micro pause, a brief chromatic glow on the hero, and health and mana filled at once. A level gives a little health, mana or damage, and no skill point. The 15 points the ranks gave move to fixed places (bosses, hidden shrines, secret areas), so no point can be ground out and secrets hold more than gold. Experience comes from kills only; a boss pays once, when the whole fight ends, and foes summoned in a boss arena pay nothing. Ringreaders still unlearn skills, for gold that grows each time.
+
+**What today's gear becomes.**
+
+| Today | Becomes |
+|-------|---------|
+| The four blades | Stay as weapons, drawn as a layer |
+| Leather, Riveted Coat, Knight's Plate, Elven Plate | The four tiers of the Armor gem. A save that owns one gets the matching gem |
+| Buckler, Kite Shield, Warding Shield | Stay, drawn as a layer; warding becomes resistance by kind |
+| Elven Helm | A Head item, not drawn |
+| Temper Blade I and II | Stay |
+| The 14 dyes | Stay; they colour the cloak |
+| Rune Dagger | The first projectile |
+| The PixelLab body sets (leather, studded mail, full plate and the Elven Plate suit) | Retired |
+
+**Build order.** (1) Prove the weapon layer on one attack clip of the 128 px hero, reading the hand from PixelLab's skeleton; if it jitters, mark the hand per frame with a small tool instead. (2) Slots and menu, with today's items moved over and saves migrated. (3) The imbued armor: the vault scene, sockets, the smiths' upgrades, tints. (4) Damage kinds and conditions, then the gem lines and the new balance sheet. (5) New items in batches by zone. (6) The hero's clips on the one body as the 128 px art comes in.
+
 ## 6. Movement and Game-Feel Spec
 
 All numbers are at the internal resolution (1 unit = 1 px at 640x360). Tile = 16 px. Player collision box = 12x40 px (sprite about 48x56). These are starting values for the movement prototype, tuned there and then frozen.
