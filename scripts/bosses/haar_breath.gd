@@ -6,6 +6,8 @@ extends Node2D
 ## it, stand on a platform, or duck into the cistern below its rim; it rides over
 ## the cistern's walls. It hurts once and can't be parried.
 
+## What its blow is made of (design bible 5.6).
+const DAMAGE_KIND := DamageKind.FIRE
 const WIDTH := 56.0
 ## The tallest it billows: under a single jump's apex (movement_tuning jump_height, 72 px).
 const HEIGHT := 56.0

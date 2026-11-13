@@ -15,6 +15,8 @@ const SIZES := {"hit": 10, "heavy": 20, "hurt": 10, "poison": 10}
 
 var amount := 0
 var kind := "hit"
+## A colour of its own (a blow of fire, ice or lightning: DamageKind.COLORS).
+var tint := Color(0, 0, 0, 0)
 var _life := LIFE
 var _drift := 0.0
 ## Numbers alternate a little left and right, so a flurry doesn't stack into one.
@@ -59,7 +61,7 @@ func _draw() -> void:
 	var text := str(amount)
 	var size: int = SIZES.get(kind, 10)
 	var alpha := clampf(_life / FADE, 0.0, 1.0)
-	var c: Color = COLORS.get(kind, Color.WHITE)
+	var c: Color = tint if tint.a > 0.0 else COLORS.get(kind, Color.WHITE)
 	c.a = alpha
 	var o := OUTLINE
 	o.a = alpha

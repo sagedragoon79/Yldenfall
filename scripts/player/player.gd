@@ -131,6 +131,11 @@ var reflects := false
 ## What a worn shield (and the Elven Helm) turns of a foe's sorcery, guarding
 ## or not (pass 225): the original's shields resisted enemy magic, 50 to 90%.
 var magic_ward := 0.0
+## Resistance to each kind of magic, kind to 0..1 (design bible 5.6; DamageKind
+## holds it to the cap). Empty until the Warding gems are built.
+var resist := {}
+## The kind of the blow being taken, for the damage number's colour.
+var _hurt_kind := DamageKind.PHYSICAL
 ## Amber Draughts carried: dying with one revives you where you fell.
 var elixirs := 0
 ## Barkbalms carried: each makes you immune to harm for OINTMENT_TIME.
@@ -1834,12 +1839,21 @@ func receive_attack(damage: int, source: Node2D, parryable := true) -> String:
 	if magic_ward > 0.0 and source.is_in_group(MAGIC):
 		damage = maxi(roundi(damage * (1.0 - magic_ward)), 1)
 		Sfx.play(WARD_SOUND, 0.05)
+	var kind := DamageKind.of(source)
+	if kind != DamageKind.PHYSICAL:
+		damage = DamageKind.reduce(damage, kind, resist)
+		if damage <= 0:
+			# Whole resistance is immunity: the blow is turned outright.
+			Sfx.play(WARD_SOUND, 0.05)
+			return "ignored"
+	_hurt_kind = kind
 	var knock := -src_dir if src_dir != 0 else -facing
 	if is_blocking and from_front and mp >= combat.guard_mp_cost:
 		mp -= combat.guard_mp_cost
 		_spawn_dust(Vector2(facing * 10, -24), "guard")
 		Sfx.play("guard")
 		take_damage(int(round(damage * (1.0 - guard_reduction))), false, knock)
+		_hurt_kind = DamageKind.PHYSICAL
 		return "guarded"
 	if is_blocking and from_front:
 		# Too little MP to pay for the guard: it breaks, loud and plain, and the
@@ -1851,6 +1865,7 @@ func receive_attack(damage: int, source: Node2D, parryable := true) -> String:
 		Sfx.play(GUARD_BREAK_SOUND)
 		Feel.add_trauma(0.25)
 	take_damage(damage, false, knock)
+	_hurt_kind = DamageKind.PHYSICAL
 	return "hit"
 
 
@@ -1876,9 +1891,15 @@ func _riposte(foe: Node2D) -> void:
 	ripostes += 1
 
 
-func take_damage(amount: int, from_hazard := false, knock_dir := 0) -> void:
+func take_damage(amount: int, from_hazard := false, knock_dir := 0, kind := "") -> void:
 	if invulnerable or dead:
 		return
+	if kind != "" and kind != DamageKind.PHYSICAL:
+		# A blow with no source (a fog, a floor) names its kind here.
+		amount = DamageKind.reduce(amount, kind, resist)
+		if amount <= 0:
+			return
+		_hurt_kind = kind
 	if is_inside_tree() and BossArena.any_falling(get_tree()):
 		# The killing blow has landed: the win can't be lost to what is still
 		# in the air while the guardian falls (pass 239).
@@ -1910,7 +1931,10 @@ func take_damage(amount: int, from_hazard := false, knock_dir := 0) -> void:
 			BossRush.fall(world, self)
 			return
 	hp -= amount
-	DamageNumber.spawn(get_parent(), global_position + Vector2(0, -44), amount, "hurt")
+	var number := DamageNumber.spawn(get_parent(), global_position + Vector2(0, -44), amount, "hurt")
+	if number != null and DamageKind.COLORS.has(_hurt_kind):
+		number.tint = DamageKind.COLORS[_hurt_kind]
+	_hurt_kind = DamageKind.PHYSICAL
 	_invuln_timer = hurt_invuln()
 	if on_ladder:
 		# A blow knocks you off the rungs.

@@ -6,6 +6,8 @@ extends Node2D
 ## the cistern's water (a third or more), which the heat cannot reach. The heat
 ## boils a third of that water away as it passes.
 
+## What its blow is made of (design bible 5.6).
+const DAMAGE_KIND := DamageKind.FIRE
 const FILL := 0.6
 const BURN := 2.4
 const FADE := 1.0
@@ -53,7 +55,7 @@ func _physics_process(delta: float) -> void:
 		_tick -= delta
 		if _tick <= 0.0 and not safe:
 			_tick = TICK
-			p.take_damage(DAMAGE)
+			p.take_damage(DAMAGE, false, 0, DAMAGE_KIND)
 			Sfx.play("steam_hiss", 0.15, -10.0)
 	if not _boiled and _time >= FILL + BURN:
 		_boiled = true
