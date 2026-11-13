@@ -81,6 +81,26 @@ const AMBER := Color("f0c02e")
 ## Sprites from tools/art/castgen.py: head (mandible wheel), plate, tail.
 const SHEET := "gnarlmaw"
 
+## The body's shape (design bible 8.1, pass 551). One plate drawn 22 times at one
+## size read as a row of identical balls, so the rings swell behind the neck and
+## taper to the tail, every third one is a heavier ring, and each sits at its own
+## small tilt. No ring is drawn smaller than its hitbox: the plate is PLATE_RADIUS
+## at scale 1, so RING_MIN is the least scale that still covers BODY_RADIUS.
+const PLATE_RADIUS := 19.0
+const RING_NECK := 1.0
+const RING_SWELL := 1.18
+const RING_MIN := 0.9
+const RING_HEAVY := 0.05
+const RING_TILT := 0.14
+## The plates sit back in the dark so the hero and the amber tail read against
+## them: a ring is drawn at RING_SHADE_NEAR of its colour behind the head, down
+## to RING_SHADE_FAR before the tail, and a lighter ring follows two darker ones.
+## The head and the tail (the weak point) keep their full colour, and so does
+## every plate while a stagger has them cracked.
+const RING_SHADE_NEAR := 0.82
+const RING_SHADE_FAR := 0.62
+const RING_SHADE_STEP := 0.1
+
 var room: Room
 var hp := MAX_HP
 var phase := 1
@@ -561,6 +581,40 @@ func _ceiling_dust(x: float) -> void:
 
 # --- Drawing -----------------------------------------------------------------------
 
+## How far down the body ring `i` sits: 0 behind the head, 1 before the tail.
+static func ring_along(i: int) -> float:
+	return clampf(float(i - 1) / float(SEGMENTS - TAIL_SEGMENTS - 2), 0.0, 1.0)
+
+
+## The scale ring `i` is drawn at (the head and tail are always 1).
+static func ring_scale(i: int) -> float:
+	if i <= 0 or i >= SEGMENTS - TAIL_SEGMENTS:
+		return 1.0
+	var t := ring_along(i)
+	var shape := lerpf(RING_NECK, RING_SWELL, smoothstep(0.0, 0.3, t)) if t < 0.3 			else lerpf(RING_SWELL, RING_MIN, smoothstep(0.3, 1.0, t))
+	if i % 3 == 0:
+		shape += RING_HEAVY
+	return maxf(shape, RING_MIN)
+
+
+## The tilt of ring `i`'s plate, in radians: the same every frame, different from its neighbours'.
+static func ring_tilt(i: int) -> float:
+	if i <= 0 or i >= SEGMENTS - TAIL_SEGMENTS:
+		return 0.0
+	return sin(float(i) * 2.399) * RING_TILT
+
+
+## The colour ring `i` is drawn in (white = the sheet's own colour).
+static func ring_tint(i: int, cracked: bool) -> Color:
+	if cracked or i <= 0 or i >= SEGMENTS - TAIL_SEGMENTS:
+		return Color.WHITE
+	var v := lerpf(RING_SHADE_NEAR, RING_SHADE_FAR, ring_along(i))
+	if i % 3 == 0:
+		v += RING_SHADE_STEP
+	# A touch cool, toward the Heartwood's own shadow.
+	return Color(v * 0.94, v * 0.97, v, 1.0)
+
+
 func _draw() -> void:
 	var stuck_glow := state == "stuck" or state == "dangle"
 	var hot := sin(_t * (10.0 if stuck_glow else 4.0)) > (0.0 if stuck_glow else 0.6)
@@ -589,8 +643,9 @@ func _draw() -> void:
 		elif s.is_tail:
 			anim = "tail"
 			frame = 1 if hot else 0
-		draw_set_transform(s.position + shudder, rot, Vector2(flip, 1))
-		Sheet.draw(self, SHEET, anim, frame)
+		var k := ring_scale(i)
+		draw_set_transform(s.position + shudder, rot + ring_tilt(i) * flip, Vector2(flip, 1) * k)
+		Sheet.draw(self, SHEET, anim, frame, ring_tint(i, stagger_left > 0.0))
 		if s.flash > 0.0:
 			Sheet.draw(self, SHEET, anim, frame, Color(1, 1, 1, 0.9), true)
 	draw_set_transform(Vector2.ZERO)
