@@ -1961,6 +1961,16 @@ The pass 540 grade listed "the Haar's orange blocks" among its flat single-fill 
 
 The collision, the burn, the light and the douse are unchanged. Judged by eye at 1x and 3x in `haar/marsh_road` and `evercrown/proving_scar`. `tests/test_fire_seal_art.gd` checks the palette, the seams, the ragged and joined sides, the heat, the motion, the runes and the ash.
 
+### 12.37 The Everbloom's veins are crystal knots (pass 545)
+
+The pass 535 grade called the veins in the Everbloom's shaft "flat cyan diamonds". Each `LightVein` (`scripts/bosses/light_vein.gd`, legend `x`) was one smooth pentagon of a single cyan with a lighter inner diamond. Each is now a knot painted in whole world pixels on master palette ramps (sky-1 to sky-7 for the crystal, night-0 to night-4 for the flesh), lit from the upper left:
+
+- **Three faceted shards**: a main shard and two smaller side shards a step darker, each a prism with a lit left face, a front face, a shaded right face and a pointed cap, with a glint on the lit edge of each cap. They grow from a fleshy node of the Evercrown's night ramp with a few root hairs, and one outline closes them all.
+- **Stepped light**: the bodies are baked once into an image; a bright head of light climbs the main shard's front face, and beads of light run up the vein toward the core, stepped at 10 frames a second like hand-drawn frames. Neighbouring veins pulse out of step. A vein redraws only when its step changes.
+- **Cut**: the main shard snaps off along a jagged line, the side shards lose their tips, a crack runs down the stump, the crystal goes dead night-violet and the vein hangs short and slack.
+
+The hitbox, the pogo, the cut and the fight are unchanged. Judged by eye at 1x and 4x in `evercrown/veins`. `tests/test_light_vein_art.gd` checks the palette, the closed outline, the facets, the climbing light, the cut and the stepped redraw.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
