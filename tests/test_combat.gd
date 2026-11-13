@@ -2281,6 +2281,54 @@ func test_blows_have_kinds_and_resistance_is_capped() -> void:
 	p.resist = {}
 
 
+## Design bible 5.6: burn, chill and curse join poison. A blow that lands leaves
+## its condition; Hardiness is the chance it does not take hold.
+class CursedThing:
+	extends Node2D
+	const CONDITION := Condition.CURSE
+
+
+func test_conditions_burn_chill_and_curse() -> void:
+	var room := Room.from_text("zone: heartwood\n---\n" + "\n".join(PackedStringArray(ARENA.duplicate())))
+	arena.add_child(room)
+	var p := make_player(room, Vector2i(3, 6))
+	await frames(2)
+	p.defense = 0.0
+	# Burn: damage over time, never the last health, and water puts it out.
+	var before := p.hp
+	check(p.afflict(Condition.BURN) and p.has_condition(Condition.BURN), "a burn takes hold")
+	await frames(int(Player.BURN_TIME * 60.0) + 6)
+	var ticks := int(Player.BURN_TIME / Player.BURN_TICK)
+	check(before - p.hp == ticks * p._burn_damage and not p.has_condition(Condition.BURN), "it burns %d times and stops (took %d)" % [ticks, before - p.hp])
+	p.afflict(Condition.BURN)
+	p.in_water = true
+	p._tick_conditions(1.0 / 60.0)
+	check(not p.has_condition(Condition.BURN), "water puts a burn out")
+	check(not p.afflict(Condition.BURN), "and nothing burns under water")
+	p.in_water = false
+	# Chill: a slower run.
+	check(p.afflict(Condition.CHILL) and p.shown_condition() == Condition.CHILL, "a chill takes hold and shows")
+	# Curse: carried by a blow, and the flask will not open.
+	var thing := CursedThing.new()
+	thing.position = cell_feet(6, 6)
+	room.add_child(thing)
+	p._invuln_timer = 0.0
+	check(p.receive_attack(5, thing, false) == "hit" and p.has_condition(Condition.CURSE), "a blow that names a curse leaves it")
+	p.cure_poison()
+	check(p.shown_condition() == "", "bread, a shrine or the Ringreader clears every condition")
+	# Hardiness: the chance it does not take hold, capped at one immunity in all.
+	p.hardiness = {Condition.CHILL: 1.0}
+	check(not p.afflict(Condition.CHILL), "whole Hardiness is immunity to that condition")
+	check(p.afflict(Condition.CURSE), "and to no other")
+	p.cure_poison()
+	var all := Condition.capped({Condition.POISON: 1.0, Condition.BURN: 1.0, Condition.CHILL: 1.0, Condition.CURSE: 1.0})
+	var total := 0.0
+	for c: String in all:
+		total += float(all[c])
+	check(is_equal_approx(total, Condition.RESIST_CAP), "four immunities are scaled to one in all (%.2f)" % total)
+	p.hardiness = {}
+
+
 func test_a_foe_hits_as_hard_as_its_zone_is_deep() -> void:
 	var rows := ARENA.duplicate()
 	var room := Room.from_text("zone: vorrhallow\n---\n" + "\n".join(PackedStringArray(rows)))

@@ -428,10 +428,12 @@ func _sync_dye() -> void:
 func _draw() -> void:
 	_sync_dye()
 	var tint := Color(1.0, 0.45, 0.45) if _red_time > 0.0 else Color.WHITE
-	if player.poison_left > 0.0 and _red_time <= 0.0:
-		# Blightcap: a sickly green cast that throbs with each tick.
+	var ill := player.shown_condition()
+	if ill != "" and _red_time <= 0.0:
+		# A condition lays its own cast over the hero (poison's sickly green,
+		# burn's orange, chill's pale blue, a curse's violet), throbbing.
 		var t := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.006)
-		tint = Color.WHITE.lerp(POISON, 0.35 + 0.2 * t)
+		tint = Color.WHITE.lerp(POISON if ill == Condition.POISON else Condition.COLORS[ill], 0.35 + 0.2 * t)
 	if _level_time > 0.0:
 		# The split is widest at the start and closes as the glow fades.
 		var k := clampf(_level_time / LEVEL_GLOW, 0.0, 1.0)

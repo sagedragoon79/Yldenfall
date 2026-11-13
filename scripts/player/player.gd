@@ -43,6 +43,16 @@ const OINTMENT_TIME := 10.0
 const POISON_TIME := 8.0
 const POISON_TICK := 1.0
 const POISON_DAMAGE := 2
+## Burn (design bible 5.6): BURN_DAMAGE every BURN_TICK for BURN_TIME, scaled by
+## the room's threat like poison, down to 1 health; water puts it out.
+const BURN_TIME := 4.0
+const BURN_TICK := 0.5
+const BURN_DAMAGE := 2
+## Chill: the run is CHILL_SLOW of itself for CHILL_TIME.
+const CHILL_TIME := 4.0
+const CHILL_SLOW := 0.7
+## Curse: the flask will not open for CURSE_TIME.
+const CURSE_TIME := 8.0
 
 const SLASH_SIZE := Vector2(36, 26)
 const UP_SLASH_SIZE := Vector2(34, 36)
@@ -321,6 +331,16 @@ var _ointment_timer := 0.0
 var _glove_timer := 0.0
 var _glove_spark := 0.0
 var _poison_timer := 0.0
+## The chance each condition does not take hold, condition to 0..1 (design bible
+## 5.6; Condition.capped holds it to the cap). Empty until the Hardiness gems.
+var hardiness := {}
+## Rolls whether a condition takes hold (tests seed it).
+var condition_rng := RandomNumberGenerator.new()
+var _burn_timer := 0.0
+var _burn_tick := 0.0
+var _burn_damage := BURN_DAMAGE
+var _chill_timer := 0.0
+var _curse_timer := 0.0
 var _poison_tick := 0.0
 ## Health each poison tick takes: POISON_DAMAGE scaled by the room's threat.
 var _poison_damage := POISON_DAMAGE
@@ -590,6 +610,7 @@ func _tick_timers(delta: float) -> void:
 			GameState.toast.emit("The Barkbalm wears off.")
 	if _poison_timer > 0.0:
 		_tick_poison(delta)
+	_tick_conditions(delta)
 	if _glove_timer > 0.0:
 		_tick_glove(delta)
 	_attack_cooldown -= delta
@@ -729,6 +750,8 @@ func _apply_wall_slide() -> void:
 
 func _horizontal_step(delta: float, on_floor: bool) -> void:
 	var target := input.move_x * tuning.run_speed * tuning.speed_fraction(input.tilt)
+	if _chill_timer > 0.0:
+		target *= CHILL_SLOW
 	var held_low := crouching and on_floor
 	if held_low:
 		# A crouch holds still and only turns; pinned under a low roof it creeps.
@@ -1601,6 +1624,10 @@ func _update_drink(delta: float, on_floor: bool) -> void:
 		# press in a tight spot isn't met with silence. Shrines refill it.
 		Sfx.play("flask_empty", 0.0, -2.0)
 		return
+	if input.heal_pressed and flask_charges > 0 and _curse_timer > 0.0:
+		# Cursed (design bible 5.6): the cork will not come, and it is heard.
+		Sfx.play("flask_empty", 0.0, -2.0)
+		return
 	if input.heal_pressed and flask_charges > 0 and on_floor and hp < max_hp and not is_attacking and not is_dashing:
 		_drink_timer = combat.drink_time * drink_mult
 		Sfx.play("drink")
@@ -1867,6 +1894,7 @@ func receive_attack(damage: int, source: Node2D, parryable := true) -> String:
 		Feel.add_trauma(0.25)
 	take_damage(damage, false, knock)
 	_hurt_kind = DamageKind.PHYSICAL
+	afflict(Condition.of(source))
 	return "hit"
 
 
@@ -2033,7 +2061,6 @@ func poison() -> bool:
 	return true
 
 
-## Bread, a shrine or the Ringreader clears poison.
 ## A level-up is a moment (design bible 5.6): the world holds its breath for
 ## LEVEL_UP_PAUSE, the hero glows, and health and mana are filled at once.
 const LEVEL_UP_PAUSE := 0.18
@@ -2049,8 +2076,88 @@ func _on_leveled_up(_rank: int) -> void:
 		visual.flash_level_up()
 
 
+## Bread, a shrine or the Ringreader clears poison, and every other condition.
 func cure_poison() -> void:
 	_poison_timer = 0.0
+	_burn_timer = 0.0
+	_chill_timer = 0.0
+	_curse_timer = 0.0
+
+
+## True while `condition` (see Condition) is on the hero.
+func has_condition(condition: String) -> bool:
+	match condition:
+		Condition.POISON: return _poison_timer > 0.0
+		Condition.BURN: return _burn_timer > 0.0
+		Condition.CHILL: return _chill_timer > 0.0
+		Condition.CURSE: return _curse_timer > 0.0
+	return false
+
+
+## The condition shown on the hero and the masks: the worst one on them, or "".
+func shown_condition() -> String:
+	for c: String in [Condition.BURN, Condition.POISON, Condition.CURSE, Condition.CHILL]:
+		if has_condition(c):
+			return c
+	return ""
+
+
+## A blow tries to leave `condition` on the hero (design bible 5.6). Hardiness
+## is the chance it does not take hold. True if it took.
+func afflict(condition: String) -> bool:
+	if dead or not Condition.ALL.has(condition):
+		return false
+	var chance := float(Condition.capped(hardiness).get(condition, 0.0))
+	if chance > 0.0 and condition_rng.randf() < chance:
+		GameState.toast.emit("Resisted.")
+		return false
+	var took := true
+	match condition:
+		Condition.POISON:
+			took = poison()
+		Condition.BURN:
+			if in_water:
+				return false
+			var room := get_tree().get_first_node_in_group("room") as Room
+			_burn_damage = BURN_DAMAGE if room == null else roundi(BURN_DAMAGE * room.threat())
+			if _burn_timer <= 0.0:
+				_burn_tick = BURN_TICK
+			_burn_timer = BURN_TIME
+		Condition.CHILL:
+			_chill_timer = CHILL_TIME
+		Condition.CURSE:
+			_curse_timer = CURSE_TIME
+	if took:
+		GameState.toast.emit(Condition.TAKES[condition])
+	return took
+
+
+func _tick_conditions(delta: float) -> void:
+	if _burn_timer > 0.0:
+		_burn_timer -= delta
+		_burn_tick -= delta
+		if in_water:
+			_burn_timer = 0.0
+		elif _burn_tick <= 0.0:
+			_burn_tick += BURN_TICK
+			if not dead and hp > 1:
+				var before := hp
+				hp = maxi(1, hp - _burn_damage)
+				var number := DamageNumber.spawn(get_parent(), global_position + Vector2(0, -44), before - hp, "hurt")
+				if number != null:
+					number.tint = Condition.COLORS[Condition.BURN]
+				Sfx.play("steam_hiss", 0.1, -12.0)
+				health_changed.emit(hp, max_hp)
+		if _burn_timer <= 0.0:
+			GameState.toast.emit(Condition.FADES[Condition.BURN])
+	if _chill_timer > 0.0:
+		_chill_timer -= delta
+		if _chill_timer <= 0.0:
+			GameState.toast.emit(Condition.FADES[Condition.CHILL])
+	if _curse_timer > 0.0:
+		_curse_timer -= delta
+		if _curse_timer <= 0.0:
+			GameState.toast.emit(Condition.FADES[Condition.CURSE])
 
 
 func _tick_poison(delta: float) -> void:
@@ -2118,7 +2225,7 @@ func _die(where: Vector2) -> void:
 
 func _respawn() -> void:
 	dead = false
-	_poison_timer = 0.0
+	cure_poison()
 	_glove_timer = 0.0
 	_thrust_charge = 0.0
 	second_wind_used = false
@@ -2147,7 +2254,7 @@ func add_gold(amount: int, found := false) -> void:
 
 ## Refills health, magic and potion charges (save shrines, the Ringreader).
 func restore() -> void:
-	_poison_timer = 0.0
+	cure_poison()
 	second_wind_used = false
 	hp = max_hp
 	mp = max_mp
