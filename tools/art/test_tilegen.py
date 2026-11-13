@@ -885,14 +885,12 @@ def _spring_lum_col(seed, x):
     return [sum(img.getpixel((x, y))[:3]) / 3.0 for y in range(tg.T)]
 
 
-def test_paint_spring_strata_wrap_across_the_tile_width():
-    # paint_spring made its wavy strata from the local x and the seed, so the wave
-    # phase jumped at every tile edge and the sunken limestone broke into hard
-    # vertical seams (pass 525 grade, bible 12.23). The wave now wraps over the
-    # tile width, so a tile's right edge flows into its own left edge. The mean
+def test_paint_spring_wraps_across_the_tile_width():
+    # The sunken ashlar (bible 12.39) places its head joints modulo the tile width
+    # and gives every block one body value, so a tile's right edge flows into its
+    # own left edge (the seam guard of bible 12.23 still holds). The mean
     # luminance step across that wrap seam (col T-1 -> col 0) is no worse than a
-    # typical interior step. Mutation: the old x+seed wave makes the wrap seam jump
-    # far past the interior baseline and fails.
+    # typical interior step.
     for seed in (201, 202, 203):
         left, right = _spring_lum_col(seed, 0), _spring_lum_col(seed, tg.T - 1)
         seam = sum(abs(a - b) for a, b in zip(left, right)) / tg.T
@@ -902,8 +900,41 @@ def test_paint_spring_strata_wrap_across_the_tile_width():
             interior += sum(abs(p - q) for p, q in zip(a, b)) / tg.T
         interior /= 3.0
         assert seam <= interior * 1.6 + 6.0, (
-            f"sunken strata do not wrap (seed {seed}): wrap seam {seam:.1f} vs "
+            f"sunken ashlar does not wrap (seed {seed}): wrap seam {seam:.1f} vs "
             f"interior step {interior:.1f}")
+
+
+def test_paint_spring_is_ashlar_not_stripes():
+    # The pass 545 grade read the Sunken pillars as "striped wallpaper": the old
+    # strata alternated two body values layer by layer at the same heights in
+    # every tile. The ashlar gives every course the same body value (the most
+    # common colour in each course is one palette name), and the head joints land
+    # at different x across the scattered variants, so no joint runs down a
+    # pillar. (Alternating the course value, or fixing the joint x, fails.)
+    T, ch = tg.T, tg.SPRING_COURSE * tg.D
+    seeds = (11 + tg.blob_masks().index(255), 201, 202, 203)
+    joints = set()
+    for seed in seeds:
+        img = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+        tg.paint_spring(img, 0, 0, seed, "umber")
+        bodies = []
+        for course in range(T // ch):
+            counts = {}
+            for y in range(course * ch, course * ch + ch):
+                for x in range(T):
+                    p = img.getpixel((x, y))
+                    counts[p] = counts.get(p, 0) + 1
+            bodies.append(max(counts, key=counts.get))
+            joints.update(tg.spring_joints(seed, course))
+        assert len(set(bodies)) == 1, f"seed {seed}: the courses alternate body value {bodies}"
+        assert bodies[0] == tg.c("umber-4"), f"seed {seed}: the body is umber-4"
+    assert len(joints) >= 5, f"the head joints line up across the variants: {sorted(joints)}"
+    for seed in range(300, 340):
+        for course in range(T // ch):
+            js = sorted(tg.spring_joints(seed, course))
+            assert all(4 * tg.D <= j <= 12 * tg.D for j in js), f"a joint strays near the tile edge: {js}"
+            if len(js) == 2:
+                assert js[1] - js[0] >= 6 * tg.D, f"two joints make a sliver: {js}"
 
 
 def _fill_busyness(zone, seed):

@@ -691,7 +691,7 @@ Deep water (legend `a`) is a volume, not a surface: while the middle of the body
 | Across | 0.7x run speed |
 | Attacks, dash | work as on land; the dash ignores the water: it runs at the land's 380 px/s for its 0.15 s and holds its line, neither floated nor slowed. The one land move the water takes is the Thrust's charge (9): it is a lunge along a floor, and a swimmer has none, so holding Attack under water swings and never glints. Held since pass 376 with the double jump and air dash the water hands back: `test_swimming_keeps_the_lands_moves` |
 | Breath | none: swimming is about routes and foes, not a timer |
-| Feel | a "dive" splash and spray when the body crosses the surface fast; a soft "swim" whoosh per stroke; the water is drawn over the bodies in it, translucent, with a rippling waterline, drifting caustics and bubbles |
+| Feel | a "dive" splash and spray when the body crosses the surface fast; a soft "swim" whoosh per stroke; the water is drawn in two layers (12.39): a body that darkens with depth behind the bodies in it, and a light tint, a rippling waterline, caustics that fade with depth and bubbles in front |
 
 The reachability checker treats a spot with the feet in water as a standing spot: it swims to the water cells beside, above and below, and from a spot with the head out (no water two rows up) it jumps out a little short of a floor jump (rise 3, 3 across).
 
@@ -1981,6 +1981,24 @@ The pass 545 grade's top defect: "off-room solid mass is one flat repeated cobbl
 - **Secrets stay secret**: secret cells are left out of the main shade and shaded by a second one parented to the secret layer, so the shade fades with the fake wall and a hidden room is never left dark once found, while the cover looks like the mass around it.
 
 Judged by eye at 1x and 3x in `evercrown/proving_scar`, `sunken/drowned_aqueduct` and `spires/broken_shrine`: thin walls and pillars are unchanged; the deep mass around rooms reads as rock receding into dark. `tests/test_deep_shade.gd` checks the distance field, the untouched edge, the falloff, the dithered steps, the whole-cell rects, the secret split and a built room.
+
+### 12.39 The Sunken Spring is ashlar and deep water (pass 548)
+
+The pass 545 grade: "the Sunken Spring's stone pillars read as striped wallpaper and its water is a flat fill".
+
+**Ashlar, not strata.** `paint_spring` laid two wavy strata per tile at the same heights in every tile, the layers alternating in value, so every pillar read as horizontal stripes running the width of the wall. It now lays the dwarves' aqueduct masonry: dressed travertine blocks in a broken bond.
+
+- Two courses per tile (`SPRING_COURSE`, 8 world px), so a tile meets the tiles above and below.
+- One or two head joints per course (`spring_joints`), 4 to 12 world px in and at least 6 apart, keyed to the seed and the course. Across the scattered variants (12.8) the blocks run 6 to 24 world px long, no joint lines up down a pillar, and no sliver forms at a tile seam.
+- Every block is one body value (`umber-4`) with a lit top and left edge and a shadow before the next joint and over the bed joint, so a wall has depth without a second body value to band. The tile wraps sideways on itself.
+- A short travertine pore in some courses, and in about one course in three a mineral drip hanging from the bed joint (`sky-3` at the joint, then `moss-3`). Every mark is at least a world pixel thick, so the fill stays calm (12.28; this replaces 12.28's limestone strata).
+
+**Deep water.** `SwimWater` was one translucent fill in front of everything. It now draws in two layers:
+
+- **The body**, behind the actors (absolute z -1, with the decor): a teal from `SHALLOW` to `ABYSS` in `LEVELS` (5) steps with a 4 x 4 ordered dither in 2-pixel blocks, over `DEPTH_FULL` (144 px). The steps follow the square root of the depth, so the light falls off fastest just under the surface. Depth counts from the pool's top, so the water under a pillar is as deep as the water beside it. Built once as an 8 x 160 strip texture and drawn per row run with texture repeat; deeper rows draw flat `ABYSS`.
+- **In front** of the bodies in it: a light tint (`FRONT_ALPHA` 0.2, down from 0.42, so a swimmer and the eels read clearly), the rippling waterline, caustic light (short wavering bands, brightest at the surface and gone by `CAUSTIC_DEPTH`, 56 px), and the bubbles.
+
+Judged by eye at 1x and 2x in `sunken/drowned_aqueduct`, `sunken/wellspring`, `sunken/source_hall` and `sunken/spring_gate`. `test_paint_spring_is_ashlar_not_stripes` and `test_paint_spring_wraps_across_the_tile_width` in `tools/art/test_tilegen.py`, and `tests/test_swim_water_art.gd` (the dithered steps, the falloff, the caustics, the layers and the depth under a pillar) hold it.
 
 ## 13. Asset Production Plan
 

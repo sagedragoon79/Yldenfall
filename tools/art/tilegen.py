@@ -304,39 +304,83 @@ def paint_meteor(img, ox, oy, seed, ramp):
 
 
 def paint_spring(img, ox, oy, seed, ramp):
-    """The Sunken Spring: pale limestone laid down by the spring itself over an
-    age, in gently waving strata like the rims of terraced pools, a blue-green
-    mineral stain bleeding along some layers.
+    """The Sunken Spring: the dwarves' aqueduct masonry, dressed travertine
+    ashlar laid in a broken bond, the spring's blue-green mineral bleeding down
+    from the joints.
 
-    The strata wave wraps seamlessly across the tile width (design bible 12.23):
-    the sine completes a whole number of cycles over ``T`` and ``seed`` only
-    shifts its phase, so a tile's left and right edges always match. Laid side by
-    side across a solid field the strata flow on instead of breaking into hard
-    vertical tile seams (pass 525).
+    Ashlar, not strata (design bible 12.39, pass 548). The older painter laid two
+    wavy strata per tile at the same heights in every tile, the layers alternating
+    in value, so a pillar read as continuous horizontal stripes: "striped
+    wallpaper" (independent grade, pass 545). Now:
 
-    Calm fill (design bible 12.28, pass 534): two broad layers per tile, each a
-    flat body under a one-pixel lit top and over a one-pixel shadow line, a wave of
-    one world pixel, and the stain as long runs along a layer's foot. The older
-    thin layers with a two-pixel wave, a pore scatter and stain flecks read as
-    "zig-zag strata" static (independent grade, pass 529)."""
-    p1 = hash2(seed, 1, 7) * math.tau
-    lh = 8 * D
-    for y in range(T):
-        for x in range(T):
-            wave = math.sin(math.tau * x / T + p1) * 1.0 * D
-            layer = int((y + wave) // lh)
-            ly = (y + wave) % lh
-            shade = 4 if layer % 2 == 0 else 3
-            if ly < 1:
-                col = f"{ramp}-{shade + 1}"
-            elif ly >= lh - 1:
-                col = f"{ramp}-{shade - 1}"
-            else:
-                col = f"{ramp}-{shade}"
-            if (hash2(layer, 7, seed + 9) > 0.55 and lh - 1 - D <= ly < lh - 1
-                    and hash2(x // (6 * D), layer, seed) > 0.3):
-                col = "sky-3"                  # the spring's mineral stain
-            img.putpixel((ox + x, oy + y), c(col))
+    - two courses per tile (``SPRING_COURSE``, 8 world px), so the courses meet
+      the tiles above and below;
+    - one or two head joints per course (``spring_joints``), at an x keyed to the
+      seed and the course, so across the scattered variants the blocks run 6 to
+      24 world px long and no joint lines up down a pillar;
+    - every block is one body value with a lit top, a lit left edge and a shadow
+      before the next joint (light from the upper left), so the wall has depth
+      without a second body value to band;
+    - travertine pores: a short horizontal void in some courses;
+    - mineral drips: a run of the spring's stain hangs down from a joint here and
+      there, the only vertical marks besides the joints.
+
+    Everything is a run at least one world pixel thick, so the fill stays calm
+    (12.28). The tile wraps on itself sideways: its joints are placed modulo the
+    tile width and
+    every block carries the same body value."""
+    ch = SPRING_COURSE * D
+    body, lit, shade, joint = f"{ramp}-4", f"{ramp}-5", f"{ramp}-3", f"{ramp}-1"
+    for course in range(T // ch):
+        y0 = course * ch
+        joints = spring_joints(seed, course)
+        for ly in range(ch):
+            for x in range(T):
+                lx = min((x - j) % T for j in joints)          # 0 at a joint
+                rx = min((j - x - 1) % T for j in joints)      # 0 just before one
+                if ly >= ch - D or lx < D:
+                    col = joint                               # bed and head joints
+                elif ly < D or lx < 2 * D:
+                    col = lit                                 # lit top and left
+                elif rx < D or ly >= ch - 2 * D:
+                    col = shade                               # shadow before a joint
+                else:
+                    col = body
+                img.putpixel((ox + x, oy + y0 + ly), c(col))
+        j = joints[0]
+        # A travertine pore: a long horizontal void inside a block.
+        if hash2(seed, course, 52) > 0.4:
+            plen = (2 + int(hash2(seed, course, 53) * 3)) * D
+            py = y0 + (3 + int(hash2(seed, course, 54) * 2)) * D
+            px0 = j + 3 * D + int(hash2(seed, course, 55) * 4) * D
+            if all((jj - px0) % T >= plen + 2 * D for jj in joints):
+                for x in range(px0, px0 + plen):
+                    for dy in range(D):
+                        img.putpixel((ox + x % T, oy + py + dy), c(shade))
+        # A mineral drip hanging from the bed joint above this course.
+        if hash2(seed, course, 56) > 0.7:
+            dx = j + 4 * D + int(hash2(seed, course, 57) * (T - 9 * D)) // D * D
+            dlen = (2 + int(hash2(seed, course, 58) * 4)) * D
+            for y in range(y0, min(y0 + dlen, y0 + ch - D)):
+                for k in range(D):
+                    img.putpixel((ox + (dx + k) % T, oy + y), c("sky-3" if y < y0 + D else "moss-3"))
+
+
+SPRING_COURSE = 8
+
+
+def spring_joints(seed, course):
+    """The head joints of one course of ``paint_spring``, in render px: one at a
+    seeded x 4 to 12 world px in, and in about a third of courses a second one,
+    also 4 to 12 in and at least 6 from the first, so blocks run 6 to 24 world px
+    long across the scattered variants and no sliver forms at a tile seam (the
+    nearest two joints across a seam are 8 world px apart)."""
+    j = 4 + int(hash2(seed, course, 51) * 9)               # 4..12 world px
+    joints = [j * D]
+    pair = [v for v in range(4, 13) if abs(v - j) >= 6]
+    if pair and hash2(seed, course, 59) > 0.66:
+        joints.append(pair[int(hash2(seed, course, 60) * len(pair))] * D)
+    return joints
 
 
 def crystal_vein(img, ox, oy, seed):
