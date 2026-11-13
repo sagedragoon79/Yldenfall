@@ -90,7 +90,7 @@ static func ground(mask: int, cell := Vector2i.ZERO, depth := 1) -> Vector2i:
 		# tile the field would band on the 32 px grid. Scatter several masonry
 		# variants by cell position (design bible 12.8). Deeper cells keep their
 		# darker MID/DEEP look; both now carry variants too.
-		var h := absi((cell.x * 73856093) ^ (cell.y * 19349663))
+		var h := scatter(cell)
 		if depth >= 3:
 			return DEEP[h % DEEP.size()]
 		if depth >= 2:
@@ -100,6 +100,17 @@ static func ground(mask: int, cell := Vector2i.ZERO, depth := 1) -> Vector2i:
 			return FULL_VARIANTS[k - 1]
 	var i: int = _index[m]
 	return Vector2i(i % COLUMNS, i / COLUMNS)
+
+
+## A well-mixed hash of a cell, for choosing its variant. The two products alone
+## are not enough: their low bits follow the cell's own low bits, so `% 4` drew
+## the same tile every fourth cell along a row and a worn block marched across a
+## field on a fixed beat (design bible 12.45).
+static func scatter(cell: Vector2i) -> int:
+	var h := ((cell.x * 73856093) ^ (cell.y * 19349663)) & 0xFFFFFFFF
+	h = ((h ^ (h >> 15)) * 0x2C1B3C6D) & 0xFFFFFFFF
+	h = ((h ^ (h >> 12)) * 0x297A2D39) & 0xFFFFFFFF
+	return h ^ (h >> 15)
 
 
 static func is_ground(coords: Vector2i) -> bool:

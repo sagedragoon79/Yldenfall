@@ -232,17 +232,36 @@ def paint_shrine(img, ox, oy, seed, ramp):
                 x += 1 if hash2(seed, step, 34 + k) > 0.6 else (-1 if hash2(seed, step, 35 + k) > 0.7 else 0)
 
 
+# One body value, the odd worn block (design bible 12.45, pass 555). The Tower's
+# plates and Vorrhallow's blocks used to take one of two values on a coin toss,
+# so a field read as a checkerboard a whole shade deep, loudest in the darkened
+# interior tiers (independent grade, passes 540 and 550: "frame tiles repeat on a
+# loud grid, Tower and Vorrhallow checkered stone"). Most blocks now share the
+# body value and about one in seven is worn a shade darker.
+WORN_BLOCK = 0.86
+# The share of Vorrhallow's tiles that carry the teal tide stain. Drawn in every
+# tile it ruled a stripe across the field every 16 world pixels.
+TIDE_TILES = 0.35
+# build_tileset paints the 47 blob tiles with seeds 11 to 57 and the interior
+# tiles (MID, DEEP and the row-7 variants) with seeds from 101. Only those carry
+# the tide stain: an edge tile has no variants, so a stain on one repeats down
+# every wall face and pillar.
+INTERIOR_SEED = 101
+
+
 def paint_drowned(img, ox, oy, seed, ramp):
     """Vorrhallow's drowned masonry: squat dwarven blocks, dark and water-worn,
-    a teal tide line where the flood stood, and veins of magenta stillglass
-    forcing their way through the joints of some blocks."""
+    a teal tide stain on some where the flood stood, and veins of magenta
+    stillglass forcing their way through the joints of some blocks. The blocks
+    share one body value; the odd one is worn a shade darker (WORN_BLOCK)."""
     bw, bh = 16 * D, 8 * D
+    tide = seed >= INTERIOR_SEED and hash2(seed, 7, 31) < TIDE_TILES
     for y in range(T):
         row = y // bh
         for x in range(T):
             sx = x + (row % 2) * (bw // 2)
             bx, ly, lx = sx // bw, y % bh, sx % bw
-            shade = 3 if hash2(bx, row, seed) > 0.45 else 2
+            shade = 2 if hash2(bx, row, seed) > WORN_BLOCK else 3
             if ly == bh - 1 or lx == 0:
                 col = "night-1"
             elif ly == 0 or lx == 1:
@@ -253,8 +272,10 @@ def paint_drowned(img, ox, oy, seed, ramp):
                 col = f"{ramp}-{shade}"
                 if hash2(x // 2, y // 2, seed + 5) > 0.88:
                     col = f"{ramp}-{shade - 1}"
-            # The tide line: a band of teal stain across the tile.
-            if 11 * D <= y < 12 * D and hash2(x // 3, 0, seed + 9) > 0.2:
+            # The tide line: a band of teal stain across some tiles (TIDE_TILES).
+            if not tide:
+                pass
+            elif 11 * D <= y < 12 * D and hash2(x // 3, 0, seed + 9) > 0.2:
                 col = "sky-2"
             elif 12 * D <= y < 13 * D and hash2(x // 2, 1, seed + 9) > 0.6:
                 col = "sky-1"
@@ -401,7 +422,7 @@ def crystal_vein(img, ox, oy, seed):
 WOOD_STRANDS = 5
 
 
-def paint_wood(img, ox, oy, seed, ramp):
+def paint_wood(img, ox, oy, seed, ramp, lo=1):
     """Living wood: broad vertical strands of two values, long grain lines running
     down them, a long highlight here and there, and the odd knot.
 
@@ -414,7 +435,8 @@ def paint_wood(img, ox, oy, seed, ramp):
     # Strands: walk across the tile in runs of 4..9 columns, alternating value.
     # The layout is the same in every tile (WOOD_STRANDS, not ``seed``), so a
     # strand runs on unbroken from one tile to the one below it; the seed varies
-    # only the grain lines, highlights and knots laid over it.
+    # only the grain lines, highlights and knots laid over it. ``lo`` is the
+    # darker strand's step on the ramp (the High Boughs' sunlit wood sits at 3).
     strand = []
     k = 0
     while len(strand) < T:
@@ -423,12 +445,12 @@ def paint_wood(img, ox, oy, seed, ramp):
         k += 1
     for x in range(T):
         val, start = strand[x]
-        base = 2 if val else 1
+        base = lo + 1 if val else lo
         edge = x == start and x > 0              # a dark seam between strands
         for y in range(T):
             col = base
             if edge:
-                col = 0 if base == 1 else 1
+                col = base - 1
             img.putpixel((ox + x, oy + y), c(f"{ramp}-{col}"))
     # Long grain lines a shade darker, and the odd long highlight a shade lighter.
     for i in range(6):
@@ -438,8 +460,8 @@ def paint_wood(img, ox, oy, seed, ramp):
         lift = hash2(seed, i, 22) > 0.6
         for y in range(y0, min(T, y0 + length)):
             nm = img.getpixel((ox + gx, oy + y))
-            here = 2 if nm[:3] == c(f"{ramp}-2")[:3] else 1
-            col = min(here + 1, 3) if lift else max(here - 1, 0)
+            here = lo + 1 if nm[:3] == c(f"{ramp}-{lo + 1}")[:3] else lo
+            col = min(here + 1, lo + 2) if lift else max(here - 1, lo - 1)
             img.putpixel((ox + gx, oy + y), c(f"{ramp}-{col}"))
     if hash2(seed, 7, 3) > 0.92:  # rare: the few interior tiles repeat a lot
         # A knot: a dark eye in a lighter ring of grain.
@@ -448,7 +470,7 @@ def paint_wood(img, ox, oy, seed, ramp):
             for dx in range(-2, 3):
                 r = (dx / 2.5) ** 2 + (dy / 3.5) ** 2
                 if r <= 1.0:
-                    col = f"{ramp}-0" if r < 0.35 else (f"{ramp}-3" if dx < 0 or dy < 0 else f"{ramp}-1")
+                    col = f"{ramp}-{lo - 1}" if r < 0.35 else (f"{ramp}-{lo + 2}" if dx < 0 or dy < 0 else f"{ramp}-{lo}")
                     img.putpixel((ox + kx + dx, oy + ky + dy), c(col))
 
 
@@ -472,23 +494,13 @@ def paint_limb(img, ox, oy, seed, ramp):
 
 
 def paint_bough(img, ox, oy, seed, ramp):
-    """A sunlit bough high in the canopy: The Heartwood's grain two shades lighter,
-    warm light streaking down the bark, and the odd sprig of young leaves."""
-    for x in range(T):
-        base = 3 if hash2(x // 3, 0, seed) > 0.4 else 4
-        phase = hash2(x, 1, seed) * 32
-        for y in range(T):
-            n = math.sin((y + phase) * 0.2)
-            col = base
-            if n > 0.9 and base == 4 and x % 3 == 1:
-                col = 5
-            elif n < -0.85:
-                col = base - 1
-            if x % 12 == 0:
-                col = min(col, 3)
-            elif x % 12 == 1 and hash2(x, y // 4, seed) > 0.5:
-                col = min(col + 1, 5)
-            img.putpixel((ox + x, oy + y), c(f"{ramp}-{col}"))
+    """A sunlit bough high in the canopy: The Heartwood's strands two shades
+    lighter, and the odd sprig of young leaves.
+
+    It shares paint_wood's calm strands (design bible 12.28 and 12.45). The older
+    face drew a sine grain down every column and a dark line every 6 world
+    pixels, and read as "striped dirt" (independent grade, pass 550)."""
+    paint_wood(img, ox, oy, seed, ramp, lo=3)
     for k in range(2):
         if hash2(seed, k, 21) > 0.6:
             # A sprig: a short stem and two bright leaves.
@@ -565,13 +577,15 @@ def cap_stone(img, ox, oy, seed, x0, x1, ramp="stone"):
 
 def paint_plates(img, ox, oy, seed, ramp):
     """Dwarven iron: square plates of 8x8 world pixels, bevelled and lit from the
-    top left, a rivet at each corner, and rust bleeding down from the odd rivet."""
+    top left, a rivet at each corner, and rust bleeding down from the odd rivet.
+    The plates share one body value; the odd one is worn a shade darker
+    (WORN_BLOCK, design bible 12.45)."""
     pw = 8 * D
     for y in range(T):
         for x in range(T):
             px, py = x // pw, y // pw
             lx, ly = x % pw, y % pw
-            shade = 3 if hash2(px + ox // T * 2, py + oy // T * 2, seed) > 0.5 else 2
+            shade = 2 if hash2(px + ox // T * 2, py + oy // T * 2, seed) > WORN_BLOCK else 3
             if lx == 0 or ly == 0:
                 col = f"{ramp}-1"
             elif lx == 1 or ly == 1:
