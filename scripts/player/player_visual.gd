@@ -126,6 +126,9 @@ var sheet := SHEET_NAME
 var _dye_worn := ""
 var _blink_time := 0.0
 var _red_time := 0.0
+## The level-up glow (design bible 5.6): how long is left of LEVEL_GLOW.
+const LEVEL_GLOW := 0.7
+var _level_time := 0.0
 var _swings := 0
 var _throws := 0
 
@@ -145,6 +148,16 @@ func squash_for(move: String, strength := 1.0) -> void:
 	squash(Vector2.ONE.lerp(SQUASH[move], clampf(strength, 0.0, 1.0)))
 
 
+## The level-up's chromatic glow: red and cyan ghosts split from the hero and
+## close back in, under a pale gold cast.
+func flash_level_up() -> void:
+	_level_time = LEVEL_GLOW
+
+
+func level_glowing() -> bool:
+	return _level_time > 0.0
+
+
 func flash_hurt() -> void:
 	_blink_time = player.hurt_invuln()
 	_red_time = 0.12
@@ -157,6 +170,7 @@ func _physics_process(delta: float) -> void:
 	scale = Vector2(look_dir(player) * shape.x, shape.y)
 	_blink_time -= delta
 	_red_time -= delta
+	_level_time -= delta
 	visible = player.dead or not (_blink_time > 0.0 and _red_time <= 0.0 and int(_blink_time * 20.0) % 2 == 0)
 	pose = current_pose(player)
 	var next := anim_for(player, pose)
@@ -420,6 +434,16 @@ func _draw() -> void:
 		# burn's orange, chill's pale blue, a curse's violet), throbbing.
 		var t := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.006)
 		tint = Color.WHITE.lerp(POISON if ill == Condition.POISON else Condition.COLORS[ill], 0.35 + 0.2 * t)
+	if _level_time > 0.0:
+		# The split is widest at the start and closes as the glow fades.
+		var k := clampf(_level_time / LEVEL_GLOW, 0.0, 1.0)
+		var split := roundf(1.0 + 4.0 * k)
+		draw_set_transform(Vector2(-split, 0.0))
+		Sheet.draw(self, sheet, anim, frame, Color(1.0, 0.25, 0.3, 0.55 * k), false)
+		draw_set_transform(Vector2(split, 0.0))
+		Sheet.draw(self, sheet, anim, frame, Color(0.25, 0.95, 1.0, 0.55 * k), false)
+		draw_set_transform(Vector2.ZERO)
+		tint = tint.lerp(Color(1.6, 1.5, 1.1), 0.7 * k)
 	Sheet.draw(self, sheet, anim, frame, tint, false)
 	var oint := player.ointment_left
 	if oint > 0.0:

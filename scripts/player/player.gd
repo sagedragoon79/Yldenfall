@@ -384,6 +384,7 @@ func _ready() -> void:
 	safe_margin = 0.05
 	add_to_group("player")
 	TimeStop.reset()
+	GameState.leveled_up.connect(_on_leveled_up)
 
 	var shape := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
@@ -2058,6 +2059,21 @@ func poison() -> bool:
 	_poison_timer = POISON_TIME
 	_poison_tick = POISON_TICK
 	return true
+
+
+## A level-up is a moment (design bible 5.6): the world holds its breath for
+## LEVEL_UP_PAUSE, the hero glows, and health and mana are filled at once.
+const LEVEL_UP_PAUSE := 0.18
+
+func _on_leveled_up(_rank: int) -> void:
+	if dead:
+		return
+	hp = max_hp
+	mp = max_mp
+	health_changed.emit(hp, max_hp)
+	Feel.hitstop(LEVEL_UP_PAUSE)
+	if visual != null:
+		visual.flash_level_up()
 
 
 ## Bread, a shrine or the Ringreader clears poison, and every other condition.

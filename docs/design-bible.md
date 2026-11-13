@@ -623,7 +623,7 @@ Signature items (the Climbing Glove, the Featherstep Boots, the Elven Stride, th
 
 **The belt.** Three places for single-use items used on yourself or set down: tonics, cures for conditions, a light, charges set against a wall to open a secret (cap 3). One button cycles, another uses. The Sapflask keeps its own button, so healing never depends on the belt. The Barkbalm and the Amber Draught move onto the belt.
 
-**Levels and skills (direction only; the design comes later).** The 16 named ranks become levels. A level-up is a moment: a micro pause, a brief chromatic glow on the hero, and health and mana filled at once. A level gives a little health, mana or damage, and no skill point. The 15 points the ranks gave move to fixed places (bosses, hidden shrines, secret areas), so no point can be ground out and secrets hold more than gold. Experience comes from kills only; a boss pays once, when the whole fight ends, and foes summoned in a boss arena pay nothing. Ringreaders still unlearn skills, for gold that grows each time.
+**Levels and skills (direction only; the design comes later).** The 16 named ranks become levels. A level-up is a moment: a micro pause, a brief chromatic glow on the hero, and health and mana filled at once. **Built (2026-11-13):** the moment itself. A rank gained holds the world for 0.18 s (`Player.LEVEL_UP_PAUSE`), fills health and mana, and splits red and cyan ghosts from the hero that close back in over 0.7 s under a pale gold cast (`PlayerVisual.flash_level_up`); `test_a_level_up_pauses_glows_and_refills` holds it. Still to build: a level gives a little health, mana or damage, and no skill point. The 15 points the ranks gave move to fixed places (bosses, hidden shrines, secret areas), so no point can be ground out and secrets hold more than gold. Experience comes from kills only; a boss pays once, when the whole fight ends, and foes summoned in a boss arena pay nothing. Ringreaders still unlearn skills, for gold that grows each time.
 
 **What today's gear becomes.**
 
@@ -2097,6 +2097,17 @@ The pass 550 grade called the Proving Scar's tall seal "a flat noisy rectangle w
 - **The halo.** It reaches `HALO` 32 px (6 onto the floor), peaks at 0.42 against the flames, and falls on a curve (`HALO_CURVE` 1.7): bright at the fire, a long thin tail. Still four dithered steps, drawn once.
 
 Hitboxes, the burn, the runes, the coals, the pools and the douse are unchanged. The grade's other half, "over half the screen is empty void", is the room's solid mass under `DeepShade` (12.38), which is meant to sink into the dark; it stays in the queue as a room-layout item. Judged by eye at 1x and 3x in `evercrown/proving_scar`. `test_fire_seal_burns_in_tall_licks` checks the runs, the field, the bank, the halo's curve and the shared time.
+
+### 12.43 A foe stands in its room's light (pass 553)
+
+The pass 550 grade saw foes (the hornet, the Silt Adder, the Bark Knight) "more saturated and detailed than the muted rooms, so they look pasted in". The zone grade (12.9) is a gentle multiply over everything, so it never brought a foe's own colours toward its room.
+
+- **One light per zone.** Every `Enemy` in a zone's room rests in one shared material (`FoeLight`, `shaders/foe_light.gdshader`). The gym, and a foe outside any room, has none and draws as painted.
+- **Muted.** A foe's colour is pulled `MUTE` (0.2) of the way toward its own grey.
+- **Darks sink.** Black sinks `SINK` (0.55) of the way toward the deep of the zone's haze (`Backdrop.ZONE_HAZE` at `DEEP` 0.6 of its value): the hue of the room's own shadows, never as light as them, so an outline stays an outline. The pull falls with the square of the darkness; a mid tone moves a little, a light hardly at all, and white not at all.
+- **What a fight reads is left alone.** The hit flash and the tell (the white wash, or a sheet drawn white) and the death's dissolve replace the material or pass through it unchanged. The hero, pickups, hazards and shots are not foes and are not touched.
+
+Tuned by eye at 1x and 3x in `tower/foot`, `heartwood/dwarf_larder` and `boughs/sunlit_bough`: a first try that sank the darks to the haze itself lifted outlines into the backdrop (the Bark Knight on the Boughs' green), hence `DEEP`. `test_foes_stand_in_their_rooms_light` checks the sum per zone, the material, and that the wash, the death and a respawn hand it back.
 
 ## 13. Asset Production Plan
 
