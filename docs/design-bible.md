@@ -1971,6 +1971,17 @@ The pass 535 grade called the veins in the Everbloom's shaft "flat cyan diamonds
 
 The hitbox, the pogo, the cut and the fight are unchanged. Judged by eye at 1x and 4x in `evercrown/veins`. `tests/test_light_vein_art.gd` checks the palette, the closed outline, the facets, the climbing light, the cut and the stepped redraw.
 
+### 12.38 Solid mass falls off into darkness (pass 546)
+
+The pass 545 grade's top defect: "off-room solid mass is one flat repeated cobble tile with scattered dots". The tilesets have three depths of ground tile (the lit edge, one step in, the interior), so every cell three or more tiles from open air drew the same interior tile, out to the room's frame. `DeepShade` (`scripts/world/deep_shade.gd`) now sinks the interior into shadow the deeper it lies, over the tiles and `EdgeShade`, under the actors:
+
+- **Distance to air**: each solid cell's 8-way distance in tiles to the nearest open cell (slopes count as open, as for the tile depth; the room's outside counts as solid). Nothing within 2.5 tiles, so the lit edge and the step in are never touched; full darkness 4 tiles further in, at 86% of a near-black, so a trace of the rock still shows at the back.
+- **Pixelled steps**: the field is blended between cell centres and quantised to five steps with a 4 x 4 ordered dither in 2-pixel blocks, so the falloff is never a smooth gradient or a hard ring (the banded-light defect of pass 540).
+- **Static**: built once per room load, and again when a guardian tears the floor. Uniformly deep cells are one rect each.
+- **Secrets stay secret**: secret cells are left out of the main shade and shaded by a second one parented to the secret layer, so the shade fades with the fake wall and a hidden room is never left dark once found, while the cover looks like the mass around it.
+
+Judged by eye at 1x and 3x in `evercrown/proving_scar`, `sunken/drowned_aqueduct` and `spires/broken_shrine`: thin walls and pillars are unchanged; the deep mass around rooms reads as rock receding into dark. `tests/test_deep_shade.gd` checks the distance field, the untouched edge, the falloff, the dithered steps, the whole-cell rects, the secret split and a built room.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

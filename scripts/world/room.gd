@@ -37,6 +37,7 @@ var _one_way := {}
 ## Cells of the room's `-` planks (not ladder tops, boardwalks or hidden planks), for `PlankSupports`.
 var _planks := {}
 var _secret_cells := {}
+var _deep_shade: DeepShade
 ## Time-locked water cells (legend `f`), gathered into Waterfalls after the grid.
 var _falls := {}
 ## Wrong-gravity cells (legend `v`), gathered into GravityDrifts after the grid.
@@ -270,6 +271,18 @@ func build(text: String) -> void:
 	add_child(shade)
 	shade.setup(_solid_look, size_tiles)
 
+	# The interior of solid mass falls off into darkness (design bible 12.38). A
+	# second shade on the secret layer fades with the fake wall.
+	_deep_shade = DeepShade.new()
+	_deep_shade.name = "DeepShade"
+	add_child(_deep_shade)
+	_deep_shade.setup(_deep_solids(), size_tiles, {}, _secret_cells)
+	if secrets != null and not _secret_cells.is_empty():
+		var hidden := DeepShade.new()
+		hidden.name = "DeepShade"
+		secrets.add_child(hidden)
+		hidden.setup(_deep_solids(), size_tiles, _secret_cells)
+
 	# What holds each plank run up: a brace, a post or hangers (design bible 12.30).
 	if not _planks.is_empty():
 		var holds := PlankSupports.new()
@@ -452,6 +465,8 @@ func tear_floor(col_from: int, col_to: int, row_from: int, row_to: int) -> void:
 		var below := Vector2i(x, row_to + 1)
 		if tiles.get_cell_source_id(below) != -1:
 			_spawn(Spikes.new(), Vector2((x + 0.5) * TILE, below.y * TILE))
+	if _deep_shade != null:
+		_deep_shade.setup(_deep_solids(), size_tiles, {}, _secret_cells)
 	# The ground around the pit gets new edges.
 	for x in range(col_from - 3, col_to + 4):
 		for y in range(row_from - 3, row_to + 4):
@@ -511,6 +526,15 @@ const _NEIGHBOURS := [
 	[Vector2i(0, 1), TilesetFactory.S], [Vector2i(-1, 1), TilesetFactory.SW],
 	[Vector2i(-1, 0), TilesetFactory.W], [Vector2i(-1, -1), TilesetFactory.NW],
 ]
+
+
+## The cells the deep shade treats as solid: the ground look, less the slopes
+## (half open, as `_depth` counts them).
+func _deep_solids() -> Dictionary:
+	var out := _solid_look.duplicate()
+	for c: Vector2i in _slope_cells:
+		out.erase(c)
+	return out
 
 
 ## How far a ground cell is from open air, in tiles (1 to 3).
