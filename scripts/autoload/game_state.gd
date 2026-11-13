@@ -5,6 +5,8 @@ extends Node
 
 ## Big centered banner (item get, area names). `subtitle` may be empty.
 signal banner(title: String, subtitle: String)
+## A rank was gained (design bible 5.6: a level-up is a moment). `rank` is the new one.
+signal leveled_up(rank: int)
 ## Small line of text near the bottom of the screen ("Progress saved").
 signal toast(text: String)
 ## A full-screen white flash (boss kills); strength 0 to 1.
@@ -406,6 +408,7 @@ func add_xp(amount: int) -> void:
 		data.skill_points = int(data.skill_points) + 1
 		banner.emit("Rank up: " + rank_name(), "You gain a skill point. Seek a Ringreader to be named and taught.")
 		Sfx.play("rank", 0.0)
+		leveled_up.emit(int(data.rank))
 
 
 ## The title you have earned but no Ringreader has named yet ("" if none).
