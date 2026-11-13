@@ -72,7 +72,7 @@ checks (4); no shade fails the value checks (23).
 | Stability and performance | 5 | 99 | Unchanged; three small static functions per ring per frame. |
 | Story and world | 5 | 99 | Unchanged. |
 
-Weighted: 98.85.
+Weighted: 98.85. Full suite: 14,361 checks passed, 0 failed.
 
 ## Next
 
