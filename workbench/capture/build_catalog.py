@@ -283,7 +283,7 @@ for m in re.finditer(r'"(\w+)": \{"title": "([^"]+)", "text": "([^"]*)"', PICK):
 sections.append({'id': 'finds', 'group': 'Items', 'label': 'Finds', 'title': 'Abilities, spells and finds',
                  'lede': 'Everything the hero picks up in the world, drawn as it floats there.', 'layout': 'grid', 'filter': 'Kind', 'rows': finds})
 sections.append({'id': 'goods', 'group': 'Items', 'label': 'Goods', 'title': 'Keys, charts and supplies',
-                 'lede': 'Goods bought in shops. They have no picture of their own in the game; the Shops tab shows them on the shelf.',
+                 'lede': 'Goods bought in shops. Each has an icon on its shelf row (pass 554); the Shops tab shows them there.',
                  'layout': 'list', 'filter': 'Kind', 'rows': goods})
 
 # --- Systems ------------------------------------------------------------------------------

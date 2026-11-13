@@ -30,6 +30,8 @@ same way (`ids` in that file; `GameState.migrate_ids` brings older saves over). 
   `python3 tools/art/decorgen.py`. Screenshot one player frame with `--shot-pose=slash1:1`.
 - UI pixel font (every glyph is drawn in the script; `PixelFont` loads it): `python3 tools/art/fontgen.py`.
   Draw UI text with `PixelFont.draw`, never `draw_string` with another font.
+- Item icons and people's portraits (`UiArt` loads them; rerun after adding an item or a person): `python3 tools/art/icongen.py`
+  (`--sheet OUT.png` writes a 4x contact sheet to look at).
 
 ## Conventions
 

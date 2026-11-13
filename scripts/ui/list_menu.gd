@@ -5,8 +5,10 @@ extends Control
 ## paused while it is open.
 ##
 ## Rows come from a provider callable (so they refresh after each choice):
-## each row is {label, right (text on the right), detail, enabled, header}.
-## Header rows are section titles and can't be selected.
+## each row is {label, right (text on the right), detail, enabled, header, icon}.
+## Header rows are section titles and can't be selected. A row's `icon` is an
+## item id: its picture leads the row (UiArt, bible 12.44), and when any row has
+## one every label is set in by ICON_INSET so the names stay in a column.
 ##
 ## Optional hooks, cleared on each open(): `on_adjust(index, step)` runs on
 ## Left/Right (option values), `on_back` runs instead of closing on Dash (sub
@@ -23,6 +25,12 @@ const ACCENT := Color("ffd24a")
 const CURSOR := Color(1, 0.86, 0.4, 0.14)
 const ROW_H := 16.0
 const INPUT_GRACE := 0.12
+## How far a label moves right in a list whose rows carry icons.
+const ICON_INSET := 18.0
+## The frame around a portrait, and its gap from the panel's corner.
+const PORTRAIT_PAD := 2.0
+const PORTRAIT_MARGIN := 10.0
+const PORTRAIT_BACK := Color("2a2440")
 
 var title := ""
 var subtitle := ""
@@ -31,6 +39,9 @@ var cursor := 0
 var is_open := false
 ## Where the panel sits; menus may move it (the title menu sits under the logo).
 var panel := PANEL
+## The person whose menu this is (an id in data/npcs.json): their portrait sits
+## in the panel's top right corner. Cleared on each open(); set it after.
+var portrait := ""
 
 var on_adjust := Callable()
 var on_back := Callable()
@@ -65,6 +76,7 @@ func open(menu_title: String, menu_subtitle: String, provider: Callable, on_sele
 	on_adjust = Callable()
 	on_back = Callable()
 	capture = Callable()
+	portrait = ""
 	cursor = 0
 	_scroll = 0
 	refresh()
@@ -176,6 +188,35 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
+## Whether the portrait is shown: someone is named and has one.
+func shows_portrait() -> bool:
+	return portrait != "" and UiArt.has_portrait(portrait)
+
+
+## The portrait's frame, in the panel's top right corner.
+func portrait_frame() -> Rect2:
+	var side := UiArt.PORTRAIT_SIZE + PORTRAIT_PAD * 2.0
+	return Rect2(panel.end.x - PORTRAIT_MARGIN - side, panel.position.y + PORTRAIT_MARGIN, side, side)
+
+
+## How wide the subtitle may run: up to the portrait when there is one.
+func subtitle_width() -> float:
+	return panel.size.x - 28.0 - (portrait_frame().size.x + 8.0 if shows_portrait() else 0.0)
+
+
+## Whether any row carries an icon, so every label is set in.
+func has_icons() -> bool:
+	for row: Dictionary in rows:
+		if String(row.get("icon", "")) != "" and UiArt.has_icon(String(row.icon)):
+			return true
+	return false
+
+
+## Where row `index`'s icon goes for rows starting at `y` (its top left corner).
+func icon_pos(index: int, y: float) -> Vector2:
+	return Vector2(panel.position.x + 14.0, y + (index - _scroll) * ROW_H + floorf((ROW_H - 1.0 - UiArt.ICON_SIZE) * 0.5))
+
+
 func _draw() -> void:
 	if not is_open:
 		return
@@ -186,9 +227,17 @@ func _draw() -> void:
 	_text(Vector2(x, y), title, 14, ACCENT)
 	y += 14
 	if subtitle != "":
-		var lines := PixelFont.draw_wrapped(self, Vector2(x, y), subtitle, panel.size.x - 28, 9, Color("c9b98f"), 1)
+		var lines := PixelFont.draw_wrapped(self, Vector2(x, y), subtitle, subtitle_width(), 9, Color("c9b98f"), 1)
 		y += (PixelFont.height() + 1) * lines + 2
 	y += 4
+	if shows_portrait():
+		var frame := portrait_frame()
+		draw_rect(frame.grow(1), BORDER)
+		draw_rect(frame, PORTRAIT_BACK)
+		UiArt.draw_portrait(self, portrait, frame.position + Vector2.ONE * PORTRAIT_PAD)
+		# The rows start under the portrait, so no price runs behind it.
+		y = maxf(y, frame.end.y + 6.0)
+	var inset := ICON_INSET if has_icons() else 0.0
 	# Long lists scroll to keep the cursor in view.
 	var fit := maxi(1, int((panel.end.y - 66 - y) / ROW_H))
 	if cursor < _scroll:
@@ -211,7 +260,9 @@ func _draw() -> void:
 			var c := CURSOR if _flash <= 0.0 else Color(0.9, 0.25, 0.3, 0.3)
 			draw_rect(Rect2(panel.position.x + 6, top, panel.size.x - 12, ROW_H - 1), c)
 			draw_colored_polygon(PackedVector2Array([Vector2(x - 6, top + 4), Vector2(x - 2, top + 7.5), Vector2(x - 6, top + 11)]), ACCENT)
-		_text(Vector2(x + 2, top + 12), row.label, 10, TEXT if enabled else DIM)
+		if inset > 0.0:
+			UiArt.draw_icon(self, String(row.get("icon", "")), icon_pos(i, y), Color.WHITE if enabled else UiArt.DIM)
+		_text(Vector2(x + 2 + inset, top + 12), row.label, 10, TEXT if enabled else DIM)
 		var right: String = row.get("right", "")
 		if right != "":
 			var w := PixelFont.width(right, 10)

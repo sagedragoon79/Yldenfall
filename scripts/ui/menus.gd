@@ -56,8 +56,18 @@ static func shop_rows(shop_id: String, p: Player) -> Array:
 				detail += "  Costs a Stillglass Shard too: you carry %d." % int(GameState.data.get("meteor_shards", 0))
 		elif item.kind == "blade":
 			detail += "  " + blade_numbers(String(entry.item))
-		out.append({"label": item.name, "right": right, "detail": detail, "enabled": st == ""})
+		out.append({"label": item.name, "right": right, "detail": detail, "enabled": st == "", "icon": String(entry.item)})
 	return out
+
+
+## Who keeps a shop: the first person in data/npcs.json whose "shop" it is ("" if
+## nobody). Their portrait heads the shop's menu (bible 12.44).
+static func keeper(shop_id: String) -> String:
+	var people: Dictionary = GameData.table("npcs")
+	for id: String in people:
+		if String(people[id].get("shop", "")) == shop_id:
+			return id
+	return ""
 
 
 static func open_shop(tree: SceneTree, shop_id: String, p: Player) -> bool:
@@ -78,6 +88,7 @@ static func open_shop(tree: SceneTree, shop_id: String, p: Player) -> bool:
 				Sfx.play("cloth", 0.0)
 			GameState.toast.emit(("Wearing: " if wearing else "Bought: ") + String(GameData.item(shop.stock[i].item).name))
 	menu.open(shop.name, shop.greeting, provider, on_select, _gold_footer(p))
+	menu.portrait = keeper(shop_id)
 	return true
 
 
