@@ -213,7 +213,9 @@ const POTION_LIGHT := Color("ff9a8a")
 const GOLD_DARK := Color("b8860b")
 const GLASS_SAND := Color("e8c870")
 const PLATE := Color(0.07, 0.06, 0.11, 0.5)
-const PLATE_EDGE := Color(1.0, 0.82, 0.29, 0.28)
+## The plate fades in over this many steps of one unit (two screen pixels)
+## outside its rect (pass 546), so it is a soft shade, not a black bar.
+const PLATE_FEATHER := 6
 ## A full mask, 24x28 half-pixels: a carved ivory face, brow to chin.
 const MASK_SHAPE := [Vector2(4, 0), Vector2(20, 0), Vector2(24, 4), Vector2(24, 14), Vector2(20, 22), Vector2(12, 28), Vector2(4, 22), Vector2(0, 14), Vector2(0, 4)]
 ## Half a mask (a Life Fruit's worth), 14 half-pixels wide.
@@ -238,11 +240,25 @@ func _hpoly(at: Vector2, pts: Array, grow: float = 0.0) -> PackedVector2Array:
 	return out
 
 
-## A faint backing plate so the HUD reads over bright rooms.
+## A faint backing plate so the HUD reads over bright rooms. Until pass 546 it
+## was one hard-edged rectangle with a gold rule, which read as a stray black bar
+## across the room (the pass 540 grade). It is now a soft shade: nested layers
+## from `plate_layers`, each a little darker, so it fades in from nothing at its
+## edge to the full PLATE behind the HUD itself.
 func _draw_plate(r: Rect2) -> void:
-	draw_rect(r, PLATE)
-	draw_rect(Rect2(r.position, Vector2(r.size.x, 0.5)), PLATE_EDGE)
-	draw_rect(Rect2(r.position + Vector2(0, r.size.y - 0.5), Vector2(r.size.x, 0.5)), Color(PLATE_EDGE, 0.12))
+	for layer: Array in plate_layers(r):
+		draw_rect(layer[0], Color(PLATE, layer[1]))
+
+
+## The plate's layers, outermost first: [rect, alpha]. Each step's alpha is
+## chosen so that, stacked, they reach PLATE's alpha over the whole of `r`.
+static func plate_layers(r: Rect2) -> Array:
+	var step := 1.0 - pow(1.0 - PLATE.a, 1.0 / PLATE_FEATHER)
+	var out := []
+	for k in PLATE_FEATHER:
+		var grow := float(PLATE_FEATHER - 1 - k)
+		out.append([r.grow(grow), step])
+	return out
 
 
 ## One health mask: ivory fills from the chin up as health returns; green when poisoned.

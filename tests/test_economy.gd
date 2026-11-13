@@ -3720,3 +3720,27 @@ func test_a_set_pieces_fire_and_smoke_move_while_the_building_stays_still() -> v
 		hi = maxf(hi, f)
 	check(lo >= 0.5 and hi <= 1.0 and hi - lo > 0.2, "the fire flickers (%.2f to %.2f)" % [lo, hi])
 	piece.queue_free()
+
+
+## Pass 546 (bible 13.5, UI): the HUD's backing plate is a soft shade, not a
+## black bar. Its outermost layer is barely there, each layer inward is a step
+## darker, and the stack reaches the plate's full shade over the whole of the
+## rect behind the HUD, so it still reads over a bright room.
+func test_the_huds_plate_is_a_soft_shade() -> void:
+	var r := Rect2(5, 5, 120, 43)
+	var layers := GameHud.plate_layers(r)
+	check(layers.size() == GameHud.PLATE_FEATHER and layers.size() >= 4, "the plate fades in over several steps (%d)" % layers.size())
+	var outer: Rect2 = layers[0][0]
+	check(float(layers[0][1]) <= 0.15, "its edge is barely there (alpha %.2f)" % float(layers[0][1]))
+	check(outer.size.x - r.size.x >= 8.0, "and the fade lies outside the HUD's own rect (%.0f wider)" % (outer.size.x - r.size.x))
+	var nested := true
+	for i in range(1, layers.size()):
+		nested = nested and (layers[i - 1][0] as Rect2).encloses(layers[i][0]) and layers[i - 1][0] != layers[i][0]
+	check(nested, "each layer lies inside the last, so it darkens inward")
+	var through := 1.0
+	for layer: Array in layers:
+		if (layer[0] as Rect2).encloses(r):
+			through *= 1.0 - float(layer[1])
+	check(absf((1.0 - through) - GameHud.PLATE.a) < 0.01, "behind the HUD it is the full shade (%.2f of %.2f)" % [1.0 - through, GameHud.PLATE.a])
+	var bible := FileAccess.get_file_as_string("res://docs/design-bible.md")
+	check(bible.contains("test_the_huds_plate_is_a_soft_shade"), "the bible names this test")
