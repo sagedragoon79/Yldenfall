@@ -963,7 +963,7 @@ def test_graded_play_fill_is_calm():
     # scattered variants, fewer than 23% of neighbouring pixel pairs change colour
     # (the old painters ran 26% to 33%) and almost no pixel stands alone. (Restoring
     # the old wood grain, strata or small cells fails the share.)
-    for zone in ("haar", "heartwood", "sunken", "evercrown"):
+    for zone in ("haar", "heartwood", "sunken", "evercrown", "boughs"):  # boughs: pass 555
         seeds = (11 + tg.blob_masks().index(255), 201, 202, 203)
         edge = sum(_fill_busyness(zone, s)[0] for s in seeds) / len(seeds)
         iso = sum(_fill_busyness(zone, s)[1] for s in seeds) / len(seeds)

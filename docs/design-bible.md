@@ -2120,6 +2120,17 @@ The pass 550 grade called the shop "a plain box with no item icons or portrait" 
 
 `UiArt` loads both sheets (`assets/ui/item_icons`, `assets/ui/portraits`). `test_the_shop_shows_what_it_sells` checks that every item has a shaded icon of its own, that look-alikes differ, that every shop has a keeper with a portrait, that every shelf row names its item's icon, and the menu's layout with and without them.
 
+### 12.45 Calm frame tiles: one body value, the odd worn block (pass 555)
+
+The pass 550 grade (and the pass 540 one before it) said the frame tiles "repeat on a loud grid (Tower and Vorrhallow checkered stone, Heartwood/Boughs striped dirt) and overpower the playfield". The solid fields that frame a room are the largest surfaces on screen, so they must be the quietest.
+
+- **One body value.** `paint_plates` (the Tower) and `paint_drowned` (Vorrhallow) used to give each plate or block one of two values on a coin toss. Two values a whole ramp step apart, half and half, are a checkerboard, and the darker interior tiers (12.8) made it louder. Most blocks now share the body value, and about one in seven is worn a step darker (`WORN_BLOCK`). No block stands brighter than the body. This is the rule for any new masonry painter: variation is the exception, not half the field.
+- **The tide stain marks some tiles.** Vorrhallow's teal tide line crossed every tile at the same height and ruled a stripe through a field every 16 world pixels. It now marks about a third of the interior tiles (`TIDE_TILES`) and no edge tile: an edge tile has no variants, so a stain on one repeats down every wall face and pillar.
+- **The High Boughs' wood is the Heartwood's strands.** `paint_bough` drew a sine grain down every column and a dark line every 6 world pixels, the "striped dirt". It now calls `paint_wood` (12.28) two steps up the bark ramp: broad strands, long grain lines, and its sprigs of young leaves. The Heartwood's own tiles are unchanged; they have been calm since pass 534.
+- **The scatter has no beat.** `TilesetFactory.ground` chose a variant from `hash % 4`, and that hash's low bits followed the cell's own, so every fourth cell along a row drew the same tile. With most blocks one value, a worn block then marched across a floor at a fixed step. `TilesetFactory.scatter` mixes the hash first. Every zone's fields are rescattered by this; the tiles themselves are the same.
+
+Only `assets/tiles/tower.png`, `vorrhallow.png` and `boughs.png` are regenerated. Collision, edges, caps and outlines are untouched. `tests/test_calm_frame_tiles.gd` holds all four: under a quarter of the Tower's and Vorrhallow's interior blocks are worn and at least two are, the tide stain is on at most half the interior tiles and on no wall face, the bough fill changes colour between under 23% of neighbouring pixels and hardly at all down a column, and cells one to eight apart along a row or down a column match about as often as chance.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
