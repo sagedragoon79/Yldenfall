@@ -865,6 +865,26 @@ func test_xp_raises_rank_and_gives_points() -> void:
 	check(GameState.rank_name() == "Barkskin" and int(GameState.data.skill_points) == 4, "300 XP: Barkskin, four points")
 
 
+## Design bible 5.6: a level-up is a moment. The world pauses, the hero glows,
+## and health and mana are filled at once.
+func test_a_level_up_pauses_glows_and_refills() -> void:
+	var w := make_world(_town(), "test/town")
+	await frames(3)
+	var p := w.player
+	p.hp = 20
+	p.mp = 5.0
+	Feel.last_hitstop = 0.0
+	GameState.add_xp(39)
+	check(p.hp == 20 and not p.visual.level_glowing(), "short of the rank nothing happens")
+	GameState.add_xp(1)
+	check(p.hp == p.max_hp and p.mp == p.max_mp, "the rank fills health and mana (%d, %.0f)" % [p.hp, p.mp])
+	check(Feel.last_hitstop == Player.LEVEL_UP_PAUSE, "the world holds its breath for %.2f s" % Player.LEVEL_UP_PAUSE)
+	check(p.visual.level_glowing(), "and the hero glows")
+	Feel.reset()
+	await frames(int(PlayerVisual.LEVEL_GLOW * 60.0) + 4)
+	check(not p.visual.level_glowing(), "the glow fades")
+
+
 func test_kills_give_xp() -> void:
 	var w := make_world(_town({Vector2i(12, 19): "M"}), "test/town")
 	await frames(3)
