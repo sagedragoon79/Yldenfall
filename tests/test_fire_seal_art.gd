@@ -330,6 +330,94 @@ func test_fire_seal_pool_lights_the_room_and_goes_out() -> void:
 	check(not seals[1]._halo.visible, "and so does its halo")
 
 
+## Pass 552 (bible 12.42): inside a seal the fire runs in tall licks, not round
+## mottle; the heat banks down toward a column's top; every tile keeps one
+## time, so a lick crosses the seams whole; and the halo is bright against the
+## flames and thins out on a curve.
+func test_fire_seal_burns_in_tall_licks() -> void:
+	var all := FireSeal.UP | FireSeal.DOWN | FireSeal.LEFT | FireSeal.RIGHT
+	# Runs of one tone, down a column of pixels and along a row, inside a wall of seals.
+	var down := 0.0
+	var down_n := 0
+	var along := 0.0
+	var along_n := 0
+	for step in 6:
+		var a := FireSeal.cells(O, step * 3, all)
+		var b := FireSeal.cells(O + Vector2(0, 16), step * 3, all)
+		for x in range(-8, 8):
+			var run := 1
+			for y in range(-7, 24):
+				var here: Color = a[Vector2i(x, y)] if y < 8 else b[Vector2i(x, y - 16)]
+				var prev: Color = a[Vector2i(x, y - 1)] if y - 1 < 8 else b[Vector2i(x, y - 17)]
+				if here == prev:
+					run += 1
+				else:
+					down += run
+					down_n += 1
+					run = 1
+			down += run
+			down_n += 1
+		for y in range(-8, 8):
+			var run := 1
+			for x in range(-7, 8):
+				if a[Vector2i(x, y)] == a[Vector2i(x - 1, y)]:
+					run += 1
+				else:
+					along += run
+					along_n += 1
+					run = 1
+			along += run
+			along_n += 1
+	down /= maxf(1.0, down_n)
+	along /= maxf(1.0, along_n)
+	check(down > along * 1.6, "the fire inside runs in tall licks (runs of %.2f px down, %.2f across)" % [down, along])
+	check(FireSeal.LICK_GAIN > FireSeal.GRAIN_GAIN * 1.5, "the licks carry the inside, the round noise only breaks them")
+	# The lick field is taller than wide, and tiles.
+	var dv := 0.0
+	var dh := 0.0
+	for y in 40:
+		for x in 40:
+			dv += absf(FireSeal.lick(x, y + 1) - FireSeal.lick(x, y))
+			dh += absf(FireSeal.lick(x + 1, y) - FireSeal.lick(x, y))
+	check(dh > dv * 2.5, "the lick field changes faster across than up (%.2f vs %.2f)" % [dh, dv])
+	check(is_equal_approx(FireSeal.lick(3, 5), FireSeal.lick(3 + FireSeal.FIELD_W, 5 + FireSeal.FIELD_H)), "the lick field tiles")
+	# The heat banks down toward the top of a column.
+	var hot := 0.0
+	var cool := 0.0
+	for step in 8:
+		var top := FireSeal.cells(O, step, all, 0.0, 0.0)
+		var deep := FireSeal.cells(O, step, all, 0.0, FireSeal.BANK)
+		for c: Vector2i in top:
+			cool += _heat_index(top[c])
+			hot += _heat_index(deep[c])
+	check(hot > cool + 100.0, "a column burns hotter at its foot than at its top (%d vs %d)" % [int(hot), int(cool)])
+	check(is_zero_approx(FireSeal.bank(FireSeal.BANK)) and FireSeal.bank(0.0) > 0.05, "the bank is gone %d tiles down" % int(FireSeal.BANK))
+	# The halo: wider than a tile and a half, and curved (half way out it is under half its peak).
+	check(FireSeal.HALO >= 28 and FireSeal.HALO_CURVE > 1.3, "the halo reaches %d px on a curve" % FireSeal.HALO)
+	var lone := FireSeal.halo_cells(O, 0)
+	var near := 0.0
+	var half := 0.0
+	var mid_x := -8 - FireSeal.HALO / 2
+	for y in range(-8, 8):
+		near += float(lone.get(Vector2i(-9, y), 0.0)) + float(lone.get(Vector2i(-10, y), 0.0))
+		half += float(lone.get(Vector2i(mid_x, y), 0.0)) + float(lone.get(Vector2i(mid_x - 1, y), 0.0))
+	check(near > 0.0 and half > 0.0 and half < near * 0.45, "the halo is bright at the flames and thin half way out (%.2f vs %.2f)" % [near, half])
+	# In a room, every tile of a seal steps on the same frame.
+	var rows := grid_rows(14, 9)
+	put_tiles(rows, 7, 3, "Z", 2, 4)
+	var room := Room.from_text("
+".join(PackedStringArray(_rows_text(rows))))
+	arena.add_child(room)
+	await frames(9)
+	var steps := {}
+	var seals: Array[FireSeal] = []
+	for c in room.get_children():
+		if c is FireSeal:
+			seals.append(c)
+			steps[(c as FireSeal)._step] = true
+	check(seals.size() == 8 and steps.size() == 1, "the seal's %d tiles keep one time (%d different frames)" % [seals.size(), steps.size()])
+
+
 func _rows_text(rows: Array) -> Array:
 	var out := []
 	for row: Array in rows:
