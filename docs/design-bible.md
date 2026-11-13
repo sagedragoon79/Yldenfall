@@ -1971,7 +1971,7 @@ The pass 535 grade called the veins in the Everbloom's shaft "flat cyan diamonds
 
 The hitbox, the pogo, the cut and the fight are unchanged. Judged by eye at 1x and 4x in `evercrown/veins`. `tests/test_light_vein_art.gd` checks the palette, the closed outline, the facets, the climbing light, the cut and the stepped redraw.
 
-### 12.38 Solid mass falls off into darkness (pass 546)
+### 12.38 Solid mass falls off into darkness (pass 547)
 
 The pass 545 grade's top defect: "off-room solid mass is one flat repeated cobble tile with scattered dots". The tilesets have three depths of ground tile (the lit edge, one step in, the interior), so every cell three or more tiles from open air drew the same interior tile, out to the room's frame. `DeepShade` (`scripts/world/deep_shade.gd`) now sinks the interior into shadow the deeper it lies, over the tiles and `EdgeShade`, under the actors:
 

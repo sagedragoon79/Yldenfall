@@ -1,7 +1,7 @@
 class_name DeepShade
 extends Node2D
 ## Solid mass falls off into darkness away from the walkable edge (design bible
-## 12.38, pass 546). The tilesets have three depths of ground tile (the lit edge,
+## 12.38, pass 547). The tilesets have three depths of ground tile (the lit edge,
 ## one step in, and the interior), so every cell three or more tiles from open
 ## air drew the same interior tile: a big off-room mass read as one flat cobble
 ## field with its studs repeating to the frame. Now the interior sinks into

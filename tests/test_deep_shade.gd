@@ -1,6 +1,6 @@
 extends TestSuite
 ## DeepShade: solid mass falls off into darkness away from the walkable edge
-## (design bible 12.38, pass 546).
+## (design bible 12.38, pass 547).
 
 
 ## A `size` grid that is solid except the open cells in `open` (a Rect2i).
