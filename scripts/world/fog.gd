@@ -4,6 +4,9 @@ extends Node2D
 ## pocket around the player and every light: the lanterns of the decor and
 ## anything in the group "light" with a `light_radius`. Restoring the Spring of
 ## Haar lifts it by half: thinner, and the player sees further.
+## Until then the fog is the Haar Wyrm's steam (8.4): warm, and rising in wisps.
+## Once the spring runs the steam stops and what is left is a cool mist that
+## drifts sideways (`steaming`).
 ## The fog is on in zones listed in ZONES; a room's `fog:` header sets its
 ## density (0 turns it off).
 
@@ -81,7 +84,13 @@ func set_room(room: Room) -> void:
 	visible = density > 0.0
 	_view.render_target_update_mode = SubViewport.UPDATE_ALWAYS if visible else SubViewport.UPDATE_DISABLED
 	_mat.set_shader_parameter("density", density)
+	_mat.set_shader_parameter("steam", 1.0 if steaming() else 0.0)
 	_update()
+
+
+## True while the fog is still the Haar Wyrm's steam: warm and rising.
+func steaming() -> bool:
+	return density > 0.0 and not GameState.flag(SPRING_FLAG)
 
 
 func vision() -> float:
