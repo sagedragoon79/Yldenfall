@@ -40,6 +40,9 @@ const DEFAULT_RADIUS := 90.0
 ## and fainter than a lamp's.
 const DECOR_RADIUS := 46.0
 const DECOR_PEAK := 0.11
+## Every overlay joins this group, so a source that goes dark (a doused fire
+## seal) can ask the room's overlay to gather its pools again (`refresh`).
+const OVERLAY_GROUP := "room_light_overlay"
 
 ## The shared radial-gradient sprite every pool is drawn from, built on first use.
 static var _pool_tex: Texture2D
@@ -57,6 +60,7 @@ func _ready() -> void:
 	var mat := CanvasItemMaterial.new()
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	material = mat
+	add_to_group(OVERLAY_GROUP)
 	# Smooth the radial sprite even where the project defaults to nearest for crisp
 	# pixel art, so a scaled-up pool stays a soft bloom with no texel stepping.
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -77,7 +81,11 @@ func _collect() -> void:
 			if n2 == null or not room.is_ancestor_of(n2):
 				continue
 			var g := source_glow(n2)
-			_pools.append([to_local(n2.global_position), g.color, g.radius, READABLE_CAP])
+			# A source can opt out of a pool of its own (a fire seal's tiles share
+			# one pool, cast from one of them) by reporting no reach.
+			if g.radius <= 0.0:
+				continue
+			_pools.append([to_local(n2.global_position + g.offset), g.color, g.radius, READABLE_CAP])
 	if decor != null:
 		var pc: Variant = decor.get("pool_color")
 		var col: Color = pc if pc is Color else DEFAULT_COLOR
@@ -93,10 +101,19 @@ func _collect() -> void:
 static func source_glow(node: Node) -> Dictionary:
 	var color: Variant = node.get("glow_color")
 	var radius: Variant = node.get("glow_radius")
+	var offset: Variant = node.get("glow_offset")
 	return {
 		"color": color if color is Color else DEFAULT_COLOR,
 		"radius": float(radius) if (radius is float or radius is int) else DEFAULT_RADIUS,
+		"offset": offset if offset is Vector2 else Vector2.ZERO,
 	}
+
+
+## Gathers the pools of every room's overlay again: a source left the group (a
+## fire seal went out) or changed its glow.
+static func refresh(tree: SceneTree) -> void:
+	for n in tree.get_nodes_in_group(OVERLAY_GROUP):
+		(n as RoomLight)._collect()
 
 
 ## A pool's brightness at normalised distance `t` from its centre (0 at the

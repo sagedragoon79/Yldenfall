@@ -14,6 +14,15 @@ extends StaticBody2D
 ## top of a column licks upward in tongues, and only its foot sits on a bed of
 ## coals. Every other tile down a seal's left edge carries one dark rune,
 ## ringed with gold heat, from a set of three. It steps at `STEP_FPS`, like hand-drawn frames.
+##
+## Pass 549 (bible 12.40): the pass 545 grade said the seals "cast no glow on
+## the walls and floor around them". A seal now casts warm pools (RoomLight) onto
+## the stone and floor around it, from tiles down its leftmost column: the middle tile of a short column, every third tile of
+## a tall one, so a column of three never stacks three pools. The pools alone
+## are too soft to read on dark stone, so each tile also throws a pixel halo of
+## heat (`halo_cells`) off its open sides: additive, stepped through a 4 x 4
+## ordered dither in 2-pixel blocks, out to `HALO` pixels, shallower onto the
+## floor. Douse it and the pools and the halo go out with the fire.
 
 ## Damage for touching the flames, and how often they can burn you.
 const BURN := 10
@@ -49,11 +58,26 @@ const RUNES := [
 ## The flag that remembers the room's seals went out: "seal:<room id>".
 var flag_id := ""
 var doused := false
-var light_radius := 30.0
+## The fog pocket each tile clears (the Haar): wide enough that the warm pool
+## around the seal shows through the murk.
+var light_radius := 40.0
+## The warm pool the seal casts (RoomLight): the heat ramp's red-orange.
+var glow_color := HEAT[3]
+## The pool's reach: none on every tile but the seal's anchor (`glow_anchor`),
+## so one seal casts one pool.
+var glow_radius: float:
+	get:
+		return glow_reach(glow_anchor(), column_length())
+## Where the pool sits: the middle of the seal, across its columns and down its height.
+var glow_offset: Vector2:
+	get:
+		var wide := _run(Vector2(16, 0)) if is_inside_tree() else 0
+		return Vector2(8.0 * wide, 8.0 if column_length() == 2 else 0.0)
 ## 0 burning, 1 out.
 var _t := 0.0
 var _burn_cd := 0.0
 var _shape: CollisionShape2D
+var _halo: Node2D
 var _clock := 0.0
 var _step := -1
 ## The sides with a seal beside them (UP | DOWN | LEFT | RIGHT), found on the first draw.
@@ -66,11 +90,15 @@ func _ready() -> void:
 	add_to_group("fire_seal")
 	add_to_group("water_target")
 	add_to_group("light")
+	add_to_group(RoomLight.GROUP)
 	_shape = CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
 	rect.size = Vector2(16, 16)
 	_shape.shape = rect
 	add_child(_shape)
+	_halo = Halo.new()
+	_halo.seal = self
+	add_child(_halo)
 	_clock = fmod(global_position.x * 0.53 + global_position.y * 0.29, 10.0)
 	if flag_id != "" and GameState.flag(flag_id):
 		_go_out(true)
@@ -96,6 +124,11 @@ func _go_out(instant: bool) -> void:
 	_shape.set_deferred("disabled", true)
 	remove_from_group("water_target")
 	remove_from_group("light")
+	remove_from_group(RoomLight.GROUP)
+	if _halo != null:
+		_halo.visible = false
+	if is_inside_tree():
+		RoomLight.refresh(get_tree())
 	queue_redraw()
 
 
@@ -110,6 +143,7 @@ func _physics_process(delta: float) -> void:
 	if step != _step:
 		_step = step
 		queue_redraw()
+		_halo.modulate.a = halo_flicker(global_position, step)
 	_burn_cd -= delta
 	var p := get_tree().get_first_node_in_group("player") as Player
 	if p == null or p.dead or _burn_cd > 0.0:
@@ -135,6 +169,138 @@ func joined() -> int:
 		elif d.distance_to(Vector2(16, 0)) < 2.0:
 			bits |= RIGHT
 	return bits
+
+
+## How far the heat halo reaches past a seal's open sides, and onto the floor.
+const HALO := 20
+const HALO_FLOOR := 5
+## The halo's alpha where it meets the flames.
+const HALO_PEAK := 0.3
+## The 4 x 4 ordered dither, 0 to 15.
+const BAYER: Array[int] = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
+
+
+## The heat halo a tile throws, local cell to alpha: every pixel within `HALO`
+## of the tile on a side with no seal beside it (corners only where both sides
+## are open; below only at a column's foot, and only `HALO_FLOOR` deep), the
+## alpha falling with distance in four steps dithered in 2-pixel blocks of
+## world pixels, so neighbouring tiles join without a seam.
+static func halo_cells(origin: Vector2, joined: int) -> Dictionary:
+	var px := {}
+	var ox := roundi(origin.x)
+	var oy := roundi(origin.y)
+	for y in range(-8 - HALO, 8 + HALO_FLOOR):
+		for x in range(-8 - HALO, 8 + HALO):
+			var dx := 0
+			var dy := 0
+			if x < -8:
+				if joined & LEFT != 0:
+					continue
+				dx = -8 - x
+			elif x > 7:
+				if joined & RIGHT != 0:
+					continue
+				dx = x - 7
+			if y < -8:
+				if joined & UP != 0:
+					continue
+				dy = -8 - y
+			elif y > 7:
+				if joined & DOWN != 0:
+					continue
+				dy = y - 7
+			if dx == 0 and dy == 0:
+				continue
+			var reach := float(HALO_FLOOR if dy > 0 and y > 7 else HALO)
+			var t := 1.0 - sqrt(float(dx * dx + dy * dy)) / reach
+			if t <= 0.0:
+				continue
+			var cx := posmod(floori((ox + x) / 2.0), 4)
+			var cy := posmod(floori((oy + y) / 2.0), 4)
+			var level := floorf(t * 4.0 + (BAYER[cy * 4 + cx] + 0.5) / 16.0) / 4.0
+			if level > 0.0:
+				px[Vector2i(x, y)] = HALO_PEAK * level
+	return px
+
+
+## The halo's breath at frame `step`: it swells and dips with the fire, each
+## seal tile a little out of step.
+static func halo_flicker(origin: Vector2, step: int) -> float:
+	return 0.82 + 0.18 * hash01(roundi(origin.x / 16.0), roundi(origin.y / 16.0), floori(step / 2.0) + 11)
+
+
+## The heat halo, drawn once (additive, behind the flames, over the stone);
+## only its alpha breathes.
+class Halo extends Node2D:
+	var seal: FireSeal
+
+	func _ready() -> void:
+		var mat := CanvasItemMaterial.new()
+		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		material = mat
+		show_behind_parent = true
+
+	func _draw() -> void:
+		var cells := FireSeal.halo_cells(seal.global_position, seal.joined())
+		var col: Color = FireSeal.HEAT[3]
+		for c: Vector2i in cells:
+			draw_rect(Rect2(c.x, c.y, 1, 1), Color(col.r, col.g, col.b, cells[c]))
+
+
+## Seal tiles in a touching run from this one, a tile at a time along `step`.
+func _run(step: Vector2) -> int:
+	var n := 0
+	var at := global_position
+	while true:
+		at += step
+		var found := false
+		for s in get_tree().get_nodes_in_group("fire_seal"):
+			if s != self and (s as Node2D).global_position.distance_to(at) < 2.0:
+				found = true
+				break
+		if not found:
+			return n
+		n += 1
+	return n
+
+
+## How many tiles tall this tile's column is.
+func column_length() -> int:
+	if not is_inside_tree():
+		return 1
+	return 1 + _run(Vector2(0, -16)) + _run(Vector2(0, 16))
+
+
+## Whether this tile casts one of its seal's pools: in the leftmost column, the
+## middle tile of a short column (the upper of two), and every third tile down a
+## tall one (`POOL_EVERY`), so a tall seal lights its whole height without a
+## pool on every tile.
+func glow_anchor() -> bool:
+	if not is_inside_tree() or doused:
+		return false
+	if joined() & LEFT != 0:
+		return false
+	return anchor_at(_run(Vector2(0, -16)), column_length())
+
+
+## Tiles between the pools down a tall seal.
+const POOL_EVERY := 3
+
+
+## Whether the tile `above` tiles below a column's top casts a pool, in a
+## column `tiles` tall.
+static func anchor_at(above: int, tiles: int) -> bool:
+	if tiles <= POOL_EVERY:
+		return above == floori((tiles - 1) / 2.0)
+	return posmod(above, POOL_EVERY) == 1
+
+
+## A pool's reach: a short column's one pool grows with it; a tall seal's
+## spaced pools are all one size.
+static func glow_reach(anchor: bool, tiles: int) -> float:
+	if not anchor:
+		return 0.0
+	return 40.0 + 14.0 * float(mini(tiles, POOL_EVERY))
 
 
 func _draw() -> void:

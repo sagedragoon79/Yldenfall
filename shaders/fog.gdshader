@@ -2,6 +2,12 @@ shader_type canvas_item;
 // The Mist's fog (design bible 3.2): a grey-green murk over the room with clear
 // pockets around the player and every light. Fog.visibility_at mirrors the
 // falloff on the CPU, so keep the two in step.
+//
+// Pass 549 (bible 12.40): the grades called the pockets "perfect blue circles"
+// in "hard concentric rings". Each pocket's rim now wavers with a slow noise of
+// its own (POCKET_WAVER of the radius, never at the centre, which the CPU
+// mirror keeps), and the clearing steps between four levels through a 4 x 4
+// ordered dither in 2-pixel blocks rather than snapping to rings.
 
 const int MAX_LIGHTS = 48;
 
@@ -22,6 +28,11 @@ uniform vec2 origin = vec2(0.0);
 
 varying vec2 world_pos;
 
+// How far a pocket's rim wavers in and out, as a fraction of its radius.
+const float POCKET_WAVER = 0.18;
+// The 4 x 4 ordered dither, 0 to 15.
+const float BAYER[16] = float[16](0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
+
 void vertex() {
 	world_pos = origin + VERTEX;
 }
@@ -39,11 +50,20 @@ void fragment() {
 		float d2 = dot(dv, dv);
 		// Most lights are far from most fragments: skip the sqrt and smoothstep.
 		if (d2 < r * r) {
-			clear = max(clear, 1.0 - smoothstep(r * 0.45, r, sqrt(d2)));
+			// The rim wavers: noise read along the pocket's own direction from
+			// its light (and seeded by where the light is), drifting slowly.
+			float d = sqrt(d2);
+			vec2 dir = dv / max(d, 1.0);
+			float w = texture(drift_tex, (dir * 3.0 + lights[i].xy * 0.071 + vec2(TIME * 0.05, 0.0)) / 64.0).r;
+			float rr = r * (1.0 - POCKET_WAVER * w);
+			clear = max(clear, 1.0 - smoothstep(rr * 0.45, rr, d));
 		}
 	}
-	// Banded steps, like dithered fog, rather than a smooth gradient.
-	clear = floor(clear * 4.0 + 0.5) / 4.0;
+	// Four steps, dithered between in 2-pixel blocks, never a smooth gradient
+	// and never hard rings.
+	ivec2 cell = ivec2(mod(floor(p / 2.0), 4.0));
+	float thresh = (BAYER[cell.y * 4 + cell.x] + 0.5) / 16.0;
+	clear = floor(clear * 3.0 + thresh) / 3.0;
 	float drift = texture(drift_tex, (p / 40.0 + vec2(TIME * 0.15, TIME * 0.05)) / 64.0).r * 0.6
 		+ texture(drift_tex, (p / 13.0 - vec2(TIME * 0.3, 0.0)) / 64.0).r * 0.4;
 	float thick = density * (1.0 - clear) * (0.85 + 0.15 * drift);
