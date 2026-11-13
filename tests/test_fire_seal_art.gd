@@ -211,3 +211,137 @@ func test_fire_seal_goes_out_to_ash_at_its_foot() -> void:
 		only_ash = only_ash and FireSeal.ASH.has(foot[c]) and c.y >= 4
 	check(foot.size() >= 16 and only_ash, "the foot is a low socket of ash (%d px)" % foot.size())
 	check(mid.is_empty(), "a tile with a seal below it leaves nothing")
+
+
+# --- Pass 549 (bible 12.40): the seals light the stone around them ---------------
+
+## One pool per short column, from its middle tile; a tall seal every third tile.
+func test_fire_seal_pools_are_spaced_down_the_column() -> void:
+	for tiles in [1, 2, 3]:
+		var anchors := 0
+		for above in tiles:
+			if FireSeal.anchor_at(above, tiles):
+				anchors += 1
+		check(anchors == 1, "a column of %d casts one pool (%d)" % [tiles, anchors])
+	check(FireSeal.anchor_at(1, 3), "a column of three casts from its middle tile")
+	check(FireSeal.anchor_at(0, 2), "a column of two casts from its upper tile")
+	var tall := 0
+	for above in 14:
+		if FireSeal.anchor_at(above, 14):
+			tall += 1
+	check(tall == 5, "a seal 14 tall casts a pool every third tile (%d)" % tall)
+	check(FireSeal.glow_reach(false, 3) == 0.0, "a tile off the anchor casts no pool")
+	check(FireSeal.glow_reach(true, 3) > FireSeal.glow_reach(true, 1), "a taller short column casts a wider pool")
+	check(FireSeal.glow_reach(true, 14) == FireSeal.glow_reach(true, 3), "a tall seal's pools are all one size")
+
+
+## The heat halo: only off open sides, falling off in dithered steps, shallow
+## onto the floor, never on the flames, and seamless between tiles.
+func test_fire_seal_halo_glows_off_open_sides() -> void:
+	var lone := FireSeal.halo_cells(O, 0)
+	var on_flames := 0
+	var past := 0
+	var floor_deep := 0
+	var levels := {}
+	for c: Vector2i in lone:
+		var a: float = lone[c]
+		levels[snappedf(a, 0.001)] = true
+		if c.x >= -8 and c.x <= 7 and c.y >= -8 and c.y <= 7:
+			on_flames += 1
+		if a > FireSeal.HALO_PEAK + 0.0001:
+			past += 1
+		if c.y > 7 + FireSeal.HALO_FLOOR:
+			floor_deep += 1
+	check(lone.size() > 600, "a lone tile throws a halo (%d px)" % lone.size())
+	check(on_flames == 0, "the halo never sits on the flames (%d)" % on_flames)
+	check(past == 0, "no halo pixel passes the peak (%d)" % past)
+	check(floor_deep == 0, "the halo onto the floor stays shallow (%d)" % floor_deep)
+	check(levels.size() >= 3 and levels.size() <= 4, "it steps through a few levels, not a gradient (%d)" % levels.size())
+	# Near the flames is brighter than far out, on average.
+	var near := 0.0
+	var far := 0.0
+	for y in range(-8, 8):
+		near += float(lone.get(Vector2i(-10, y), 0.0)) + float(lone.get(Vector2i(-11, y), 0.0))
+		far += float(lone.get(Vector2i(-24, y), 0.0)) + float(lone.get(Vector2i(-25, y), 0.0))
+	check(near > far * 2.0, "the halo falls off away from the flames (%.2f vs %.2f)" % [near, far])
+	# A joined side throws nothing; a column's inner tile has no top or floor halo.
+	var inner := FireSeal.halo_cells(O, FireSeal.UP | FireSeal.DOWN | FireSeal.RIGHT)
+	var wrong := 0
+	for c: Vector2i in inner:
+		if c.x > 7 or c.y < -8 or c.y > 7:
+			wrong += 1
+	check(inner.size() > 100, "an inner tile still glows off its open side")
+	check(wrong == 0, "nothing glows off a joined side (%d)" % wrong)
+	# The dither is in world pixels: two tiles stacked give the same pattern.
+	var below := FireSeal.halo_cells(O + Vector2(0, 16), FireSeal.UP | FireSeal.DOWN | FireSeal.RIGHT)
+	var seam := 0
+	for x in range(-8 - FireSeal.HALO, -8):
+		# The rows either side of the seam differ by no more than one dither step.
+		var a_top: float = inner.get(Vector2i(x, 7), 0.0)
+		var a_low: float = below.get(Vector2i(x, -8), 0.0)
+		if absf(a_top - a_low) > FireSeal.HALO_PEAK * 0.26:
+			seam += 1
+	check(seam == 0, "the halo runs across the seam between tiles (%d jumps)" % seam)
+
+
+## The halo breathes in alpha, gently, and never goes out while the seal burns.
+func test_fire_seal_halo_breathes() -> void:
+	var seen := {}
+	for step in 40:
+		var f := FireSeal.halo_flicker(O, step)
+		check(f >= 0.8 and f <= 1.0, "the breath stays gentle (%.2f)" % f)
+		seen[snappedf(f, 0.01)] = true
+	check(seen.size() > 4, "it moves (%d values)" % seen.size())
+
+
+## In a room: a column of three casts one warm pool onto the stone, and dousing
+## it puts the pool and the halo out.
+func test_fire_seal_pool_lights_the_room_and_goes_out() -> void:
+	var rows := grid_rows(14, 9)
+	put_tiles(rows, 7, 3, "Z", 1, 3)
+	var room := Room.from_text("\n".join(PackedStringArray(_rows_text(rows))))
+	arena.add_child(room)
+	await frames(2)
+	var rl := room.get_node_or_null("RoomLight") as RoomLight
+	check(rl != null, "the room built a RoomLight overlay")
+	if rl == null:
+		return
+	var seals: Array[FireSeal] = []
+	for c in room.get_children():
+		if c is FireSeal:
+			seals.append(c)
+	check(seals.size() == 3, "three seal tiles (%d)" % seals.size())
+	var warm := 0
+	for pool: Array in rl._pools:
+		if (pool[1] as Color).is_equal_approx(FireSeal.HEAT[3]):
+			warm += 1
+			check(pool[3] <= RoomLight.READABLE_CAP, "the seal's pool stays under the readability cap")
+	check(warm == 1, "a column of three casts one pool (%d)" % warm)
+	if seals.is_empty():
+		return
+	for s in seals:
+		s.flag_id = ""
+	seals[0].douse()
+	warm = 0
+	for pool: Array in rl._pools:
+		if (pool[1] as Color).is_equal_approx(FireSeal.HEAT[3]):
+			warm += 1
+	check(warm == 0, "a doused seal's pool goes out (%d)" % warm)
+	check(not seals[1]._halo.visible, "and so does its halo")
+
+
+func _rows_text(rows: Array) -> Array:
+	var out := []
+	for row: Array in rows:
+		out.append("".join(PackedStringArray(row)))
+	return out
+
+
+## The Haar's fog pockets are no longer perfect circles in hard rings: the rim
+## wavers and the steps are dithered (the shader is checked by its source; the
+## CPU mirror keeps the undisturbed centre).
+func test_fog_pockets_waver_and_dither() -> void:
+	var src := FileAccess.get_file_as_string("res://shaders/fog.gdshader")
+	check(src.find("floor(clear * 4.0 + 0.5)") < 0, "the hard rounding to rings is gone")
+	check(src.find("POCKET_WAVER") >= 0 and src.find("BAYER") >= 0, "the rim wavers and the steps are dithered")
+	check(src.find("floor(p / 2.0)") >= 0, "the dither is in 2-pixel blocks of world pixels")
