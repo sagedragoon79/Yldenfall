@@ -89,6 +89,9 @@ static var _wash_material: ShaderMaterial
 ## Whether this foe last drew itself white without the wash: `draw_sheet` in
 ## white, or a foe's own white overlay (`drawn_white`).
 var _sheet_white := false
+## The material this foe rests in: its room's light (`FoeLight`, bible 12.43),
+## or null outside a zone. The flash, the tell and the death replace it.
+var _rest_material: ShaderMaterial
 
 
 func _ready() -> void:
@@ -109,6 +112,8 @@ func _ready() -> void:
 		_corrupt()
 	hp = max_hp
 	home = global_position
+	_rest_material = FoeLight.material_for(FoeLight.zone_of(self))
+	material = _rest_material
 
 
 func _corrupt() -> void:
@@ -371,7 +376,7 @@ func _dissolved() -> void:
 	if not dead:
 		return
 	visible = false
-	material = null
+	material = _rest_material
 	if respawn_time <= 0.0:
 		queue_free()
 
@@ -385,7 +390,7 @@ func _respawn() -> void:
 	if _dissolver != null:
 		_dissolver.kill()
 		_dissolver = null
-	material = null
+	material = _rest_material
 	dead = false
 	perished = false
 	fell = false
@@ -448,7 +453,7 @@ func wash(on: bool) -> void:
 	if on and not dead:
 		material = _wash_material
 	elif material == _wash_material:
-		material = null
+		material = _rest_material
 
 
 ## True while this foe's drawing is washed white.
