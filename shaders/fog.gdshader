@@ -14,6 +14,10 @@ const int MAX_LIGHTS = 48;
 uniform vec4 fog_color : source_color = vec4(0.47, 0.53, 0.48, 1.0);
 uniform vec4 deep_color : source_color = vec4(0.07, 0.09, 0.09, 1.0);
 uniform float density = 0.82;
+// 1 while the Haar Wyrm lives: the fog is his steam, warm and rising (bible
+// 3.2). 0 once the Haar Spring runs: a thin cool mist that drifts sideways.
+uniform float steam = 0.0;
+uniform vec4 warm_color : source_color = vec4(0.66, 0.60, 0.50, 1.0);
 uniform int light_count = 0;
 // x, y in world pixels; z is the clear radius.
 uniform vec3 lights[MAX_LIGHTS];
@@ -64,9 +68,17 @@ void fragment() {
 	ivec2 cell = ivec2(mod(floor(p / 2.0), 4.0));
 	float thresh = (BAYER[cell.y * 4 + cell.x] + 0.5) / 16.0;
 	clear = floor(clear * 3.0 + thresh) / 3.0;
-	float drift = texture(drift_tex, (p / 40.0 + vec2(TIME * 0.15, TIME * 0.05)) / 64.0).r * 0.6
-		+ texture(drift_tex, (p / 13.0 - vec2(TIME * 0.3, 0.0)) / 64.0).r * 0.4;
+	// Steam climbs (the pattern scrolls up); a cooled mist slides sideways.
+	vec2 slow = mix(vec2(TIME * 0.15, TIME * 0.05), vec2(TIME * 0.03, TIME * 0.24), steam);
+	vec2 fast = mix(vec2(-TIME * 0.3, 0.0), vec2(TIME * 0.05, TIME * 0.5), steam);
+	float drift = texture(drift_tex, (p / 40.0 + slow) / 64.0).r * 0.6
+		+ texture(drift_tex, (p / 13.0 + fast) / 64.0).r * 0.4;
+	// Rising wisps: tall thin threads of paler steam, stepped through the same
+	// dither so they stay pixel art.
+	float wisp = texture(drift_tex, (vec2(p.x / 7.0, p.y / 44.0 + TIME * 0.55)) / 64.0).r;
+	wisp = floor(smoothstep(0.58, 0.9, wisp) * 2.0 + thresh) / 2.0 * steam;
 	float thick = density * (1.0 - clear) * (0.85 + 0.15 * drift);
 	vec3 col = mix(fog_color.rgb, deep_color.rgb, 0.55 + 0.25 * drift);
+	col = mix(col, warm_color.rgb, 0.16 * steam + 0.3 * wisp);
 	COLOR = vec4(col, thick);
 }

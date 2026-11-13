@@ -400,6 +400,31 @@ func test_the_haar_fog_hides_all_but_the_light() -> void:
 	check(not w.fog.visible and w.fog.visibility_at(Vector2(100, 100)) == 1.0, "other zones have no fog")
 
 
+## Bible 3.2: until the Haar Spring runs the fog is the Haar Wyrm's steam, warm
+## and rising. Restored, it is a cool mist. The people of the Haar say it is hot
+## and that nobody knows why.
+func test_the_haar_fog_is_steam_until_the_spring_runs() -> void:
+	var w := _fog_world()
+	await frames(3)
+	var fog := w.fog
+	check(fog.steaming(), "the fog steams while the Haar Wyrm lives")
+	check(float(fog._mat.get_shader_parameter("steam")) == 1.0, "and the shader is told to rise")
+	var src := FileAccess.get_file_as_string("res://shaders/fog.gdshader")
+	check(src.find("uniform float steam") >= 0 and src.find("warm_color") >= 0 and src.find("wisp") >= 0, "the shader has warm, rising wisps")
+	GameState.set_flag(Fog.SPRING_FLAG)
+	fog.set_room(w.room)
+	await frames(1)
+	check(not fog.steaming() and float(fog._mat.get_shader_parameter("steam")) == 0.0, "the restored spring stops the steam")
+	w._enter("tower/foot")
+	await frames(1)
+	check(not w.fog.steaming(), "no steam where there is no fog")
+	var nell := " ".join(GameData.npc("lampwick_lamplighter").lines)
+	var brigid := " ".join(GameData.npc("polesend_barmaid").lines)
+	check(nell.find("warm") >= 0 and nell.find("why") >= 0, "Nell says the fog is warm and nobody knows why")
+	check(brigid.find("Hot fog") >= 0, "Brigid says the fog is hot")
+	check(" ".join(GameData.npc("lampwick_lamplighter").lines_cleared).find("breath") >= 0, "and afterwards Nell knows whose breath it was")
+
+
 ## Bible 4.4: bound fog seals the shaft above Lantern Landing. It tells you what
 ## it needs, holds without the Lantern Key, and parts for good when the key's
 ## light comes near. The key is not used up.
