@@ -86,6 +86,47 @@ func test_tail_takes_full_damage_and_the_plates_a_quarter() -> void:
 	check(before - boss.hp == 20, "one swing over several segments counts once, at the best rate (%d)" % (before - boss.hp))
 
 
+## Pass 551 (design bible 8.1): the body is not one plate drawn 22 times. The rings
+## swell and taper, neighbours differ, none is drawn smaller than its hitbox, and
+## the plates sit darker than the head and the tail until a stagger cracks them.
+func test_gnarlmaws_rings_are_not_one_plate_repeated() -> void:
+	var first := 1
+	var last := Gnarlmaw.SEGMENTS - Gnarlmaw.TAIL_SEGMENTS - 1
+	var sizes := {}
+	var same_neighbours := 0
+	var least := 9.0
+	var most := 0.0
+	for i in range(first, last + 1):
+		var k := Gnarlmaw.ring_scale(i)
+		sizes[snappedf(k, 0.01)] = true
+		least = minf(least, k)
+		most = maxf(most, k)
+		if i > first and is_equal_approx(k, Gnarlmaw.ring_scale(i - 1)) and is_equal_approx(Gnarlmaw.ring_tilt(i), Gnarlmaw.ring_tilt(i - 1)):
+			same_neighbours += 1
+		check(Gnarlmaw.PLATE_RADIUS * k >= Gnarlmaw.BODY_RADIUS, "ring %d is drawn no smaller than its hitbox (%.1f px)" % [i, Gnarlmaw.PLATE_RADIUS * k])
+		check(absf(Gnarlmaw.ring_tilt(i)) <= Gnarlmaw.RING_TILT + 0.001, "ring %d tilts no more than RING_TILT" % i)
+		var tint := Gnarlmaw.ring_tint(i, false)
+		check(tint.v < 0.95 and tint.v >= Gnarlmaw.RING_SHADE_FAR - 0.01, "ring %d sits back in the dark (value %.2f)" % [i, tint.v])
+		check(Gnarlmaw.ring_tint(i, true) == Color.WHITE, "ring %d shows its full colour while cracked" % i)
+	check(sizes.size() >= 8, "the rings come in at least 8 sizes (%d)" % sizes.size())
+	check(same_neighbours == 0, "no ring matches the one before it in size and tilt (%d do)" % same_neighbours)
+	check(most - least >= 0.2, "the body swells and tapers by a fifth or more (%.2f to %.2f)" % [least, most])
+	check(Gnarlmaw.ring_scale(last) < Gnarlmaw.ring_scale(first + 6), "it is thinner before the tail than behind the neck")
+	check(Gnarlmaw.ring_tint(last, false).v < Gnarlmaw.ring_tint(first, false).v, "and darker there")
+	for i: int in [0, Gnarlmaw.SEGMENTS - 3, Gnarlmaw.SEGMENTS - 1]:
+		check(is_equal_approx(Gnarlmaw.ring_scale(i), 1.0) and Gnarlmaw.ring_tilt(i) == 0.0 and Gnarlmaw.ring_tint(i, false) == Color.WHITE,
+			"segment %d (head or tail) keeps its size and its full colour" % i)
+	# The plate on the sheet is the size the rule above assumes.
+	var cell := Sheet.dest_rect(Gnarlmaw.SHEET)
+	check(cell.size.x > 0.0, "the sheet loads")
+	var img: Image = (Sheet.get_sheet(Gnarlmaw.SHEET).tex as Texture2D).get_image()
+	var region := Sheet.region(Gnarlmaw.SHEET, "plate", 0)
+	var used := img.get_region(Rect2i(region)).get_used_rect()
+	var density: float = Sheet.get_sheet(Gnarlmaw.SHEET).density
+	var drawn := minf(used.size.x, used.size.y) * 0.5 / density
+	check(drawn >= Gnarlmaw.PLATE_RADIUS - 1.0, "the plate on the sheet is at least PLATE_RADIUS (%.1f px)" % drawn)
+
+
 func test_floor_lunge_misses_the_ledges() -> void:
 	var setup := _boss_world()
 	var w: World = setup[0]
