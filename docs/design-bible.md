@@ -2014,6 +2014,17 @@ The pass 545 grade: "fire seals cast no glow on the walls and floor around them,
 
 Judged by eye at 1x and 2x in `haar/marsh_road`, `haar/lampwick` and `evercrown/proving_scar`. `tests/test_fire_seal_art.gd` checks the pool spacing and reach, the halo's sides, steps, falloff, floor and seam, its breath, a built room's single pool and the douse, and the fog shader's waver and dither.
 
+### 12.41 What wades breaks the water (pass 550)
+
+The pass 545 grade named Vorrhallow's standing water (4.4, the pass 259 row of the flags table) as flat translucent rectangles that figures stand in without touching. `Tide` now answers what wades in it:
+
+- **The waterline.** Every visible member of the `player` and `enemy` groups whose collision box crosses the surface, over a surface column, gets a bright line across its body where the water meets it, lifted a pixel, with a lip at each end two pixels past its sides.
+- **Ripples.** Each wading body lets a ripple go every `WAKE_STILL` (1.1 s) standing and every `WAKE_MOVING` (0.35 s) while it moves faster than 20 px/s. A ripple is a pale crest over a dark trough running out both ways from the body's edges, spreading 30 px with an ease-out over `RING_LIFE` (1.3 s) and fading to nothing; at most `MAX_RINGS` live at once.
+- **Depth.** The surface row's body is no longer one fill: it is lighter just under the surface (`SHALLOW`) and darkens and thickens toward the floor (`FLOOR`) in four steps through a 2 x 2 ordered dither in 2-pixel blocks, drawn once as a strip texture, the same grain as the swim water (12.39). Cells under the surface row (the spike pits) take the floor's tone.
+- Drained, the hall keeps no wake or ripple.
+
+Judged by eye at 1x and 2x in `vorrhallow/flooded_hall` with the hero and a Crystal Dwarf wading. `tests/test_tide_wake.gd` checks the ripple's spread and fade, the depth steps and dither, the hero's waterline and ripples (and that running sends them faster), that nothing out of the water makes a wake, a foe's waterline, and the drained hall.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
