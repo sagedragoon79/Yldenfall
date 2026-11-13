@@ -34,6 +34,8 @@ extends StaticBody2D
 ## and falling away on a curve.
 
 ## Damage for touching the flames, and how often they can burn you.
+## What its blow is made of (design bible 5.6).
+const DAMAGE_KIND := DamageKind.FIRE
 const BURN := 10
 const BURN_EVERY := 0.6
 const DOUSE_TIME := 0.7

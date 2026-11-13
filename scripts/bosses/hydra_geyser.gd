@@ -7,6 +7,8 @@ extends Node2D
 ## strikes. The line is locked before it fires, so you dodge it by leaving the
 ## line. It hits once, hard, and throws you back; it can't be parried.
 
+## What its blow is made of (design bible 5.6).
+const DAMAGE_KIND := DamageKind.FIRE
 const WIDTH := 18.0
 ## How fast the jet shoots out, and how long it holds and retracts.
 const EXTEND_SPEED := 1100.0

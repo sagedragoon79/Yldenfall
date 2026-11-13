@@ -2235,6 +2235,52 @@ func test_the_sheet_past_thane_vorrund_holds_the_severance() -> void:
 	check(down.has("sunken/spring_gate") and down.has("vorrhallow/evercrown_gate"), "the Rise leads on to the Crown Gate and down to the Sunken Spring (%s)" % [down])
 
 
+## Design bible 5.6: every blow has a kind, and the hero's resistance to the
+## kinds of magic is capped at one whole immunity in all.
+func test_blows_have_kinds_and_resistance_is_capped() -> void:
+	var room := Room.from_text("zone: heartwood
+---
+" + "
+".join(PackedStringArray(ARENA.duplicate())))
+	arena.add_child(room)
+	var p := make_player(room, Vector2i(3, 6))
+	var foe := Blinkhop.new()
+	foe.position = cell_feet(8, 6)
+	room.add_child(foe)
+	var seal := FireSeal.new()
+	room.add_child(seal)
+	await frames(2)
+	p.defense = 0.0
+	check(DamageKind.of(foe) == DamageKind.PHYSICAL, "a foe that names no kind strikes physically")
+	check(DamageKind.of(seal) == DamageKind.FIRE, "a fire seal burns with fire")
+	check(SteamBreath.DAMAGE_KIND == DamageKind.FIRE and HydraGeyser.DAMAGE_KIND == DamageKind.FIRE and HydraFog.DAMAGE_KIND == DamageKind.FIRE, "the Haar Wyrm's breaths are fire")
+	check(ThunderBeetle.DAMAGE_KIND == DamageKind.LIGHTNING, "a Thunder Beetle's discharge is lightning")
+	# Resistance takes its share of its own kind and nothing else.
+	p.resist = {DamageKind.FIRE: 0.5}
+	p.receive_attack(10, seal, false)
+	check(p.max_hp - p.hp == 5, "half fire resistance halves a fire seal's 10 (took %d)" % (p.max_hp - p.hp))
+	p.hp = p.max_hp
+	p._invuln_timer = 0.0
+	var before := p.hp
+	p.receive_attack(10, foe, false)
+	check(before - p.hp == roundi(10 * room.threat()), "and does nothing to a physical blow (took %d)" % (before - p.hp))
+	# Whole resistance is immunity.
+	p.hp = p.max_hp
+	p._invuln_timer = 0.0
+	p.resist = {DamageKind.FIRE: 1.0}
+	check(p.receive_attack(10, seal, false) == "ignored" and p.hp == p.max_hp, "whole fire resistance is immunity")
+	p.take_damage(6, false, 0, DamageKind.FIRE)
+	check(p.hp == p.max_hp, "and a sourceless burn (the thermal fog) is turned too")
+	# All kinds together never pass one whole immunity.
+	var all := DamageKind.capped({DamageKind.FIRE: 1.0, DamageKind.ICE: 1.0, DamageKind.LIGHTNING: 1.0, DamageKind.PHYSICAL: 1.0})
+	var total := 0.0
+	for k: String in all:
+		total += float(all[k])
+	check(is_equal_approx(total, DamageKind.RESIST_CAP) and not all.has(DamageKind.PHYSICAL), "three immunities are scaled to one in all, and physical is never resisted (%.2f)" % total)
+	check(DamageKind.reduce(10, DamageKind.ICE, {DamageKind.FIRE: 0.75, DamageKind.ICE: 0.25}) == 8, "a split of 75 and 25 stands as set")
+	p.resist = {}
+
+
 func test_a_foe_hits_as_hard_as_its_zone_is_deep() -> void:
 	var rows := ARENA.duplicate()
 	var room := Room.from_text("zone: vorrhallow\n---\n" + "\n".join(PackedStringArray(rows)))

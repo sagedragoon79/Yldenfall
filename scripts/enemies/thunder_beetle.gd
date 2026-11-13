@@ -9,6 +9,8 @@ extends Enemy
 ## open and every blow lands in full. Legend `t`.
 
 ## How near you must come (px, centre to centre) before it charges.
+## What its blow is made of (design bible 5.6).
+const DAMAGE_KIND := DamageKind.LIGHTNING
 const TRIGGER := 64.0
 const WALK_SPEED := 28.0
 const CHARGE := 0.6

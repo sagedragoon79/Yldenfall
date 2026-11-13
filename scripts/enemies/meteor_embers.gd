@@ -4,6 +4,8 @@ extends Node2D
 ## whoever stands in it for LIFE seconds, then dies down. The origin is on the
 ## floor's surface.
 
+## What its blow is made of (design bible 5.6).
+const DAMAGE_KIND := DamageKind.FIRE
 const LIFE := 1.4
 const WIDTH := 22.0
 const HEIGHT := 8.0
