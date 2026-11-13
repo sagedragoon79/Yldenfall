@@ -81,7 +81,7 @@ one; an icon one row low fails three; `keeper` returning anyone fails 22.
 | Stability and performance | 5 | 99 | Unchanged; two small sheets, loaded once. |
 | Story and world | 5 | 99 | Unchanged. |
 
-Weighted: 98.85. Full suite: SUITE_TOTAL checks passed, 0 failed.
+Weighted: 98.85. Full suite: 14,843 checks passed, 0 failed.
 
 ## Next
 
