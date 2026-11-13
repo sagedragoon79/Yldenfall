@@ -80,7 +80,7 @@ the old `boughs.png` fails both bough checks; the old hash fails 26.
 | Stability and performance | 5 | 99 | Unchanged. |
 | Story and world | 5 | 99 | Unchanged. |
 
-Weighted: 98.85. Full suite: SUITE_LINE
+Weighted: 98.85. Full suite: 15,032 checks passed, 0 failed.
 
 ## Next
 
