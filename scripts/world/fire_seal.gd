@@ -23,6 +23,15 @@ extends StaticBody2D
 ## heat (`halo_cells`) off its open sides: additive, stepped through a 4 x 4
 ## ordered dither in 2-pixel blocks, out to `HALO` pixels, shallower onto the
 ## floor. Douse it and the pools and the halo go out with the fire.
+##
+## Pass 552 (bible 12.42): the pass 550 grade called the Proving Scar's tall
+## seal "a flat noisy rectangle with no glow falloff". Two octaves of round
+## noise drove the whole ramp inside the sheet, so a wide seal was mottled like
+## lava, with no up or down. The inside is now drawn by tall licks (`lick`, a
+## field stretched six to one up the column) over a steady core, with the round
+## noise only breaking their edges; the heat banks down a tone toward the top
+## of a tall seal, and the halo reaches `HALO` 32 px, bright against the flames
+## and falling away on a curve.
 
 ## Damage for touching the flames, and how often they can burn you.
 const BURN := 10
@@ -78,10 +87,13 @@ var _t := 0.0
 var _burn_cd := 0.0
 var _shape: CollisionShape2D
 var _halo: Node2D
+## Every tile of a seal keeps the same time, so the licks cross the seams whole.
 var _clock := 0.0
 var _step := -1
 ## The sides with a seal beside them (UP | DOWN | LEFT | RIGHT), found on the first draw.
 var _joined := -1
+## Tiles of seal above this one, found on the first draw (the heat's bank).
+var _above := -1
 
 
 func _ready() -> void:
@@ -99,7 +111,6 @@ func _ready() -> void:
 	_halo = Halo.new()
 	_halo.seal = self
 	add_child(_halo)
-	_clock = fmod(global_position.x * 0.53 + global_position.y * 0.29, 10.0)
 	if flag_id != "" and GameState.flag(flag_id):
 		_go_out(true)
 
@@ -172,10 +183,13 @@ func joined() -> int:
 
 
 ## How far the heat halo reaches past a seal's open sides, and onto the floor.
-const HALO := 20
-const HALO_FLOOR := 5
+const HALO := 32
+const HALO_FLOOR := 6
 ## The halo's alpha where it meets the flames.
-const HALO_PEAK := 0.3
+const HALO_PEAK := 0.42
+## The falloff's curve: above 1 the halo is bright at the flames and thins out
+## in a long tail, as light does, rather than fading on a straight line.
+const HALO_CURVE := 1.7
 ## The 4 x 4 ordered dither, 0 to 15.
 const BAYER: Array[int] = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 
@@ -215,6 +229,7 @@ static func halo_cells(origin: Vector2, joined: int) -> Dictionary:
 			var t := 1.0 - sqrt(float(dx * dx + dy * dy)) / reach
 			if t <= 0.0:
 				continue
+			t = pow(t, HALO_CURVE)
 			var cx := posmod(floori((ox + x) / 2.0), 4)
 			var cy := posmod(floori((oy + y) / 2.0), 4)
 			var level := floorf(t * 4.0 + (BAYER[cy * 4 + cx] + 0.5) / 16.0) / 4.0
@@ -307,7 +322,9 @@ func _draw() -> void:
 	if _joined < 0:
 		_joined = joined()
 	var step := int(_clock * STEP_FPS)
-	var px := cells(global_position, step, _joined, _t if doused else 0.0)
+	if _above < 0:
+		_above = _run(Vector2(0, -16))
+	var px := cells(global_position, step, _joined, _t if doused else 0.0, float(_above))
 	# Draw each row as runs of one colour.
 	var clear := Color(0, 0, 0, 0)
 	for y in range(-8 - TONGUE - (30 if doused else 0), 8):
@@ -354,6 +371,17 @@ const STEPS: Array[float] = [0.28, 0.4, 0.52, 0.64, 0.76, 0.88]
 const FIELD_W := 50
 const FIELD_H := 100
 static var _field := PackedFloat32Array()
+static var _licks := PackedFloat32Array()
+## How much of the inside's heat the tall licks carry, and how much the round
+## noise that breaks their edges.
+const LICK_GAIN := 0.42
+const GRAIN_GAIN := 0.2
+## The inside's steady heat, and what the deepest part of a wide seal adds.
+const CORE_HEAT := 0.68
+const CORE_DEEP := 0.08
+## How much cooler the top tile of a column burns than its foot, across `BANK` tiles.
+const BANK_COOL := 0.1
+const BANK := 4.0
 
 
 ## The tone for a heat from 0 to 1, or clear below the flame's edge.
@@ -392,6 +420,25 @@ static func field(x: int, y: int) -> float:
 	return _field[posmod(y, FIELD_H) * FIELD_W + posmod(x, FIELD_W)]
 
 
+## The lick field at a world pixel (x) and a rise (y), 0 to 1: the same noise
+## stretched six to one up the column, so the fire inside a seal runs in tall
+## tongues, and it tiles like `field`.
+static func lick(x: int, y: int) -> float:
+	if _licks.is_empty():
+		_licks.resize(FIELD_W * FIELD_H)
+		for fy in FIELD_H:
+			for fx in FIELD_W:
+				# 0.36 across 50 pixels (18 lattices), 0.06 and 0.12 down 100 (6 and 12).
+				_licks[fy * FIELD_W + fx] = vnoise_wrap(fx * 0.36, fy * 0.06, 6, 18, 6) * 0.7 + vnoise_wrap(fx * 0.72, fy * 0.12, 7, 36, 12) * 0.3
+	return _licks[posmod(y, FIELD_H) * FIELD_W + posmod(x, FIELD_W)]
+
+
+## How far a tile sits below its column's top, in tiles, for the heat's bank:
+## 0 at the top. Static callers (tests) pass it; a tile in a room counts it.
+static func bank(above: float) -> float:
+	return BANK_COOL * (1.0 - clampf(above / BANK, 0.0, 1.0))
+
+
 ## Whether a tile carries a rune: the leftmost tile of a seal, every other
 ## row, so a column holds a few runes rather than a grid of them.
 static func has_rune(origin: Vector2, joined: int) -> bool:
@@ -401,7 +448,7 @@ static func has_rune(origin: Vector2, joined: int) -> bool:
 ## The tile's pixels at frame `step`: local cell (from the tile's center, the
 ## tile spanning -8 to 7) to colour. `origin` is the tile's world position,
 ## `joined` the sides with a seal beside it, `out` 0 burning to 1 doused.
-static func cells(origin: Vector2, step: int, joined: int, out: float = 0.0) -> Dictionary:
+static func cells(origin: Vector2, step: int, joined: int, out: float = 0.0, above: float = BANK) -> Dictionary:
 	var px := {}
 	var ox := roundi(origin.x)
 	var oy := roundi(origin.y)
@@ -439,7 +486,14 @@ static func cells(origin: Vector2, step: int, joined: int, out: float = 0.0) -> 
 			if joined & RIGHT == 0:
 				d = minf(d, float(7 - x) - rag_r)
 			var side := clampf((d + 1.5) / 4.0, -1.0, 1.0)
-			var h := 0.12 + 0.6 * side + 0.7 * (n - 0.5)
+			# Inside: tall licks over a steady core, the round noise only breaking
+			# their edges. At an open side the round noise still rags the flame.
+			var inside := clampf((d - 1.0) / 3.0, 0.0, 1.0)
+			var deep := clampf((d - 2.5) / 6.0, 0.0, 1.0) if d < 90.0 else 1.0
+			var rise := lick(wx, wy + floori(step * 2.5))
+			var h_edge := 0.12 + 0.6 * side + 0.7 * (n - 0.5)
+			var h_core := CORE_HEAT + CORE_DEEP * deep + LICK_GAIN * (rise - 0.5) + GRAIN_GAIN * (n - 0.5) - bank(above + float(y + 8) / 16.0)
+			var h := lerpf(h_edge, h_core, inside)
 			if y < -8:
 				# Tongues above the column: each lick has its own height this frame.
 				var reach := 3.0 + TONGUE * 0.9 * reaches[x + 8] * side
