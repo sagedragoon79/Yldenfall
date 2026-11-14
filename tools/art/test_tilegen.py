@@ -1207,6 +1207,41 @@ def test_the_evercrown_keeps_red_for_what_hurts():
         assert _uses(tg.Image.open(root / rel), ember) == 0, f"{rel} carries no ember"
 
 
+def _hue(rgb):
+    import colorsys
+    return colorsys.rgb_to_hls(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255)[0] * 360
+
+
+def test_the_evercrown_cells_are_lit_by_their_pores():
+    # Design bible 12.50 (pass 560): the Evercrown's tiles were violet on a wine
+    # backdrop, a smaller hue step than Vorrhallow's. The cells keep a black-violet
+    # body (the night ramp), and their lit rim and cool seams are on the sky ramp
+    # (sky-3, sky-1): the cyan pores' light. The warm seams stay wine. (Putting the
+    # rim back on night-3 or the seam on night-1 fails; so does a blue body.)
+    T = tg.T
+    tile = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+    tg.paint_meteor(tile, 0, 0, 101, "night")
+    n = T * T
+    body = _uses(tile, {tg.c("night-2")[:3]})
+    rim = _uses(tile, {tg.c("sky-3")[:3]})
+    cool = _uses(tile, {tg.c("sky-1")[:3]})
+    warm = _uses(tile, {tg.c("crystal-1")[:3]})
+    assert body / n >= 0.5, f"the cells' body is black-violet ({body}/{n})"
+    assert 0.08 <= rim / n <= 0.3, f"the lit rim is the pores' blue, a line not a fill ({rim}/{n})"
+    assert cool > 0 and warm > 0, "the seams are cool shadow and wine sinew"
+    assert _uses(tile, {tg.c("night-3")[:3], tg.c("night-1")[:3]}) == 0, "no violet rim or seam is left"
+    # The fill's mean hue leaves the night ramp's violet (about 255) for indigo,
+    # away from the wine haze (about 295).
+    px = tile.load()
+    mean = [sum(px[x, y][i] for x in range(T) for y in range(T)) / n for i in range(3)]
+    assert _hue(mean) <= 250, f"the fill's mean hue is indigo ({_hue(mean):.0f})"
+    assert _hue(tg.c("night-2")) - _hue(mean) >= 4, "the fill is cooler than its body"
+    # Only whole world pixels (12.28) and the committed atlas agrees.
+    root = Path(__file__).resolve().parents[2]
+    atlas = tg.Image.open(root / "assets/tiles/evercrown.png")
+    assert _uses(atlas, {tg.c("sky-3")[:3]}) > 0, "the committed atlas carries the cool rim"
+
+
 def test_evercrown_floor_stubs_do_not_pass_for_spikes():
     # Design bible 12.48: the floor's crystal stubs were tall bright splinters, the
     # shape and brightness of a row of spikes. They are short (under a spike's 10

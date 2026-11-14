@@ -385,12 +385,21 @@ def paint_drowned(img, ox, oy, seed, ramp):
 
 
 MEAT_CELLS = 3
+# The Evercrown's cells take their light from the cyan pores (design bible 12.50,
+# pass 560): the body stays black-violet (the zone's ramp), and the lit upper rim
+# and the cool seams are on the sky ramp at the values the night ramp had there.
+# The tile's hue then sits a step further from the wine backdrop (12.48) without
+# a colour off the master palette. The warm seams stay wine (crystal-1).
+MEAT_RIM = "sky-3"
+MEAT_SEAM_COOL = "sky-1"
+MEAT_SEAM_WARM = "crystal-1"
 
 
 def paint_meteor(img, ox, oy, seed, ramp):
     """the Evercrown, the inside of the Everbloom: organic stone grown in rounded cells
-    like a honeycomb of scar tissue, black-violet, with wine-dark sinew in the
-    seams and the odd pore of alien cyan light.
+    like a honeycomb of scar tissue, black-violet, with wine-dark sinew and cool
+    shadow in the seams, the odd pore of alien cyan light, and that light on the
+    upper rim of every cell (12.50).
 
     Calm fill (design bible 12.28, pass 534): the cells are broad (two per tile, not
     three) and wrap across tile edges, each a flat body of one value with a lit rim only
@@ -418,9 +427,9 @@ def paint_meteor(img, ox, oy, seed, ramp):
             if edge < 1.0 * D:
                 # Wine sinew, not red: in the Evercrown the ember ramp belongs to
                 # what hurts (bible 12.48).
-                col = "crystal-1" if hash2(gx + gy, 0, MEAT_CELLS + 4) > 0.55 else f"{ramp}-1"
+                col = MEAT_SEAM_WARM if hash2(gx + gy, 0, MEAT_CELLS + 4) > 0.55 else MEAT_SEAM_COOL
             elif edge < 2.0 * D and y < py:
-                col = f"{ramp}-{shade + 1}"   # the lit upper rim of the cell
+                col = MEAT_RIM   # the lit upper rim of the cell, in the pores' light
             else:
                 col = f"{ramp}-{shade}"
             if d1 < 1.0 * D and hash2(gx, gy, seed + 6) > 0.95:
