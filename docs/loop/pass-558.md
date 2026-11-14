@@ -87,7 +87,12 @@ of the four new Python guards fails.
 | Stability and performance | 5 | 99 | Unchanged. |
 | Story and world | 5 | 99 | Unchanged. |
 
-Weighted: 98.85. Full suite: SUITE_COUNT checks passed, 0 failed.
+Weighted: 98.85. Full suite: 15,162 checks passed and 5 failed in the whole run, all five wall-clock
+budgets in four tests (two journeys' frame spikes, a room's load time and settled frame time, a
+room's frame time while spoils rest), while other work loaded this PC (54% processor load). Rerun
+alone, the four tests pass (136, 3 and 3 checks; the room budget test failed once more on three
+Tower rooms this pass does not touch, then passed three times running). The pass changes colours
+only. With the reruns: 15,167 passed, 0 failed.
 
 ## Next
 
