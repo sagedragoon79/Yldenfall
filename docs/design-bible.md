@@ -2171,6 +2171,19 @@ After: the backdrop's median luminance is 30 in `vorrhallow/flooded_hall` (hue 2
 
 Not done: Vorrhallow's spikes stand in flooded pits and the water's tint dims their rim; and `tools/art/decorgen.py` seeds each zone by its name, so the zones renamed in pass 462 no longer regenerate to their committed atlases (only the Evercrown's atlas was regenerated here, and its cells were redrawn from the new seed).
 
+### 12.49 What hurts shows through Vorrhallow's water (pass 559)
+
+Left over from 12.48: the spikes in the Flooded Hall's and the Drowned Nave's pits stand under the tide (4.4), and `Tide` is drawn in front of them. The pit's water (`Tide.pit_color`) took the near-white steel rim of 12.24 down to a blue-grey at about half its value, on teeth whose dark body was already lost against the dark pit. The one hazard of the hall was the dimmest thing in it.
+
+- **The water draws the rim again.** `Tide.sunk_spikes` gathers every `Spikes` cluster that stands in a water cell (again whenever the room gains or loses a child, so a pit that opens later is found). Over its own body the water draws each one's rim with `Spikes.draw_rim` at `SUNK_RIM` (0.9): the catchlight down the leading edge and the tip cap, as on a dry cluster.
+- **Both edges under water.** A dry tooth is a dark triangle with a lit edge. Under water the triangle is gone and the lit edge alone read as a row of slashes, so the sunk rim also traces the shaded edge in the face tone (`far_edge`). The two edges keep the point.
+- **Pale water over the teeth.** A faint band of the surface colour lies over each cluster from just above its tips, fading to the floor (`SUNK_GLOW`), so the teeth stand against something lighter than the pit.
+- Drained (Thane Vorrund at rest), the water draws nothing and the spikes are as anywhere else.
+
+Judged by eye at 1x and 4x in both rooms, before and after. `test_spikes_under_the_water_keep_their_rim` holds it: the water knows each sunk cluster and no dry one, finds one set down later, shows the rim at a luminance of at least 0.8 and well above the dimmed one, and knows none once drained.
+
+Not done: the Evercrown's tiles are still violet on a wine backdrop, a smaller hue step than Vorrhallow's.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

@@ -3,8 +3,8 @@ extends Node2D
 ## The standing water of Vorrhallow's drowned halls (design bible 4.4, `tide:`
 ## header). Until Thane Vorrund is at rest it stands a tile deep on the floors
 ## and fills the pits below them: a still, dark water you wade through (your
-## steps slosh), drawn translucent in front of what stands in it so the spikes
-## under it still show. Once he is at rest Vorrhallow drains, and all that is left
+## steps slosh), drawn translucent in front of what stands in it. The spikes
+## under it keep their steel rim: the water draws it again over itself (12.49). Once he is at rest Vorrhallow drains, and all that is left
 ## is the tide mark where the surface stood, and silt on the floor.
 ##
 ## Pass 550: whatever wades in it (the hero, a foe) breaks the surface. A bright
@@ -38,6 +38,13 @@ const RING_SPREAD := 30.0
 const RING_ALPHA := 0.75
 const MAX_RINGS := 48
 
+## Spikes under the water keep their steel rim (bible 12.49): the water is drawn in
+## front of them and would dim it, so it draws the rim again over itself at this alpha.
+const SUNK_RIM := 0.9
+## The pale water lying over a sunk cluster, from its tips down: what the dark
+## teeth stand against. Alpha at the tips' row, fading to nothing at the floor.
+const SUNK_GLOW := 0.2
+
 const _BAYER := [[0, 2], [3, 1]]
 
 ## The water's cells (tiles) -> true.
@@ -59,6 +66,10 @@ var _floor := {}
 ## Instance id -> seconds to that body's next ripple.
 var _clock := {}
 var _strip: ImageTexture
+## Each spike cluster standing in the water: its bottom centre (local px).
+var _sunk: Array[Vector2] = []
+## The room's child count when `_sunk` was last gathered (a pit can open later).
+var _sunk_at := -1
 
 
 func _ready() -> void:
@@ -100,6 +111,17 @@ static func depth_level(x: int, depth: int) -> int:
 
 static func level_color(level: int) -> Color:
 	return SHALLOW.lerp(FLOOR, float(level) / float(LEVELS - 1))
+
+
+## The water under the surface row, down a pit: one flat, dark tone.
+static func pit_color() -> Color:
+	return DEEP.lerp(FLOOR, 0.6)
+
+
+## A sunk spike's rim as it shows: the steel drawn over the pit's water.
+static func sunk_rim_color() -> Color:
+	var under := Spikes.RIM.lerp(Color(pit_color(), 1.0), pit_color().a)
+	return under.lerp(Spikes.RIM, SUNK_RIM)
 
 
 ## One tile of the surface row's body, as a texture (a 4 px wide dither period).
@@ -148,6 +170,7 @@ func _process(delta: float) -> void:
 		return
 	_t += delta
 	_wake(delta)
+	sunk_spikes()
 	queue_redraw()
 
 
@@ -191,6 +214,26 @@ func _wake(delta: float) -> void:
 	rings = live
 
 
+## The spike clusters that stand in the water (their bottom centres, local px),
+## gathered again whenever the room gains or loses a child.
+func sunk_spikes() -> Array[Vector2]:
+	var room := get_parent()
+	if room == null or drained():
+		_sunk.clear()
+		_sunk_at = -1
+		return _sunk
+	if room.get_child_count() == _sunk_at:
+		return _sunk
+	_sunk_at = room.get_child_count()
+	_sunk.clear()
+	for child in room.get_children():
+		if child is Spikes:
+			var at := to_local((child as Spikes).global_position)
+			if cells.has(Vector2i(floori(at.x / Room.TILE), floori((at.y - 1.0) / Room.TILE))):
+				_sunk.append(at)
+	return _sunk
+
+
 func _draw() -> void:
 	var y := surface_y()
 	if drained():
@@ -207,7 +250,12 @@ func _draw() -> void:
 		if c.y == row:
 			draw_texture_rect(_strip, cell, true)
 		else:
-			draw_rect(cell, DEEP.lerp(FLOOR, 0.6))
+			draw_rect(cell, pit_color())
+	# What hurts shows through: pale water over each sunk cluster, and its steel rim again.
+	for at: Vector2 in _sunk:
+		for k in 5:
+			draw_rect(Rect2(at.x - 8.0, at.y - 12.0 + k * 2.0, 16.0, 2.0), Color(SURFACE, SUNK_GLOW * (1.0 - k / 5.0)))
+		Spikes.draw_rim(self, at, SUNK_RIM, true)
 	# The still surface: a pale line that breathes, with slow glints drifting on it.
 	for x in _cols:
 		var a := 0.55 + 0.25 * sin(_t * 1.3 + x * 0.6)
