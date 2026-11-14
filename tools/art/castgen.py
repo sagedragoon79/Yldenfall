@@ -822,6 +822,11 @@ GNARLMAW = [
     ("head", [roku_head(i) for i in range(6)], list(range(6)), 12, True),
     ("plate", [roku_plate(False), roku_plate(True)], [0], 1, False),
     ("tail", [roku_tail(False), roku_tail(True)], [0], 1, False),
+    # Second looks of the plate and the tail's tip (design bible 8.1, pass 562). The art is the
+    # Autosprite still dressed by autosprite_parts.py --dress; these are only its stand-ins.
+    ("plate_spined", [roku_plate(False), roku_plate(True)], [0], 1, False),
+    ("plate_mossy", [roku_plate(False), roku_plate(True)], [0], 1, False),
+    ("tail_tip", [roku_tail(False), roku_tail(True)], [0], 1, False),
 ]
 
 

@@ -146,7 +146,10 @@
   "animations": {
    "head": {"file": "head.png", "frame_size": 512, "columns": 24, "count": 24, "anchor": "center", "fps": 12, "loop": true, "autosprite": "character cmvki2qv700ikcjben0qxn2ke (pro still), turned by tools/art/autosprite_spin.py --center 515,390 --radius 350 --hub 100 --frames 24 --size 512 --mirror"},
    "plate": {"file": "plate.png", "frame_size": 512, "columns": 2, "count": 2, "anchor": "center", "height": 38, "autosprite": "character cmvki8kzw00xy8p8adn82rk5v (pro still), states by tools/art/autosprite_parts.py --box 70,50,970,950 --states plain,crack"},
-   "tail": {"file": "tail.png", "frame_size": 512, "columns": 2, "count": 2, "anchor": "center", "height": 30, "autosprite": "character cmvki8x2y00941g8yjbshrtxp (pro still), states by tools/art/autosprite_parts.py --box 130,0,910,780 --cut 615 --states plain,glow"}
+   "tail": {"file": "tail.png", "frame_size": 512, "columns": 2, "count": 2, "anchor": "center", "height": 30, "autosprite": "character cmvki8x2y00941g8yjbshrtxp (pro still), states by tools/art/autosprite_parts.py --box 130,0,910,780 --cut 615 --states plain,glow"},
+   "plate_spined": {"file": "plate_spined.png", "frame_size": 512, "columns": 2, "count": 2, "anchor": "center", "height": 42.2, "lower": -23.0, "feet_x": 252.7, "autosprite": "character cmvki8kzw00xy8p8adn82rk5v (pro still, no new credits), dressed by tools/art/autosprite_parts.py --box 70,50,970,950 --states plain,crack --dress spines --height 38"},
+   "plate_mossy": {"file": "plate_mossy.png", "frame_size": 512, "columns": 2, "count": 2, "anchor": "center", "height": 38, "extra_ramps": ["moss"], "autosprite": "character cmvki8kzw00xy8p8adn82rk5v (pro still, no new credits), dressed by tools/art/autosprite_parts.py --box 70,50,970,950 --states plain,crack --dress moss"},
+   "tail_tip": {"file": "tail_tip.png", "frame_size": 512, "columns": 2, "count": 2, "anchor": "center", "height": 30, "lower": -0.2, "feet_x": 297.6, "autosprite": "character cmvki8x2y00941g8yjbshrtxp (pro still, no new credits), dressed by tools/art/autosprite_parts.py --box 130,0,910,780 --cut 615 --states plain,glow --dress sting"}
   }
  },
  "gloamweaver": {
