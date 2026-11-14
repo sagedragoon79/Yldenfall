@@ -1796,9 +1796,9 @@ func test_a_shield_wards_a_foes_sorcery() -> void:
 	check_near(p.magic_ward, 0.2, 0.001, "a shield on the back of a two-hander wards nothing; the helmet still does")
 	GameState.data.equipment.blade = "short_sword"
 	GameState.data.equipment.shield = "magic_shield"
-	Menus.choose_equipment(Menus.OFFHAND_DAGGER, p)
-	check(GameState.offhand_free(), "the Rune Dagger chosen for the off hand takes the shield off")
-	check_near(p.magic_ward, 0.2, 0.001, "and with it the shield's ward: only the helmet's stays (pass 313)")
+	GameState.data.equipment.shield = ""
+	GameState.refresh_stats(p)
+	check_near(p.magic_ward, 0.2, 0.001, "the shield taken off, its ward goes: only the helmet's stays (pass 313)")
 	var bible := FileAccess.get_file_as_string("res://docs/design-bible.md")
 	check(bible.contains("the source game had no thrown dagger, and its shield, once bought, was always on the arm and always resisting magic"),
 		"the bible says how the off hand departs from the source game's shield")
@@ -3384,7 +3384,7 @@ func test_gear_is_kept_and_swapped_and_the_broad_sword_takes_both_hands() -> voi
 	var rows := Menus.equipment_rows()
 	var labels: Array = rows.map(func(r: Dictionary) -> String: return r.label)
 	check(labels.slice(0, 4) == ["Blades", "Short Sword", "Wayfarer's Sword", "Dwarvish Broad Sword"], "the Equipment page lists blades by tier (%s)" % [labels])
-	check(labels.has("Off Hand") and labels.has("Buckler"), "and the shields you have, under the Off Hand")
+	check(labels.has("Shield") and labels.has("Buckler"), "and the shields you have, under Shield")
 	check(rows[2].right == "Worn", "marking what you wear")
 	# A save keeps the gear, and an older save gets what it wore, renamed.
 	var src := GameState.fresh()

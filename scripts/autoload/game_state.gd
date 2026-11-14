@@ -19,17 +19,20 @@ signal ending_started
 ## The most of a foe's sorcery a shield and helmet together turn (pass 225).
 const MAX_WARD := 0.6
 const SAVE_PATH := "user://save_%d.json"
-## 2 (pass 317): saves from before the off hand (Sean, 2026-10-31) are told of it.
+## 2 (pass 317): the off-hand rule (a shield or the Rune Dagger), gone since the
+## projectile slot (design bible 5.6): a shield and a thrown weapon are both worn.
 ## 3 (pass 462): ids renamed for Yldenfall; older saves come over (migrate_ids).
 const VERSION := 3
 ## The first save version written with the Yldenfall ids.
 const IDS_VERSION := 3
-## The first save version written under the off-hand rule.
-const OFFHAND_VERSION := 2
-## Flag set on an older save that found the Rune Dagger and wears a shield:
-## the next Continue tells the player the shield now holds the throwing hand.
+## The flag the off-hand rule's notice used; a save that still carries it drops it.
 const OFFHAND_NOTICE := "notice:offhand"
-const OFFHAND_NOTICE_TEXT := ["The Off Hand", "Your shield now holds the throwing hand. To throw, choose the Rune Dagger under Off Hand (Equipment)."]
+## The projectile slot (design bible 5.6): the place in `equipment` that names
+## what Throw throws. Thrown weapons only. The Rune Dagger returns and never
+## runs out; every other one is an item of kind "projectile", carried by count
+## in `ammo`.
+const PROJECTILE_PLACE := "projectile"
+const RUNE_DAGGER := "rune_dagger"
 ## Save maps whose every entry is true or false (pass 351; `sanitize`).
 const BOOL_MAPS := ["abilities", "flags", "charts", "collected", "visited"]
 ## Item ids a newer build renamed: old id -> new id (sanitize carries a save over).
@@ -148,7 +151,9 @@ static func fresh() -> Dictionary:
 		"skill_points": 0,
 		"skills": [],
 		"respecs": 0,
-		"equipment": {"blade": "short_sword", "armor": "", "shield": "", "helmet": "", "neck": "", "ring1": "", "ring2": "", "relic": ""},
+		"equipment": {"blade": "short_sword", "armor": "", "shield": "", "helmet": "", "neck": "", "ring1": "", "ring2": "", "relic": "", "projectile": ""},
+		## Thrown weapons carried, by item id (each at most its "carry").
+		"ammo": {},
 		## Smith tempers per blade id (0 to 2): each adds TEMPER_BONUS to its damage.
 		"tempers": {},
 		"keys": {},
@@ -215,12 +220,10 @@ func collect(id: String) -> void:
 
 
 ## The notice a loaded save is owed (pass 317): [title, subtitle] for a banner,
-## or empty. It is given once: taking it clears it from the save.
+## or empty. It is given once: taking it clears it from the save. None is owed
+## now: the off-hand rule it explained is gone.
 func take_load_notice() -> Array:
-	if not flag(OFFHAND_NOTICE):
-		return []
-	data.flags.erase(OFFHAND_NOTICE)
-	return OFFHAND_NOTICE_TEXT.duplicate()
+	return []
 
 
 func flag(id: String) -> bool:
@@ -363,11 +366,60 @@ func wear(id: String, p: Player = null) -> void:
 		refresh_stats(p)
 
 
-## The off hand holds a shield or the Rune Dagger, not both (Sean, 2026-10-31): the
-## dagger is thrown from the left hand, the shield's arm. With no shield worn the
-## hand is free to throw it.
-func offhand_free() -> bool:
-	return String(data.equipment.get("shield", "")) == ""
+## Every counted thrown weapon, in the order of data/items.json.
+static func projectile_items() -> Array:
+	var out := []
+	var items := GameData.table("items")
+	for id: String in items:
+		if String(items[id].get("kind", "")) == "projectile":
+			out.append(id)
+	return out
+
+
+## How many of a counted thrown weapon you carry.
+func ammo(id: String) -> int:
+	var held: Variant = data.get("ammo", {}).get(id, 0)
+	return int(held) if _is_number(held) else 0
+
+
+## What you have to throw, the Rune Dagger first: it for anyone whose
+## `abilities` have it, and each counted weapon you still carry.
+func projectiles(abilities: Dictionary) -> Array:
+	var out := []
+	if bool(abilities.get(RUNE_DAGGER, false)):
+		out.append(RUNE_DAGGER)
+	for id: String in projectile_items():
+		if ammo(id) > 0:
+			out.append(id)
+	return out
+
+
+## What Throw throws ("" for nothing): the slot's choice while you have it,
+## else the first thing you do have, so a spent weapon falls back to the dagger.
+func projectile(abilities: Dictionary) -> String:
+	var have := projectiles(abilities)
+	var want := String(data.equipment.get(PROJECTILE_PLACE, ""))
+	if have.has(want):
+		return want
+	return "" if have.is_empty() else String(have[0])
+
+
+## Takes `n` of a counted thrown weapon, up to what you can carry, and puts it
+## in the slot. Returns how many were taken.
+func take_projectile(id: String, n: int) -> int:
+	var room := int(GameData.item(id).get("carry", 0)) - ammo(id)
+	var got := clampi(n, 0, maxi(room, 0))
+	if not data.get("ammo") is Dictionary:
+		data.ammo = {}
+	data.ammo[id] = ammo(id) + got
+	if got > 0:
+		data.equipment[PROJECTILE_PLACE] = id
+	return got
+
+
+## One of a counted thrown weapon leaves your hand.
+func spend_projectile(id: String) -> void:
+	data.ammo[id] = maxi(ammo(id) - 1, 0)
 
 
 ## True when the blade in hand takes both hands (the Dwarvish Broad Sword):
@@ -851,12 +903,8 @@ static func sanitize(src: Variant) -> Dictionary:
 	for k: Variant in src:
 		if k is String:
 			out[k] = _coerce(out[k], src[k]) if out.has(k) else src[k]
-	# A save from before the off hand (pass 317) that found the dagger and wears a
-	# shield: Throw would now do nothing, unexplained, so the next Continue says why.
-	var was: Variant = (src as Dictionary).get("version", 1)
-	if (int(was) if _is_number(was) else 1) < OFFHAND_VERSION and bool(out.abilities.get("rune_dagger", false)) \
-			and String(out.equipment.get("shield", "")) != "":
-		out.flags[OFFHAND_NOTICE] = true
+	# The off-hand rule's notice (pass 317) is owed to no one now.
+	out.flags.erase(OFFHAND_NOTICE)
 	out.version = VERSION
 	# Items renamed since a save was written keep their place and temper (pass 184).
 	for old: String in RENAMED_ITEMS:
@@ -906,6 +954,23 @@ static func sanitize(src: Variant) -> Dictionary:
 				out.equipment[place] = ""
 	if String(out.equipment.ring2) == String(out.equipment.ring1):
 		out.equipment.ring2 = ""
+	# The projectile slot (design bible 5.6) names the Rune Dagger or a counted
+	# thrown_ids weapon; a save from before it that found the dagger has it there.
+	var thrown_ids := projectile_items()
+	var held_throw: Variant = out.equipment.get(PROJECTILE_PLACE, "")
+	if not held_throw is String or not (held_throw == "" or held_throw == RUNE_DAGGER or thrown_ids.has(held_throw)):
+		held_throw = ""
+	var had_slot: bool = (src as Dictionary).get("equipment") is Dictionary and (src.equipment as Dictionary).has(PROJECTILE_PLACE)
+	if held_throw == "" and not had_slot and bool(out.abilities.get(RUNE_DAGGER, false)):
+		held_throw = RUNE_DAGGER
+	out.equipment[PROJECTILE_PLACE] = held_throw
+	var counts := {}
+	var src_ammo: Dictionary = out.ammo if out.ammo is Dictionary else {}
+	for id: String in thrown_ids:
+		var n: Variant = src_ammo.get(id, 0)
+		if _is_number(n) and int(n) > 0:
+			counts[id] = clampi(int(n), 0, int(GameData.item(id).get("carry", 0)))
+	out.ammo = counts
 	# The belt: three places, each empty or a belt item, none twice.
 	var belt := []
 	belt.resize(BELT_PLACES)

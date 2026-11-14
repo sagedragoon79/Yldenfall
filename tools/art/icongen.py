@@ -327,6 +327,8 @@ BY_ID = {
     "life_fruit": life_fruit,
     "mana_dew": mana_dew,
     "ointment": balm,
+    "hawthorn_spikes": blade(6.4, 0.75, steel=mat("umber", 6, 5, 3, 1), guard=mat("bark", 3, 2, 1, 0),
+                             grip=mat("bark", 4, 3, 2, 0), guard_len=0.9),
     "tonic": flask(mat("leaf", 6, 5, 3, 1), PAL["leaf-7"]),
     "elixir": flask(mat("gold", 6, 5, 4, 2), PAL["gold-7"]),
     "fire_scroll": scroll("ember"),

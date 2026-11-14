@@ -19,7 +19,8 @@
 			{"item": "life_fruit", "price": 800, "once": true},
 			{"item": "ointment", "price": 300},
 			{"item": "amber_band", "price": 600},
-			{"item": "tonic", "price": 120}
+			{"item": "tonic", "price": 120},
+			{"item": "hawthorn_spikes", "price": 60}
 		]
 	},
 	"amberlee_armor": {

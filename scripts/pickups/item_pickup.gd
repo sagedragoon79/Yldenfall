@@ -39,7 +39,7 @@ const INFO := {
 	"meteor_shard": {"title": "Stillglass Shard", "text": "", "color": Color("e04aa8")},
 	"elven_helm": {"title": "Elven Helm", "text": "One more mask, and 10% less damage on top of your armor. Your shield stays in hand.", "color": Color("a8d4cc")},
 	"glass_key": {"title": "Glass Key", "text": "Opens the Glass door. There is only one.", "color": Color("9a6ad8")},
-	"rune_dagger": {"title": "Rune Dagger", "text": "Throw (B) flicks it from your off hand; Up throws it high. It takes the shield's hand: choose one on the Equipment page.", "color": Color("7ff0e0")},
+	"rune_dagger": {"title": "Rune Dagger", "text": "Throw (B) flicks it; Up throws it high. It comes back, so it never runs out. It is in your Projectile slot (Equipment).", "color": Color("7ff0e0")},
 	"pendant": {"title": "Acorn Charm", "text": "An old charm of the Tree's folk. Your blade strikes a tenth harder.", "color": Color("e8c06a")},
 	"briar_wand": {"title": "Briar Wand", "text": "Deluge's bolts strike half again as hard.", "color": Color("6ac8f0")},
 	"severance": {"title": "Severance", "text": "The only blade that can wound the Everbloom. Stillglass flesh parts before it.", "color": Color("8af0e8")},
@@ -78,12 +78,9 @@ func grant(p: Player) -> void:
 		p.abilities[kind] = true
 		if Spells.DATA.has(kind) and not p.abilities.get(p.equipped_spell, false):
 			p.equipped_spell = kind
-		if kind == "rune_dagger" and not GameState.offhand_free():
-			# It takes the off hand (Sean, 2026-10-31), so the room that teaches it
-			# can be played at once: the shield comes off, to be chosen again.
-			GameState.data.equipment.shield = ""
-			GameState.refresh_stats(p)
-			subtitle += " Your shield is on your back for now."
+		if kind == "rune_dagger" and String(GameState.data.equipment.get(GameState.PROJECTILE_PLACE, "")) == "":
+			# It goes into the projectile slot (design bible 5.6); the shield stays on.
+			GameState.data.equipment[GameState.PROJECTILE_PLACE] = kind
 	elif kind == "severance":
 		# Found, not bought: it goes straight into your hand (design bible 5.2, A10).
 		p.abilities[kind] = true

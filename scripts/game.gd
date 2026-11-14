@@ -36,6 +36,7 @@ extends Node2D
 ##   --hair=ID                  color the hair (PlayerVisual.HAIR, e.g. copper)
 ##   --armor=ID                 wear an armor (data/items.json, kind "armor"), and its body set
 ##   --wear=A,B                 own and wear gear (blades, armor, shields, helmets), e.g. for --open=equipment
+##   --throw=ID                 have the Rune Dagger and all you can carry of a counted thrown weapon (hawthorn_spikes)
 ##   --hp=N                     start with N health (for screenshots)
 ##   --ointments=N, --use-ointment   carry N Barkbalms, and rub one on
 ##   --reflect                  fling a Warding Shield shot of sap-light from in front of the player
@@ -364,6 +365,11 @@ func _process(_delta: float) -> void:
 		# Screenshots: own and wear gear (e.g. --wear=elven_plate,magic_shield,elven_helm).
 		for id: String in String(_args["wear"]).split(","):
 			GameState.obtain_gear(id, world.player)
+	if _args.has("throw") and _frames == 2:
+		# Screenshots: the projectile slot (e.g. --throw=hawthorn_spikes).
+		world.player.abilities["rune_dagger"] = true
+		GameState.data.abilities.rune_dagger = true
+		GameState.take_projectile(String(_args["throw"]), 999)
 	if _args.has("skills") and _frames == 2:
 		# Screenshots: learn skills (e.g. --skills=wisplight_swarm).
 		for id: String in String(_args["skills"]).split(","):

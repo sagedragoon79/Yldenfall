@@ -22,6 +22,7 @@
 	"life_fruit": {"name": "Life Fruit", "kind": "stat", "desc": "Two fruits grow a new mask of health."},
 	"mana_dew": {"name": "Mana Dew", "kind": "stat", "desc": "Your magic grows by 10."},
 	"ointment": {"name": "Barkbalm", "kind": "ointment", "belt": true, "desc": "Used from your belt: nothing can hurt you for 10 seconds. You can carry three."},
+	"hawthorn_spikes": {"name": "Hawthorn Spikes", "kind": "projectile", "damage": 4, "speed": 520, "range": 220, "carry": 12, "bundle": 6, "wait": 0.25, "desc": "Thrown: six iron-hard thorns to a bundle, fast and far, and gone once thrown. You can carry twelve."},
 	"tonic": {"name": "Bitterleaf Tonic", "kind": "tonic", "belt": true, "desc": "Used from your belt: it clears poison, burning, chill and curse. You can carry three."},
 	"elixir": {"name": "Amber Draught", "kind": "elixir", "belt": true, "desc": "If you fall, it revives you where you stand. You can carry one."},
 	"temper_1": {"name": "Temper Blade I", "kind": "temper", "level": 1, "desc": "The smith folds your blade in dwarf fire: +15% damage."},

@@ -894,25 +894,24 @@ func test_an_old_save_gains_the_new_keys() -> void:
 
 
 
-## Bible 15 (pass 317): a save from before the off hand (Sean, 2026-10-31) that
-## found the Rune Dagger and wears a shield would press Throw to nothing. The
-## next Continue says why, once; a newer save, or one with the hand free, is not told.
-func test_an_old_save_with_shield_and_dagger_is_told_of_the_off_hand() -> void:
+## Bible 15 (pass 317, changed with the projectile slot of 5.6): a save from any
+## build that found the Rune Dagger and wears a shield keeps both. The dagger is in
+## the projectile slot, and the off-hand rule's notice is owed to no one.
+func test_an_old_save_keeps_its_shield_and_its_dagger() -> void:
 	var base := {"gold": 0, "save_room": "hearthroot/plaza", "save_pos": [100, 200]}
-	var told := func(version: int, shield: String) -> Array:
+	var load_it := func(version: int, shield: String, flags: Dictionary) -> Array:
 		var src := base.duplicate(true)
 		src.version = version
 		src.abilities = {"rune_dagger": true}
 		src.equipment = {"blade": "short_sword", "shield": shield}
 		src.gear = ["short_sword", shield] if shield != "" else ["short_sword"]
+		src.flags = flags
 		GameState.data = GameState.sanitize(JSON.parse_string(JSON.stringify(src)))
 		return GameState.take_load_notice()
-	var notice: Array = told.call(1, "small_shield")
-	check(notice.size() == 2 and String(notice[1]).contains("Rune Dagger under Off Hand (Equipment)"), "an old save with a shield and the dagger is told where to free the hand (%s)" % [notice])
-	check(GameState.take_load_notice().is_empty() and not GameState.flag(GameState.OFFHAND_NOTICE), "once: taking the notice clears it")
-	check(String(GameState.data.equipment.shield) == "small_shield", "and the shield stays on: the choice is the player's")
-	check((told.call(1, "") as Array).is_empty(), "an old save with the hand already free is not told")
-	check((told.call(GameState.OFFHAND_VERSION, "small_shield") as Array).is_empty(), "nor a save written under the off-hand rule")
+	for version: int in [1, 2, GameState.VERSION]:
+		var notice: Array = load_it.call(version, "small_shield", {GameState.OFFHAND_NOTICE: true})
+		check(notice.is_empty() and not GameState.flag(GameState.OFFHAND_NOTICE), "a version %d save is told nothing, and the old notice's flag is dropped" % version)
+		check(String(GameState.data.equipment.shield) == "small_shield" and String(GameState.data.equipment.projectile) == "rune_dagger", "it keeps the shield on, with the dagger in the slot")
 	check(int(GameState.data.version) == GameState.VERSION, "and the save is brought up to this version")
 	var game := FileAccess.get_file_as_string("res://scripts/game.gd")
 	check(game.contains("GameState.take_load_notice()"), "Continue shows the notice")
@@ -1322,7 +1321,7 @@ func test_the_hand_dagger_is_the_short_sword_and_the_rune_dagger_is_found() -> v
 	w.room.add_child(pick)
 	pick.grant(p)
 	check(bool(p.abilities.get("rune_dagger", false)), "picked up, it is yours")
-	check(GameState.offhand_free() and not p.has_shield, "and it takes the off hand: the shield goes on your back")
+	check(p.has_shield and GameState.projectile(p.abilities) == "rune_dagger", "and it goes in the projectile slot: the shield stays on")
 	GameState.data.gear.erase("small_shield")
 
 
@@ -3712,13 +3711,13 @@ func test_the_equipment_page_changes_hands_mid_guard() -> void:
 	check(note.contains("`test_the_equipment_page_changes_hands_mid_guard`"), "the bible names the test")
 
 
-## Pass 447 (bible 5.2): the off hand changed while the Rune Dagger is in the
-## air. Sean's rule puts a shield or the dagger in the off hand; a player can
-## throw, open the pause menu before it lands, and strap on a shield. Through
-## the real controller: the dagger in flight is left to finish its flight and
-## come home, the shield then guards and Throw does nothing, and the dagger put
-## back in the off hand throws again. Nothing is left behind or doubled.
-func test_the_off_hand_changes_while_the_dagger_flies() -> void:
+## Pass 447 (bible 5.2, changed with the projectile slot of 5.6): a shield put on
+## while the Rune Dagger is in the air. A player can throw, open the pause menu
+## before it lands, and strap on a shield. Through the real controller: the dagger
+## in flight is left to finish its flight and come home, the shield then guards,
+## and Throw flicks the dagger again with the shield on. Nothing is left behind
+## or doubled.
+func test_a_shield_goes_on_while_the_dagger_flies() -> void:
 	Settings.path = TEMP_SETTINGS
 	GameState.new_game()
 	GameState.data.gear.append("small_shield")
@@ -3759,37 +3758,32 @@ func test_the_off_hand_changes_while_the_dagger_flies() -> void:
 		return on and not menu.is_open and not arena.get_tree().paused
 	var daggers := func() -> int:
 		return g.world.room.get_children().filter(func(n: Node) -> bool: return n is RuneDagger).size()
-	check(GameState.offhand_free() and not p.has_shield, "the off hand is free for the dagger")
+	check(not p.has_shield, "no shield yet")
 	await _tap("throw")
 	var flying: RuneDagger = p.rune_dagger
 	check(is_instance_valid(flying) and daggers.call() == 1, "Throw lets it fly")
 	var put_on: bool = await wear.call("small_shield")
-	check(put_on and p.has_shield and not GameState.offhand_free(), "with it still in the air, the buttons strap the Buckler on")
+	check(put_on and p.has_shield, "with it still in the air, the buttons strap the Buckler on")
 	check(is_instance_valid(flying) and daggers.call() == 1, "the dagger is still in flight, alone (%d)" % daggers.call())
 	for i in 90:
 		await frames(1)
 		if p.dagger_ready():
 			break
 	check(not is_instance_valid(flying) and daggers.call() == 0 and p.dagger_ready(), "it ends its flight and comes home")
-	await _tap("throw")
-	await frames(2)
-	check(daggers.call() == 0 and p.dagger_ready(), "with the shield on the arm Throw does nothing")
 	Input.action_press("block")
 	await frames(3)
-	check(p.is_blocking, "and Block guards")
+	check(p.is_blocking, "the shield guards")
 	Input.action_release("block")
 	await frames(2)
-	var back: bool = await wear.call(Menus.OFFHAND_DAGGER)
-	check(back and GameState.offhand_free() and not p.has_shield, "the dagger back in the off hand, the shield comes off")
 	await _tap("throw")
-	check(daggers.call() == 1, "and Throw lets it fly again")
+	check(daggers.call() == 1 and p.has_shield, "and Throw lets it fly again, with the shield on")
 	await frames(60)
 	g.queue_free()
 	await frames(2)
 	GameState.new_game()
 	_restore()
 	var note := FileAccess.get_file_as_string("res://docs/design-bible.md")
-	check(note.contains("`test_the_off_hand_changes_while_the_dagger_flies`"), "the bible names the test")
+	check(note.contains("`test_a_shield_goes_on_while_the_dagger_flies`"), "the bible names the test")
 
 
 ## A save from before pass 462 spoke the old ids (design bible 14): loading it
