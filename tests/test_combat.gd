@@ -778,6 +778,56 @@ func _until(cond: Callable, max_frames: int) -> bool:
 	return cond.call()
 
 
+## Pass 561: the workbench's fight pictures (workbench/capture/shot.gd, --when) are
+## frames of the game being played. "hit" waits for a real blow's spark and the swing's
+## smear together; "tell" for a living foe's wind-up.
+func test_a_fight_picture_waits_for_the_spark_and_the_smear() -> void:
+	var shot: GDScript = load("res://workbench/capture/shot.gd")
+	var room := _arena_with("E", Vector2i(5, 6))
+	var p := make_player(room, Vector2i(3, 6))
+	await frames(6)
+	var tree := room.get_tree()
+	check(not shot.moment(tree, "hit"), "no fight picture of a hero standing idle")
+	p.input.attack_pressed = true
+	await frames(1)
+	p.input.attack_pressed = false
+	var smear: SlashFx = null
+	for c in p.get_children():
+		if c is SlashFx:
+			smear = c
+	if not check(smear != null, "the swing has a smear"):
+		return
+	if smear.waiting():
+		check(not shot.moment(tree, "hit"), "not while the smear waits out the windup")
+	var came: bool = await _until(func() -> bool: return shot.moment(tree, "hit"), 40)
+	if not check(came, "the moment comes on a real hit"):
+		return
+	check(_find(room, HitSpark) != null, "with the spark in the air")
+	check(is_instance_valid(smear) and not smear.waiting(), "and the smear showing")
+	await frames(40)
+	check(not shot.moment(tree, "hit"), "and passes once the swing is over")
+
+
+func test_a_fight_picture_of_a_tell_needs_a_living_foe_winding_up() -> void:
+	var shot: GDScript = load("res://workbench/capture/shot.gd")
+	var room := _arena_with("D", Vector2i(8, 6))
+	make_player(room, Vector2i(2, 6))
+	await frames(4)
+	var tree := room.get_tree()
+	var foe: Enemy = _find(room, Enemy)
+	if not check(foe != null, "a Rot Dwarf stands in the arena"):
+		return
+	foe.set_state("walk")
+	check(not shot.moment(tree, "tell"), "a walking foe is no tell")
+	for state: String in shot.TELLS:
+		foe.set_state(state)
+		check(shot.moment(tree, "tell"), "%s is a wind-up" % state)
+	foe.dead = true
+	check(not shot.moment(tree, "tell"), "a dead foe tells nothing")
+	foe.dead = false
+	foe.set_state("walk")
+
+
 func test_a_hit_sparks_where_the_blade_meets_the_foe() -> void:
 	var room := _arena_with("E", Vector2i(5, 6))
 	var p := make_player(room, Vector2i(3, 6))

@@ -7,11 +7,12 @@ Usage: python3 workbench/capture/build_catalog.py
   foe, guardian, pickup and spell scripts. Row ids are the game's own ids, so notes
   stay attached across reruns.
 """
-import glob, json, os, re, time
+import glob, json, os, re, sys, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 CAT = os.path.join(ROOT, 'workbench', 'catalog')
+sys.path.insert(0, HERE)
 rd = lambda *p: open(os.path.join(ROOT, *p), encoding='utf-8').read()
 data = lambda name: json.loads(rd('data', name + '.json'))
 
@@ -142,6 +143,26 @@ for z in ZONE_ORDER:
 sections.append({'id': 'rooms', 'group': 'World', 'label': 'Rooms', 'title': 'Every room',
                  'lede': 'All %d rooms, each shot where the hero enters it, with the interface hidden.' % len(room_rows),
                  'layout': 'wide', 'filter': 'Zone', 'rows': room_rows})
+
+# --- Fights: the game being played (capture_all.py, FIGHTS) ---------------------------
+import capture_all as CAP
+fight_rows = []
+for fid, rid, foe, when in CAP.FIGHTS:
+    h = R.get(rid)
+    if h is None:
+        continue
+    who = title(CHAR_FOE.get(foe, foe))
+    fight_rows.append(clean({
+        'id': fid, 'name': '%s: %s' % (h.get('name', rid), 'a blow lands' if when == 'hit' else 'a tell'), 'sub': ZONES.get(h.get('zone'), ''),
+        'img': img('fights/%s.png' % fid),
+        'text': ("A real swing on the %s: the smear, the hit spark and the foe's flash in one frame." % who) if when == 'hit'
+                else ('The %s winds up an attack; the hero only stands there.' % who),
+        'tags': [who, 'Hit' if when == 'hit' else 'Tell'],
+        'fields': {'Zone': ZONES.get(h.get('zone'), ''), 'Room': rid, 'Foe': who, 'Moment': when},
+    }))
+sections.append({'id': 'fights', 'group': 'World', 'label': 'Fights', 'title': 'Fight frames',
+                 'lede': 'The game being played, at the size the player sees it: nothing here is staged. The hero is put beside a foe and swings (or stands), and the capture waits for the moment itself.',
+                 'layout': 'wide', 'filter': 'Zone', 'rows': fight_rows})
 
 # --- People ------------------------------------------------------------------------
 NPCS = data('npcs')

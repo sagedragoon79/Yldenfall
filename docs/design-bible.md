@@ -1598,6 +1598,14 @@ to spend the PixelLab budget (subscription generations plus the pay-as-you-go cr
 reaching this bar. The order of guardians to remake and the per-guardian generation budget are in
 the style guide, section 8.
 
+**The grade sees the game being played (pass 561).** A grade set of rooms alone shows a hero standing
+idle, so the grader cannot judge combat at all (the pass 560 grade's top defect). Every grade set
+carries two to four **fight frames** from `workbench/catalog/fights/`
+(`capture_all.py --only=fights`). They are frames of real play at the size the player sees them, never
+staged: the hero is stood beside a foe and swings, and the capture waits for the frame where the
+swing's smear, the hit spark and the foe's flash are all drawn (`--when=hit`), or stands and waits
+for a foe's wind-up (`--when=tell`). A capture whose moment never comes saves nothing.
+
 ### 12.1 Resolution and scale
 
 - **World resolution:** 640x360 world pixels. All gameplay numbers (movement, hitboxes, rooms, tiles) are in world pixels.

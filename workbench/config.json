@@ -10,7 +10,8 @@
   "shotDirs": [
     "../shots",
     "catalog/rooms",
-    "catalog/guardians"
+    "catalog/guardians",
+    "catalog/fights"
   ],
   "clipDir": "clips",
   "catalogDir": "catalog",
