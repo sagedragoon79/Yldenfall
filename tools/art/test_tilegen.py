@@ -1130,12 +1130,14 @@ def test_evercrown_shelf_is_grown_from_the_zone_not_hot_stillglass():
             p = px[x, y]
             if p[3]:
                 assert p[:3] not in hot, f"hot stillglass at {x},{y}"
-                n = names[p[:3]].rsplit("-", 1)[0]
+                # The sinew in the notches is crystal-1 (wine, bible 12.48); the
+                # glaze on the lit rim is the lighter crystal.
+                n = "sinew" if names[p[:3]] == "crystal-1" else names[p[:3]].rsplit("-", 1)[0]
                 seen[n] = seen.get(n, 0) + 1
     total = sum(seen.values())
     assert seen.get("night", 0) > 0.7 * total, f"the shelf is mostly night matter: {seen}"
     assert 0 < seen.get("crystal", 0) < 0.08 * total, f"crystal is only a glaze: {seen}"
-    assert seen.get("ember", 0) > 0, "sinew shows in the notches"
+    assert seen.get("sinew", 0) > 0, "sinew shows in the notches"
 
 
 def test_evercrown_shelf_sits_on_the_world_pixel_grain():
@@ -1157,13 +1159,13 @@ def test_evercrown_shelf_has_an_unbroken_lit_top_and_a_shadowed_underside():
     assert all(p[3] for p in top), "the top band is unbroken"
     assert tg.c("night-0") not in top, "no outline along the lit top"
     lum_top = sum(_lum(p) for p in top) / W
-    skip = {tg.c(n)[:3] for n in ("night-0", "ember-1", "sky-4", "sky-6")}
+    skip = {tg.c(n)[:3] for n in ("night-0", "crystal-1", "sky-4", "sky-6")}
     under = [px[x * tg.D, y * tg.D] for x in range(W) for y in (2, 3, 4)
              if px[x * tg.D, y * tg.D][3] and px[x * tg.D, y * tg.D][:3] not in skip]
     assert lum_top > sum(_lum(p) for p in under) / len(under) + 20, "the top is lit, the lobes fall into shade"
     for x in range(W):
         col = [px[x * tg.D, y * tg.D] for y in range(6)]
-        body = [i for i, p in enumerate(col) if p[3] and p[:3] != tg.c("ember-1")[:3]]
+        body = [i for i, p in enumerate(col) if p[3] and p[:3] != tg.c("crystal-1")[:3]]
         if body:
             assert col[body[-1]][:3] == tg.c("night-0")[:3], f"column {x} closes in night-0"
 
@@ -1174,6 +1176,91 @@ def test_evercrown_shelf_tiles_seamlessly():
     assert sum(tg.SHELF_SEGS) == tg.T // tg.D
     for y in range(2):
         assert px[0, y * tg.D] == px[t.width - 1, y * tg.D] or (px[0, y * tg.D][3] and px[t.width - 1, y * tg.D][3])
+
+
+def _ember():
+    return {tg.c(f"ember-{i}")[:3] for i in range(8)}
+
+
+def _uses(img, colours):
+    """How many opaque pixels of `img` are one of `colours` (RGB triples)."""
+    px = img.convert("RGBA").load()
+    w, h = img.size
+    return sum(1 for y in range(h) for x in range(w) if px[x, y][3] and px[x, y][:3] in colours)
+
+
+def test_the_evercrown_keeps_red_for_what_hurts():
+    # Design bible 12.48: in the Evercrown the ember ramp belongs to what hurts
+    # (thorn bulbs, fire seals, a foe's tell). Its tiles, backdrops and decor
+    # carry none, so a red thing on screen is a threat. (Putting the ember seam
+    # back in paint_meteor, the red bead on a tendril or the red core glow fails.)
+    ember = _ember()
+    tile = tg.Image.new("RGBA", (tg.T * 4, tg.T), tg.CLEAR)
+    for i in range(4):
+        tg.paint_tile(tile, i * tg.T, 0, 255, "evercrown", 101 + i)
+    assert _uses(tile, ember) == 0, "the Evercrown's solid tiles carry no ember"
+    assert _uses(tg.evercrown_far(), ember) == 0, "the Evercrown's far wall carries no ember"
+    assert _uses(tg.evercrown_mid(), ember) == 0, "the Evercrown's tendrils carry no ember"
+    root = Path(__file__).resolve().parents[2]
+    for rel in ("assets/tiles/evercrown.png", "assets/bg/evercrown_far.png",
+                "assets/bg/evercrown_mid.png", "assets/decor/evercrown.png"):
+        assert _uses(tg.Image.open(root / rel), ember) == 0, f"{rel} carries no ember"
+
+
+def test_evercrown_floor_stubs_do_not_pass_for_spikes():
+    # Design bible 12.48: the floor's crystal stubs were tall bright splinters, the
+    # shape and brightness of a row of spikes. They are short (under a spike's 10
+    # world pixels) and no brighter than their night-3 rim.
+    import random
+    import decorgen as dg
+    assert dg.EVERCROWN_STUB < 10, "a stub is shorter than a floor spike"
+    cap = _lum(tg.c("night-3"))
+    for seed in range(12):
+        cell = dg.evercrown_shards(random.Random(seed))
+        px = cell.img.load()
+        w, h = cell.img.size
+        rows = [y for y in range(h) if any(px[x, y][3] for x in range(w))]
+        assert rows, "a stub is drawn"
+        tall = (max(rows) - min(rows) + 1) / dg.D  # world pixels, with the outline
+        assert tall <= dg.EVERCROWN_STUB + 2, f"seed {seed}: a stub stands {tall} px tall"
+        for y in rows:
+            for x in range(w):
+                if px[x, y][3]:
+                    assert _lum(px[x, y]) <= cap + 1, f"seed {seed}: a stub pixel is brighter than its rim"
+
+
+def test_the_crystal_halls_ridges_sit_deep_in_their_own_hue():
+    # Design bible 12.48: both halls shared one crystal-1 ridge, the value and hue
+    # of their play tiles' shadows. Each ridge is now the darkest shade of its
+    # zone's own hue: Vorrhallow's drowned blue, the Evercrown's wine.
+    assert tg.RIDGE_COLOR["vorrhallow"] == ("sky-0", "sky-1")
+    assert tg.RIDGE_COLOR["evercrown"] == ("crystal-0", "crystal-1")
+    for z in ("vorrhallow", "evercrown"):
+        body = tg.c(tg.RIDGE_COLOR[z][0])
+        assert _lum(body) < 25, f"{z}: the ridge body (lum {_lum(body):.0f}) sits deep"
+    v, e = tg.c("sky-0"), tg.c("crystal-0")
+    assert v[2] > v[0] and e[0] > e[1], "blue for Vorrhallow, wine for the Evercrown"
+
+
+def test_the_core_glow_is_a_fine_dither_not_blocks():
+    # Design bible 12.48: the glow at the foot of the Evercrown's far wall was
+    # random 4 px blocks, a band of checker noise behind the floor. It is an ordered
+    # dither one world pixel fine that thickens downward to CORE_GLOW.
+    far = tg.evercrown_far()
+    px = far.load()
+    glow = tg.c("crystal-2")
+    def share(y0, y1):
+        n = sum(1 for y in range(y0, y1) for x in range(0, tg.BG_W) if px[x, y] == glow)
+        return n / ((y1 - y0) * tg.BG_W)
+    top, foot = int(tg.BG_H * 0.8), tg.BG_H
+    upper, lower = share(top, top + 8 * tg.D), share(foot - 8 * tg.D, foot)
+    assert upper < 0.15 < lower <= tg.CORE_GLOW + 0.1, f"the glow thickens downward ({upper:.2f} to {lower:.2f})"
+    # No lit run longer than two world pixels along the foot row: a dither, not blocks.
+    y, run, longest = foot - tg.D, 0, 0
+    for x in range(tg.BG_W):
+        run = run + 1 if px[x, y] == glow else 0
+        longest = max(longest, run)
+    assert longest <= 2 * tg.D, f"the foot row has a lit run {longest} px long"
 
 
 if __name__ == "__main__":

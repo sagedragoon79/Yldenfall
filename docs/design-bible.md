@@ -1183,8 +1183,8 @@ The core (phase 2) has none: no blade reaches it, only the veins.
     spiked trench, and a Shade Knight and a Crystal Dwarf.
   - **Heart Stair** (63,-10, 40x45): switchback shelves of stillglass flesh with a Glass Slug, Crystal Dwarf, Shade
     Knights and a Clockwork Hound. At the top, the heart is not open yet.
-  - the Evercrown has its own tiles (`paint_meteor`: rounded cells of black-violet scar tissue with blood-red seams and cyan
-    pores), backdrops (ribbed walls, light veins, a red glow below), decor (polyps, veins, tendrils, wall eyes),
+  - the Evercrown has its own tiles (`paint_meteor`: rounded cells of black-violet scar tissue with wine-dark seams and cyan
+    pores), backdrops (ribbed walls, light veins, a wine glow below; no red, 12.48), decor (polyps, veins, tendrils, wall eyes),
     cyan spore motes, a theme (B locrian over a heartbeat, detuned pads) and an ambience (breathing drone, heartbeat,
     glassy whines).
   - **Corrupted foes, as built (pass 78):** every foe spawned in an Evercrown room is `corrupted` (a room header
@@ -2001,11 +2001,11 @@ The ruined towers on some islands (`ruined_spire`) follow the same grain and ram
 The pass 540 grade listed the Evercrown's "hot-magenta platforms and chains" among its flat single-fill props. The zone's one-way plank was a stillglass board in the saturated crystal ramp on a crystal trestle, hung (12.30) on crystal chains: the brightest flat colour in a dark violet zone. The Evercrown is the inside of the Everbloom, so its shelves are now grown from the zone's own matter rather than built (`paint_grown_shelf` and `shelf_cells` in `tools/art/tilegen.py`, `PLANK["evercrown"]` marked `grown`):
 
 - **Body**: a continuous lit top band (night-5 over night-4) the width of the tile, so a run reads as one ledge, with one rounded lobe per segment hanging beneath it (`SHELF_SEGS`, 7 and 9 world px, so the tile repeats seamlessly). The lobes are shaded on the night ramp (night-4 to night-2), lit from the upper left.
-- **Accents**: a short glaze of crystal-3 where the light first catches each lobe (the only crystal left, under 8% of the tile), sinew (ember-1) in the notches between lobes, a cyan pore (sky-6 over sky-4) in the wide lobe.
+- **Accents**: a short glaze of crystal-3 where the light first catches each lobe (the only crystal left, under 8% of the tile), sinew (crystal-1 since pass 558, 12.48; ember-1 before) in the notches between lobes, a cyan pore (sky-6 over sky-4) in the wide lobe.
 - **Selective outline**: night-0 under each lobe and down its shaded right side, never along the lit top.
 - **Tendrils**: in place of a trestle, one fleshy root hangs from the wide lobe and paling toward its tip (night-2 to crystal-2) with a bead of cyan sap, and a stub hangs from the narrow one.
 
-Hangers are sinew strands (night-5, night-3, ember-1; drawn like rope), and posts and braces are night-ramp tissue. Painted in whole world pixels. Judged by eye at 1x and 3x in `evercrown/veins` against the pass 541 build: the shelves keep their read as platforms against the violet backdrop while no longer the loudest colour in the room. `tools/art/test_tilegen.py` checks the palette (mostly night, a glaze of crystal, no hot crystal), the world-pixel grain, the unbroken lit top over shaded lobes, the outline and the seamless tile; `tests/test_plank_supports.gd` checks the sinew look.
+Hangers are sinew strands (night-5, night-3, crystal-1 since 12.48; drawn like rope), and posts and braces are night-ramp tissue. Painted in whole world pixels. Judged by eye at 1x and 3x in `evercrown/veins` against the pass 541 build: the shelves keep their read as platforms against the violet backdrop while no longer the loudest colour in the room. `tools/art/test_tilegen.py` checks the palette (mostly night, a glaze of crystal, no hot crystal), the world-pixel grain, the unbroken lit top over shaded lobes, the outline and the seamless tile; `tests/test_plank_supports.gd` checks the sinew look.
 
 ### 12.35 The Smelter's crucible is a pixel prop (pass 543)
 
@@ -2156,6 +2156,20 @@ The rest of 12.46's grade item. A masonry floor had one built line, but it stopp
 - **Cracks and moss in the field** (`field_wear`). About four in ten of the scattered variants of `paint_bricks` and `paint_drowned` carry one hairline crack. The gym's surface variants carry a tuft of moss in a bed joint, drawn in whole world pixels (12.28). Edge tiles carry neither (a mark on a tile with no variants repeats down every wall face), the darkened tiers grow no moss, and the Inner Rings grow nothing. The Spires already had cracks; the Sunken Spring has its pores and drips (12.39).
 
 `assets/tiles/gym.png`, `spires.png`, `sunken.png`, `trials.png` and `vorrhallow.png` are regenerated; collision and edges are untouched. `tests/test_brick_structure.gd` holds it: the course test covers all five zones, a foot tile's lit line runs the tile but for its joint, the mirrored foot closes on the other side, a ceiling corner has no course, and moss is in the gym's surface variants only.
+
+### 12.48 The crystal halls: a deep backdrop in each hall's own hue, and red for what hurts (pass 558)
+
+The pass 555 grade read Vorrhallow and the Evercrown as "nearly monochrome with low value contrast; crystal shards, tendrils and backdrop columns blur together and hazards do not separate from decor". Measured on `vorrhallow/flooded_hall` and `evercrown/veins`: the backdrop's median luminance was 40 and 39 of 255, the play tiles' 43 to 53, and every region's hue lay between 255 and 280 degrees. One purple at one value.
+
+- **A haze per hall** (`Backdrop.ZONE_HAZE`). Both halls shared the crystal violet of 12.5. Vorrhallow's is now a drowned blue (22, 36, 56) and the Evercrown's a wine (44, 20, 46): each deeper than before, at least 60 degrees of hue from the other and at least 25 from the violet of the play tiles (the stone and night ramps). They follow the two halls' colours on the map (teal and wine). `FoeLight` (12.43) and the foreground fringe (12.29) read the same colour, so a foe's shadows and the near fringe move with the room.
+- **A deep ridge** (`RIDGE_COLOR`). Both ridges were crystal-1, the value of the tiles' own shadows, and filled the lower half of the backdrop with the flattest purple in the frame. Vorrhallow's is sky-0 with a sky-1 crest, the Evercrown's crystal-0 with a crystal-1 crest: a dark silhouette in front of the dimly lit far hall.
+- **Red is for what hurts, in the Evercrown.** The ember ramp there belongs to thorn bulbs, fire seals and a foe's tell. The tile's seams, the grown shelf's sinew and its hangers, the polyps' bands and the wall eye's veins are crystal-1 (wine); the bead on a hanging tendril and down a mid tendril is cyan, the light of its bulb; the glow at the foot of the far wall is crystal-2. Nothing in the Evercrown's tiles, backdrops or decor is on the ember ramp. Vorrhallow had none to begin with: its hazards are floor spikes, which keep their steel rim (12.24), and its magenta stillglass is decor.
+- **Floor stubs, not splinters.** The Evercrown's floor decor `evercrown_shards` drew splinters up to 20 world pixels tall with a bright crystal-3 edge, the shape of a row of spikes. They are stubs of at most `EVERCROWN_STUB` (8, under a spike's 10), two wide at the top, no brighter than a night-3 rim.
+- **The core glow is a dither.** The glow at the foot of `evercrown_far` was random 4 px blocks and read as a band of checker noise behind the floor. It is an ordered 4x4 dither one world pixel fine, thickening downward to half the pixels (`CORE_GLOW`).
+
+After: the backdrop's median luminance is 30 in `vorrhallow/flooded_hall` (hue 230) and 20 in `evercrown/veins`, against tiles unchanged at 47 and 53. Judged by eye at 1x in six rooms, before and after. `assets/tiles/evercrown.png`, `assets/bg/evercrown_far.png`, `evercrown_mid.png`, `evercrown_ridge.png`, `vorrhallow_ridge.png` and `assets/decor/evercrown.png` are regenerated; collision is untouched. `test_the_crystal_halls_recede_deep_each_in_its_own_hue` holds the haze; four guards in `tools/art/test_tilegen.py` hold the ridges, the absence of ember, the stubs and the dither.
+
+Not done: Vorrhallow's spikes stand in flooded pits and the water's tint dims their rim; and `tools/art/decorgen.py` seeds each zone by its name, so the zones renamed in pass 462 no longer regenerate to their committed atlases (only the Evercrown's atlas was regenerated here, and its cells were redrawn from the new seed).
 
 ## 13. Asset Production Plan
 

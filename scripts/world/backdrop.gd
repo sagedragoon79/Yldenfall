@@ -32,9 +32,14 @@ const HAZE := Color8(44, 37, 65)
 ## of one shared night. Each is a low shade of the zone's dominant master-palette
 ## hue blended halfway toward night-1 (HAZE) — tinted for identity, anchored to
 ## the shared night for cohesion. Warm hearths (hearthroot, spires), green woods
-## (heartwood, boughs), cold spring-blue (haar, sunken), crystal violet
-## (evercrown, vorrhallow) and bare grey stone (tower, trials). Computed from the
-## palette in tools/art/palette.py; mirror any change there.
+## (heartwood, boughs), cold spring-blue (haar, sunken) and bare grey stone
+## (tower, trials). Computed from the palette in tools/art/palette.py; mirror any
+## change there.
+##
+## The two crystal halls (vorrhallow, evercrown) are set by hand, deeper and each
+## in the hue of its place on the map (design bible 12.48, pass 558): Vorrhallow a
+## drowned blue, the Evercrown a wine. Both shared one crystal violet until then,
+## the hue and value of their own violet play tiles, so a frame read as one purple.
 ##
 ## The two murkiest zones (haar, sunken) are eased toward neutral (pass 513): the
 ## independent grade read them as a low-contrast grey-green / grey-teal where the
@@ -49,8 +54,8 @@ const ZONE_HAZE := {
 	"tower": Color8(46, 40, 62),
 	"haar": Color8(74, 84, 98),
 	"boughs": Color8(43, 83, 53),
-	"vorrhallow": Color8(46, 39, 69),
-	"evercrown": Color8(55, 34, 68),
+	"vorrhallow": Color8(22, 36, 56),
+	"evercrown": Color8(44, 20, 46),
 	"sunken": Color8(56, 62, 80),
 	"trials": Color8(46, 40, 62),
 	"spires": Color8(64, 37, 42),

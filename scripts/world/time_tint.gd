@@ -12,7 +12,8 @@ const NEUTRAL := Color.WHITE
 ## Per-zone whole-scene colour grade (design bible 12.9): a gentle cinematic tint
 ## multiplied over the whole world (backdrop, tiles, actors alike), giving each
 ## zone its own light. The families mirror Backdrop.ZONE_HAZE: warm hearths, green
-## woods, cold spring-blue, crystal violet and bare grey stone. Every channel stays
+## woods, cold spring-blue, crystal violet (the grade keeps it; the haze of the two
+## crystal halls split in pass 558, bible 12.48) and bare grey stone. Every channel stays
 ## high (>= 0.84) and luminance stays high (>= 0.9), so the multiply shifts hue and
 ## mood without darkening the scene — and because it is a uniform multiply it leaves
 ## contrast ratios untouched, so foes, hazards and telegraphs keep their pop.

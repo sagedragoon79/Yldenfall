@@ -942,7 +942,7 @@ def evercrown_polyps(rng):
         h = rng.randint(4, 12)
         for k in range(h):
             w = 3 if k < h - 2 else 2
-            c.rect(x - w // 2, H - 1 - k, w, 1, "night-2" if k % 3 else "ember-1")
+            c.rect(x - w // 2, H - 1 - k, w, 1, "night-2" if k % 3 else "crystal-1")
         c.rect(x - 1, H - h - 2, 3, 2, "night-1")
         c.px(x, H - h - 2, "sky-6")
         c.px(x - 1, H - h - 1, "sky-3")
@@ -951,19 +951,25 @@ def evercrown_polyps(rng):
     return c
 
 
+EVERCROWN_STUB = 8  # the tallest stub, under a floor spike's 10
+
+
 def evercrown_shards(rng):
-    """Black-violet crystal splinters, red light deep inside them."""
+    """Black-violet crystal stubs, wine light deep inside them. Short and blunt
+    (EVERCROWN_STUB world pixels at most, a flat top two wide), and no brighter
+    than crystal-2: a row of tall bright splinters read as floor spikes
+    (design bible 12.48)."""
     c = Cell()
     base = rng.randint(8, 22)
     for _ in range(rng.randint(2, 3)):
         x = base + rng.randint(-6, 6)
-        h = rng.randint(8, 20)
+        h = rng.randint(4, EVERCROWN_STUB)
         lean = rng.uniform(-0.4, 0.4)
         for k in range(h):
-            w = max(1, (h - k) * 4 // h)
+            w = max(2, (h - k) * 4 // h)
             xx = x + int(lean * k)
-            c.rect(xx - w // 2, H - 1 - k, w, 1, "crystal-1" if k % 4 else "ember-2")
-            c.px(xx - w // 2, H - 1 - k, "crystal-3")
+            c.rect(xx - w // 2, H - 1 - k, w, 1, "crystal-1" if k % 4 else "crystal-2")
+            c.px(xx - w // 2, H - 1 - k, "night-3")
     c.outline("night-0")
     return c
 
@@ -982,7 +988,7 @@ def evercrown_veins(rng):
 
 
 def evercrown_tendrils(rng):
-    """Tendrils hanging from the vault, each ending in a red bead."""
+    """Tendrils hanging from the vault, each ending in a bead of cyan light."""
     c = Cell()
     for _ in range(rng.randint(2, 4)):
         x = rng.randint(4, 27)
@@ -991,8 +997,8 @@ def evercrown_tendrils(rng):
             xx = x + int(math.sin(y / 4.0) * 1.5)
             c.px(xx, y, "night-2" if y % 4 else "crystal-1")
             c.px(xx + 1, y, "night-1")
-        c.px(x, n, "ember-4")
-        c.px(x, n + 1, "ember-2")
+        c.px(x, n, "sky-5")
+        c.px(x, n + 1, "sky-3")
     c.outline("night-0")
     return c
 
@@ -1011,11 +1017,11 @@ def evercrown_eyes(rng):
 
 
 def evercrown_wall_eye(rng):
-    """One great eye opening in the wall, red-veined."""
+    """One great eye opening in the wall, wine-veined."""
     c = Cell()
     y = rng.randint(22, 42)
     c.disc(4, y, 5, 3, "night-2")
-    c.rect(1, y - 1, 7, 3, "ember-1")
+    c.rect(1, y - 1, 7, 3, "crystal-1")
     c.rect(2, y - 1, 5, 3, "sky-5")
     c.rect(4, y - 1, 1, 3, "night-0")
     c.outline("night-0")
