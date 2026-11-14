@@ -422,6 +422,11 @@ const OFFHAND_DAGGER := "offhand:rune_dagger"
 ## helmet you have, by slot, and your cloak's dyes (pass 189). Choose one to
 ## put it on; choose what you wear (not the blade or the cloak) to take it off.
 ## Back returns to the pause menu.
+## A belt row's id on the Equipment page, and where each belt item's count is saved.
+const BELT_PREFIX := "belt:"
+const BELT_COUNTS := {"ointment": "ointments", "elixir": "elixirs", "tonic": "tonics"}
+
+
 static func equipment_rows() -> Array:
 	var names := {"blade": "Blades", "armor": "Armor", "shield": "Off Hand", "helmet": "Helmets", "neck": "Neck", "ring": "Rings, two worn", "relic": "Relic"}
 	var dagger := bool(GameState.data.abilities.get("rune_dagger", false))
@@ -454,6 +459,19 @@ static func equipment_rows() -> Array:
 			if worn and slot != "blade":
 				detail += "  Choose it again to take it off."
 			out.append({"label": item.name, "right": "Worn" if worn else "", "detail": detail, "enabled": true, "id": id})
+	# The belt (design bible 5.6): what each place holds; choosing one takes it in hand.
+	var belt: Array = GameState.data.belt
+	if belt.any(func(id: String) -> bool: return id != ""):
+		out.append({"label": "Belt, three places", "header": true})
+		for i in belt.size():
+			var id := String(belt[i])
+			if id == "":
+				continue
+			var item := GameData.item(id)
+			var n := int(GameState.data.get(BELT_COUNTS[id], 0))
+			var held := i == int(GameState.data.belt_at)
+			out.append({"label": item.name, "right": ("In hand  x%d" if held else "x%d") % n,
+				"detail": String(item.desc) + ("" if held else "  Choose it to take it in hand."), "enabled": true, "id": BELT_PREFIX + str(i)})
 	out.append({"label": "Cloak", "header": true})
 	for id: String in cloak_dyes():
 		var item := GameData.item(id)
@@ -478,6 +496,10 @@ static func worn_totals(p: Player) -> String:
 ## A row chosen on the Equipment page: gear goes on (or off), a dye on the cloak,
 ## a color on the hair.
 static func choose_equipment(id: String, p: Player) -> void:
+	if id.begins_with(BELT_PREFIX):
+		GameState.data.belt_at = int(id.trim_prefix(BELT_PREFIX))
+		Sfx.play("cloth", 0.0)
+		return
 	if id == OFFHAND_DAGGER:
 		GameState.data.equipment.shield = ""
 		GameState.refresh_stats(p)
@@ -513,6 +535,7 @@ static func open_equipment(tree: SceneTree, p: Player, back: Callable) -> bool:
 	if menu == null:
 		return false
 	# What was found since the last save (the Rune Dagger's Off Hand row) shows at once.
+	GameState.tidy_belt(p)
 	GameState.capture(p)
 	var provider := func() -> Array: return equipment_rows()
 	var on_select := func(i: int) -> void:
@@ -605,7 +628,9 @@ static func inventory_rows(p: Player) -> Array:
 	# is bought, and the Amber Draught nowhere, so a player could not see it was there.
 	var supplies := []
 	if p.ointments > 0:
-		supplies.append({"label": "Barkbalm", "right": "x%d" % p.ointments, "detail": "Rub one on from the pause menu: nothing can hurt you for 10 seconds."})
+		supplies.append({"label": "Barkbalm", "right": "x%d" % p.ointments, "detail": "Used from your belt: nothing can hurt you for 10 seconds."})
+	if p.tonics > 0:
+		supplies.append({"label": "Bitterleaf Tonic", "right": "x%d" % p.tonics, "detail": "Used from your belt: it clears poison, burning, chill and curse."})
 	if p.elixirs > 0:
 		supplies.append({"label": "Amber Draught", "right": "x%d" % p.elixirs, "detail": "Used by itself when a blow would fell you: it brings you back at full health."})
 	if not supplies.is_empty():
@@ -723,7 +748,7 @@ static func open_options(tree: SceneTree, back: Callable) -> bool:
 const ACTION_NAMES := {
 	"move_left": "Move left", "move_right": "Move right", "move_up": "Look up / enter", "move_down": "Crouch / drop",
 	"jump": "Jump", "attack": "Attack", "dash": "Dash", "block": "Block / parry", "spell": "Cast spell", "spell_next": "Next spell",
-	"heal": "Drink potion", "stillstone": "Stillstone", "throw": "Throw dagger", "map": "Map",
+	"heal": "Drink potion", "stillstone": "Stillstone", "throw": "Throw dagger", "belt_next": "Belt: next", "belt_use": "Belt: use", "map": "Map",
 }
 
 

@@ -84,6 +84,9 @@ const GEAR_SLOTS := ["blade", "armor", "shield", "helmet"]
 ## The trinkets (design bible 5.6): icons in the menu only, each with one fixed
 ## rule. A kind's places are its keys in `equipment`; there are two rings.
 const TRINKET_PLACES := {"neck": ["neck"], "ring": ["ring1", "ring2"], "relic": ["relic"]}
+## The belt (design bible 5.6): places for single-use things, reached in play
+## with two buttons. An item with "belt" in data/items.json takes a place.
+const BELT_PLACES := 3
 ## Every kind of thing that is worn, in the order the Equipment page lists them.
 const GEAR_KINDS := ["blade", "armor", "shield", "helmet", "neck", "ring", "relic"]
 
@@ -158,6 +161,11 @@ static func fresh() -> Dictionary:
 		"elixirs": 0,
 		## Barkbalms carried (at most Shop.OINTMENT_MAX).
 		"ointments": 0,
+		## Bitterleaf Tonics carried (at most Shop.TONIC_MAX).
+		"tonics": 0,
+		## What each place on the belt holds ("" for nothing), and the place in hand.
+		"belt": ["", "", ""],
+		"belt_at": 0,
 		"collected": {},
 		"visited": {},
 		## Room id -> [x, y] of each Ringreader you have spoken to: the Grain Road's stops.
@@ -279,6 +287,38 @@ func worn_trinkets() -> Array:
 			if String(item.get("kind", "")) == kind:
 				out.append(item)
 	return out
+
+
+## Every item that goes on the belt, in the order of data/items.json.
+static func belt_items() -> Array:
+	var out := []
+	var items := GameData.table("items")
+	for id: String in items:
+		if bool(items[id].get("belt", false)):
+			out.append(id)
+	return out
+
+
+## Puts what `p` carries and has not belted into the free places. Nothing is
+## taken off: a place keeps its thing when the last one is used.
+func tidy_belt(p: Player) -> void:
+	var belt: Array = data.belt
+	for id: String in belt_items():
+		if p.carried(id) > 0 and not belt.has(id):
+			var free := belt.find("")
+			if free >= 0:
+				belt[free] = id
+
+
+## True when `id` has a place on `p`'s belt.
+func on_belt(id: String, p: Player) -> bool:
+	tidy_belt(p)
+	return Array(data.belt).has(id)
+
+
+## What is in hand on the belt ("" for an empty place).
+func belt_held() -> String:
+	return String(data.belt[clampi(int(data.belt_at), 0, BELT_PLACES - 1)])
 
 
 ## Takes `id` into your gear and puts it on (a purchase, a find, a reward). A
@@ -501,6 +541,7 @@ func apply(p: Player) -> void:
 	p.gold = int(data.gold)
 	p.elixirs = int(data.elixirs)
 	p.ointments = int(data.ointments)
+	p.tonics = int(data.get("tonics", 0))
 	refresh_stats(p)
 	p.restore()
 
@@ -587,6 +628,7 @@ func capture(p: Player) -> void:
 	data.gold = p.gold
 	data.elixirs = p.elixirs
 	data.ointments = p.ointments
+	data.tonics = p.tonics
 
 
 ## Applies a permanent stat item (Life Fruit, Mana Dew, a Potion, Ring or Stillglass Shard) and
@@ -864,6 +906,18 @@ static func sanitize(src: Variant) -> Dictionary:
 				out.equipment[place] = ""
 	if String(out.equipment.ring2) == String(out.equipment.ring1):
 		out.equipment.ring2 = ""
+	# The belt: three places, each empty or a belt item, none twice.
+	var belt := []
+	belt.resize(BELT_PLACES)
+	belt.fill("")
+	var known := belt_items()
+	var src_belt: Array = out.belt if out.belt is Array else []
+	for i in mini(src_belt.size(), BELT_PLACES):
+		if src_belt[i] is String and known.has(src_belt[i]) and not belt.has(src_belt[i]):
+			belt[i] = src_belt[i]
+	out.belt = belt
+	out.belt_at = clampi(int(out.belt_at), 0, BELT_PLACES - 1)
+	out.tonics = clampi(int(out.tonics), 0, Shop.TONIC_MAX)
 	# Gear kept since pass 186: whatever is worn, and the starting blade.
 	var gear: Array = _unique_strings(out.gear)
 	for i in gear.size():

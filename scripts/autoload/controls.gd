@@ -35,6 +35,10 @@ const BINDINGS := {
 	"spell_next": {"keys": [KEY_G, KEY_O], "buttons": [JOY_BUTTON_RIGHT_STICK]},
 	"heal": {"keys": [KEY_Q, KEY_H], "trigger": JOY_AXIS_TRIGGER_LEFT},
 	"stillstone": {"keys": [KEY_T, KEY_E], "buttons": [JOY_BUTTON_LEFT_STICK]},
+	# The belt (design bible 5.6). Every pad button is taken, so the right
+	# stick has it: flick right for the next thing, pull down to use it.
+	"belt_next": {"keys": [KEY_1, KEY_COMMA], "axis": [JOY_AXIS_RIGHT_X, 1.0]},
+	"belt_use": {"keys": [KEY_2, KEY_PERIOD], "axis": [JOY_AXIS_RIGHT_Y, 1.0]},
 	"map": {"keys": [KEY_TAB, KEY_M], "buttons": [JOY_BUTTON_BACK]},
 	"pause": {"keys": [KEY_ESCAPE, KEY_P], "buttons": [JOY_BUTTON_START]},
 	"debug_glove": {"keys": [KEY_F1]},

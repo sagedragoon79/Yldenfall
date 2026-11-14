@@ -150,6 +150,8 @@ var _hurt_kind := DamageKind.PHYSICAL
 var elixirs := 0
 ## Barkbalms carried: each makes you immune to harm for OINTMENT_TIME.
 var ointments := 0
+## Bitterleaf Tonics carried: each clears every condition on you.
+var tonics := 0
 ## Seconds left on a War Glove (the original's Glove, a rare drop): blade hits
 ## deal combat.war_glove_mult more while it lasts.
 var glove_left: float:
@@ -502,6 +504,7 @@ func _physics_process(delta: float) -> void:
 	_try_cycle_spell()
 	_try_cast()
 	_try_stillstone()
+	_try_belt()
 	_try_throw(delta)
 	_try_attack(on_floor)
 	_try_thrust(on_floor, delta)
@@ -1955,7 +1958,7 @@ func take_damage(amount: int, from_hazard := false, knock_dir := 0, kind := "") 
 		GameState.toast.emit("Second Wind!")
 		Sfx.play("heal", 0.0)
 		_spawn_dust(Vector2(0, -16), "heal")
-	if BossRush.active() and amount >= hp and elixirs <= 0:
+	if BossRush.active() and amount >= hp and not draught_ready():
 		# A boss rush (bible 11): the blow that would kill you ends the rush
 		# (an Amber Draught still saves you first).
 		var world := get_tree().get_first_node_in_group("world") as World
@@ -1986,7 +1989,7 @@ func take_damage(amount: int, from_hazard := false, knock_dir := 0, kind := "") 
 		# thud under the yelp, so the deep zones' heavy hits read by ear.
 		Sfx.play("hurt_heavy", 0.04)
 	visual.flash_hurt()
-	if hp <= 0 and elixirs > 0:
+	if hp <= 0 and draught_ready():
 		_drink_elixir()
 		return
 	if hp <= 0:
@@ -2008,7 +2011,86 @@ func take_damage(amount: int, from_hazard := false, knock_dir := 0, kind := "") 
 	health_changed.emit(hp, max_hp)
 
 
-## Rubs on an Barkbalm (from the pause menu): nothing can hurt you for
+## How many of a belt item you carry.
+func carried(id: String) -> int:
+	match id:
+		"ointment":
+			return ointments
+		"elixir":
+			return elixirs
+		"tonic":
+			return tonics
+	return 0
+
+
+## True when an Amber Draught is on the belt to catch the blow that fells you.
+func draught_ready() -> bool:
+	return elixirs > 0 and GameState.on_belt("elixir", self)
+
+
+func _try_belt() -> void:
+	if input.belt_next_pressed:
+		belt_next()
+	if input.belt_use_pressed:
+		belt_use()
+
+
+## Takes the next thing on the belt that you still carry into hand, and
+## returns it ("" when the belt has nothing left).
+func belt_next() -> String:
+	GameState.tidy_belt(self)
+	var belt: Array = GameState.data.belt
+	var at := int(GameState.data.belt_at)
+	for i in range(1, GameState.BELT_PLACES + 1):
+		var j := (at + i) % GameState.BELT_PLACES
+		if carried(String(belt[j])) > 0:
+			if j != at:
+				Sfx.play("cloth", 0.0, -6.0)
+			GameState.data.belt_at = j
+			return String(belt[j])
+	return ""
+
+
+## Uses what is in hand on the belt; with none of it left, the next thing
+## comes to hand first. False, with a refusal, when nothing was used.
+func belt_use() -> bool:
+	if dead:
+		return false
+	GameState.tidy_belt(self)
+	var id := GameState.belt_held()
+	if carried(id) <= 0:
+		id = belt_next()
+	var used := false
+	match id:
+		"ointment":
+			used = use_ointment()
+		"tonic":
+			used = use_tonic()
+		"elixir":
+			GameState.toast.emit("The Amber Draught waits for the blow that would fell you.")
+	if not used:
+		Sfx.play("menu_refuse", 0.0, -4.0)
+	elif carried(id) <= 0:
+		belt_next()
+	return used
+
+
+## Drinks a Bitterleaf Tonic: every condition on you clears. False if you
+## have none or nothing ails you.
+func use_tonic() -> bool:
+	if tonics <= 0 or dead:
+		return false
+	if not Condition.ALL.any(func(c: String) -> bool: return has_condition(c)):
+		GameState.toast.emit("Nothing ails you.")
+		return false
+	tonics -= 1
+	cure_poison()
+	Sfx.play("heal", 0.0)
+	GameState.toast.emit("The Bitterleaf Tonic clears your blood.")
+	return true
+
+
+## Rubs on a Barkbalm (from the belt or the pause menu): nothing can hurt you for
 ## OINTMENT_TIME seconds. False if you have none or one is already on.
 func use_ointment() -> bool:
 	if ointments <= 0 or _ointment_timer > 0.0 or dead:

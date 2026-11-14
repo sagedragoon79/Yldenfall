@@ -7,6 +7,8 @@ extends RefCounted
 const ELIXIR_MAX := 1
 ## Barkbalms you can carry at once.
 const OINTMENT_MAX := 3
+## Bitterleaf Tonics you can carry at once.
+const TONIC_MAX := 3
 
 
 ## The stock indices on the shelf now. An entry with "requires" (a GameState flag)
@@ -43,6 +45,9 @@ static func status(shop_id: String, index: int, p: Player) -> String:
 				return "owned"
 		"ointment":
 			if p.ointments >= OINTMENT_MAX:
+				return "full"
+		"tonic":
+			if p.tonics >= TONIC_MAX:
 				return "full"
 		"key":
 			var kind := String(entry.item).trim_suffix("_key")
@@ -109,6 +114,8 @@ static func buy(shop_id: String, index: int, p: Player) -> bool:
 			p.elixirs += 1
 		"ointment":
 			p.ointments += 1
+		"tonic":
+			p.tonics += 1
 		"temper":
 			var tempers: Dictionary = GameState.data.get("tempers", {})
 			tempers[String(GameState.data.equipment.blade)] = int(item.level)
