@@ -147,6 +147,28 @@ func test_every_zone_haze_is_a_dark_tone() -> void:
 			"%s fog colour is dark enough to recede into" % z)
 
 
+func test_the_crystal_halls_recede_deep_each_in_its_own_hue() -> void:
+	# Vorrhallow and the Evercrown shared one crystal violet, the hue and the value
+	# of their own play tiles, so the frame read as one purple (the independent
+	# grade, pass 555). Each hall's haze is now deep and in the hue of its place on
+	# the map: Vorrhallow's drowned blue, the Evercrown's wine (design bible 12.48).
+	# Fails if either goes back to the shared violet.
+	var v := Backdrop.ZONE_HAZE["vorrhallow"] as Color
+	var e := Backdrop.ZONE_HAZE["evercrown"] as Color
+	for c: Color in [v, e]:
+		var lum := c.r * 0.299 + c.g * 0.587 + c.b * 0.114
+		check(lum < 0.14, "a crystal hall's haze sits deep (%.3f)" % lum)
+	check(v.b > v.g and v.g > v.r, "Vorrhallow's haze is a drowned blue")
+	check(e.r > e.g * 1.8 and e.b > e.g * 1.8, "the Evercrown's haze is wine")
+	var apart := absf(v.h - e.h)
+	apart = minf(apart, 1.0 - apart) * 360.0
+	check(apart >= 60.0, "the two halls' hazes are %d degrees of hue apart" % int(apart))
+	# The play tiles of both are violet (stone and night ramps, hue about 255):
+	# each haze stands at least 25 degrees off it.
+	for c: Color in [v, e]:
+		check(absf(c.h * 360.0 - 255.0) >= 25.0, "a hall's haze is off its tiles' violet (%d)" % int(c.h * 360.0))
+
+
 func test_the_murkiest_zones_are_eased_toward_neutral() -> void:
 	# The two murkiest zones — the Haar and the Sunken Spring, the darkest fogs — read
 	# as a low-contrast grey-green / grey-teal where the play field merged into the

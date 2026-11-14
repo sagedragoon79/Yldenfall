@@ -48,8 +48,8 @@ const LOOKS := {
 	"trials": {"hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"]},
 	"tower": {"hang": "chain", "lit": "aca1ba", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"]},
 	# The Evercrown's shelves are grown, not built (bible 12.34, pass 542): they hang on
-	# sinew strands (night-5, night-3, ember-1), not hot crystal chains.
-	"evercrown": {"hang": "sinew", "lit": "af92c9", "mid": "5d4997", "dark": "501623", "wood": ["8265b8", "5d4997", "2c2541"]},
+	# sinew strands (night-5, night-3, crystal-1: wine, not red, bible 12.48), not hot crystal chains.
+	"evercrown": {"hang": "sinew", "lit": "af92c9", "mid": "5d4997", "dark": "421e48", "wood": ["8265b8", "5d4997", "2c2541"]},
 }
 
 ## The plan, one Dictionary per support: {kind: "brace", "post" or "hang", ...}.

@@ -389,7 +389,7 @@ MEAT_CELLS = 3
 
 def paint_meteor(img, ox, oy, seed, ramp):
     """the Evercrown, the inside of the Everbloom: organic stone grown in rounded cells
-    like a honeycomb of scar tissue, black-violet, with blood-red sinew in the
+    like a honeycomb of scar tissue, black-violet, with wine-dark sinew in the
     seams and the odd pore of alien cyan light.
 
     Calm fill (design bible 12.28, pass 534): the cells are broad (two per tile, not
@@ -416,7 +416,9 @@ def paint_meteor(img, ox, oy, seed, ramp):
             edge = d2 - d1
             shade = 2  # one flat body; the lit rims and seams give the form
             if edge < 1.0 * D:
-                col = "ember-1" if hash2(gx + gy, 0, MEAT_CELLS + 4) > 0.55 else f"{ramp}-1"
+                # Wine sinew, not red: in the Evercrown the ember ramp belongs to
+                # what hurts (bible 12.48).
+                col = "crystal-1" if hash2(gx + gy, 0, MEAT_CELLS + 4) > 0.55 else f"{ramp}-1"
             elif edge < 2.0 * D and y < py:
                 col = f"{ramp}-{shade + 1}"   # the lit upper rim of the cell
             else:
@@ -932,7 +934,7 @@ def paint_one_way(img, ox, oy, zone):
 # board in the hot crystal ramp, hung on crystal chains: the independent grade (pass
 # 540) read it as a flat single-fill magenta prop. It is now grown from the zone's
 # own matter: a row of rounded cell segments on the night ramp, lit from the upper
-# left, with sinew (ember-1) in the seams, a cyan pore in some segments, a thin
+# left, with sinew (crystal-1, wine: bible 12.48) in the seams, a cyan pore in some segments, a thin
 # crystal glaze only on the lit rim, a night-0 outline under the shadow side, and
 # short tendrils hanging from its underside. Painted in whole world pixels.
 SHELF_SEGS = (7, 9)     # world px per segment; they sum to the tile so runs tile seamlessly
@@ -989,7 +991,7 @@ def shelf_cells():
     for wx in range(W):
         for wy in range(2, 5):
             if (wx, wy) not in body and (((wx - 1) % W, wy) in body or ((wx + 1) % W, wy) in body):
-                out[(wx, wy)] = "ember-1"
+                out[(wx, wy)] = "crystal-1"  # wine, not red (bible 12.48)
     # selective outline: under the body and down its shaded right side only
     for (wx, wy) in list(body):
         below = (wx, wy + 1) in body
@@ -2031,12 +2033,16 @@ def vorrhallow_mid():
     return img
 
 
+BAYER4 = ((0, 8, 2, 10), (12, 4, 14, 6), (3, 11, 1, 9), (15, 7, 13, 5))
+CORE_GLOW = 0.5  # the most of the core glow's pixels that are lit, at the foot
+
+
 def evercrown_far():
     img = Image.new("RGBA", (BG_W, BG_H), c("night-0"))
     gradient(img, "night-0", "crystal-1")
     rng = random.Random(77)
     # The stillglass's hollow heart: vast ribbed walls curving away like the inside
-    # of a shell, cyan veins of light pulsing through them toward a red glow.
+    # of a shell, cyan veins of light pulsing through them toward a wine glow.
     for i in range(9):
         cx = int((i + rng.uniform(0.0, 0.5)) * BG_W / 9)
         w = rng.randrange(30, 60) * D
@@ -2057,11 +2063,15 @@ def evercrown_far():
             put(img, x + 1, y, c("sky-3"))
             x += rng.choice([-1, 0, 1])
             y += 1 if rng.random() > 0.3 else -1
-    # A red glow far below: the core.
+    # A wine glow far below: the core. Not red (bible 12.48), and an ordered
+    # dither one world pixel fine that thickens downward to CORE_GLOW of the
+    # pixels: the older random 4 px blocks read as a band of checker noise
+    # behind the floor.
     for y in range(int(BG_H * 0.8), BG_H):
+        k = (y - BG_H * 0.8) / (BG_H * 0.2) * CORE_GLOW
         for x in range(BG_W):
-            if hash2(x // (4 * D), y // (4 * D), 7) > 0.55 - (y - BG_H * 0.8) / BG_H:
-                put(img, x, y, c("ember-1"))
+            if k > (BAYER4[(y // D) % 4][(x // D) % 4] + 0.5) / 16.0:
+                put(img, x, y, c("crystal-2"))
     far_motes(img, rng, ["crystal-2", "sky-2", "crystal-3"], glows=6)
     return img
 
@@ -2097,7 +2107,7 @@ def evercrown_mid():
                 else:
                     col = "crystal-3"
                 if (t // (6 * D)) % 5 == 0 and dx == wdt // 2:
-                    col = "ember-2"
+                    col = "sky-3"  # a bead of the bulb's light, not red (bible 12.48)
                 put(img, x0 + sway + dx - wdt // 2, y, c(col))
         # A cyan bulb at the tip.
         tip_y = ln if down else BG_H - 1 - ln
@@ -2400,7 +2410,9 @@ RIDGE_KIND = {
 RIDGE_COLOR = {
     "heartwood": ("bark-1", "bark-2"), "boughs": ("leaf-1", "leaf-2"),
     "haar": ("sky-1", "sky-2"), "sunken": ("sky-1", "sky-2"),
-    "evercrown": ("crystal-1", "crystal-2"), "vorrhallow": ("crystal-1", "crystal-2"),
+    # The two crystal halls sit a shade deeper, each in its own hue (bible 12.48):
+    # Vorrhallow's drowned blue, the Evercrown's wine.
+    "evercrown": ("crystal-0", "crystal-1"), "vorrhallow": ("sky-0", "sky-1"),
     "tower": ("stone-1", "stone-2"), "trials": ("stone-1", "stone-2"),
     "hearthroot": ("stone-1", "stone-2"), "spires": ("stone-1", "stone-2"),
 }
