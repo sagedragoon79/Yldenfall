@@ -75,7 +75,7 @@ func test_a_masonry_floor_has_a_string_course() -> void:
 	# A floor tile open above and solid on both sides: the course runs its whole
 	# width as one lit line over a shadow line, so it joins across a floor.
 	var top := TilesetFactory.FULL & ~(TilesetFactory.N | TilesetFactory.NE | TilesetFactory.NW)
-	for zone in ["spires", "trials", "gym"]:
+	for zone in ["spires", "trials", "gym", "vorrhallow", "sunken"]:
 		var img := _atlas(zone)
 		var tile := TilesetFactory.ground(top)
 		var lit := img.get_pixel(tile.x * PX, tile.y * PX + COURSE_LIT)
@@ -97,3 +97,59 @@ func test_a_masonry_floor_has_a_string_course() -> void:
 			if not img.get_pixel(full.x * PX + x, full.y * PX + COURSE_LIT).is_equal_approx(lit):
 				plain = true
 		check(plain, "%s: a tile inside the wall carries no string course" % zone)
+
+
+## Moss pixels in a tier: green well above red and blue, as no stone is.
+func _moss(img: Image, tier: Array) -> int:
+	var n := 0
+	for tile: Vector2i in tier:
+		for y in PX:
+			for x in PX:
+				var c := img.get_pixel(tile.x * PX + x, tile.y * PX + y)
+				if c.g > c.r * 1.2 and c.g > c.b * 1.2:
+					n += 1
+	return n
+
+
+func test_a_wall_stands_on_a_footing() -> void:
+	# Design bible 12.47. The tile under a wall's foot (solid all round but for
+	# the open air up and to the left) carries the floor's course on, and closes
+	# it with a head joint on the side that runs on into the wall.
+	var foot := TilesetFactory.FULL & ~TilesetFactory.NW
+	var top := TilesetFactory.FULL & ~(TilesetFactory.N | TilesetFactory.NE | TilesetFactory.NW)
+	for zone in ["spires", "trials", "gym", "vorrhallow", "sunken"]:
+		var img := _atlas(zone)
+		var floor_tile := TilesetFactory.ground(top)
+		var lit := img.get_pixel(floor_tile.x * PX, floor_tile.y * PX + COURSE_LIT)
+		var tile := TilesetFactory.ground(foot)
+		var run := 0
+		for x in PX:
+			if img.get_pixel(tile.x * PX + x, tile.y * PX + COURSE_LIT).is_equal_approx(lit):
+				run += 1
+		check(run == PX - 2, "%s: the footing's lit line runs the tile but for its joint, got %d of %d" % [zone, run, PX])
+		var joint := img.get_pixel(tile.x * PX + PX - 1, tile.y * PX + COURSE_LIT)
+		check(joint.get_luminance() < lit.get_luminance() - 0.2,
+			"%s: the footing ends in a dark head joint inside the wall" % zone)
+		# The mirrored foot closes on its other side.
+		var mirror := TilesetFactory.ground(TilesetFactory.FULL & ~TilesetFactory.NE)
+		check(img.get_pixel(mirror.x * PX, mirror.y * PX + COURSE_LIT).get_luminance() < lit.get_luminance() - 0.2,
+			"%s: the mirrored footing has its joint on the west" % zone)
+		# A ceiling's inner corner is no foot: it carries no course.
+		var soffit := TilesetFactory.ground(TilesetFactory.FULL & ~TilesetFactory.SW)
+		var plain := 0
+		for x in PX:
+			if not img.get_pixel(soffit.x * PX + x, soffit.y * PX + COURSE_LIT).is_equal_approx(lit):
+				plain += 1
+		check(plain > PX / 4, "%s: a ceiling's inner corner carries no course" % zone)
+
+
+func test_moss_grows_in_the_surface_brick_only() -> void:
+	# A tuft of moss sits in a joint of the gym's surface variants. The darkened
+	# tiers have none, and the Inner Rings grow nothing (pass 113).
+	var gym := _atlas("gym")
+	check(_moss(gym, TilesetFactory.FULL_VARIANTS) >= 24, "the gym's surface variants carry moss, got %d" % _moss(gym, TilesetFactory.FULL_VARIANTS))
+	check(_moss(gym, TilesetFactory.MID) == 0, "the gym's mid tier has no moss")
+	check(_moss(gym, TilesetFactory.DEEP) == 0, "the gym's deep tier has no moss")
+	var trials := _atlas("trials")
+	for tier: Array in [TilesetFactory.FULL_VARIANTS, TilesetFactory.MID, TilesetFactory.DEEP]:
+		check(_moss(trials, tier) == 0, "the Inner Rings' brick grows no moss")

@@ -160,6 +160,8 @@ INTERIOR_SEED = 101
 
 # The share of bricks that stand a shade proud (paint_bricks).
 PROUD_BRICK = 0.92
+# Set by paint_tile for the zone in hand: whether its brick grows moss.
+BRICK_MOSS = False
 
 
 def is_interior(seed):
@@ -175,7 +177,12 @@ def is_interior(seed):
 # brick fill that stops at the grass. World-pixel rows from the tile's top.
 COURSE_TOP = 7
 COURSE_ROWS = 3
-COURSE_ZONES = ("spires", "trials", "gym")
+COURSE_ZONES = ("spires", "trials", "gym", "vorrhallow", "sunken")
+# A footing (design bible 12.47, pass 557): where a wall or a pillar stands on a
+# masonry floor, the floor's course carries on under its foot, through the
+# inner-corner tile, and ends inside the wall at a head joint. Without it the
+# course stopped dead at the wall's face and the wall read as pasted on.
+FOOT_JOINT = 1  # world px of joint where a footing ends inside a wall
 
 
 def string_course(img, ox, oy, seed, x0, x1, ramp):
@@ -195,6 +202,65 @@ def string_course(img, ox, oy, seed, x0, x1, ramp):
         if hash2(x // D, 3, seed + 43) > 0.95:
             for y in range(y0 + D, y1 - D):
                 img.putpixel((ox + x, oy + y), c(f"{ramp}-2"))
+
+
+def footing(img, ox, oy, seed, mask, ramp):
+    """The string course under the foot of a wall: an interior tile with solid
+    above it and open air on an upper diagonal. With both diagonals open (a
+    pillar one tile wide) it runs the whole tile; with one, it ends in a head
+    joint on the side that goes on into the wall."""
+    if not mask & N or not mask & E or not mask & W or (mask & NE and mask & NW):
+        return False
+    string_course(img, ox, oy, seed, 0, T, ramp)
+    y0, y1 = COURSE_TOP * D, (COURSE_TOP + COURSE_ROWS) * D
+    for side_open, x0 in ((mask & NE, T - FOOT_JOINT * D), (mask & NW, 0)):
+        if side_open:  # this side is under the wall: close the course here
+            for x in range(x0, x0 + FOOT_JOINT * D):
+                for y in range(y0, y1):
+                    img.putpixel((ox + x, oy + y), c(f"{ramp}-1"))
+    return True
+
+
+def crack(img, ox, oy, seed, k, col, length=T // 2):
+    """A hairline crack one render pixel wide, running down and wandering
+    sideways from a seeded point in the tile's upper half."""
+    x, y = int(hash2(seed, k, 32) * (T - 6)) + 3, int(hash2(seed, k, 33) * (T // 2))
+    for step in range(length):
+        if 0 <= x < T and 0 <= y < T:
+            img.putpixel((ox + x, oy + y), col)
+        y += 1
+        x += 1 if hash2(seed, step, 34 + k) > 0.6 else (-1 if hash2(seed, step, 35 + k) > 0.7 else 0)
+
+
+# Cracks and moss in a brick field (design bible 12.47). Only the scattered
+# variants carry them (an edge tile has no variants, so a mark on one repeats
+# down every wall face): a crack in about four variants in ten, and a tuft of
+# moss in a joint of a surface variant in the zones that grow moss.
+FIELD_CRACK = 0.6
+MOSS_ZONES_RAMP = "leaf"
+SURFACE_VARIANT_SEEDS = (201, 202, 203)
+
+
+def field_wear(img, ox, oy, seed, ramp, moss):
+    if seed < INTERIOR_SEED:
+        return
+    if hash2(seed, 0, 31) > FIELD_CRACK:
+        crack(img, ox, oy, seed, 0, c(f"{ramp}-1"))
+    if moss and seed in SURFACE_VARIANT_SEEDS:
+        # A tuft sitting in a bed joint: a run of blocks one world pixel tall,
+        # the odd one hanging a pixel lower. Whole world pixels, so it stays calm.
+        n = 3 + int(hash2(seed, 1, 61) * 4)                       # 3..6 world px
+        mx = int(hash2(seed, 2, 61) * (T // D - n - 2)) + 1
+        my = (4 * (1 + int(hash2(seed, 3, 61) * 3)) - 1) * D      # a bed joint row
+        for i in range(n):
+            drop = 2 if hash2(seed, i, 62) > 0.6 else 1
+            for j in range(drop):
+                name = f"{MOSS_ZONES_RAMP}-{3 if j == 0 else 2}"
+                for dy in range(D):
+                    for dx in range(D):
+                        yy = my + j * D + dy - (D - 1)
+                        if 0 <= yy < T:
+                            img.putpixel((ox + (mx + i) * D + dx, oy + yy), c(name))
 
 
 def paint_bricks(img, ox, oy, seed, ramp):
@@ -238,6 +304,7 @@ def paint_bricks(img, ox, oy, seed, ramp):
                 elif hash2(x, y, seed + 4) > 0.97:
                     col = f"{ramp}-{shade + 1}"
             img.putpixel((ox + x, oy + y), c(col))
+    field_wear(img, ox, oy, seed, ramp, BRICK_MOSS)
 
 
 def paint_shrine(img, ox, oy, seed, ramp):
@@ -280,12 +347,7 @@ def paint_shrine(img, ox, oy, seed, ramp):
     # A crack or two, running down and sideways.
     for k in range(2):
         if hash2(seed, k, 31) > 0.55:
-            x, y = int(hash2(seed, k, 32) * (T - 6)) + 3, int(hash2(seed, k, 33) * (T // 2))
-            for step in range(T // 2):
-                if 0 <= x < T and 0 <= y < T:
-                    img.putpixel((ox + x, oy + y), c(f"{ramp}-1"))
-                y += 1
-                x += 1 if hash2(seed, step, 34 + k) > 0.6 else (-1 if hash2(seed, step, 35 + k) > 0.7 else 0)
+            crack(img, ox, oy, seed, k, c(f"{ramp}-1"))
 
 
 def paint_drowned(img, ox, oy, seed, ramp):
@@ -319,6 +381,7 @@ def paint_drowned(img, ox, oy, seed, ramp):
             elif 12 * D <= y < 13 * D and hash2(x // 2, 1, seed + 9) > 0.6:
                 col = "sky-1"
             img.putpixel((ox + x, oy + y), c(col))
+    field_wear(img, ox, oy, seed, ramp, False)
 
 
 MEAT_CELLS = 3
@@ -703,7 +766,9 @@ ZONES = {
 
 
 def paint_tile(img, ox, oy, mask, zone, seed):
+    global BRICK_MOSS
     z = ZONES[zone]
+    BRICK_MOSS = z["cap"] == "moss"  # the Inner Rings grow nothing (pass 113)
     z["painter"](img, ox, oy, seed, z["ramp"])
     if zone == "vorrhallow" and (mask & (N | E | S | W)) != (N | E | S | W):
         crystal_vein(img, ox, oy, seed)
@@ -747,6 +812,8 @@ def paint_tile(img, ox, oy, mask, zone, seed):
             cap_stone(img, ox, oy, seed, x0, x1, ramp)
         if zone in COURSE_ZONES:
             string_course(img, ox, oy, seed, x0, x1, ramp)
+    elif zone in COURSE_ZONES:
+        footing(img, ox, oy, seed, mask, ramp)
     # Inner corners: a dark notch where two solid sides meet an open diagonal.
     for bit, a, b, px, py in [(NE, N, E, T - D, 0), (SE, S, E, T - D, T - D), (SW, S, W, 0, T - D), (NW, N, W, 0, 0)]:
         if mask & a and mask & b and not mask & bit:
