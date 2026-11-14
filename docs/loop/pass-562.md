@@ -73,6 +73,14 @@ Mutation check: with `BOW_BODY` at 2, every ring plain and the tip drawn as a pl
 fail (three looks, the run of three, the tip is the plain part, the horn, the swing at the middle,
 the span in a real lunge).
 
+## Resumed
+
+An app restart cut the pass off during the full suite. It was resumed on 2026-11-14: `main` (#633,
+#634) was merged in, the arena was shot again at frame 330 and looked at, and the suite was rerun:
+15269 checks passed and one failed, `test_every_room_loads_and_settles_inside_the_budget`
+(`spires/sky_steps` at 21.51 ms a frame). That is a wall-clock budget, the PC was busy with other
+work, and the pass touches nothing in the Spires; run alone the test passes (3 checks).
+
 ## Rubric (design bible 15.3)
 
 | Category | Weight | Score | Notes |
