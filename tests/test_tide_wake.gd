@@ -118,3 +118,43 @@ func test_the_drained_hall_has_no_wake() -> void:
 	var tide: Tide = w.room.tide
 	check(tide.wakes.is_empty() and tide.rings.is_empty(), "drained, nothing wades")
 	GameState.data.flags.erase(Tide.DRAIN_FLAG)
+
+
+## Pass 559 (bible 12.49): the water is drawn in front of the spikes in its pits and
+## dimmed their steel rim. It draws the rim again over itself, so what hurts shows.
+func test_spikes_under_the_water_keep_their_rim() -> void:
+	var w := _hall()
+	await frames(3)
+	var tide: Tide = w.room.tide
+	var in_pit := 0
+	for c in w.room.get_children():
+		if c is Spikes and tide.has_point((c as Spikes).global_position + Vector2(0, -4)):
+			in_pit += 1
+	var sunk := tide.sunk_spikes()
+	check(in_pit >= 4, "the hall's pit holds spikes under water (%d)" % in_pit)
+	check(sunk.size() == in_pit, "the water knows each of them (%d of %d)" % [sunk.size(), in_pit])
+	for at: Vector2 in sunk:
+		check(tide.has_point(tide.to_global(at) + Vector2(0, -4)), "and each one it knows stands in it")
+	# A cluster out of the water is the spikes' own business.
+	var dry := Spikes.new()
+	w.room.add_child(dry)
+	dry.global_position = Vector2(cell_feet(10, 10))
+	await frames(2)
+	check(tide.sunk_spikes().size() == in_pit, "a cluster above the water is not the water's to draw")
+	# One set down in the water later (a pit that opens) is found.
+	var late := Spikes.new()
+	w.room.add_child(late)
+	late.global_position = tide.to_global(Vector2(12.5 * Room.TILE, (tide.row + 1) * Room.TILE))
+	await frames(2)
+	check(tide.sunk_spikes().size() == in_pit + 1, "one that comes to stand in it later is found")
+	# The rim through the water is near the steel's own value, far from the pit's.
+	var pit := Tide.pit_color()
+	var dimmed := Spikes.RIM.lerp(Color(pit, 1.0), pit.a)
+	var shown := Tide.sunk_rim_color()
+	check(Tide.SUNK_RIM >= 0.8, "the rim is drawn again nearly whole")
+	check(shown.get_luminance() >= 0.8, "it shows near white (%.2f)" % shown.get_luminance())
+	check(shown.get_luminance() - dimmed.get_luminance() >= 0.25, "well above the rim the water dimmed (%.2f over %.2f)" % [shown.get_luminance(), dimmed.get_luminance()])
+	GameState.set_flag(Tide.DRAIN_FLAG)
+	await frames(2)
+	check(tide.sunk_spikes().is_empty(), "drained, the spikes stand dry and draw their own rim")
+	GameState.data.flags.erase(Tide.DRAIN_FLAG)
