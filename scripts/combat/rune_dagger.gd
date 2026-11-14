@@ -24,6 +24,12 @@ const RUNE := Color("7ff0e0")
 const OUTLINE := Color("141a22")
 
 var damage := DAMAGE
+## What was thrown: the Rune Dagger, or a counted thrown weapon's item id
+## (design bible 5.6). A counted one flies at its own speed and reach, does not
+## come back, and lights nothing.
+var kind := "rune_dagger"
+var speed := SPEED
+var reach := RANGE
 ## Unit direction of flight.
 var dir := Vector2.RIGHT
 var thrower: Player
@@ -37,7 +43,13 @@ var _done := false
 func _ready() -> void:
 	z_index = 3
 	add_to_group("projectile")
-	add_to_group("light")
+	if returns():
+		add_to_group("light")
+
+
+## Only the Rune Dagger reforms at the thrower's side.
+func returns() -> bool:
+	return kind == "rune_dagger"
 
 
 func _physics_process(delta: float) -> void:
@@ -46,7 +58,7 @@ func _physics_process(delta: float) -> void:
 	_trail.push_front(global_position)
 	if _trail.size() > 5:
 		_trail.pop_back()
-	var step := SPEED * delta
+	var step := speed * delta
 	global_position += dir * step
 	_flown += step
 	var size := SIZE if dir.x != 0.0 else Vector2(SIZE.y, SIZE.x)
@@ -71,7 +83,7 @@ func _physics_process(delta: float) -> void:
 	if room != null and room.is_solid_at(global_position + dir * SIZE.x * 0.5):
 		_end("wall")
 		return
-	if _flown >= RANGE:
+	if _flown >= reach:
 		_end("spent")
 		return
 	queue_redraw()
@@ -87,7 +99,7 @@ func _end(how: String) -> void:
 	d.global_position = global_position
 	if how == "wall":
 		Sfx.play(WALL_SOUND, 0.15, -4.0)
-	if thrower != null and is_instance_valid(thrower):
+	if returns() and thrower != null and is_instance_valid(thrower):
 		thrower.dagger_spent()
 	queue_free()
 
@@ -97,8 +109,16 @@ func _draw() -> void:
 	for i in _trail.size():
 		var p := to_local(_trail[i])
 		var s := 3.0 - i * 0.5
-		draw_rect(Rect2(p - Vector2(s, s) * 0.5, Vector2(s, s)), Color(RUNE, 0.5 - i * 0.09))
+		draw_rect(Rect2(p - Vector2(s, s) * 0.5, Vector2(s, s)), Color(RUNE if returns() else Color("c9b18c"), (0.5 if returns() else 0.3) - i * 0.06))
 	draw_set_transform(Vector2.ZERO, a, Vector2.ONE)
+	if not returns():
+		# A counted weapon: a dark iron-hard spike, pale at the point.
+		draw_rect(Rect2(-6, -2, 13, 4), OUTLINE)
+		draw_rect(Rect2(-5, -1, 9, 2), Color("6b4a35"))
+		draw_rect(Rect2(-5, -1, 9, 1), Color("9c7450"))
+		draw_rect(Rect2(4, -1, 3, 1), Color("e8dcc0"))
+		draw_set_transform(Vector2.ZERO)
+		return
 	# Point first: a slim blade with a rune lit along it, a short dark hilt behind.
 	draw_rect(Rect2(-8, -2, 15, 4), OUTLINE)
 	draw_rect(Rect2(-3, -1, 9, 2), BLADE)

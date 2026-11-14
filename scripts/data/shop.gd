@@ -49,6 +49,9 @@ static func status(shop_id: String, index: int, p: Player) -> String:
 		"tonic":
 			if p.tonics >= TONIC_MAX:
 				return "full"
+		"projectile":
+			if GameState.ammo(String(entry.item)) >= int(item.get("carry", 0)):
+				return "full"
 		"key":
 			var kind := String(entry.item).trim_suffix("_key")
 			if GameState.key_count(kind) >= doors_shut(kind):
@@ -116,6 +119,9 @@ static func buy(shop_id: String, index: int, p: Player) -> bool:
 			p.ointments += 1
 		"tonic":
 			p.tonics += 1
+		"projectile":
+			# Sold by the bundle, and it goes into the projectile slot.
+			GameState.take_projectile(String(entry.item), int(item.get("bundle", 1)))
 		"temper":
 			var tempers: Dictionary = GameState.data.get("tempers", {})
 			tempers[String(GameState.data.equipment.blade)] = int(item.level)
