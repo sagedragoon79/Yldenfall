@@ -2147,6 +2147,16 @@ Only `assets/tiles/spires.png`, `trials.png` and `gym.png` are regenerated; coll
 
 Not done from that grade item: a plinth where a wall meets a floor, cracks and moss in the field, and the same treatment for Vorrhallow and the Sunken Spring.
 
+### 12.47 A wall stands on a footing; Vorrhallow and the Sunken Spring get the course (pass 557)
+
+The rest of 12.46's grade item. A masonry floor had one built line, but it stopped dead at the face of any wall or pillar standing on it, and two masonry zones had none.
+
+- **The course in Vorrhallow and the Sunken Spring.** `COURSE_ZONES` now holds every masonry zone that is painted in code: the Spires, the Inner Rings, the gym, Vorrhallow and the Sunken Spring. In Vorrhallow the pale course is also the floor's one light value against a dark field, which helps the zone's narrow value range.
+- **A footing.** The tile under a wall's foot (solid above and to both sides, open air on an upper diagonal) carries the floor's course on (`footing`). With one diagonal open it closes with a head joint one world pixel wide (`FOOT_JOINT`) on the side that runs on into the wall, so the course is bonded into the wall and does not trail off; under a pillar two tiles wide the two joints meet as one. A ceiling's inner corner carries nothing. This is the footing a 47-tile blob set can draw: the wall's own bottom tile is the same tile as the rest of its face, so a plinth that projects from the wall above the floor would need a new tile and a rule in `TilesetFactory`. Not built.
+- **Cracks and moss in the field** (`field_wear`). About four in ten of the scattered variants of `paint_bricks` and `paint_drowned` carry one hairline crack. The gym's surface variants carry a tuft of moss in a bed joint, drawn in whole world pixels (12.28). Edge tiles carry neither (a mark on a tile with no variants repeats down every wall face), the darkened tiers grow no moss, and the Inner Rings grow nothing. The Spires already had cracks; the Sunken Spring has its pores and drips (12.39).
+
+`assets/tiles/gym.png`, `spires.png`, `sunken.png`, `trials.png` and `vorrhallow.png` are regenerated; collision and edges are untouched. `tests/test_brick_structure.gd` holds it: the course test covers all five zones, a foot tile's lit line runs the tile but for its joint, the mirrored foot closes on the other side, a ceiling corner has no course, and moss is in the gym's surface variants only.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
