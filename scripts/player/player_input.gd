@@ -24,6 +24,8 @@ var spell_next_pressed := false
 var heal_pressed := false
 var stillstone_pressed := false
 var throw_pressed := false
+var belt_next_pressed := false
+var belt_use_pressed := false
 ## Up was held last frame as a stick's sideways drift, too level to count.
 var _up_drifting := false
 
@@ -57,6 +59,8 @@ func poll(tuning: MovementTuning = null) -> void:
 	heal_pressed = Input.is_action_just_pressed("heal")
 	stillstone_pressed = Input.is_action_just_pressed("stillstone")
 	throw_pressed = Input.is_action_just_pressed("throw")
+	belt_next_pressed = Input.is_action_just_pressed("belt_next")
+	belt_use_pressed = Input.is_action_just_pressed("belt_use")
 
 
 ## Whether `action` (up or down) leans far enough from level to count: its
@@ -85,6 +89,8 @@ func drop_presses() -> void:
 	heal_pressed = false
 	stillstone_pressed = false
 	throw_pressed = false
+	belt_next_pressed = false
+	belt_use_pressed = false
 
 
 ## Clears everything (used when control is taken away, e.g. on death).

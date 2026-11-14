@@ -796,6 +796,9 @@ func test_every_save_field_survives_a_round_trip() -> void:
 	d.meteor_shards = 2
 	d.elixirs = 1
 	d.ointments = 2
+	d.tonics = 3
+	d.belt = ["elixir", "tonic", "ointment"]
+	d.belt_at = 2
 	d.collected = {"hearthroot/plaza:12,30": true}
 	d.visited = {"hearthroot/plaza": true, "heartwood/entrance": true}
 	d.ringreaders = {"hearthroot/ringreader_hall": [120, 304]}

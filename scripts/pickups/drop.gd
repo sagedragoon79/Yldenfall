@@ -239,13 +239,13 @@ func _collect(p: Player) -> void:
 		Sfx.play("item", 0.0, -4.0)
 		if p.ointments < Shop.OINTMENT_MAX:
 			p.ointments += 1
-			GameState.toast.emit("An Barkbalm! Rub it on from the pause menu.")
+			GameState.toast.emit("A Barkbalm! It is on your belt.")
 		elif p.ointment_left <= 0.0:
 			# The pouch is full: it goes straight on, as the original's did.
 			p.ointments += 1
 			p.use_ointment()
 		else:
-			GameState.toast.emit("An Barkbalm, but your pouch is full.")
+			GameState.toast.emit("A Barkbalm, but your pouch is full.")
 	else:
 		p.mp = minf(p.max_mp, p.mp + MANA_GAIN)
 		d.setup("coin")

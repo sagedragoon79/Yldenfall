@@ -427,6 +427,93 @@ func test_every_card_door_guards_a_vault() -> void:
 		check(grid[y - Reach.BODY_ROWS].substr(1, x).count("#") == x, "%s: a roof over the vault, so the door is the only way in" % room)
 
 
+## Design bible 5.6: the belt. Three places for single-use things; one button
+## takes the next in hand, another uses it. The Barkbalm and the Amber Draught
+## sit on it beside the Bitterleaf Tonic, which clears every condition.
+func test_the_belt_three_places_cycled_and_used() -> void:
+	var w := make_world(_town(), "test/town")
+	var p := w.player
+	await frames(3)
+	p.gold = 9000
+	check(GameState.data.belt == ["", "", ""] and not Menus.equipment_rows().any(func(r: Dictionary) -> bool: return String(r.label).begins_with("Belt")), "a new game's belt is empty, and the page has no Belt section")
+	# With nothing on it, the use button refuses.
+	Sfx.recent.clear()
+	p.input.belt_use_pressed = true
+	await frames(2)
+	check(Sfx.recent.has("menu_refuse") and p.ointment_left == 0.0, "an empty belt refuses (%s)" % [Sfx.recent])
+	# Bought things take the free places in the order they come.
+	var sundries: Array = GameData.shop("hearthroot_items").stock
+	var tonic_at := sundries.find_custom(func(e: Dictionary) -> bool: return e.item == "tonic")
+	check(tonic_at >= 0 and Shop.buy("hearthroot_items", tonic_at, p) and p.tonics == 1, "Hearthroot sells the Bitterleaf Tonic")
+	p.ointments = 2
+	p.elixirs = 1
+	GameState.tidy_belt(p)
+	check(GameState.data.belt == ["ointment", "tonic", "elixir"], "each thing carried takes a place (%s)" % [GameState.data.belt])
+	for i in Shop.TONIC_MAX:
+		Shop.buy("hearthroot_items", tonic_at, p)
+	check(p.tonics == Shop.TONIC_MAX and Shop.status("hearthroot_items", tonic_at, p) == "full", "you carry %d tonics at most" % Shop.TONIC_MAX)
+	# The use button uses what is in hand.
+	check(GameState.belt_held() == "ointment", "the first place is in hand")
+	p.input.belt_use_pressed = true
+	await frames(2)
+	check(p.ointments == 1 and p.ointment_left > Player.OINTMENT_TIME - 0.2, "the use button rubs on a Barkbalm (%d left, %.1f s)" % [p.ointments, p.ointment_left])
+	# The next button takes the next thing carried in hand.
+	p.input.belt_next_pressed = true
+	await frames(2)
+	check(GameState.belt_held() == "tonic", "the next button takes the tonic in hand (%s)" % GameState.belt_held())
+	# A tonic is not wasted on a well body, and clears every condition on a sick one.
+	p.input.belt_use_pressed = true
+	await frames(2)
+	check(p.tonics == Shop.TONIC_MAX, "well, the tonic stays corked")
+	p._ointment_timer = 0.0
+	p._poison_timer = 5.0
+	p._curse_timer = 5.0
+	check(p.has_condition(Condition.POISON) and p.has_condition(Condition.CURSE), "poisoned and cursed")
+	p.input.belt_use_pressed = true
+	await frames(2)
+	check(p.tonics == Shop.TONIC_MAX - 1 and not Condition.ALL.any(func(c: String) -> bool: return p.has_condition(c)), "the tonic clears them all (%d left)" % p.tonics)
+	# The Amber Draught has a place, but only a killing blow opens it.
+	p.input.belt_next_pressed = true
+	await frames(2)
+	check(GameState.belt_held() == "elixir", "next again: the Amber Draught")
+	p.input.belt_use_pressed = true
+	await frames(2)
+	check(p.elixirs == 1, "the use button leaves it be")
+	p.hp = 5
+	p._invuln_timer = 0.0
+	p.take_damage(999)
+	check(not p.dead and p.elixirs == 0 and p.hp > 5, "a blow that would fell you opens it (HP %d)" % p.hp)
+	# Next skips a place whose thing has run out, and wraps.
+	p.input.belt_next_pressed = true
+	await frames(2)
+	check(GameState.belt_held() == "ointment", "next wraps to the Barkbalm (%s)" % GameState.belt_held())
+	# Using the last of a thing brings the next to hand; its place is kept.
+	p._ointment_timer = 0.0
+	check(p.belt_use() and p.ointments == 0 and GameState.belt_held() == "tonic" and GameState.data.belt[0] == "ointment", "the last Barkbalm used, the tonic comes to hand and the Barkbalm keeps its place")
+	# The Equipment page lists the belt, and choosing a row takes it in hand.
+	GameState.capture(p)
+	var rows := Menus.equipment_rows().filter(func(r: Dictionary) -> bool: return String(r.get("id", "")).begins_with(Menus.BELT_PREFIX))
+	check(rows.size() == 3 and String(rows[1].right).begins_with("In hand") and String(rows[1].right).ends_with("x%d" % p.tonics), "the page lists three belt rows, the tonic in hand (%s)" % [rows.map(func(r: Dictionary) -> String: return "%s %s" % [r.label, r.right])])
+	Menus.choose_equipment(String(rows[2].id), p)
+	check(GameState.belt_held() == "elixir", "choosing a row takes it in hand")
+	# Both buttons are bound, on keys and on the pad, and named on the Controls page.
+	for action: String in ["belt_next", "belt_use"]:
+		var events := InputMap.action_get_events(action)
+		check(events.any(func(e: InputEvent) -> bool: return e is InputEventKey) and events.any(func(e: InputEvent) -> bool: return e is InputEventJoypadMotion) and Menus.ACTION_NAMES.has(action), "%s has a key, a stick and a name" % action)
+	# A save: an older one has an empty belt; nonsense is cleared.
+	var old := GameState.fresh()
+	old.erase("belt")
+	old.erase("belt_at")
+	old.erase("tonics")
+	var got := GameState.sanitize(old)
+	check(got.belt == ["", "", ""] and got.belt_at == 0 and got.tonics == 0, "an older save has an empty belt")
+	old["belt"] = ["ointment", "ointment", "short_sword", "tonic"]
+	old["belt_at"] = 9
+	old["tonics"] = 40
+	got = GameState.sanitize(old)
+	check(got.belt == ["ointment", "", ""] and got.belt_at == 2 and got.tonics == Shop.TONIC_MAX, "a thing twice, a blade and too many are put right (%s)" % [got.belt])
+
+
 ## Design bible 5.6: the neck, two rings and a relic. Each is an icon in the
 ## menu with one fixed rule; a relic sleeps until its ability is found; an
 ## older save comes over with the places empty.

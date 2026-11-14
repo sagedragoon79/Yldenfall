@@ -112,7 +112,7 @@ func _draw() -> void:
 		mask_x += widths[i] + 2.0
 	var bar_w := maxf(mask_x - 2.0, player.max_mp)
 	var row_w := maxf(bar_w, player.flask_max * 9 + 48 + (14 if _glass_shown() else 0))
-	_draw_plate(Rect2(origin - Vector2(5, 5), Vector2(row_w + 10, 43 + (14 if _ointment_shown() or player.glove_left > 0.0 else 0))))
+	_draw_plate(Rect2(origin - Vector2(5, 5), Vector2(row_w + 10, 43 + (16 if _belt_shown() or player.glove_left > 0.0 else 0))))
 	mask_x = 0.0
 	for i in masks:
 		# The last container is narrower when a Life Fruit has added half a mask.
@@ -130,8 +130,8 @@ func _draw() -> void:
 	PixelFont.draw(self, gp + Vector2(10, 9), str(int(maxf(_shown_gold, 0.0))), 10, GOLD, OUTLINE)
 	if _glass_shown():
 		_draw_glass(origin + Vector2(row_w - 8, 27))
-	_draw_ointment(origin + Vector2(0, 42))
-	_draw_glove(origin + Vector2(48, 42))
+	_draw_belt(origin + Vector2(0, 41))
+	_draw_glove(origin + Vector2(52, 42))
 	_draw_minimap()
 	_draw_boss()
 	_draw_trial()
@@ -366,23 +366,30 @@ func _draw_glass(at: Vector2) -> void:
 		draw_rect(Rect2(at + Vector2(2, 2), Vector2(1, 2)), Color(1, 1, 1, 0.7))
 
 
-func _ointment_shown() -> bool:
-	return player.ointments > 0 or player.ointment_left > 0.0
+func _belt_shown() -> bool:
+	return player.ointment_left > 0.0 or GameState.belt_items().any(func(id: String) -> bool: return player.carried(id) > 0)
 
 
-## Barkbalms carried (a small jar and a count), and the time left on one in use.
-func _draw_ointment(at: Vector2) -> void:
+## The belt (design bible 5.6): the thing in hand and how many, a pip for each
+## place, and the time left on a Barkbalm in use.
+func _draw_belt(at: Vector2) -> void:
 	var left := player.ointment_left
-	if player.ointments <= 0 and left <= 0.0:
+	if not _belt_shown():
 		return
-	draw_rect(Rect2(at + Vector2(1, 0), Vector2(5, 2)), Color("8d4e16"))
-	draw_rect(Rect2(at + Vector2(0, 2), Vector2(7, 7)), OUTLINE)
-	draw_rect(Rect2(at + Vector2(1, 3), Vector2(5, 5)), OINTMENT)
-	draw_rect(Rect2(at + Vector2(2, 3), Vector2(1, 2)), Color("f7f1de"))
-	var label := "x%d" % player.ointments
-	PixelFont.draw(self, at + Vector2(10, 9), label, 10, OINTMENT, OUTLINE)
+	GameState.tidy_belt(player)
+	var id := GameState.belt_held()
+	var n := player.carried(id)
+	if id != "":
+		UiArt.draw_icon(self, id, at + Vector2(-2, -3), Color.WHITE if n > 0 else Color(1, 1, 1, 0.35))
+		PixelFont.draw(self, at + Vector2(14, 9), "x%d" % n, 10, OINTMENT if n > 0 else Color(OINTMENT, 0.5), OUTLINE)
+	var belt: Array = GameState.data.belt
+	for i in belt.size():
+		var pip := Rect2(at + Vector2(30 + i * 4, 6), Vector2(3, 3))
+		draw_rect(pip.grow(1), OUTLINE)
+		var full := player.carried(String(belt[i])) > 0
+		draw_rect(pip, OINTMENT if i == int(GameState.data.belt_at) else (Color("8d4e16") if full else Color("3a2f24")))
 	if left > 0.0:
-		var bar := Rect2(at + Vector2(0, 11), Vector2(30, 2))
+		var bar := Rect2(at + Vector2(0, 12), Vector2(40, 2))
 		draw_rect(bar.grow(1), OUTLINE)
 		draw_rect(Rect2(bar.position, Vector2(roundf(bar.size.x * left / Player.OINTMENT_TIME), bar.size.y)), OINTMENT)
 

@@ -327,6 +327,7 @@ BY_ID = {
     "life_fruit": life_fruit,
     "mana_dew": mana_dew,
     "ointment": balm,
+    "tonic": flask(mat("leaf", 6, 5, 3, 1), PAL["leaf-7"]),
     "elixir": flask(mat("gold", 6, 5, 4, 2), PAL["gold-7"]),
     "fire_scroll": scroll("ember"),
     "wisplight_scroll": scroll("sky"),
