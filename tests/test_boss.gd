@@ -114,8 +114,8 @@ func test_gnarlmaws_rings_are_not_one_plate_repeated() -> void:
 	check(Gnarlmaw.ring_scale(last) < Gnarlmaw.ring_scale(first + 6), "it is thinner before the tail than behind the neck")
 	check(Gnarlmaw.ring_tint(last, false).v < Gnarlmaw.ring_tint(first, false).v, "and darker there")
 	for i: int in [0, Gnarlmaw.SEGMENTS - 3, Gnarlmaw.SEGMENTS - 1]:
-		check(is_equal_approx(Gnarlmaw.ring_scale(i), 1.0) and Gnarlmaw.ring_tilt(i) == 0.0 and Gnarlmaw.ring_tint(i, false) == Color.WHITE,
-			"segment %d (head or tail) keeps its size and its full colour" % i)
+		check(Gnarlmaw.ring_scale(i) >= 1.0 and Gnarlmaw.ring_tilt(i) == 0.0 and Gnarlmaw.ring_tint(i, false) == Color.WHITE,
+			"segment %d (head or tail) is drawn no smaller than its sprite, upright, in its full colour" % i)
 	# The plate on the sheet is the size the rule above assumes.
 	var cell := Sheet.dest_rect(Gnarlmaw.SHEET)
 	check(cell.size.x > 0.0, "the sheet loads")
@@ -125,6 +125,92 @@ func test_gnarlmaws_rings_are_not_one_plate_repeated() -> void:
 	var density: float = Sheet.get_sheet(Gnarlmaw.SHEET).density
 	var drawn := minf(used.size.x, used.size.y) * 0.5 / density
 	check(drawn >= Gnarlmaw.PLATE_RADIUS - 1.0, "the plate on the sheet is at least PLATE_RADIUS (%.1f px)" % drawn)
+
+
+## Pass 562 (design bible 8.1): the plate has three looks, the tail's sacs differ and
+## end in a horn, and the body bows off its rail instead of lying in a straight line.
+func test_gnarlmaws_body_is_dressed_and_bowed() -> void:
+	var first := 1
+	var last := Gnarlmaw.SEGMENTS - Gnarlmaw.TAIL_SEGMENTS - 1
+	check(Gnarlmaw.RING_LOOKS.length() == last - first + 1, "every body ring has a look (%d for %d rings)" % [Gnarlmaw.RING_LOOKS.length(), last - first + 1])
+	var count := {}
+	var run := 1
+	var longest := 1
+	for i in range(first, last + 1):
+		var look := Gnarlmaw.ring_look(i)
+		count[look] = int(count.get(look, 0)) + 1
+		run = run + 1 if i > first and look == Gnarlmaw.ring_look(i - 1) else 1
+		longest = maxi(longest, run)
+	check(count.size() == 3, "the rings wear three looks (%s)" % [count])
+	for look: String in count:
+		check(count[look] >= 4, "%s is on four rings or more (%d)" % [look, count[look]])
+	check(longest <= 2, "no look runs three rings in a row (longest run %d)" % longest)
+	check(Gnarlmaw.ring_look(0) == "head", "segment 0 is the head")
+	check(Gnarlmaw.ring_look(Gnarlmaw.SEGMENTS - 1) == Gnarlmaw.TAIL_TIP_ANIM and Gnarlmaw.ring_look(Gnarlmaw.SEGMENTS - 2) == "tail",
+		"only the last sac of the tail wears the horn")
+	# The looks are on the sheet, plain and cracked (or cold and hot), and are not the plain part again.
+	var sheet = Sheet.get_sheet(Gnarlmaw.SHEET)
+	var img: Image = (sheet.tex as Texture2D).get_image()
+	var plain := img.get_region(Rect2i(Sheet.region(Gnarlmaw.SHEET, "plate", 0)))
+	var sac := img.get_region(Rect2i(Sheet.region(Gnarlmaw.SHEET, "tail", 0)))
+	for look: String in ["plate_spined", "plate_mossy", Gnarlmaw.TAIL_TIP_ANIM]:
+		check(sheet.animations.has(look) and sheet.animations[look].frames.size() == 2, "%s has its two states on the sheet" % look)
+		if not sheet.animations.has(look):
+			continue
+		var other := img.get_region(Rect2i(Sheet.region(Gnarlmaw.SHEET, look, 0)))
+		var base := sac if look == Gnarlmaw.TAIL_TIP_ANIM else plain
+		var differ := 0
+		for y in other.get_height():
+			for x in other.get_width():
+				if other.get_pixel(x, y) != base.get_pixel(x, y):
+					differ += 1
+		check(differ >= 150, "%s is not the plain part again (%d pixels differ)" % [look, differ])
+		var used := other.get_used_rect()
+		var round_part := base.get_used_rect()
+		if look == "plate_spined":
+			check(used.position.y <= round_part.position.y - 4, "its thorns stand above the plate (top row %d against %d)" % [used.position.y, round_part.position.y])
+			check(absi(used.end.y - round_part.end.y) <= 2, "and the plate under them keeps its size (bottom row %d against %d)" % [used.end.y, round_part.end.y])
+		elif look == Gnarlmaw.TAIL_TIP_ANIM:
+			check(used.position.x <= round_part.position.x - 6, "its horn reaches behind the sac (first column %d against %d)" % [used.position.x, round_part.position.x])
+			check(absi(used.end.x - round_part.end.x) <= 2 and absi(used.size.y - round_part.size.y) <= 2, "and the sac keeps its size and place")
+		else:
+			check(used.grow(1).encloses(round_part) and round_part.grow(1).encloses(used), "the moss does not change the plate's outline (%s against %s)" % [used, round_part])
+	# The tail: three sacs of three sizes, the fullest first, none under its hitbox.
+	var tail0 := Gnarlmaw.SEGMENTS - Gnarlmaw.TAIL_SEGMENTS
+	for k in Gnarlmaw.TAIL_SEGMENTS:
+		check(Gnarlmaw.ring_scale(tail0 + k) >= 1.0, "sac %d is drawn no smaller than its sprite" % k)
+		if k > 0:
+			check(Gnarlmaw.ring_scale(tail0 + k) < Gnarlmaw.ring_scale(tail0 + k - 1), "sac %d is smaller than the one before it" % k)
+	# The bow: the middle of the body swings well off the rail, the head and the tail hardly.
+	var mid := (first + last) / 2
+	check(Gnarlmaw.bow_reach(mid, false) >= 5.0, "the middle of the body swings 5 px or more (%.1f)" % Gnarlmaw.bow_reach(mid, false))
+	check(Gnarlmaw.bow_reach(0, false) <= 2.0 and Gnarlmaw.bow_reach(Gnarlmaw.SEGMENTS - 1, false) <= 2.0, "the head and the tail stay within 2 px of the rail")
+	for i in Gnarlmaw.SEGMENTS:
+		check(Gnarlmaw.bow_reach(i, true) >= Gnarlmaw.BOW_STUCK, "segment %d thrashes while he is stuck" % i)
+	check(TAU / Gnarlmaw.BOW_WAVE >= Gnarlmaw.SPACING * 8.0, "one wave is 8 rings long or more: a bow, not a shiver (%.0f px)" % (TAU / Gnarlmaw.BOW_WAVE))
+	# In a real lunge the body is not on one line, and the weak point is where the rail puts it.
+	var setup := _boss_world()
+	var w: World = setup[0]
+	var boss: Gnarlmaw = setup[1]
+	w.player.teleport(cell_feet(4, 13))
+	await frames(3)
+	boss._start_lunge(Gnarlmaw.FLOOR_LANE, true)
+	var stuck := await _until(func() -> bool: return boss.state == "stuck", 300)
+	check(stuck, "he lunges across the floor and bites the wall")
+	var widest := 0.0
+	var tail_off := 0.0
+	for n in 60:
+		await frames(1)
+		var lo := INF
+		var hi := -INF
+		for i in range(first, last + 1):
+			if boss.segments[i].active:
+				lo = minf(lo, boss.segments[i].position.y)
+				hi = maxf(hi, boss.segments[i].position.y)
+		widest = maxf(widest, hi - lo)
+		tail_off = maxf(tail_off, absf(boss.tail_position().y - Gnarlmaw.FLOOR_LANE))
+	check(widest >= 10.0, "the rings in the room span 10 px or more across the rail (%.1f)" % widest)
+	check(tail_off <= Gnarlmaw.BOW_STUCK + 0.01, "the tail stays within %.0f px of its lane (%.1f)" % [Gnarlmaw.BOW_STUCK, tail_off])
 
 
 func test_floor_lunge_misses_the_ledges() -> void:

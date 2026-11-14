@@ -89,6 +89,42 @@
    ],
    "fps": 1,
    "loop": false
+  },
+  "plate_spined": {
+   "row": 3,
+   "frames": [
+    {},
+    {}
+   ],
+   "seq": [
+    0
+   ],
+   "fps": 1,
+   "loop": false
+  },
+  "plate_mossy": {
+   "row": 4,
+   "frames": [
+    {},
+    {}
+   ],
+   "seq": [
+    0
+   ],
+   "fps": 1,
+   "loop": false
+  },
+  "tail_tip": {
+   "row": 5,
+   "frames": [
+    {},
+    {}
+   ],
+   "seq": [
+    0
+   ],
+   "fps": 1,
+   "loop": false
   }
  },
  "density": 2,

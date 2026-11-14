@@ -100,6 +100,26 @@ const RING_TILT := 0.14
 const RING_SHADE_NEAR := 0.82
 const RING_SHADE_FAR := 0.62
 const RING_SHADE_STEP := 0.1
+## Three looks of the plate (pass 562): the plain one, one with bark thorns raked back
+## along its top, one with moss over its crest. S and M mark the body rings that wear the
+## second and third; the thorns stand on the swell behind the neck, the moss gathers
+## toward the tail, and no look runs three rings in a row.
+const RING_LOOKS := ".S.SS.S.M.S.M..MS.M.MM"
+const LOOK_ANIMS := {".": "plate", "S": "plate_spined", "M": "plate_mossy"}
+## The three sacs of the tail are not one sac: the first is the fullest, and the last
+## ends in a horn (its own sprite). None is drawn smaller than its hitbox.
+const TAIL_SCALES := [1.14, 1.05, 1.0]
+const TAIL_TIP_ANIM := "tail_tip"
+## The body bows as it crawls: a wave runs down it, BOW_NECK px to each side of the rail
+## at the head and at the tail (so the bite and the weak point stay where the rail puts
+## them) and BOW_BODY px at the middle of the body. BOW_STUCK is the least any segment
+## thrashes while he is bitten into a wall. The hitboxes ride the wave with the plates.
+const BOW_NECK := 2.0
+const BOW_BODY := 6.0
+const BOW_STUCK := 4.0
+## Radians of the wave per pixel of rail (one wave is about 12 rings long), and per second.
+const BOW_WAVE := 0.024
+const BOW_RATE := 5.0
 
 var room: Room
 var hp := MAX_HP
@@ -211,7 +231,7 @@ func _place_segments() -> void:
 	var perp := Vector2(-_rail_dir.y, _rail_dir.x)
 	for s in segments:
 		var along := _head_s - s.index * SPACING
-		var wiggle := sin(along * 0.045 - _t * 9.0) * (2.0 if state != "stuck" else 4.0)
+		var wiggle := sin(along * BOW_WAVE - _t * BOW_RATE) * bow_reach(s.index, state == "stuck")
 		var pos := _rail_point(along) + perp * wiggle
 		if state in ["dangle", "dangle_down", "dangle_up"]:
 			# The hanging tail sways like a pendulum from the ceiling.
@@ -586,10 +606,31 @@ static func ring_along(i: int) -> float:
 	return clampf(float(i - 1) / float(SEGMENTS - TAIL_SEGMENTS - 2), 0.0, 1.0)
 
 
-## The scale ring `i` is drawn at (the head and tail are always 1).
+## How far segment `i` swings to each side of the rail, in pixels.
+static func bow_reach(i: int, stuck: bool) -> float:
+	var reach := BOW_NECK
+	if i > 0 and i < SEGMENTS - TAIL_SEGMENTS:
+		reach = lerpf(BOW_NECK, BOW_BODY, sin(PI * ring_along(i)))
+	return maxf(reach, BOW_STUCK) if stuck else reach
+
+
+## The sprite segment `i` is drawn from: one of the plate's three looks, the tail's sac, or its horned tip.
+static func ring_look(i: int) -> String:
+	if i <= 0:
+		return "head"
+	if i == SEGMENTS - 1:
+		return TAIL_TIP_ANIM
+	if i >= SEGMENTS - TAIL_SEGMENTS:
+		return "tail"
+	return LOOK_ANIMS[RING_LOOKS[i - 1]]
+
+
+## The scale ring `i` is drawn at (the head is always 1; the tail's sacs have their own).
 static func ring_scale(i: int) -> float:
-	if i <= 0 or i >= SEGMENTS - TAIL_SEGMENTS:
+	if i <= 0:
 		return 1.0
+	if i >= SEGMENTS - TAIL_SEGMENTS:
+		return TAIL_SCALES[i - (SEGMENTS - TAIL_SEGMENTS)]
 	var t := ring_along(i)
 	var shape := lerpf(RING_NECK, RING_SWELL, smoothstep(0.0, 0.3, t)) if t < 0.3 			else lerpf(RING_SWELL, RING_MIN, smoothstep(0.3, 1.0, t))
 	if i % 3 == 0:
@@ -630,10 +671,9 @@ func _draw() -> void:
 		var s := segments[i]
 		if s.dead:
 			continue
-		var anim := "plate"
+		var anim := ring_look(i)
 		var frame := 1 if stagger_left > 0.0 else 0
 		if s.is_head:
-			anim = "head"
 			var spin := _t * (14.0 if state in ["stuck", "lunge", "plunge", "intro"] else 3.0)
 			# The head frames cover one turn of the mandible wheel: 60 degrees for the
 			# code-drawn wheel (six-fold), a full turn for the Autosprite one.
@@ -641,7 +681,6 @@ func _draw() -> void:
 			var n: int = Sheet.get_sheet(SHEET).animations.head.frames.size()
 			frame = int(fposmod(spin, turn) / turn * n) % n
 		elif s.is_tail:
-			anim = "tail"
 			frame = 1 if hot else 0
 		var k := ring_scale(i)
 		draw_set_transform(s.position + shudder, rot + ring_tilt(i) * flip, Vector2(flip, 1) * k)
