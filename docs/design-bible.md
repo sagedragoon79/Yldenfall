@@ -1184,7 +1184,7 @@ The core (phase 2) has none: no blade reaches it, only the veins.
   - **Heart Stair** (63,-10, 40x45): switchback shelves of stillglass flesh with a Glass Slug, Crystal Dwarf, Shade
     Knights and a Clockwork Hound. At the top, the heart is not open yet.
   - the Evercrown has its own tiles (`paint_meteor`: rounded cells of black-violet scar tissue with wine-dark seams and cyan
-    pores), backdrops (ribbed walls, light veins, a wine glow below; no red, 12.48), decor (polyps, veins, tendrils, wall eyes),
+    pores whose light rims each cell, 12.50), backdrops (ribbed walls, light veins, a wine glow below; no red, 12.48), decor (polyps, veins, tendrils, wall eyes),
     cyan spore motes, a theme (B locrian over a heartbeat, detuned pads) and an ambience (breathing drone, heartbeat,
     glassy whines).
   - **Corrupted foes, as built (pass 78):** every foe spawned in an Evercrown room is `corrupted` (a room header
@@ -2183,6 +2183,15 @@ Left over from 12.48: the spikes in the Flooded Hall's and the Drowned Nave's pi
 Judged by eye at 1x and 4x in both rooms, before and after. `test_spikes_under_the_water_keep_their_rim` holds it: the water knows each sunk cluster and no dry one, finds one set down later, shows the rim at a luminance of at least 0.8 and well above the dimmed one, and knows none once drained.
 
 Not done: the Evercrown's tiles are still violet on a wine backdrop, a smaller hue step than Vorrhallow's.
+
+### 12.50 The Evercrown's cells are lit by their pores (pass 560)
+
+Left over from 12.48 and 12.49: the Evercrown's tiles were violet on a wine backdrop. Every colour of the fill was on the night ramp (hue about 255), 34 degrees from the haze on the committed atlas, where Vorrhallow's lavender stands on a blue. The master palette has no indigo, so the body cannot move without leaving the palette, and a body on the sky ramp reads as a blue cave, not the black-violet of the zone's mood (12.2); a first take showed both.
+
+- **The rim and the cool seams take the pores' light.** `paint_meteor` keeps its black-violet body (night-2). The lit upper rim of each cell is sky-3 (`MEAT_RIM`), the value night-3 had there, and the seams that are not wine sinew are sky-1 (`MEAT_SEAM_COOL`) where they were night-1. The wine seams (`MEAT_SEAM_WARM`, crystal-1) and the cyan pores are as before. The light on a cell is now the light the zone makes.
+- Nothing else moves: the cap, the grown shelf (12.34), the hangers, the stele and collision are untouched, and red is still for what hurts (12.48).
+
+After: the mean hue of the atlas's opaque pixels goes from 261 to 246, 49 degrees off the haze; the floor of `evercrown/threshold` measures hue 237 where it measured 251, at the same luminance. Judged by eye at 1x and 3x in `threshold`, `veins`, `heart` and `proving_scar`, before and after: the rock reads as an indigo mass with a cool glint on each cell, and the wine tendrils and ridge fall behind it. `assets/tiles/evercrown.png` is regenerated. `test_the_evercrowns_tiles_stand_off_its_wine_haze` holds the atlas to the haze; `test_the_evercrown_cells_are_lit_by_their_pores` in `tools/art/test_tilegen.py` holds the painter.
 
 ## 13. Asset Production Plan
 

@@ -169,6 +169,46 @@ func test_the_crystal_halls_recede_deep_each_in_its_own_hue() -> void:
 		check(absf(c.h * 360.0 - 255.0) >= 25.0, "a hall's haze is off its tiles' violet (%d)" % int(c.h * 360.0))
 
 
+func test_the_evercrowns_tiles_stand_off_its_wine_haze() -> void:
+	# The Evercrown's tiles were violet (the night ramp, lit rim and all) on a wine
+	# backdrop: a smaller hue step than Vorrhallow's (the pass 555 grade's leftover).
+	# The cells' lit rim and cool seams are now on the sky ramp, the cyan pores'
+	# light, over the same black-violet body (design bible 12.50). Measured on the
+	# committed atlas: the mean hue of its opaque pixels went from 261 to 246, so it
+	# stands 49 degrees off the haze where it stood 34. Fails if the rim goes back
+	# to night-3, or the haze moves toward the tiles.
+	var img := (load("res://assets/tiles/evercrown.png") as Texture2D).get_image()
+	var rim := Color("3677aa")       # sky-3
+	var old_rim := Color("5d4997")   # night-3
+	var sum := Vector3.ZERO
+	var n := 0
+	var cool := 0
+	var violet := 0
+	for y in img.get_height():
+		for x in img.get_width():
+			var c := img.get_pixel(x, y)
+			if c.a < 1.0:
+				continue
+			sum += Vector3(c.r, c.g, c.b)
+			n += 1
+			if c.is_equal_approx(rim):
+				cool += 1
+			elif c.is_equal_approx(old_rim):
+				violet += 1
+	check(n > 0, "the Evercrown's atlas has opaque pixels")
+	var mean := Color(sum.x / n, sum.y / n, sum.z / n)
+	var haze := Backdrop.ZONE_HAZE["evercrown"] as Color
+	var apart := absf(mean.h - haze.h)
+	apart = minf(apart, 1.0 - apart) * 360.0
+	check(apart >= 42.0, "the tiles stand %d degrees of hue off the haze" % int(apart))
+	check(mean.b > mean.r and mean.r > mean.g, "the tiles are still a blue-violet, not a blue")
+	check(float(cool) / n >= 0.04, "the cells' rim is the pores' blue (%d of %d)" % [cool, n])
+	check(float(violet) / n < 0.01, "almost no violet rim is left (%d of %d)" % [violet, n])
+	var lum := mean.r * 0.299 + mean.g * 0.587 + mean.b * 0.114
+	var haze_lum := haze.r * 0.299 + haze.g * 0.587 + haze.b * 0.114
+	check(lum > haze_lum * 1.5, "the tiles stay lighter than the haze")
+
+
 func test_the_murkiest_zones_are_eased_toward_neutral() -> void:
 	# The two murkiest zones — the Haar and the Sunken Spring, the darkest fogs — read
 	# as a low-contrast grey-green / grey-teal where the play field merged into the
