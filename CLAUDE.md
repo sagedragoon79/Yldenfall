@@ -76,10 +76,10 @@ http://localhost:8977.
 - Keep `workbench/tasks.json` current at every step (`doing`, `queue`, `done` newest first, `stuck`).
 - When visuals change, refresh the pictures and catalogue (`GODOT` set as for the tests):
   `python3 workbench/capture/capture_all.py --redo --only=rooms` (or `things`, `people`, `gear`,
-  `dyes`, `arenas`, `shops`), then `python3 workbench/capture/build_catalog.py`. Clips:
+  `dyes`, `arenas`, `shops`, `fights`: real hits and tells, for the grade), then `python3 workbench/capture/build_catalog.py`. Clips:
   `python3 workbench/capture/make_clips.py`. Look at what they captured before trusting it.
 - It is also hosted at https://yldenfall-workbench.vercel.app behind one password (in
   `workbench/.wb_pass`, never committed). `python -u workbench/push.py` (with `PYTHONUTF8=1` on
   Windows) keeps it live and pulls Sean's notes from it; `workbench/deploy.py` redeploys pictures.
 - After a meaningful pass, get an independent grade: 8 to 12 screenshots across the game to a
-  separate agent with no hints, scored out of 10 against Hollow Knight; add it to `workbench/grades.json`.
+  separate agent with no hints (two to four of them fight frames, bible 12.0), scored out of 10 against Hollow Knight; add it to `workbench/grades.json`.

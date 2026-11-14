@@ -18,10 +18,20 @@ extends Node
 ##   --slash=KIND[,...]  play the hero's swing smear (KIND side, up or down)
 ##                       --slash-age=N frames before the shot (default 2); words after
 ##                       it: "heavy", "left" (face left), "back" (the second combo cut)
+##   --face-left         turn the hero to face left before anything else happens
+##   --when=hit|tell     a fight frame: save once the hero's blade lands on something
+##                       (hit: a HitSpark and the swing's smear, from a real swing, see --shot-attack) or a foe
+##                       winds up an attack (tell), --after=N frames later (default 2).
+##                       --frames is then the longest it waits (give it 600 or so); if
+##                       the moment never comes nothing is saved and the exit code is 3.
+
+## The states foes wind up an attack in (Enemy.MIN_TELEGRAPH), for --when=tell.
+const TELLS: Array[String] = ["windup", "tell", "wind", "rev", "swell", "coil", "raise"]
 
 var _args := {}
 var _frames := 0
 var _game: Node
+var _moment := -1  # the frame --when's moment came, or -1
 
 
 func _ready() -> void:
@@ -39,12 +49,24 @@ func _process(_delta: float) -> void:
 	var p = _game.get("player")
 	if _args.has("invulnerable") and p != null:
 		p.hp = p.max_hp
+	if _args.has("face-left") and p != null and _frames <= 20:
+		p.facing = -1
 	var at_frame := int(_args.get("frames", "50"))
 	if _args.has("spark") and _frames == at_frame - int(_args.get("spark-age", "3")):
 		_throw_spark(String(_args["spark"]).split(","))
 	if _args.has("slash") and _frames == at_frame - int(_args.get("slash-age", "2")):
 		_play_slash(String(_args["slash"]).split(","))
-	if _frames < at_frame:
+	if _args.has("when"):
+		if _moment < 0 and moment(get_tree(), String(_args["when"])):
+			_moment = _frames
+		if _moment < 0 and _frames >= at_frame:
+			printerr("workbench: no %s within %d frames" % [_args["when"], at_frame])
+			set_process(false)
+			get_tree().quit(3)
+			return
+		if _moment < 0 or _frames < _moment + int(_args.get("after", "2")):
+			return
+	elif _frames < at_frame:
 		return
 	set_process(false)
 	var img: Image
@@ -77,6 +99,34 @@ func _process(_delta: float) -> void:
 	DirAccess.make_dir_recursive_absolute(out.get_base_dir())
 	img.save_png(out)
 	get_tree().quit()
+
+
+## True on a frame worth a fight picture (--when). "hit": a spark from the hero's
+## blade is in the air and the swing's smear is showing. "tell": a living foe is in
+## a wind-up state.
+static func moment(tree: SceneTree, what: String) -> bool:
+	match what:
+		"hit":
+			# The blow lands on the swing's first step, the game holds for the hitstop
+			# (real time, so no frame count is safe) and only then does the blade
+			# travel: wait until the spark and the swing's smear are both drawn.
+			var room := tree.get_first_node_in_group("room")
+			var hero := tree.get_first_node_in_group("player")
+			if room == null or hero == null:
+				return false
+			var smear := false
+			for c in hero.get_children():
+				if c is SlashFx and not c.waiting():
+					smear = true
+			if smear:
+				for c in room.get_children():
+					if c is HitSpark:
+						return true
+		"tell":
+			for e in tree.get_nodes_in_group("enemy"):
+				if e is Enemy and not e.dead and TELLS.has(e.state):
+					return true
+	return false
 
 
 func _focus(what: String) -> Node2D:

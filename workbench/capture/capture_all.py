@@ -8,7 +8,8 @@ Usage: python3 workbench/capture/capture_all.py [--only=rooms,people,...] [--red
 
 Kinds: things (foes, guardians and pickups drawn alone), rooms, people (each
 townsperson in their room), gear (the hero wearing each piece), dyes, arenas
-(guardians made of several parts, shot in their rooms) and shops (the shop menu).
+(guardians made of several parts, shot in their rooms), shops (the shop menu) and
+fights (the game being played: a real swing landing on a foe, and a foe's tell).
 """
 import concurrent.futures as cf, glob, json, os, re, shutil, subprocess, sys, tempfile, time
 
@@ -88,6 +89,39 @@ def floor_mid(grid):
     return w // 2, len(grid) // 2
 
 
+# Fight frames: (picture id, room, foe's legend character, moment). The hero is put
+# beside the first such foe that has floor to stand on; see fight_spot.
+FIGHTS = [
+    ('heartwood-hit', 'heartwood/entrance', 'M', 'hit'),
+    ('heartwood-tell', 'heartwood/dwarf_hall', 'D', 'tell'),
+    ('boughs-hit', 'boughs/thicket_road', '!', 'hit'),
+    ('haar-hit', 'haar/marsh_road', 'V', 'hit'),
+    ('haar-tell', 'haar/marsh_road', 'p', 'tell'),
+    ('spires-hit', 'spires/fallen_bridge', 't', 'hit'),
+    ('vorrhallow-hit', 'vorrhallow/kings_kennels', 'j', 'hit'),
+    ('vorrhallow-tell', 'vorrhallow/flooded_hall', 'q', 'tell'),
+    ('tower-hit', 'tower/smelter', 'I', 'hit'),
+    ('evercrown-hit', 'evercrown/threshold', 'D', 'hit'),
+]
+
+
+def fight_spot(grid, foe, gap=2):
+    """The tile to stand the hero on to fight the first `foe` in a room: `gap` tiles to
+    one side of it on the same floor, facing it. Returns (x, y, side) with side 1 when
+    the foe is to the hero's right, or None when no such foe has room beside it."""
+    w = max(len(r) for r in grid)
+    g = [r.ljust(w) for r in grid]
+    for y in range(1, len(g) - 1):
+        for x in range(w):
+            if g[y][x] != foe or g[y + 1][x] != '#':
+                continue
+            for side in (1, -1):
+                xs = [x - side * d for d in range(1, gap + 2)]
+                if all(0 < c < w - 1 and g[y][c] == '.' and g[y + 1][c] == '#' and g[y - 1][c] == '.' for c in xs):
+                    return x - side * gap, y, side
+    return None
+
+
 def jobs():
     R = rooms()
     items = json.load(open(os.path.join(ROOT, 'data', 'items.json'), encoding='utf-8'))
@@ -126,6 +160,19 @@ def jobs():
                 add('arenas', 'guardians/gnarlmaw.png', lambda o, g=g: shot(o, g, frames=330))
             else:
                 add('arenas', 'guardians/%s.png' % h['boss'], lambda o, g=g: shot(o, g, hero='400,240', focus='boss', frames=240))
+    for fid, rid, foe, when in FIGHTS:
+        # A tell is shot from four tiles off, so the foe is not already touching the hero.
+        spot = fight_spot(R[rid]['grid'], foe, 2 if when == 'hit' else 4) if rid in R else None
+        if spot is None:
+            add('fights', 'fights/%s.png' % fid, lambda o, rid=rid, foe=foe: 'FAIL %s (no %s with floor beside it in %s)' % (os.path.relpath(o, CAT), foe, rid))
+            continue
+        g = ['--room=' + rid, '--shot-at=%d,%d' % spot[:2]] + (['--face-left'] if spot[2] < 0 else [])
+        if when == 'hit':
+            # A real swing: the smear, the spark and the foe's flash share the frame.
+            add('fights', 'fights/%s.png' % fid, lambda o, g=g: shot(o, g + ['--shot-attack=24'], when='hit', after=2, frames=600))
+        else:
+            # The hero only stands there, so the frame is the foe's wind-up and nothing else.
+            add('fights', 'fights/%s.png' % fid, lambda o, g=g: shot(o, g, when='tell', after=4, frames=600))
     keeper = {}
     for rid, h in R.items():
         for n in h['npcs']:
