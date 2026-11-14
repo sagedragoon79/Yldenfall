@@ -81,6 +81,11 @@ const GROWN_GATES := {
 }
 ## The equipment slots, in the order the Equipment page lists them.
 const GEAR_SLOTS := ["blade", "armor", "shield", "helmet"]
+## The trinkets (design bible 5.6): icons in the menu only, each with one fixed
+## rule. A kind's places are its keys in `equipment`; there are two rings.
+const TRINKET_PLACES := {"neck": ["neck"], "ring": ["ring1", "ring2"], "relic": ["relic"]}
+## Every kind of thing that is worn, in the order the Equipment page lists them.
+const GEAR_KINDS := ["blade", "armor", "shield", "helmet", "neck", "ring", "relic"]
 
 ## The 16 ranks, named for a tree's growth. Each rank after Seedling gives a skill point.
 const RANKS := ["Seedling", "Sprout", "Sapling", "Thornling", "Barkskin", "Wayfarer", "Ranger", "Bough-Guard",
@@ -140,7 +145,7 @@ static func fresh() -> Dictionary:
 		"skill_points": 0,
 		"skills": [],
 		"respecs": 0,
-		"equipment": {"blade": "short_sword", "armor": "", "shield": "", "helmet": ""},
+		"equipment": {"blade": "short_sword", "armor": "", "shield": "", "helmet": "", "neck": "", "ring1": "", "ring2": "", "relic": ""},
 		## Smith tempers per blade id (0 to 2): each adds TEMPER_BONUS to its damage.
 		"tempers": {},
 		"keys": {},
@@ -244,30 +249,76 @@ func earn_dye(id: String) -> void:
 ## Gear (pass 186): a blade, armor, shield or helmet you have is kept, and the
 ## Equipment page puts any of it on.
 func owns_gear(id: String) -> bool:
-	return Array(data.get("gear", [])).has(id) or GEAR_SLOTS.any(func(s: String) -> bool: return String(data.equipment.get(s, "")) == id)
+	return Array(data.get("gear", [])).has(id) or is_worn(id)
 
 
-## Takes `id` into your gear and puts it on (a purchase, a find, a reward).
+## The places in `equipment` that hold things of `kind`: one, or two for rings.
+static func places(kind: String) -> Array:
+	return TRINKET_PLACES.get(kind, [kind] if GEAR_SLOTS.has(kind) else [])
+
+
+## Every place in `equipment`, in the Equipment page's order.
+static func all_places() -> Array:
+	var out := []
+	for kind: String in GEAR_KINDS:
+		out.append_array(places(kind))
+	return out
+
+
+## True when `id` is on you now.
+func is_worn(id: String) -> bool:
+	return id != "" and all_places().any(func(s: String) -> bool: return String(data.equipment.get(s, "")) == id)
+
+
+## The trinkets on you (neck, rings, relic) that this build knows.
+func worn_trinkets() -> Array:
+	var out := []
+	for kind: String in TRINKET_PLACES:
+		for place: String in TRINKET_PLACES[kind]:
+			var item := GameData.item(String(data.equipment.get(place, "")))
+			if String(item.get("kind", "")) == kind:
+				out.append(item)
+	return out
+
+
+## Takes `id` into your gear and puts it on (a purchase, a find, a reward). A
+## third ring is kept, not worn: both hands are full.
 func obtain_gear(id: String, p: Player = null) -> void:
 	if not Array(data.gear).has(id):
 		data.gear.append(id)
-	var slot := String(GameData.item(id).get("kind", ""))
-	if GEAR_SLOTS.has(slot):
-		data.equipment[slot] = id
+	var at := places(String(GameData.item(id).get("kind", "")))
+	if at.size() == 1:
+		data.equipment[at[0]] = id
+	elif not at.is_empty() and not is_worn(id):
+		for place: String in at:
+			if String(data.equipment.get(place, "")) == "":
+				data.equipment[place] = id
+				break
 	if p != null:
 		refresh_stats(p)
 
 
 ## Puts on gear you have, in its slot. Wearing what is already worn takes it
-## off, except the blade: you always hold one.
+## off, except the blade: you always hold one. A ring goes on the free hand,
+## or takes the second ring's place when both are full.
 func wear(id: String, p: Player = null) -> void:
-	var slot := String(GameData.item(id).get("kind", ""))
-	if not GEAR_SLOTS.has(slot) or not owns_gear(id):
+	var kind := String(GameData.item(id).get("kind", ""))
+	var at := places(kind)
+	if at.is_empty() or not owns_gear(id):
 		return
-	if String(data.equipment.get(slot, "")) == id and slot != "blade":
-		data.equipment[slot] = ""
+	var on := ""
+	var free := ""
+	for place: String in at:
+		var worn := String(data.equipment.get(place, ""))
+		if worn == id:
+			on = place
+		elif worn == "" and free == "":
+			free = place
+	if on != "":
+		if kind != "blade":
+			data.equipment[on] = ""
 	else:
-		data.equipment[slot] = id
+		data.equipment[free if free != "" else at[-1]] = id
 	if p != null:
 		refresh_stats(p)
 
@@ -480,6 +531,21 @@ func refresh_stats(p: Player) -> void:
 	var ward := float(GameData.item(eq.shield).get("ward", 0.0)) if p.has_shield else 0.0
 	p.magic_ward = minf(ward + float(helmet.get("ward", 0.0)), MAX_WARD)
 	p.melee_mult = 1.0 + (0.1 if has_skill("keen_edge") else 0.0) + (0.1 if has_skill("keener_edge") else 0.0)
+	# Trinkets (design bible 5.6): each adds its one rule. A relic alters a
+	# signature ability, so it does nothing until that ability is found.
+	var flask := 1.0
+	var mp_hit := 0.0
+	var dash := 1.0
+	for trinket: Dictionary in worn_trinkets():
+		var needs := String(trinket.get("needs", ""))
+		if needs != "" and not bool(p.abilities.get(needs, false)):
+			continue
+		p.melee_mult += float(trinket.get("melee", 0.0))
+		flask += float(trinket.get("flask", 0.0))
+		mp_hit += float(trinket.get("mp_hit", 0.0))
+		dash += float(trinket.get("dash", 0.0))
+	p.flask_mult = flask
+	p.dash_mult = dash
 	p.riposte = has_skill("riposte")
 	p.bloodletting = has_skill("bloodletting")
 	p.thrust = has_skill("thrust")
@@ -493,7 +559,7 @@ func refresh_stats(p: Player) -> void:
 	p.wanderers_grace = has_skill("wanderers_grace")
 	p.feather_fall = has_skill("feather_fall")
 	p.ground_combo_length = 4 if has_skill("fourth_strike") else 3
-	p.mp_hit_mult = 1.5 if has_skill("siphon") else 1.0
+	p.mp_hit_mult = (1.5 if has_skill("siphon") else 1.0) + mp_hit
 	p.gold_mult = 1.1 if has_skill("gold_sense") else 1.0
 	p.magnet_mult = 1.6 if has_skill("gold_sense") else 1.0
 	p.rising_cut = has_skill("rising_cut")
@@ -785,11 +851,24 @@ static func sanitize(src: Variant) -> Dictionary:
 		var kind := String(GameData.item(String(out.equipment.get(slot, ""))).get("kind", ""))
 		if kind != "" and kind != slot:
 			out.equipment[slot] = "short_sword" if slot == "blade" else ""
+	# The trinket places (design bible 5.6) hold their own kinds too, and one
+	# ring is never on both hands.
+	for trinket: String in TRINKET_PLACES:
+		for place: String in TRINKET_PLACES[trinket]:
+			var worn: Variant = out.equipment.get(place, "")
+			if not worn is String:
+				out.equipment[place] = ""
+				continue
+			var kind := String(GameData.item(String(worn)).get("kind", ""))
+			if kind != "" and kind != trinket:
+				out.equipment[place] = ""
+	if String(out.equipment.ring2) == String(out.equipment.ring1):
+		out.equipment.ring2 = ""
 	# Gear kept since pass 186: whatever is worn, and the starting blade.
 	var gear: Array = _unique_strings(out.gear)
 	for i in gear.size():
 		gear[i] = RENAMED_ITEMS.get(gear[i], gear[i])
-	for slot: String in GEAR_SLOTS:
+	for slot: String in all_places():
 		var worn := String(out.equipment.get(slot, ""))
 		if worn != "" and not gear.has(worn):
 			gear.append(worn)

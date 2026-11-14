@@ -427,6 +427,61 @@ func test_every_card_door_guards_a_vault() -> void:
 		check(grid[y - Reach.BODY_ROWS].substr(1, x).count("#") == x, "%s: a roof over the vault, so the door is the only way in" % room)
 
 
+## Design bible 5.6: the neck, two rings and a relic. Each is an icon in the
+## menu with one fixed rule; a relic sleeps until its ability is found; an
+## older save comes over with the places empty.
+func test_trinkets_neck_two_rings_and_a_relic() -> void:
+	var w := make_world(_town(), "test/town")
+	var p := w.player
+	await frames(3)
+	p.gold = 9000
+	var base_melee := p.melee_mult
+	var base_mp := p.mp_hit_mult
+	# A ring is bought like any gear, goes on the free hand, and is kept.
+	var sundries: Array = GameData.shop("hearthroot_items").stock
+	var at := sundries.find_custom(func(e: Dictionary) -> bool: return e.item == "amber_band")
+	check(at >= 0 and Shop.buy("hearthroot_items", at, p), "the Amber Band is bought in Hearthroot")
+	check(GameState.data.equipment.ring1 == "amber_band" and is_equal_approx(p.flask_mult, 1.1), "it goes on, and the flask heals a tenth more (%.2f)" % p.flask_mult)
+	check(Shop.status("hearthroot_items", at, p) == "owned", "and is not sold twice")
+	GameState.obtain_gear("whetstone_ring", p)
+	check(GameState.data.equipment.ring2 == "whetstone_ring" and is_equal_approx(p.melee_mult, base_melee + 0.05), "a second ring takes the other hand: 5%% harder (%.2f)" % p.melee_mult)
+	GameState.wear("amber_band", p)
+	check(GameState.data.equipment.ring1 == "" and is_equal_approx(p.flask_mult, 1.0), "choosing a worn ring takes it off, and its rule with it")
+	GameState.wear("amber_band", p)
+	check(GameState.data.equipment.ring1 == "amber_band" and GameState.data.equipment.ring2 == "whetstone_ring", "and it goes back on the free hand, never on both")
+	# The neck.
+	GameState.obtain_gear("dewcatch_torc", p)
+	check(GameState.data.equipment.neck == "dewcatch_torc" and is_equal_approx(p.mp_hit_mult, base_mp + 0.25), "the Dewcatch Torc: a quarter more mana a blow (%.2f)" % p.mp_hit_mult)
+	# The relic alters a signature ability, so it sleeps until that is found.
+	p.abilities.erase("stride")
+	GameState.obtain_gear("stride_knot", p)
+	check(GameState.data.equipment.relic == "stride_knot" and is_equal_approx(p.dash_mult, 1.0), "the Stride Knot sleeps without the Elven Stride")
+	var row: Dictionary = Menus.equipment_rows().filter(func(r: Dictionary) -> bool: return r.get("id", "") == "stride_knot")[0]
+	check(String(row.detail).contains("sleeps until"), "and its row says so (%s)" % row.detail)
+	p.abilities["stride"] = true
+	GameState.refresh_stats(p)
+	check(is_equal_approx(p.dash_mult, 1.15), "with it, the dash carries 15%% farther (%.2f)" % p.dash_mult)
+	# The Equipment page lists them under their own headers.
+	var heads := Menus.equipment_rows().filter(func(r: Dictionary) -> bool: return r.get("header", false)).map(func(r: Dictionary) -> String: return String(r.label))
+	check(heads.has("Neck") and heads.has("Rings, two worn") and heads.has("Relic"), "the page has a Neck, Rings and Relic section (%s)" % [heads])
+	# Every trinket has one rule the game knows, and none is a resistance.
+	var items := GameData.table("items")
+	for id: String in items:
+		if GameState.TRINKET_PLACES.has(String(items[id].kind)):
+			var rules := ["melee", "flask", "mp_hit", "dash"].filter(func(k: String) -> bool: return items[id].has(k))
+			check(rules.size() == 1, "%s has one rule (%s)" % [id, rules])
+			check(not items[id].has("ward") and not items[id].has("defense"), "%s gives no resistance" % id)
+	# A save: an older one comes over with the places empty; a wrong thing comes off.
+	var old := GameState.fresh()
+	old.equipment = {"blade": "short_sword", "armor": "", "shield": "", "helmet": ""}
+	var got := GameState.sanitize(old)
+	check(got.equipment.neck == "" and got.equipment.ring1 == "" and got.equipment.ring2 == "" and got.equipment.relic == "", "an older save has the new places, empty (%s)" % [got.equipment])
+	old.equipment = {"blade": "short_sword", "armor": "", "shield": "", "helmet": "", "neck": "amber_band", "ring1": "amber_band", "ring2": "amber_band", "relic": 7}
+	got = GameState.sanitize(old)
+	check(got.equipment.neck == "" and got.equipment.ring1 == "amber_band" and got.equipment.ring2 == "" and got.equipment.relic == "", "a ring on the neck or on both hands comes off (%s)" % [got.equipment])
+	check(Array(got.gear).has("amber_band"), "and what is worn is kept as gear")
+
+
 func test_the_elven_helm_is_a_secret_worth_a_mask() -> void:
 	# Bible 5.2: a helmet in its own slot (pass 185), found, not bought.
 	var rooms := _town({}, ["prop: 12, 19, elven_helm"])
@@ -1785,7 +1840,7 @@ func test_forepaws_physician_mends_you_and_its_larder_sells() -> void:
 	check(ids.has("kettleforge_physician") and ids.has("kettleforge_grocer"), "both keep house in Kettleforge (%s)" % [ids])
 	room.queue_free()
 	var stock: Array = GameData.shop(GameData.npc("kettleforge_grocer").shop).stock
-	check(stock.map(func(e: Dictionary) -> String: return e.item) == ["elixir", "silver_key"], "the Larder sells an Amber Draught and the Silver Key")
+	check(stock.map(func(e: Dictionary) -> String: return e.item) == ["elixir", "silver_key", "stride_knot"], "the Larder sells an Amber Draught, the Silver Key and the Stride Knot")
 
 
 ## Pass 457 (bible 10.3): the source game's hospital, by the buttons. Right walks

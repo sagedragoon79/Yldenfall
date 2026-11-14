@@ -17,7 +17,8 @@
 			{"item": "copper_key", "price": 150},
 			{"item": "mana_dew", "price": 500, "once": true},
 			{"item": "life_fruit", "price": 800, "once": true},
-			{"item": "ointment", "price": 300}
+			{"item": "ointment", "price": 300},
+			{"item": "amber_band", "price": 600}
 		]
 	},
 	"amberlee_armor": {
@@ -37,7 +38,8 @@
 			{"item": "copper_key", "price": 150},
 			{"item": "silver_key", "price": 400},
 			{"item": "mana_dew", "price": 800, "once": true},
-			{"item": "life_fruit", "price": 1200, "once": true}
+			{"item": "life_fruit", "price": 1200, "once": true},
+			{"item": "whetstone_ring", "price": 1200}
 		]
 	},
 	"kettleforge_smith": {
@@ -55,7 +57,8 @@
 		"greeting": "Dried meat for the climb and a Silver Key for the vaults. The deep galleries kept everything but our appetite.",
 		"stock": [
 			{"item": "elixir", "price": 1500},
-			{"item": "silver_key", "price": 400}
+			{"item": "silver_key", "price": 400},
+			{"item": "stride_knot", "price": 1500}
 		]
 	},
 	"hearthroot_charts": {
@@ -106,7 +109,8 @@
 		"greeting": "Every scroll here was copied by lamplight while the storm rang the bells.",
 		"stock": [
 			{"item": "fire_scroll", "price": 1200},
-			{"item": "wisplight_scroll", "price": 2500}
+			{"item": "wisplight_scroll", "price": 2500},
+			{"item": "dewcatch_torc", "price": 1800}
 		]
 	},
 	"spires_items": {

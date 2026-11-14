@@ -266,7 +266,46 @@ def scroll(seal):
     return paint
 
 
+def ring(metal, stone, lit):
+    """A finger ring seen from the front, its stone set on top."""
+    def paint():
+        cv = icon()
+        cv.part(cv.ellipse((7.0, 8.6), 4.2, 4.2) & ~cv.ellipse((7.0, 8.6), 2.7, 2.7), metal)
+        cv.part(cv.ellipse((7.0, 3.9), 2.2, 1.9), stone, deep=True)
+        cv.flat(cv.ellipse((6.4, 3.4), 0.5, 0.5), lit)
+        return cv.finish()[0]
+    return paint
+
+
+def torc():
+    """An open collar, its two ends each a small cup."""
+    cv = icon()
+    metal = mat("stone", 7, 6, 4, 2)
+    band = cv.ellipse((7.0, 6.4), 5.2, 5.0) & ~cv.ellipse((7.0, 6.4), 3.7, 3.5)
+    gap = cv.polygon([(7.0, 6.4), (4.4, 13.6), (9.6, 13.6)])
+    cv.part(band & ~gap, metal)
+    for x in (4.9, 9.1):
+        cv.part(cv.ellipse((x, 10.9), 1.5, 1.5), metal, deep=True)
+        cv.flat(cv.ellipse((x, 10.7), 0.6, 0.5), PAL["sky-6"])
+    return cv.finish()[0]
+
+
+def knot():
+    """A cord tied in a loop, both ends hanging."""
+    cv = icon()
+    cord = mat("ochre", 6, 5, 3, 1)
+    cv.part(cv.ellipse((7.0, 5.0), 3.8, 3.4) & ~cv.ellipse((7.0, 5.0), 2.2, 1.9), cord)
+    cv.part(cv.capsule((6.2, 8.2), (3.6, 12.6), 0.8), cord)
+    cv.part(cv.capsule((7.8, 8.2), (10.4, 12.6), 0.8), cord)
+    cv.part(cv.ellipse((7.0, 8.2), 1.5, 1.3), mat("leaf", 6, 5, 3, 1), deep=True)
+    return cv.finish()[0]
+
+
 BY_ID = {
+    "amber_band": ring(GOLD, mat("gold", 7, 6, 4, 2), PAL["gold-7"]),
+    "whetstone_ring": ring(mat("stone", 6, 5, 3, 1), mat("ash", 5, 4, 3, 1), PAL["ash-6"]),
+    "dewcatch_torc": torc,
+    "stride_knot": knot,
     "short_sword": blade(7.0, 0.9),
     "long_sword": blade(9.6, 0.95, fuller=PAL["stone-5"], guard_len=2.4),
     "dwarvish_broad_sword": blade(10.0, 1.7, steel=mat("stone", 6, 5, 3, 1), guard=mat("ember", 5, 4, 3, 1),
