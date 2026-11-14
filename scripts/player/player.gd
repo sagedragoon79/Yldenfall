@@ -187,6 +187,8 @@ var executioner := false
 var thrusts := 0
 ## Rune Daggers thrown (the soaks count them, pass 191).
 var throws := 0
+## Seconds until the next counted weapon can be thrown.
+var _throw_wait := 0.0
 var spell_cost_mult := 1.0
 var chain_thunder := false
 var time_thief := false
@@ -1705,16 +1707,21 @@ func _try_throw(delta: float) -> void:
 	# Buffered like a swing (pass 192): a press while you can't throw yet (the
 	# end of a swing or a dash, the dagger still reforming) goes the first frame
 	# you can.
-	if _throw_buffer_timer <= 0.0 or not abilities.get("rune_dagger", false):
+	_throw_wait = maxf(_throw_wait - delta, 0.0)
+	# The projectile slot (design bible 5.6): the Rune Dagger, or a counted
+	# thrown weapon while any are left. A shield does not stop a throw.
+	var held := GameState.projectile(abilities)
+	if _throw_buffer_timer <= 0.0 or held == "":
 		return
-	if not GameState.offhand_free():
-		# The shield is on the throwing arm (the off hand holds one or the other).
-		_throw_buffer_timer = 0.0
+	if is_dashing or is_drinking or is_blocking or is_attacking or is_hurt:
 		return
-	if is_dashing or is_drinking or is_blocking or is_attacking or is_hurt or not dagger_ready():
+	if (not dagger_ready()) if held == GameState.RUNE_DAGGER else _throw_wait > 0.0:
 		return
 	_throw_buffer_timer = 0.0
-	throw_dagger()
+	if held == GameState.RUNE_DAGGER:
+		throw_dagger()
+	else:
+		throw_counted(held)
 
 
 func throw_dagger() -> void:
@@ -1728,6 +1735,26 @@ func throw_dagger() -> void:
 	throws += 1
 	visual.squash_for("throw")
 	Sfx.play("dagger_throw")
+
+
+## A counted thrown weapon (design bible 5.6): one leaves your hand and is
+## gone. Its item gives its damage, speed, reach and the wait between throws.
+func throw_counted(id: String) -> void:
+	var item := GameData.item(id)
+	var d := RuneDagger.new()
+	d.thrower = self
+	d.kind = id
+	d.damage = roundi(float(item.get("damage", RuneDagger.DAMAGE)) * melee_mult)
+	d.speed = float(item.get("speed", RuneDagger.SPEED))
+	d.reach = float(item.get("range", RuneDagger.RANGE))
+	d.dir = Vector2.UP if input.up else Vector2(facing, 0)
+	get_parent().add_child(d)
+	d.global_position = global_position + Vector2(facing * 10, -(LOW_SHOT_HEIGHT if crouching else THROW_HEIGHT))
+	GameState.spend_projectile(id)
+	_throw_wait = float(item.get("wait", 0.25))
+	throws += 1
+	visual.squash_for("throw")
+	Sfx.play("dagger_throw", 0.1)
 
 
 func _try_cast() -> void:

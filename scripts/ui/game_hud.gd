@@ -131,6 +131,7 @@ func _draw() -> void:
 	if _glass_shown():
 		_draw_glass(origin + Vector2(row_w - 8, 27))
 	_draw_belt(origin + Vector2(0, 41))
+	_draw_projectile(origin + Vector2(row_w - 26, 41))
 	_draw_glove(origin + Vector2(52, 42))
 	_draw_minimap()
 	_draw_boss()
@@ -364,6 +365,16 @@ func _draw_glass(at: Vector2) -> void:
 		draw_rect(Rect2(at + Vector2(3.75, 5.5), Vector2(0.5, 5)), sand)
 	if can_turn:
 		draw_rect(Rect2(at + Vector2(2, 2), Vector2(1, 2)), Color(1, 1, 1, 0.7))
+
+
+## The projectile slot (design bible 5.6): a counted thrown weapon in hand and
+## how many are left. The Rune Dagger never runs out, so it shows nothing.
+func _draw_projectile(at: Vector2) -> void:
+	var id := GameState.projectile(player.abilities)
+	if id == "" or id == GameState.RUNE_DAGGER:
+		return
+	UiArt.draw_icon(self, id, at + Vector2(-2, -3), Color.WHITE)
+	PixelFont.draw(self, at + Vector2(10, 9), "x%d" % GameState.ammo(id), 10, GOLD, OUTLINE)
 
 
 func _belt_shown() -> bool:

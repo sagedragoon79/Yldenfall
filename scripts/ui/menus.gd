@@ -414,8 +414,8 @@ static func cloak_dyes() -> Array:
 
 ## Equipment rows for a hair color carry this before the PlayerVisual.HAIR id.
 const HAIR_PREFIX := "hair:"
-## The Off Hand row that takes the shield off to free the hand for the Rune Dagger.
-const OFFHAND_DAGGER := "offhand:rune_dagger"
+## An Equipment row for the projectile slot carries this before what it throws.
+const PROJECTILE_PREFIX := "projectile:"
 
 
 ## The Equipment page (pause menu, pass 186): every blade, armor, shield and
@@ -428,19 +428,14 @@ const BELT_COUNTS := {"ointment": "ointments", "elixir": "elixirs", "tonic": "to
 
 
 static func equipment_rows() -> Array:
-	var names := {"blade": "Blades", "armor": "Armor", "shield": "Off Hand", "helmet": "Helmets", "neck": "Neck", "ring": "Rings, two worn", "relic": "Relic"}
-	var dagger := bool(GameState.data.abilities.get("rune_dagger", false))
+	var names := {"blade": "Blades", "armor": "Armor", "shield": "Shield", "helmet": "Helmets", "neck": "Neck", "ring": "Rings, two worn", "relic": "Relic"}
 	var out := []
 	for slot: String in GameState.GEAR_KINDS:
 		var have: Array = Array(GameState.data.gear).filter(func(id: String) -> bool: return String(GameData.item(id).get("kind", "")) == slot)
-		if have.is_empty() and not (slot == "shield" and dagger):
+		if have.is_empty():
 			continue
 		have.sort_custom(func(a: String, b: String) -> bool: return int(GameData.item(a).get("tier", 0)) < int(GameData.item(b).get("tier", 0)))
 		out.append({"label": names[slot], "header": true})
-		if slot == "shield" and dagger:
-			# The off hand holds a shield or the Rune Dagger (Sean, 2026-10-31).
-			out.append({"label": "Rune Dagger", "right": "Worn" if GameState.offhand_free() else "",
-				"detail": "Thrown from the off hand, so no shield: no guard, parry or ward.", "enabled": true, "id": OFFHAND_DAGGER})
 		for id: String in have:
 			var item := GameData.item(id)
 			var worn := GameState.is_worn(id)
@@ -454,11 +449,22 @@ static func equipment_rows() -> Array:
 				detail += "  Tempered %d of 2." % GameState.temper_level(id)
 			if slot == "shield" and GameState.two_handed():
 				detail += "  Slung with a two-hander: no guard or ward."
-			if slot == "shield" and dagger:
-				detail += "  On the throwing arm: no Rune Dagger."
 			if worn and slot != "blade":
 				detail += "  Choose it again to take it off."
 			out.append({"label": item.name, "right": "Worn" if worn else "", "detail": detail, "enabled": true, "id": id})
+	# The projectile slot (design bible 5.6): what you have to throw; choosing one
+	# puts it on the Throw button.
+	var thrown: Array = GameState.projectiles(GameState.data.abilities)
+	if not thrown.is_empty():
+		out.append({"label": "Projectile", "header": true})
+		var held := GameState.projectile(GameState.data.abilities)
+		for id: String in thrown:
+			var is_dagger: bool = id == GameState.RUNE_DAGGER
+			var count := "" if is_dagger else "x%d" % GameState.ammo(id)
+			var right := ("In hand  " + count).strip_edges() if id == held else count
+			out.append({"label": "Rune Dagger" if is_dagger else String(GameData.item(id).name), "right": right,
+				"detail": "Thrown, it flies and comes back: it never runs out." if is_dagger else String(GameData.item(id).desc),
+				"enabled": true, "id": PROJECTILE_PREFIX + id})
 	# The belt (design bible 5.6): what each place holds; choosing one takes it in hand.
 	var belt: Array = GameState.data.belt
 	if belt.any(func(id: String) -> bool: return id != ""):
@@ -500,10 +506,8 @@ static func choose_equipment(id: String, p: Player) -> void:
 		GameState.data.belt_at = int(id.trim_prefix(BELT_PREFIX))
 		Sfx.play("cloth", 0.0)
 		return
-	if id == OFFHAND_DAGGER:
-		GameState.data.equipment.shield = ""
-		GameState.refresh_stats(p)
-		GameState.capture(p)
+	if id.begins_with(PROJECTILE_PREFIX):
+		GameState.data.equipment[GameState.PROJECTILE_PLACE] = id.trim_prefix(PROJECTILE_PREFIX)
 		Sfx.play("gear_on", 0.0)
 		return
 	if id.begins_with(HAIR_PREFIX):
@@ -534,7 +538,7 @@ static func open_equipment(tree: SceneTree, p: Player, back: Callable) -> bool:
 	var menu := _menu(tree)
 	if menu == null:
 		return false
-	# What was found since the last save (the Rune Dagger's Off Hand row) shows at once.
+	# What was found since the last save (the Rune Dagger's Projectile row) shows at once.
 	GameState.tidy_belt(p)
 	GameState.capture(p)
 	var provider := func() -> Array: return equipment_rows()

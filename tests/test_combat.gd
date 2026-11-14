@@ -1787,42 +1787,87 @@ func test_a_midair_up_slash_that_lands_holds_you_up() -> void:
 ## The Rune Dagger (pass 184, bible 5.2): thrown, it strikes the first foe in
 ## its path, breaks into rune light, and reforms at your hip RETURN later; only
 ## one flies at a time, it costs no magic, and Up throws it straight up.
-func test_the_off_hand_holds_a_shield_or_the_rune_dagger() -> void:
-	# Sean (2026-10-31): the dagger is thrown from the left hand, the shield's arm,
-	# so the off hand holds one or the other: a shield guards, the dagger flies.
+func test_the_projectile_slot_throws_beside_a_shield() -> void:
+	# Design bible 5.6 (Sean, 2026-11-13): a slot of its own for thrown weapons, so
+	# a shield and a projectile are both worn. The Rune Dagger returns and never
+	# runs out; a counted weapon is spent as it is thrown.
 	var room := _arena_with("E", Vector2i(10, 6))
 	var p := make_player(room, Vector2i(3, 6))
 	p.abilities["rune_dagger"] = true
+	GameState.data.abilities.rune_dagger = true
 	GameState.data.gear.append("small_shield")
 	GameState.wear("small_shield", p)
 	await frames(6)
-	check(p.has_shield, "the Buckler is on the off hand")
+	check(p.has_shield and GameState.projectile(p.abilities) == "rune_dagger", "the Buckler on the arm, the Rune Dagger in the slot")
 	p.input.throw_pressed = true
 	await frames(2)
 	p.input.throw_pressed = false
-	check(p.rune_dagger == null, "so the Rune Dagger stays put")
-	GameState.capture(p)
-	var rows := Menus.equipment_rows()
-	var labels: Array = rows.map(func(r: Dictionary) -> String: return String(r.label))
-	var at := labels.find("Off Hand")
-	check(at >= 0 and labels.find("Rune Dagger") == at + 1, "the Equipment page offers the dagger first under the Off Hand (%s)" % [labels])
-	Menus.choose_equipment(Menus.OFFHAND_DAGGER, p)
-	check(GameState.offhand_free() and not p.has_shield, "choosing it takes the shield off")
-	var dagger_row: Dictionary = Menus.equipment_rows().filter(func(r: Dictionary) -> bool: return String(r.label) == "Rune Dagger")[0]
-	check(dagger_row.right == "Worn", "and the dagger reads as worn")
-	await frames(1)
-	p.input.throw_pressed = true
-	await frames(2)
-	p.input.throw_pressed = false
-	check(p.rune_dagger != null, "now Throw flicks it")
+	check(is_instance_valid(p.rune_dagger), "Throw flicks it with the shield on")
+	for i in 90:
+		await frames(1)
+		if p.dagger_ready():
+			break
 	p.input.block_held = true
 	await frames(2)
+	check(p.is_blocking, "and Block still guards")
 	p.input.block_held = false
-	check(not p.is_blocking, "and there is no guard")
+	await frames(2)
+	var labels: Array = Menus.equipment_rows().map(func(r: Dictionary) -> String: return String(r.label))
+	var at := labels.find("Projectile")
+	check(labels.has("Shield") and not labels.has("Off Hand") and at >= 0 and labels[at + 1] == "Rune Dagger", "the Equipment page has a Shield section and a Projectile one (%s)" % [labels])
+	# A counted weapon: bought by the bundle, it goes in the slot.
+	p.gold = 9000
+	var stock: Array = GameData.shop("hearthroot_items").stock
+	var spikes_at := stock.find_custom(func(e: Dictionary) -> bool: return e.item == "hawthorn_spikes")
+	var item := GameData.item("hawthorn_spikes")
+	check(spikes_at >= 0 and Shop.buy("hearthroot_items", spikes_at, p) and GameState.ammo("hawthorn_spikes") == int(item.bundle), "Hearthroot sells Hawthorn Spikes by the bundle (%d)" % GameState.ammo("hawthorn_spikes"))
+	check(GameState.projectile(p.abilities) == "hawthorn_spikes", "and they go in the slot")
+	Shop.buy("hearthroot_items", spikes_at, p)
+	check(GameState.ammo("hawthorn_spikes") == int(item.carry) and Shop.status("hearthroot_items", spikes_at, p) == "full", "you carry %d at most" % int(item.carry))
+	var row: Dictionary = Menus.equipment_rows().filter(func(r: Dictionary) -> bool: return String(r.get("id", "")) == Menus.PROJECTILE_PREFIX + "hawthorn_spikes")[0]
+	check(String(row.right) == "In hand  x%d" % int(item.carry), "the page shows them in hand, with the count (%s)" % row.right)
+	# Thrown, one is gone: it does not come back, and the next waits its moment.
+	p.input.throw_pressed = true
+	await frames(2)
+	p.input.throw_pressed = false
+	var thrown: Array = runner.get_tree().get_nodes_in_group("projectile").filter(func(n: Node) -> bool: return n is RuneDagger and n.kind == "hawthorn_spikes")
+	check(thrown.size() == 1 and GameState.ammo("hawthorn_spikes") == int(item.carry) - 1 and not is_instance_valid(p.rune_dagger), "Throw spends one and leaves the dagger at your hip (%d left)" % GameState.ammo("hawthorn_spikes"))
+	check(thrown.size() == 1 and not thrown[0].returns() and is_equal_approx(thrown[0].speed, float(item.speed)) and thrown[0].damage == roundi(float(item.damage) * p.melee_mult), "it flies at its own speed and does its own damage")
+	p.input.throw_pressed = true
+	await frames(2)
+	p.input.throw_pressed = false
+	check(GameState.ammo("hawthorn_spikes") == int(item.carry) - 1, "a second press inside the wait throws nothing")
+	# Choosing the dagger's row puts it back on the button; the spikes are kept.
+	Menus.choose_equipment(Menus.PROJECTILE_PREFIX + "rune_dagger", p)
+	check(GameState.projectile(p.abilities) == "rune_dagger" and GameState.ammo("hawthorn_spikes") == int(item.carry) - 1, "the dagger chosen, the spikes are kept")
+	# The last one thrown, the slot falls back to the dagger.
+	Menus.choose_equipment(Menus.PROJECTILE_PREFIX + "hawthorn_spikes", p)
+	GameState.data.ammo.hawthorn_spikes = 1
+	p._throw_wait = 0.0
+	p.input.throw_pressed = true
+	await frames(2)
+	p.input.throw_pressed = false
+	check(GameState.ammo("hawthorn_spikes") == 0 and GameState.projectile(p.abilities) == "rune_dagger", "the last one thrown, the Rune Dagger is back on the button")
+	# With nothing to throw, Throw does nothing.
+	check(GameState.projectile({}) == "", "no dagger and no spikes: nothing to throw")
+	# A save: an older one that found the dagger has it in the slot; nonsense is cleared.
+	var old := GameState.fresh()
+	old.abilities.rune_dagger = true
+	old.equipment.erase("projectile")
+	old.erase("ammo")
+	var got := GameState.sanitize(old)
+	check(String(got.equipment.projectile) == "rune_dagger" and got.ammo == {}, "an older save has the Rune Dagger in the slot")
+	old.equipment["projectile"] = "short_sword"
+	old["ammo"] = {"hawthorn_spikes": 400, "short_sword": 3, "elixir": "many"}
+	got = GameState.sanitize(old)
+	check(String(got.equipment.projectile) == "" and got.ammo == {"hawthorn_spikes": int(item.carry)}, "a blade in the slot and too many spikes are put right (%s, %s)" % [got.equipment.projectile, got.ammo])
 	for d in runner.get_tree().get_nodes_in_group("projectile"):
 		d.free()
 	GameState.data.gear.erase("small_shield")
 	GameState.data.abilities.rune_dagger = false
+	GameState.data.ammo = {}
+	GameState.data.equipment.projectile = ""
+	GameState.data.equipment.shield = ""
 
 
 func test_the_rune_dagger_flies_strikes_and_reforms_at_your_hip() -> void:
@@ -1997,12 +2042,13 @@ func test_the_rune_dagger_answers_the_real_controller() -> void:
 	check(is_instance_valid(p.rune_dagger), "the buffered press goes as the swing ends (%d frames later)" % waited)
 	while not p.dagger_ready():
 		await frames(1)
-	# A shield on the arm: Throw does nothing (Sean's rule, pass 313).
+	# A shield on the arm: Throw still flicks it (the projectile slot, bible 5.6).
 	GameState.data.equipment.shield = "small_shield"
 	await press_for_real(p, ["throw"])
 	release_for_real(["throw"])
-	await frames(4)
-	check(not is_instance_valid(p.rune_dagger) and runner.get_tree().get_nodes_in_group("projectile").is_empty(), "with a shield on the arm, Throw does nothing")
+	check(is_instance_valid(p.rune_dagger), "with a shield on the arm, Throw still flicks it")
+	while not p.dagger_ready():
+		await frames(1)
 	GameState.data.equipment.shield = shield_was
 	room.free()
 	var note := FileAccess.get_file_as_string("res://docs/design-bible.md").get_slice("\n### 5.3 ", 1).get_slice("\n### 5.4 ", 0)
