@@ -141,6 +141,62 @@ def masonry_shade(x, y, seed, dark, body, light, cell=16):
     return body
 
 
+# One body value, the odd worn block (design bible 12.45, pass 555). The Tower's
+# plates and Vorrhallow's blocks used to take one of two values on a coin toss,
+# so a field read as a checkerboard a whole shade deep, loudest in the darkened
+# interior tiers (independent grade, passes 540 and 550: "frame tiles repeat on a
+# loud grid, Tower and Vorrhallow checkered stone"). Most blocks now share the
+# body value and about one in seven is worn a shade darker.
+WORN_BLOCK = 0.86
+# The share of Vorrhallow's tiles that carry the teal tide stain. Drawn in every
+# tile it ruled a stripe across the field every 16 world pixels.
+TIDE_TILES = 0.35
+# build_tileset paints the 47 blob tiles with seeds 11 to 57 and the interior
+# tiles (MID, DEEP and the row-7 variants) with seeds from 101. Only those carry
+# the tide stain: an edge tile has no variants, so a stain on one repeats down
+# every wall face and pillar.
+INTERIOR_SEED = 101
+
+
+# The share of bricks that stand a shade proud (paint_bricks).
+PROUD_BRICK = 0.92
+
+
+def is_interior(seed):
+    """True for the seeds build_tileset gives the darkened interior tiers (MID
+    and DEEP in row 6, and their row-7 variants). The surface tiles and their
+    row-7 variants (201 to 203) are not interior."""
+    return INTERIOR_SEED <= seed < 200 or seed >= 211
+
+
+# A string course under the cap of a masonry floor (design bible 12.46, pass
+# 556): a lit line, a band of dressed stone and a shadow line, straight across
+# every top tile, so a floor reads as built (a coping on a wall) and not as a
+# brick fill that stops at the grass. World-pixel rows from the tile's top.
+COURSE_TOP = 7
+COURSE_ROWS = 3
+COURSE_ZONES = ("spires", "trials", "gym")
+
+
+def string_course(img, ox, oy, seed, x0, x1, ramp):
+    y0 = COURSE_TOP * D
+    y1 = y0 + COURSE_ROWS * D
+    for x in range(x0, x1):
+        for y in range(y0, y1):
+            if y < y0 + D:
+                col = f"{ramp}-6"
+            elif y >= y1 - D:
+                col = f"{ramp}-1"
+            else:
+                col = f"{ramp}-5" if hash2(x // 2, y // 2, seed + 41) > 0.12 else f"{ramp}-4"
+            img.putpixel((ox + x, oy + y), c(col))
+        # A butt joint now and then, so the course is laid stones and not a pipe.
+    for x in range(x0, x1):
+        if hash2(x // D, 3, seed + 43) > 0.95:
+            for y in range(y0 + D, y1 - D):
+                img.putpixel((ox + x, oy + y), c(f"{ramp}-2"))
+
+
 def paint_bricks(img, ox, oy, seed, ramp):
     """Masonry: rows of 8x4 world-pixel bricks offset per row, lit from the top
     left, with a one-render-pixel mortar line and a grain of tiny pits.
@@ -165,8 +221,9 @@ def paint_bricks(img, ox, oy, seed, ramp):
             bx = sx // bw
             by = row
             lx, ly = sx % bw, yy % bh
-            shade = 3 if hash2(bx, by, seed) > 0.45 else 2
-            if hash2(bx, by, seed + 9) > 0.92:
+            # One body value, the odd worn or proud brick (bible 12.46).
+            shade = 2 if hash2(bx, by, seed) > WORN_BLOCK else 3
+            if hash2(bx, by, seed + 9) > PROUD_BRICK:
                 shade = 4
             if ly == bh - 1 or lx == 0:
                 col = f"{ramp}-1"
@@ -195,16 +252,15 @@ def paint_shrine(img, ox, oy, seed, ramp):
     # Course scale varies with the seed so adjacent scattered variants differ.
     bw = (10 + int(hash2(seed, 7, 91) * 5)) * D  # 10..14 blocks wide
     bh = (5 + int(hash2(seed, 8, 92) * 3)) * D   # 5..7 blocks tall
+    gold = not is_interior(seed)  # the inlay is surface dressing (bible 12.46)
     for y in range(T):
         row = y // bh
         for x in range(T):
             sx = x + (row % 2) * (bw // 2) + int(hash2(row, 0, seed) * 4) * D
             bx, ly, lx = sx // bw, y % bh, sx % bw
-            shade = 4 if hash2(bx, row, seed) > 0.5 else 3
-            # A weathered stone here and there drops a shade, so the field carries
-            # block-scale value variation instead of a flat two-tone repeat.
-            if hash2(bx, row, seed + 11) > 0.82:
-                shade = max(2, shade - 1)
+            # One body value, the odd worn block (bible 12.46): a coin toss between
+            # two values made the darkened deep tiers a checkerboard.
+            shade = 3 if hash2(bx, row, seed) > WORN_BLOCK else 4
             if ly == bh - 1 or lx == 0:
                 col = f"{ramp}-1"
             elif ly == 0 or lx == 1:
@@ -218,7 +274,7 @@ def paint_shrine(img, ox, oy, seed, ramp):
             # Gold inlay: a groove across the middle of a few blocks. Rare and
             # keyed per block (not a regular course), so it reads as scattered
             # accents, never a gold dash marching across every row.
-            if ly == bh // 2 and 3 <= lx < bw - 3 and hash2(bx, row, seed + 7) > 0.82:
+            if gold and ly == bh // 2 and 3 <= lx < bw - 3 and hash2(bx, row, seed + 7) > 0.82:
                 col = "gold-4" if lx % 4 else "gold-5"
             img.putpixel((ox + x, oy + y), c(col))
     # A crack or two, running down and sideways.
@@ -230,23 +286,6 @@ def paint_shrine(img, ox, oy, seed, ramp):
                     img.putpixel((ox + x, oy + y), c(f"{ramp}-1"))
                 y += 1
                 x += 1 if hash2(seed, step, 34 + k) > 0.6 else (-1 if hash2(seed, step, 35 + k) > 0.7 else 0)
-
-
-# One body value, the odd worn block (design bible 12.45, pass 555). The Tower's
-# plates and Vorrhallow's blocks used to take one of two values on a coin toss,
-# so a field read as a checkerboard a whole shade deep, loudest in the darkened
-# interior tiers (independent grade, passes 540 and 550: "frame tiles repeat on a
-# loud grid, Tower and Vorrhallow checkered stone"). Most blocks now share the
-# body value and about one in seven is worn a shade darker.
-WORN_BLOCK = 0.86
-# The share of Vorrhallow's tiles that carry the teal tide stain. Drawn in every
-# tile it ruled a stripe across the field every 16 world pixels.
-TIDE_TILES = 0.35
-# build_tileset paints the 47 blob tiles with seeds 11 to 57 and the interior
-# tiles (MID, DEEP and the row-7 variants) with seeds from 101. Only those carry
-# the tide stain: an edge tile has no variants, so a stain on one repeats down
-# every wall face and pillar.
-INTERIOR_SEED = 101
 
 
 def paint_drowned(img, ox, oy, seed, ramp):
@@ -706,6 +745,8 @@ def paint_tile(img, ox, oy, mask, zone, seed):
             cap_girder(img, ox, oy, seed, x0, x1, ramp)
         else:
             cap_stone(img, ox, oy, seed, x0, x1, ramp)
+        if zone in COURSE_ZONES:
+            string_course(img, ox, oy, seed, x0, x1, ramp)
     # Inner corners: a dark notch where two solid sides meet an open diagonal.
     for bit, a, b, px, py in [(NE, N, E, T - D, 0), (SE, S, E, T - D, T - D), (SW, S, W, 0, T - D), (NW, N, W, 0, 0)]:
         if mask & a and mask & b and not mask & bit:

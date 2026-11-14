@@ -2133,6 +2133,18 @@ The pass 550 grade (and the pass 540 one before it) said the frame tiles "repeat
 
 Only `assets/tiles/tower.png`, `vorrhallow.png` and `boughs.png` are regenerated. Collision, edges, caps and outlines are untouched. `tests/test_calm_frame_tiles.gd` holds all four: under a quarter of the Tower's and Vorrhallow's interior blocks are worn and at least two are, the tide stain is on at most half the interior tiles and on no wall face, the bough fill changes colour between under 23% of neighbouring pixels and hardly at all down a column, and cells one to eight apart along a row or down a column match about as often as chance.
 
+### 12.46 Brick fields with structure: one body, a string course, gold on the surface (pass 556)
+
+The pass 555 grade said the brick fields of the Spires and the Inner Rings "read as a flat tile-editor fill with random dark missing bricks and no structure", and pass 555 left the Spires' deep tiers alternating two values. This applies 12.45's rule to the two brick painters it had not reached, and gives a masonry floor one built line.
+
+- **One body value.** `paint_shrine` (the Spires) and `paint_bricks` (the Inner Rings and the gym) chose each stone's value with a coin toss, and the shrine dropped a further fifth of its blocks a shade. Darkened for the interior tiers (12.8), the Spires' wall depth was a near-black checkerboard. Both now use `WORN_BLOCK`: one body value and about one worn stone in seven. A brick may still stand a shade proud (`PROUD_BRICK`, about one in twelve); an ashlar block may not.
+- **The gold inlay is surface dressing.** Two shades down, the Spires' inlay was orange dashes on near-black, the loudest thing in a wall's depth. `is_interior(seed)` names the seeds of the darkened tiers, and `paint_shrine` draws no gold there. Edge tiles and the surface variants keep it.
+- **A string course under the cap.** Every top tile of a masonry zone (`COURSE_ZONES`: the Spires, the Inner Rings, the gym) carries a course of dressed stone 7 world pixels under its top: a lit line, a pale band with the odd butt joint, and a shadow line. It runs straight across a floor and caps a pillar like a capital, so a floor reads as built and not as a fill that stops at the grass. Tiles inside a wall carry none. Hearthroot's ground is PixelLab art and is untouched.
+
+Only `assets/tiles/spires.png`, `trials.png` and `gym.png` are regenerated; collision and edges are untouched. `tests/test_brick_structure.gd` holds it: the Spires' body value takes about half of every tier, the brick's body value leads its tier, the mid and deep tiers have no gold while the surface keeps some, and a floor tile's course is one lit line over one shadow line that no interior tile carries.
+
+Not done from that grade item: a plinth where a wall meets a floor, cracks and moss in the field, and the same treatment for Vorrhallow and the Sunken Spring.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
