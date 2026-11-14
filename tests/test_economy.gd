@@ -1840,7 +1840,7 @@ func test_forepaws_physician_mends_you_and_its_larder_sells() -> void:
 	check(ids.has("kettleforge_physician") and ids.has("kettleforge_grocer"), "both keep house in Kettleforge (%s)" % [ids])
 	room.queue_free()
 	var stock: Array = GameData.shop(GameData.npc("kettleforge_grocer").shop).stock
-	check(stock.map(func(e: Dictionary) -> String: return e.item) == ["elixir", "silver_key"], "the Larder sells an Amber Draught and the Silver Key")
+	check(stock.map(func(e: Dictionary) -> String: return e.item) == ["elixir", "silver_key", "stride_knot"], "the Larder sells an Amber Draught, the Silver Key and the Stride Knot")
 
 
 ## Pass 457 (bible 10.3): the source game's hospital, by the buttons. Right walks
