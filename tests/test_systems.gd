@@ -786,8 +786,8 @@ func test_every_save_field_survives_a_round_trip() -> void:
 	d.skill_points = 3
 	d.skills = ["keen_edge", "torrent_pierce", "wisplight_swarm"]
 	d.respecs = 2
-	d.equipment = {"blade": "severance", "armor": "full_plate", "shield": "magic_shield", "helmet": "elven_helm"}
-	d.gear = ["short_sword", "dwarvish_broad_sword", "severance", "full_plate", "magic_shield", "elven_helm"]
+	d.equipment = {"blade": "severance", "armor": "full_plate", "shield": "magic_shield", "helmet": "elven_helm", "neck": "dewcatch_torc", "ring1": "whetstone_ring", "ring2": "amber_band", "relic": "stride_knot"}
+	d.gear = ["short_sword", "dwarvish_broad_sword", "severance", "full_plate", "magic_shield", "elven_helm", "dewcatch_torc", "whetstone_ring", "amber_band", "stride_knot"]
 	d.tempers = {"dwarvish_broad_sword": 2, "long_sword": 1}
 	d.keys = {"copper": true, "lantern": true}
 	d.rings = ["thaw", "sun"]

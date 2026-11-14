@@ -423,10 +423,10 @@ const OFFHAND_DAGGER := "offhand:rune_dagger"
 ## put it on; choose what you wear (not the blade or the cloak) to take it off.
 ## Back returns to the pause menu.
 static func equipment_rows() -> Array:
-	var names := {"blade": "Blades", "armor": "Armor", "shield": "Off Hand", "helmet": "Helmets"}
+	var names := {"blade": "Blades", "armor": "Armor", "shield": "Off Hand", "helmet": "Helmets", "neck": "Neck", "ring": "Rings, two worn", "relic": "Relic"}
 	var dagger := bool(GameState.data.abilities.get("rune_dagger", false))
 	var out := []
-	for slot: String in GameState.GEAR_SLOTS:
+	for slot: String in GameState.GEAR_KINDS:
 		var have: Array = Array(GameState.data.gear).filter(func(id: String) -> bool: return String(GameData.item(id).get("kind", "")) == slot)
 		if have.is_empty() and not (slot == "shield" and dagger):
 			continue
@@ -438,8 +438,11 @@ static func equipment_rows() -> Array:
 				"detail": "Thrown from the off hand, so no shield: no guard, parry or ward.", "enabled": true, "id": OFFHAND_DAGGER})
 		for id: String in have:
 			var item := GameData.item(id)
-			var worn := String(GameState.data.equipment.get(slot, "")) == id
+			var worn := GameState.is_worn(id)
 			var detail := String(item.desc)
+			var needs := String(item.get("needs", ""))
+			if needs != "" and not bool(GameState.data.abilities.get(needs, false)):
+				detail += "  It sleeps until you find the %s." % ability_info(needs)[0]
 			if slot == "blade":
 				detail += "  " + blade_numbers(id)
 			if slot == "blade" and GameState.temper_level(id) > 0:

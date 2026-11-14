@@ -156,6 +156,10 @@ var glove_left: float:
 	get: return maxf(_glove_timer, 0.0)
 var melee_mult := 1.0
 var mp_hit_mult := 1.0
+## Trinkets (design bible 5.6): the share of a flask's healing, and of the
+## Elven Stride's length, that what is worn leaves you with.
+var flask_mult := 1.0
+var dash_mult := 1.0
 var gold_mult := 1.0
 var magnet_mult := 1.0
 var ground_combo_length := 3
@@ -1065,7 +1069,7 @@ func _try_dash(on_floor: bool) -> void:
 		_dash_dir = -wall_dir
 	facing = _dash_dir
 	_ground_dash = on_floor
-	_dash_timer = tuning.dash_time
+	_dash_timer = tuning.dash_time * dash_mult
 	_invuln_timer = maxf(_invuln_timer, dash_invuln())
 	_jump_cut_available = false
 	_attack_timer = 0.0
@@ -1613,7 +1617,7 @@ func _update_drink(delta: float, on_floor: bool) -> void:
 			return
 		_drink_timer -= delta
 		if _drink_timer <= 0.0:
-			hp = mini(hp + combat.flask_heal, max_hp)
+			hp = mini(hp + roundi(combat.flask_heal * flask_mult), max_hp)
 			flask_charges -= 1
 			_spawn_dust(Vector2(0, -20), "heal")
 			Sfx.play("heal")

@@ -34,7 +34,7 @@ static func status(shop_id: String, index: int, p: Player) -> String:
 	if entry.get("once", false) and GameState.is_collected(_once_id(shop_id, index)):
 		return "sold out"
 	match item.kind:
-		"blade", "armor", "shield", "helmet":
+		"blade", "armor", "shield", "helmet", "neck", "ring", "relic":
 			# Gear you have is kept (pass 186): put it on from the Equipment page.
 			if GameState.owns_gear(String(entry.item)):
 				return "owned"
@@ -99,7 +99,7 @@ static func buy(shop_id: String, index: int, p: Player) -> bool:
 	p.gold -= int(entry.price)
 	GameState.data.meteor_shards = int(GameState.data.get("meteor_shards", 0)) - shards(entry)
 	match item.kind:
-		"blade", "armor", "shield", "helmet":
+		"blade", "armor", "shield", "helmet", "neck", "ring", "relic":
 			GameState.obtain_gear(String(entry.item), p)
 		"key":
 			GameState.add_key(String(entry.item).trim_suffix("_key"))
