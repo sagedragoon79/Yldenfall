@@ -381,6 +381,8 @@ func _add_prop(kind: String, pos: Vector2) -> void:
 	match kind:
 		"fountain":
 			_spawn(Fountain.new(), pos)
+		"spring_wall":
+			_spawn(SpringWall.new(), pos)
 		"spring_heartwood":
 			var spring := Spring.new()
 			spring.spring_id = "heartwood"
