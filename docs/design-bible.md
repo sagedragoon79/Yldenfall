@@ -2231,6 +2231,20 @@ Stillglass is a light in this world (the shards on the floor glow), so the cryst
 
 Judged by eye at 1x and 3x in `vorrhallow/flooded_hall`, at rest and in the windup, before and after. `tests/test_foe_glow.gd` checks the steps, the dither and its blocks, the breath, the tell and the dark, that the light outweighs his steel, and on a dwarf in the hall that the glow is behind him, additive, on his back whichever way he faces, swelling with the windup and gone at his death.
 
+### 12.53 Edges vary, and every zone trims its floors and ceilings in its own material (pass 565)
+
+The pass 560 grade said of the Heartwood, Vorrhallow, the Evercrown and the Tower: "one terrain tile repeated without variation in thick floor and ceiling bands, with no edge pieces, cracks or trim". Two causes. The fields scatter over variants (12.8, 12.45), but a floor's top tile, a ceiling's bottom tile and a wall's face were each a single tile, so the one row of a band that the eye rests on was the same tile from end to end. And only the masonry zones had a built line under a floor's cap (12.46); no zone had anything on the underside of a ceiling.
+
+- **Edge variants.** Row 8 of each painted atlas holds three more top tiles, three more bottom tiles and one more of each wall face, painted with seeds of their own (from `EDGE_SEED`, below `INTERIOR_SEED`, so they are still edge tiles: no tide stain, no field wear). `TilesetFactory.ground` scatters a straight edge over its base tile and its variants by cell when the zone has them (`has_edges`). Corners and every other mask stay one tile. Hearthroot's PixelLab atlas has no row 8 and is untouched. This reverses the old rule that edge tiles never vary; it holds because of the next point.
+- **The lines run straight in every variant.** A trim's lit line and shadow line sit on the same rows in the base tile and in each variant, so a run joins whichever tile a cell draws. What varies is the material between and around them: the moss, the grain, the worn blocks, the Evercrown's pores (`MEAT_EDGE_PORE`: its cells are the same in every tile, so an edge variant opens more pores, or the variants would be copies).
+- **A trim in the zone's material** (`TRIM_KIND`, `trim_band`). Where masonry has its string course, wood (the Heartwood, the High Boughs, the Haar's limbs) has a rind: the bark rolls over in a lip, notched where two strands meet. The Tower's iron has a flange with a rivet every 8 world pixels. The Evercrown's cells fuse into a skin lit by the pores, pinched every 8 pixels; it is on the sky ramp, never `night-3`, the old violet rim that 12.50 took out. Each is three world pixels: a lit line, a band, a shadow line. A wall stands on it as on a course (the footing of 12.47).
+- **A soffit** (`soffit`). The bottom tile of a ceiling (solid above) carries the same three rows above its dark lip, a step or two into the shade, so it is always dimmer than the floor's trim. A ledge one tile thick has a cap and a trim already and gets none.
+
+Every painted zone's `assets/tiles/<zone>.png` is regenerated (nine rows now); collision is the same shape for every new tile. `tests/test_edge_trim.gd` holds it: a long edge uses its base and every variant with no beat, and does not vary without the row; every painted zone has the tiles and Hearthroot does not; a room lays them along a floor and a ceiling and they are solid; every zone's floor trim and soffit are one lit line over one shadow line, the same in every variant; a tile inside a wall and a thin ledge have none; iron, bark and the Evercrown's cells trim in different colours with a broken band.
+
+Not done from that grade item: cracks in the grown zones' fields, and a second trim profile per zone.
+
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
