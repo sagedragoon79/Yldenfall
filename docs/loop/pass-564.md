@@ -49,7 +49,7 @@ dither fails ("neighbouring steps mix"); a dead dwarf that still glows fails ("t
 dark"); a glow that ignores his facing fails ("follows the crystal on his back"); a peak of 0.2
 fails ("lit past his steel").
 
-Full suite: SUITE_RESULT
+Full suite: 15309 checks passed, 0 failed.
 
 ## Rubric (design bible 15.3)
 
