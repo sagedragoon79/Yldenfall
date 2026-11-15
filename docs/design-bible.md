@@ -2305,6 +2305,18 @@ The second room by 12.56's rule (a set piece of its own, and a room whose name o
 
 It is scenery (z -2, no collision, no sound), and it is kept clear of the room's bed of spikes so that nothing about it reads as a hazard: the wheels are behind the hero, darker than the floor, and nothing on them is the spikes' white. A fifth Tower landmark; `test_every_zone_has_its_three_landmarks` is unchanged. Judged by eye at 1x and 3x in `tower/gear_pit`. `tests/test_gear_train.gd`.
 
+### 12.58 The Three Mouths stand behind the Fountain of Hearthroot (pass 571)
+
+The third room by 12.56's rule, and the first room a player sees. The pass 570 grade called the Fountain Plaza "mostly empty dark space with flat silhouette backdrops and a handful of tiny props; no midground, no focal point". Its sign has always read "Fed by the three springs of the Ylden", and the fountain, Sean's own sprite, is 76 px wide in a hall 1280 px long.
+
+`SpringWall` (room prop `spring_wall`) is the wall the fountain was built against: a headwall of grey stone 208 px wide and 164 px tall, with a plinth, a cornice and a stepped crown that carries a leaf in a roundel. Three arched niches stand in it. In each, a stone mouth with a bronze lip once poured one spring into the long trough at the wall's foot: the Heartwood on the left, the Haar in the middle, the sky on the right, in the order `Fountain.SPRINGS` counts them. A sign is cut in each keystone (a leaf on its stem, the Haar's water, the sky's bolt). Dry, each niche shows the lime the water left, and the trough shows its bed.
+
+It is restoration feedback (4.4) at the scale of the room. When a spring is restored its mouth runs: a thread of water falls from the lip to the trough, taller than the hero, with glints sliding down it; its sign lights; the trough fills, brighter with each spring. With all three, the leaf in the crown lights green. The fountain's own states are untouched.
+
+Two lanterns hang on the outer piers and warm the stone round them: the room's lit midground. The light is painted into the stone (the stone ramp gives way to the umber ramp in a narrow dithered band), not laid over it as a halo, so it does not add to the checkerboard halos the same grade named. Painted like the crucible (12.35), the bell and the gears: whole world pixels on master palette ramps, lit from the upper left (the right jamb of each niche catches the light, the left pier throws its shadow across the niche's back), baked once for the whole run. The water, the lit signs and the flames are drawn live. Scenery only: z -2, behind the fountain, no collision, no sound.
+
+Tests: `tests/test_spring_wall.gd`.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

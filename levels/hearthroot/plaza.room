@@ -2,6 +2,7 @@ name: Fountain Plaza
 zone: hearthroot
 map: 1, 0
 chest_gold: 60
+prop: 40, 19, spring_wall
 prop: 40, 19, fountain
 sign: 40, 19, [spring:heartwood spring:haar spring:sky] The Fountain of Hearthroot.|Fed by the three springs of the Ylden. It runs full again, for the first time in a season.
 sign: 40, 19, [spring:heartwood] The Fountain of Hearthroot.|Fed by the three springs of the Ylden. Water runs into it again. Not every spring flows yet.
