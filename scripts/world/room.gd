@@ -472,7 +472,7 @@ func tear_floor(col_from: int, col_to: int, row_from: int, row_to: int) -> void:
 		for y in range(row_from - 3, row_to + 4):
 			var cell := Vector2i(x, y)
 			if _solid_look.has(cell) and tiles.get_cell_source_id(cell) != -1:
-				tiles.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.ground(_ground_mask(cell), cell, _depth(cell)))
+				tiles.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.ground(_ground_mask(cell), cell, _depth(cell), TilesetFactory.has_edges(zone)))
 
 
 ## The spot a spike sets the player back to (bible 6.13, pass 292) is never over
@@ -566,7 +566,7 @@ func _place(ch: String, cell: Vector2i, grid: Array[String]) -> void:
 	var center := cell_origin + Vector2(TILE, TILE) * 0.5
 	match ch:
 		"#", "u":
-			tiles.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.ground(_ground_mask(cell), cell, _depth(cell)))
+			tiles.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.ground(_ground_mask(cell), cell, _depth(cell), TilesetFactory.has_edges(zone)))
 		"-":
 			tiles.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.ONE_WAY)
 			_one_way[cell] = true
@@ -852,7 +852,7 @@ func _place_secret(cell: Vector2i) -> void:
 		secrets.name = "Secrets"
 		secrets.z_index = 3
 		add_child(secrets)
-	secrets.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.ground(_ground_mask(cell), cell, _depth(cell)))
+	secrets.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.ground(_ground_mask(cell), cell, _depth(cell), TilesetFactory.has_edges(zone)))
 	_secret_cells[cell] = true
 
 

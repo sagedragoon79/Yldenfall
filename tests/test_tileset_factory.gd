@@ -47,8 +47,9 @@ func test_deep_tiers_scatter_within_their_darker_sets() -> void:
 
 
 func test_edges_are_stable_across_cells() -> void:
-	# A non-FULL mask (an exposed top face) is the same tile wherever it sits, so
-	# the variant scatter never disturbs edge continuity.
+	# Without edge variants (the default, and Hearthroot's PixelLab atlas) a
+	# non-FULL mask is the same tile wherever it sits. With them a straight edge
+	# scatters too (design bible 12.53; tests/test_edge_trim.gd).
 	var mask := TilesetFactory.E | TilesetFactory.S | TilesetFactory.W | TilesetFactory.SE | TilesetFactory.SW
 	var first := TilesetFactory.ground(mask, Vector2i.ZERO, 1)
 	for y in 8:

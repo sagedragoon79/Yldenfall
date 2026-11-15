@@ -32,6 +32,16 @@ const DEEP: Array[Vector2i] = [Vector2i(4, 6), Vector2i(5, 6), Vector2i(5, 7), V
 ## Surface-bright full-solid variants (row 7, cols 0-2): the visible interior of
 ## a large solid field, scattered by cell so the 32 px repeat unit stops reading.
 const FULL_VARIANTS: Array[Vector2i] = [Vector2i(0, 7), Vector2i(1, 7), Vector2i(2, 7)]
+## Edge variants (row 8, design bible 12.53): a floor's top tile, a ceiling's
+## bottom tile and a wall's two faces, scattered by cell like the fields, so a
+## long floor or ceiling is not one tile from end to end. Their trim lines run
+## straight in every variant, so a run still joins. An atlas without row 8
+## (Hearthroot's PixelLab set) has none: see `has_edges`.
+const TOP_VARIANTS: Array[Vector2i] = [Vector2i(0, 8), Vector2i(1, 8), Vector2i(2, 8)]
+const BOTTOM_VARIANTS: Array[Vector2i] = [Vector2i(3, 8), Vector2i(4, 8), Vector2i(5, 8)]
+const WEST_VARIANTS: Array[Vector2i] = [Vector2i(6, 8)]
+const EAST_VARIANTS: Array[Vector2i] = [Vector2i(7, 8)]
+const EDGE_ROWS := 9
 ## Legend `/`: solid below a diagonal rising to the east.
 const SLOPE_EAST := Vector2i(6, 6)
 ## Legend `\`: solid below a diagonal rising to the west.
@@ -47,10 +57,15 @@ const SW := 32
 const W := 64
 const NW := 128
 const FULL := 255
+const EDGE_TOP := FULL & ~(N | NE | NW)
+const EDGE_BOTTOM := FULL & ~(S | SE | SW)
+const EDGE_WEST := FULL & ~(W | NW | SW)
+const EDGE_EAST := FULL & ~(E | NE | SE)
 
 static var _masks: Array[int] = []
 static var _index := {}
 static var _cache := {}
+static var _edges := {}
 
 
 ## The 47 distinct reduced masks, ascending (tilegen.py builds the same list).
@@ -82,9 +97,16 @@ static func reduce_mask(m: int) -> int:
 
 ## Atlas coordinates of the ground tile for a neighbour mask. `depth` is how
 ## many tiles the cell is from open air (1 = touching it); deeper cells darken.
-static func ground(mask: int, cell := Vector2i.ZERO, depth := 1) -> Vector2i:
+## With `edges` (a zone whose atlas has row 8), a straight edge scatters too.
+static func ground(mask: int, cell := Vector2i.ZERO, depth := 1, edges := false) -> Vector2i:
 	blob_masks()
 	var m := reduce_mask(mask)
+	if edges and m != FULL:
+		var set := edge_variants(m)
+		if not set.is_empty():
+			var k := scatter(cell) % (set.size() + 1)
+			if k > 0:
+				return set[k - 1]
 	if m == FULL:
 		# A large field is mostly full-solid cells, so if they all drew one atlas
 		# tile the field would band on the 32 px grid. Scatter several masonry
@@ -111,6 +133,31 @@ static func scatter(cell: Vector2i) -> int:
 	h = ((h ^ (h >> 15)) * 0x2C1B3C6D) & 0xFFFFFFFF
 	h = ((h ^ (h >> 12)) * 0x297A2D39) & 0xFFFFFFFF
 	return h ^ (h >> 15)
+
+
+## The row-8 variants of a straight edge, or none for any other mask.
+static func edge_variants(reduced_mask: int) -> Array[Vector2i]:
+	match reduced_mask:
+		EDGE_TOP:
+			return TOP_VARIANTS
+		EDGE_BOTTOM:
+			return BOTTOM_VARIANTS
+		EDGE_WEST:
+			return WEST_VARIANTS
+		EDGE_EAST:
+			return EAST_VARIANTS
+	return []
+
+
+## True if the zone's atlas carries the edge variants (row 8).
+static func has_edges(zone: String) -> bool:
+	var path := TILES_DIR + zone + ".png"
+	if zone == "" or not ResourceLoader.exists(path):
+		path = TILES_DIR + FALLBACK_ZONE + ".png"
+	if not _edges.has(path):
+		var tex: Texture2D = load(path)
+		_edges[path] = tex.get_height() >= EDGE_ROWS * TILE * DENSITY
+	return _edges[path]
 
 
 static func is_ground(coords: Vector2i) -> bool:
@@ -153,6 +200,11 @@ static func build(zone := "", with_collision := true) -> TileSet:
 	all.append_array(MID)
 	all.append_array(DEEP)
 	all.append_array(FULL_VARIANTS)
+	if has_edges(zone):
+		all.append_array(TOP_VARIANTS)
+		all.append_array(BOTTOM_VARIANTS)
+		all.append_array(WEST_VARIANTS)
+		all.append_array(EAST_VARIANTS)
 	for i in blob_masks().size():
 		all.append(Vector2i(i % COLUMNS, i / COLUMNS))
 	for coords in all:

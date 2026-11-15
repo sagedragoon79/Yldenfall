@@ -1059,7 +1059,7 @@ func test_autotiles_match_their_neighbours() -> void:
 	check(lone == TilesetFactory.ground(0), "a lone block uses the all-edges tile (%s)" % lone)
 	var floor_top := room.tiles.get_cell_atlas_coords(Vector2i(10, 20))
 	var top_mask := TilesetFactory.FULL & ~(TilesetFactory.N | TilesetFactory.NE | TilesetFactory.NW)
-	check(floor_top == TilesetFactory.ground(top_mask), "the floor's top row has a top edge (%s)" % floor_top)
+	check(floor_top == TilesetFactory.ground(top_mask) or floor_top in TilesetFactory.TOP_VARIANTS, "the floor's top row has a top edge (%s)" % floor_top)
 	var mid := room.tiles.get_cell_atlas_coords(Vector2i(10, 21))
 	check(mid in TilesetFactory.MID, "two tiles into the floor is darker (%s)" % mid)
 	var deep := room.tiles.get_cell_atlas_coords(Vector2i(10, 22))
@@ -1171,11 +1171,11 @@ func test_every_zone_has_a_tileset() -> void:
 func test_tiles_are_drawn_at_double_density() -> void:
 	var size := TilesetFactory.TILE * TilesetFactory.DENSITY
 	var small: Array[String] = []
-	# 8 rows: rows 0-6 (blobs, one-way, amber, MID/DEEP, slopes) plus row 7, the
+	# 8 rows, or 9 with the edge variants (12.53): rows 0-6 (blobs, one-way, amber, MID/DEEP, slopes) plus row 7, the
 	# masonry variant row that keeps solid fields from banding (design bible 12.8).
 	for zone: String in DirAccess.get_directories_at("res://levels"):
 		var tex: Texture2D = load(TilesetFactory.TILES_DIR + zone + ".png")
-		if tex.get_width() != TilesetFactory.COLUMNS * size or tex.get_height() != 8 * size:
+		if tex.get_width() != TilesetFactory.COLUMNS * size or not tex.get_height() in [8 * size, TilesetFactory.EDGE_ROWS * size]:
 			small.append(zone)
 	check(small.is_empty(), "every atlas holds %d px tiles (wrong: %s)" % [size, small])
 	var room := make_room(["##########", "#........#", "#........#", "#........#", "#........#", "##########", "##########"])

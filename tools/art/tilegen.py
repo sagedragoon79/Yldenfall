@@ -156,6 +156,9 @@ TIDE_TILES = 0.35
 # the tide stain: an edge tile has no variants, so a stain on one repeats down
 # every wall face and pillar.
 INTERIOR_SEED = 101
+# build_tileset paints the row-8 edge variants (12.53) with seeds from 61: edge
+# tiles still, so they carry no tide stain and no field wear.
+EDGE_SEED = 61
 
 
 # The share of bricks that stand a shade proud (paint_bricks).
@@ -204,20 +207,108 @@ def string_course(img, ox, oy, seed, x0, x1, ramp):
                 img.putpixel((ox + x, oy + y), c(f"{ramp}-2"))
 
 
-def footing(img, ox, oy, seed, mask, ramp):
-    """The string course under the foot of a wall: an interior tile with solid
+def footing(img, ox, oy, seed, mask, zone, ramp):
+    """The floor's trim under the foot of a wall: an interior tile with solid
     above it and open air on an upper diagonal. With both diagonals open (a
     pillar one tile wide) it runs the whole tile; with one, it ends in a head
     joint on the side that goes on into the wall."""
     if not mask & N or not mask & E or not mask & W or (mask & NE and mask & NW):
         return False
-    string_course(img, ox, oy, seed, 0, T, ramp)
+    if not floor_trim(img, ox, oy, seed, 0, T, zone, ramp):
+        return False
+    joint = f"{ramp}-1" if zone in COURSE_ZONES else TRIM_TONES[zone][0][2]
     y0, y1 = COURSE_TOP * D, (COURSE_TOP + COURSE_ROWS) * D
     for side_open, x0 in ((mask & NE, T - FOOT_JOINT * D), (mask & NW, 0)):
-        if side_open:  # this side is under the wall: close the course here
+        if side_open:  # this side is under the wall: close the trim here
             for x in range(x0, x0 + FOOT_JOINT * D):
                 for y in range(y0, y1):
-                    img.putpixel((ox + x, oy + y), c(f"{ramp}-1"))
+                    img.putpixel((ox + x, oy + y), c(joint))
+    return True
+
+
+# A trim of the zone's own material (design bible 12.53, pass 565). The string
+# course gave the masonry zones one built line under a floor's cap; the zones
+# that are not masonry (the Heartwood's bark, the Tower's iron, the Evercrown's
+# cells, the Haar's limbs, the High Boughs) had none, and no zone had anything
+# on the underside of a ceiling, so a thick floor or ceiling band was one tile
+# from its cap to the screen's edge (independent grade, pass 560). Each entry:
+# the lit line, the band and the shadow line of the floor's trim, then the same
+# three for a ceiling's soffit, which sits in the shade and so a step or two down.
+TRIM_KIND = {"heartwood": "rind", "boughs": "rind", "haar": "rind", "tower": "flange", "evercrown": "membrane"}
+TRIM_TONES = {
+    "heartwood": (("bark-4", "bark-3", "bark-0"), ("bark-3", "bark-2", "bark-0")),
+    "boughs": (("bark-6", "bark-5", "bark-2"), ("bark-5", "bark-4", "bark-2")),
+    "haar": (("umber-4", "umber-3", "umber-0"), ("umber-3", "umber-2", "umber-0")),
+    "tower": (("stone-6", "stone-4", "night-0"), ("stone-4", "stone-3", "night-0")),
+    # No night-3 here: that was the cells' old violet rim (12.50).
+    "evercrown": (("sky-3", "sky-2", "night-0"), ("sky-2", "sky-1", "night-0")),
+}
+SOFFIT_ROWS = 3    # world px, sitting on the underside's dark lip
+SOFFIT_BOTTOM = 2  # world px of outline and lip under it
+RIVET_STEP = 8     # world px between the rivets of the Tower's flange
+
+
+def wood_strand_starts():
+    """The columns where paint_wood starts a strand (the same in every tile)."""
+    starts, x = [], 0
+    while x < T:
+        starts.append(x)
+        x += 4 + int(hash2(WOOD_STRANDS, x, 18) * 6)
+    return starts
+
+
+def trim_band(img, ox, oy, seed, x0, x1, zone, y0, tones):
+    """Three world-pixel rows from render row ``y0``: a lit line, a band and a
+    shadow line, in the zone's material.
+
+    - a rind (wood): the bark rolls over in a lip, notched where two strands meet;
+    - a flange (iron): a flat bar with a rivet every RIVET_STEP world pixels;
+    - a membrane (the Evercrown): the cells fuse into a skin, pinched every 8 px.
+    The lit and shadow lines run straight, so the trim joins from tile to tile
+    whichever variant draws it."""
+    lit, band, shadow = tones
+    kind = TRIM_KIND[zone]
+    seams = set(wood_strand_starts()) if kind == "rind" else ()
+    for x in range(x0, x1):
+        wx = x // D
+        for row, col in enumerate((lit, band, shadow)):
+            if row == 1:
+                if kind == "rind" and x > 1 and (x in seams or x - 1 in seams):
+                    col = shadow                      # a notch between two strands
+                elif kind == "flange" and wx % RIVET_STEP == RIVET_STEP // 2:
+                    col = "stone-7"                   # a rivet head
+                elif kind == "membrane" and wx % 8 == 0:
+                    col = shadow                      # the skin pinched between two cells
+            for dy in range(D):
+                img.putpixel((ox + x, oy + y0 + row * D + dy), c(col))
+
+
+def floor_trim(img, ox, oy, seed, x0, x1, zone, ramp):
+    """The built or grown line under a floor's cap: the string course in a
+    masonry zone, the zone's own trim elsewhere. False if the zone has none."""
+    if zone in COURSE_ZONES:
+        string_course(img, ox, oy, seed, x0, x1, ramp)
+    elif zone in TRIM_KIND:
+        trim_band(img, ox, oy, seed, x0, x1, zone, COURSE_TOP * D, TRIM_TONES[zone][0])
+    else:
+        return False
+    return True
+
+
+def soffit(img, ox, oy, seed, x0, x1, zone, ramp):
+    """The same line on the underside of a ceiling, a step into the shade."""
+    y0 = T - (SOFFIT_BOTTOM + SOFFIT_ROWS) * D
+    if zone in COURSE_ZONES:
+        for x in range(x0, x1):
+            for row, col in enumerate((f"{ramp}-4", f"{ramp}-3", f"{ramp}-1")):
+                if row == 1 and hash2(x // D, 5, 47) > 0.93:
+                    col = f"{ramp}-2"                 # a butt joint
+                for dy in range(D):
+                    img.putpixel((ox + x, oy + y0 + row * D + dy), c(col))
+    elif zone in TRIM_KIND:
+        trim_band(img, ox, oy, seed, x0, x1, zone, y0, TRIM_TONES[zone][1])
+    else:
+        return False
     return True
 
 
@@ -393,6 +484,7 @@ MEAT_CELLS = 3
 MEAT_RIM = "sky-3"
 MEAT_SEAM_COOL = "sky-1"
 MEAT_SEAM_WARM = "crystal-1"
+MEAT_EDGE_PORE = 0.55
 
 
 def paint_meteor(img, ox, oy, seed, ramp):
@@ -411,6 +503,10 @@ def paint_meteor(img, ox, oy, seed, ramp):
     # with the seams joined and a run of ledge tiles reads as one grown mass.
     n = 2
     cell = T // n
+    # The cells are the same in every tile, so only the pores tell one tile from
+    # another. An edge variant (12.53) opens more of them, or a ceiling's three
+    # bottom tiles would be three copies.
+    pore = MEAT_EDGE_PORE if EDGE_SEED <= seed < INTERIOR_SEED else 0.95
     pts = []
     for gy in range(-1, n + 1):
         for gx in range(-1, n + 1):
@@ -432,7 +528,7 @@ def paint_meteor(img, ox, oy, seed, ramp):
                 col = MEAT_RIM   # the lit upper rim of the cell, in the pores' light
             else:
                 col = f"{ramp}-{shade}"
-            if d1 < 1.0 * D and hash2(gx, gy, seed + 6) > 0.95:
+            if d1 < 1.0 * D and hash2(gx, gy, seed + 6) > pore:
                 col = "sky-6"
             img.putpixel((ox + x, oy + y), c(col))
 
@@ -810,6 +906,8 @@ def paint_tile(img, ox, oy, mask, zone, seed):
         for x in range(2, T - 2):
             if hash2(x, 11, seed) > 0.93:
                 img.putpixel((ox + x, oy + T - 1), c(z["under"]))
+        if mask & N:  # a ceiling, not a ledge one tile thick: its soffit
+            soffit(img, ox, oy, seed, 0 if mask & W else D + 2, T if mask & E else T - D - 2, zone, ramp)
     # Top: the zone's cap.
     if not mask & N:
         x0 = 0 if mask & W else D
@@ -821,10 +919,9 @@ def paint_tile(img, ox, oy, mask, zone, seed):
             cap_girder(img, ox, oy, seed, x0, x1, ramp)
         else:
             cap_stone(img, ox, oy, seed, x0, x1, ramp)
-        if zone in COURSE_ZONES:
-            string_course(img, ox, oy, seed, x0, x1, ramp)
-    elif zone in COURSE_ZONES:
-        footing(img, ox, oy, seed, mask, ramp)
+        floor_trim(img, ox, oy, seed, x0, x1, zone, ramp)
+    else:
+        footing(img, ox, oy, seed, mask, zone, ramp)
     # Inner corners: a dark notch where two solid sides meet an open diagonal.
     for bit, a, b, px, py in [(NE, N, E, T - D, 0), (SE, S, E, T - D, T - D), (SW, S, W, 0, T - D), (NW, N, W, 0, 0)]:
         if mask & a and mask & b and not mask & bit:
@@ -1083,6 +1180,13 @@ PIXELLAB_SETS = {
 }
 
 
+EDGE_VARIANTS = 3
+EDGE_TOP = 255 & ~(N | NE | NW)       # a floor's top tile
+EDGE_BOTTOM = 255 & ~(S | SE | SW)    # a ceiling's bottom tile
+EDGE_WEST = 255 & ~(W | NW | SW)      # a wall's west face
+EDGE_EAST = 255 & ~(E | NE | SE)      # a wall's east face
+
+
 def build_tileset(zone):
     if zone in PIXELLAB_SETS:
         import shutil
@@ -1094,7 +1198,7 @@ def build_tileset(zone):
         return
     masks = blob_masks()
     assert len(masks) == 47
-    img = Image.new("RGBA", (T * COLS, T * 8), CLEAR)
+    img = Image.new("RGBA", (T * COLS, T * 9), CLEAR)
     for i, m in enumerate(masks):
         paint_tile(img, (i % COLS) * T, (i // COLS) * T, m, zone, 11 + i)
     paint_one_way(img, 0, 6 * T, zone)
@@ -1120,6 +1224,15 @@ def build_tileset(zone):
     for k in range(2):
         paint_tile(img, (5 + k) * T, 7 * T, 255, zone, 221 + k)
         darken(img, (5 + k) * T, 7 * T, 2)
+    # Row 8: edge variants (design bible 12.53, pass 565). A floor's top tile, a
+    # ceiling's bottom tile and a wall's two faces were each one tile, repeated
+    # the length of the room. Each gets fresh seeds (under INTERIOR_SEED, so they
+    # are painted as edge tiles); the factory scatters them by cell.
+    for k in range(EDGE_VARIANTS):
+        paint_tile(img, k * T, 8 * T, EDGE_TOP, zone, 61 + k)
+        paint_tile(img, (3 + k) * T, 8 * T, EDGE_BOTTOM, zone, 71 + k)
+    paint_tile(img, 6 * T, 8 * T, EDGE_WEST, zone, 81)
+    paint_tile(img, 7 * T, 8 * T, EDGE_EAST, zone, 82)
     TILES.mkdir(parents=True, exist_ok=True)
     img.save(TILES / f"{zone}.png")
 
