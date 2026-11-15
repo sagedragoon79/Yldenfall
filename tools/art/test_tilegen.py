@@ -1298,5 +1298,75 @@ def test_the_core_glow_is_a_fine_dither_not_blocks():
     assert longest <= 2 * tg.D, f"the foot row has a lit run {longest} px long"
 
 
+def _seated(painter, key, lit, reach):
+    """Paints a Vorrhallow layer and returns its pixels, pillars and seats, after
+    checking that every pixel of the shards' lit rim lies within `reach` world
+    pixels of a seat: no stillglass hangs in the open."""
+    img = painter()
+    px = img.load()
+    rec = tg.STILLGLASS_SEATS[key]
+    seats, D, W = rec["seats"], tg.D, tg.BG_W // tg.D
+    assert len(seats) >= 6, f"{key} has only {len(seats)} growths"
+    rim = tg.c(lit)
+    n = 0
+    for y in range(0, tg.BG_H, D):
+        for x in range(0, tg.BG_W, D):
+            if px[x, y] != rim:
+                continue
+            n += 1
+            wx, wy = x // D, y // D
+            near = min(max(min(abs(wx - rx), W - abs(wx - rx)), abs(wy - ry)) for rx, ry, _ in seats)
+            assert near <= reach, f"{key}: stillglass at {wx},{wy} is {near} px from any seat"
+    assert n > 40 * len(seats) // 4, f"{key}: the shards have no lit rim ({n} px)"
+    return px, rec
+
+
+def test_vorrhallows_stillglass_is_seated_on_the_stone():
+    # Design bible 12.51: the independent grade (pass 560) saw "floating spears,
+    # attached to no rock". Every growth in both backdrops has a seat on a pillar's
+    # face, leans away from that pillar, and no shard lies far from a seat.
+    D, W = tg.D, tg.BG_W // tg.D
+    for painter, key, lit, reach in ((tg.vorrhallow_far, "vorrhallow_far", "crystal-5", 34),
+                                     (tg.vorrhallow_mid, "vorrhallow_mid", "crystal-6", 40)):
+        px, rec = _seated(painter, key, lit, reach)
+        glass = {tg.c(n) for n in (lit, "crystal-3", "crystal-4", "crystal-2", "crystal-1")}
+        for rx, ry, side in rec["seats"]:
+            edges = {(x0 % W) if side < 0 else ((x0 + w - 1) % W) for x0, w in rec["pillars"]}
+            assert rx % W in edges, f"{key}: the seat at {rx},{ry} is on no pillar's face"
+            # Broad at the root: glass runs along the face, just outside it, for
+            # 8 world pixels or more (the old needle crossed it in 3 or 4).
+            run = sum(1 for dy in range(-16, 17)
+                      if 0 <= ry + dy < tg.BG_H // D and px[((rx + side) % W) * D, (ry + dy) * D] in glass)
+            assert run >= 8, f"{key}: the growth at {rx},{ry} is {run} px across at its root"
+            # It leans away from its pillar: glass stands 4 px out from the face.
+            out = sum(1 for dy in range(-30, 6)
+                      if 0 <= ry + dy < tg.BG_H // D and px[((rx + side * 4) % W) * D, (ry + dy) * D] in glass)
+            assert out >= 3, f"{key}: the growth at {rx},{ry} does not leave its pillar"
+
+
+def test_a_stillglass_shard_has_two_facets_and_a_lit_rim():
+    # 12.51: a shard is a prism, not a flat spear: a lit facet with a bright rim
+    # toward the top-left light, and a facet in shade.
+    from PIL import Image
+    img = Image.new("RGBA", (tg.BG_W, tg.BG_H), tg.CLEAR)
+    tg.stillglass_shard(img, 100, 200, 0.7, 30, 12, ("crystal-6", "crystal-4", "crystal-2"))
+    counts = {}
+    for y in range(0, tg.BG_H, tg.D):
+        for x in range(0, tg.BG_W, tg.D):
+            p = img.getpixel((x, y))
+            if p[3]:
+                counts[p] = counts.get(p, 0) + 1
+    rim, body, shade = (counts.get(tg.c(n), 0) for n in ("crystal-6", "crystal-4", "crystal-2"))
+    total = rim + body + shade
+    assert total == sum(counts.values()) and total > 120, "the shard is drawn in its three colours only"
+    assert shade > total * 0.3 and body > total * 0.2, f"two facets ({body} lit, {shade} in shade)"
+    assert 0 < rim < body + shade, f"a rim, not a fill ({rim})"
+    # The rim is on the side toward the light: its mean lies up and left of the shade's.
+    def mean(col):
+        pts = [(x, y) for y in range(0, tg.BG_H, tg.D) for x in range(0, tg.BG_W, tg.D) if img.getpixel((x, y)) == tg.c(col)]
+        return sum(x + y for x, y in pts) / len(pts)
+    assert mean("crystal-6") < mean("crystal-2"), "the rim faces the top-left light"
+
+
 if __name__ == "__main__":
     main()
