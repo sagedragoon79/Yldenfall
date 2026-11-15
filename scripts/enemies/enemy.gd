@@ -19,6 +19,14 @@ const HEAD_HEIGHT := 36.0
 const DISSOLVE := 0.45
 const DISSOLVE_SHADER := preload("res://shaders/dissolve.gdshader")
 const WASH_SHADER := preload("res://shaders/wash.gdshader")
+## How white a foe is drawn (bible 6.7): `FLASH_WASH` on the frame a blow lands
+## and through every tell's pulse, `FLASH_SOFT_WASH` for the rest of a hit flash,
+## pale enough that the foe's inner lines still read. The two `SHEET_` values are
+## the same pair for a foe drawn from a sheet (the alpha of its white overlay).
+const FLASH_WASH := 0.72
+const FLASH_SOFT_WASH := 0.4
+const SHEET_WHITE := 0.85
+const SHEET_SOFT_WHITE := 0.45
 
 @export var max_hp := 24
 @export var contact_damage := 20
@@ -86,9 +94,15 @@ var _slow := 0.0
 var _respawn_timer := 0.0
 var _dissolver: Tween
 static var _wash_material: ShaderMaterial
+static var _soft_wash_material: ShaderMaterial
+## The hit flash as it was last drawn, and the frame its white pop was drawn on
+## (`_flash_is_soft`).
+var _flash_drawn := 0.0
+var _flash_pop_frame := -1
 ## Whether this foe last drew itself white without the wash: `draw_sheet` in
 ## white, or a foe's own white overlay (`drawn_white`).
 var _sheet_white := false
+var _sheet_white_alpha := 0.0
 ## The material this foe rests in: its room's light (`FoeLight`, bible 12.43),
 ## or null outside a zone. The flash, the tell and the death replace it.
 var _rest_material: ShaderMaterial
@@ -443,6 +457,21 @@ func flashing() -> bool:
 	return _flash > 0.0
 
 
+## True when a hit flash is past its pop (bible 6.7, pass 567): the frame a blow
+## lands the foe is drawn white (`FLASH_WASH`), and for the rest of the flash,
+## the hit-stop included, in a pale tint that keeps its inner lines
+## (`FLASH_SOFT_WASH`). A tell's pulse is never soft. Call it once per drawing.
+func _flash_is_soft() -> bool:
+	if _flash <= 0.0:
+		_flash_drawn = 0.0
+		return false
+	var frame := Engine.get_process_frames()
+	if _flash > _flash_drawn:
+		_flash_pop_frame = frame
+	_flash_drawn = _flash
+	return frame != _flash_pop_frame
+
+
 ## Washes everything this foe draws white while `on` (call it from `_draw`): a
 ## code-drawn foe's flash follows its own silhouette, never a box around it.
 ## Leaves the death's dissolve alone.
@@ -450,15 +479,28 @@ func wash(on: bool) -> void:
 	if _wash_material == null:
 		_wash_material = ShaderMaterial.new()
 		_wash_material.shader = WASH_SHADER
+		_wash_material.set_shader_parameter("amount", FLASH_WASH)
+		_soft_wash_material = ShaderMaterial.new()
+		_soft_wash_material.shader = WASH_SHADER
+		_soft_wash_material.set_shader_parameter("amount", FLASH_SOFT_WASH)
+	var soft := _flash_is_soft()
 	if on and not dead:
-		material = _wash_material
-	elif material == _wash_material:
+		material = _soft_wash_material if soft else _wash_material
+	elif washed():
 		material = _rest_material
 
 
 ## True while this foe's drawing is washed white.
 func washed() -> bool:
-	return _wash_material != null and material == _wash_material
+	return _wash_material != null and (material == _wash_material or material == _soft_wash_material)
+
+
+## How strongly this foe's last drawing was whitened, 0 to 1: the wash's amount,
+## or a sheet's white overlay. 0 when it was drawn in its own colors.
+func white_strength() -> float:
+	if washed():
+		return FLASH_SOFT_WASH if material == _soft_wash_material else FLASH_WASH
+	return _sheet_white_alpha if _sheet_white else 0.0
 
 
 ## True when this foe's last drawing went white, washed (`wash`) or drawn
@@ -479,7 +521,9 @@ func draw_sheet(sheet: String, anim: String, t: float, white := false, offset :=
 	_sheet_white = white
 	draw_set_transform(offset, 0.0, Vector2(facing, 1))
 	Sheet.draw(self, sheet, anim, f)
+	var soft := _flash_is_soft()
+	_sheet_white_alpha = SHEET_SOFT_WHITE if soft else SHEET_WHITE
 	if white:
-		Sheet.draw(self, sheet, anim, f, Color(1, 1, 1, 0.85), true)
+		Sheet.draw(self, sheet, anim, f, Color(1, 1, 1, _sheet_white_alpha), true)
 	draw_set_transform(Vector2.ZERO)
 	return f
