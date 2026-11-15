@@ -403,6 +403,38 @@ func test_pause_menu_and_its_sub_menus() -> void:
 
 
 
+## Abilities on the Equipment page (design bible 5.6): the signature finds take
+## no slot. They are listed in the order they are found, each always on with
+## what it does, and choosing one changes nothing.
+func test_the_equipment_page_lists_abilities_as_always_on() -> void:
+	var w := make_world(_town(), "test/town")
+	var p := w.player
+	await frames(2)
+	var section := func() -> Array:
+		GameState.capture(p)
+		var rows := Menus.equipment_rows()
+		var at := rows.find_custom(func(r: Dictionary) -> bool: return String(r.label).begins_with("Abilities"))
+		var out := []
+		while at >= 0 and at + 1 < rows.size() and not rows[at + 1].get("header", false):
+			at += 1
+			out.append(rows[at])
+		return out
+	check(section.call().is_empty(), "a new game has no Abilities section")
+	p.abilities.stride = true
+	p.abilities.glove = true
+	p.abilities.rune_dagger = true
+	var rows: Array = section.call()
+	check(rows.map(func(r: Dictionary) -> String: return r.label) == ["Climbing Glove", "Elven Stride"],
+		"found abilities in their order; the Rune Dagger is in the projectile slot instead (%s)" % [rows.map(func(r: Dictionary) -> String: return r.label)])
+	check(rows.all(func(r: Dictionary) -> bool: return r.right == "Always on" and String(r.detail) != "" and not r.has("id")),
+		"each is always on, says what it does, and is not a thing to choose")
+	var heads := Menus.equipment_rows().filter(func(r: Dictionary) -> bool: return r.get("header", false)).map(func(r: Dictionary) -> String: return String(r.label))
+	check(heads.find("Abilities, always on") == heads.find("Cloak") - 1 and heads.has("Projectile"), "the section sits above the cloak (%s)" % [heads])
+	check(not Menus.inventory_rows(p).any(func(r: Dictionary) -> bool: return r.label == "Climbing Glove"), "and the Inventory page no longer repeats them")
+	for id: String in Menus.ABILITIES:
+		check(Menus.ability_info(id)[0] != "" and Menus.ability_info(id)[1] != "", "%s has a name and a line" % id)
+
+
 ## The Inventory page (pass 205, bible 10.3): every found ability, spell,
 ## relic, ring, key and shard is listed with what it does, under its group,
 ## in a fixed order; nothing you lack is shown.
@@ -424,7 +456,7 @@ func test_the_inventory_page_lists_what_you_have_found() -> void:
 	GameState.data.potion_shards = 4
 	GameState.data.meteor_shards = 1
 	var rows := Menus.inventory_rows(p)
-	check(labels.call() == ["Abilities", "Climbing Glove", "Delver's Pick", "Spells", "Deluge", "Emberfall", "Relics", "Acorn Charm",
+	check(labels.call() == ["Spells", "Deluge", "Emberfall", "Relics", "Acorn Charm",
 		"Rings, 2 of 4", "Thaw Seed", "Fall Seed", "Keys", "Copper Key", "Lantern Key", "Shards", "Potion Shards", "Stillglass Shards"],
 		"each find under its group, in order (%s)" % [labels.call()])
 	var by := {}
@@ -437,7 +469,7 @@ func test_the_inventory_page_lists_what_you_have_found() -> void:
 	var blank := rows.filter(func(r: Dictionary) -> bool: return not r.get("header", false) and String(r.get("detail", "")) == "")
 	check(blank.is_empty(), "every find says what it does (%s)" % [blank])
 	for id: String in ItemPickup.ABILITIES + ["delvers_pick", "fire", "wisplight"]:
-		var listed := Menus.INVENTORY_GROUPS.any(func(g: Array) -> bool: return Array(g[1]).has(id))
+		var listed := Menus.INVENTORY_GROUPS.any(func(g: Array) -> bool: return Array(g[1]).has(id)) or Menus.ABILITIES.has(id) or id == GameState.RUNE_DAGGER
 		check(listed and Menus.ability_info(id)[1] != "", "%s has a place and a line on the page" % id)
 	# With everything found, every line still fits the menu's three-line box.
 	for g: Array in Menus.INVENTORY_GROUPS:
@@ -454,7 +486,7 @@ func test_the_inventory_page_lists_what_you_have_found() -> void:
 		if n > 3:
 			long.append("%s: %d lines" % [row.label, n])
 	check(long.is_empty(), "every line fits in three lines: %s" % [long])
-	check(Menus.inventory_rows(p).size() == 7 + 6 + 2 + 4 + 7 + 3 + 6, "and all of it is listed")
+	check(Menus.inventory_rows(p).size() == 6 + 2 + 4 + 7 + 3 + 5, "and all of it is listed")
 	_restore()
 
 ## The pixel font (bible 12): every printable ASCII character has a glyph, and
