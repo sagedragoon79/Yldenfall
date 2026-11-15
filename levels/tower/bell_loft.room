@@ -4,7 +4,8 @@ map: 16, -7
 ambience: heights
 chest_gold: 300
 secret: 2, 16, 8, 19
-sign: 30, 19, BELL LOFT. The shift bell lies where it fell, split from lip to crown.|Some say it rang by itself the night the Hammer came.
+sign: 27, 19, BELL LOFT. The shift bell lies where it fell, split from lip to crown.|Some say it rang by itself the night the Hammer came.
+prop: 33, 19, fallen_bell
 door: 1, tower/crown_lookout, 1
 ---
 ########################################

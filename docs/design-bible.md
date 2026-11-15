@@ -2278,6 +2278,19 @@ The fall is still scenery: it never pushes the player, and its sound (13.3) is u
 
 Not done from that grade item: the underwater area ("an empty dithered gradient with one fish") beyond the plunge, and cracks in the grown zones' fields.
 
+### 12.56 The Bell Loft's bell lies where it fell (pass 569)
+
+The pass 565 grade: "nearly every room uses one kit (rope or chain swings, a four-legged table platform, one chest) on a dead-flat floor; zones differ by palette more than architecture". The cure is a set piece of its own in a room, one room at a time, and a room whose name or sign already promises one comes first. The Bell Loft's sign has always read "The shift bell lies where it fell, split from lip to crown", and the room showed a swing, a table and a chest.
+
+`FallenBell` (`scripts/world/fallen_bell.gd`, room prop `fallen_bell`) is that bell, painted like the crucible (12.35): whole world pixels on master palette ramps, lit from the upper left, baked once.
+
+- **The bell** lies on its side by the east door, its mouth turned to the room and a little to the viewer, resting on its lip and its shoulder. It is 74 px long and 72 px across the lip, half again the hero's height. The bronze is the ochre ramp with a 2 x 2 dither between tones, a glint along its upper side, three raised bands that bend with the mouth, and verdigris (the moss ramp) in streaks round it, only where it lies in shade.
+- **The split** runs unbroken from the lip to the crown, a gap at the lip and a hairline at the crown, in a zigzag, and its lower edge catches the light.
+- **What fell with it:** the iron clapper has rolled out of the mouth onto the floor; half of the timber headstock lies behind the bell, its end in splinters; chips of bronze lie where the lip struck.
+- **What stayed:** the other half of the headstock hangs under the ceiling from two iron straps, and the frayed bell rope sways from it. Now and then a glint runs down the lip.
+
+It is scenery (z -2, no collision, no sound). The sign moved three tiles west to stand clear of it. A fourth Tower landmark beside 3.3's three; `test_every_zone_has_its_three_landmarks` is unchanged. Judged by eye at 1x and 3x in `tower/bell_loft`. `tests/test_fallen_bell.gd`.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
