@@ -65,7 +65,9 @@ func test_plates_and_blocks_share_one_body_value() -> void:
 	# The coin toss between two values made a checkerboard a whole shade deep
 	# (about half the blocks worn). Now a few are: more than none, so the field
 	# is not one flat value, and under a quarter, so it is not a checker.
-	for zone in ["tower", "vorrhallow"]:
+	# The Tower's plates are a tile wide since pass 566 and a worn one is pitted,
+	# not darker (12.54): test_tower_plates.gd holds it.
+	for zone in ["vorrhallow"]:
 		var w := _worn(zone)
 		check(w.y == 48, "%s: 12 interior tiles of 4 blocks were measured, got %d" % [zone, w.y])
 		check(w.x >= 2, "%s: a few blocks are worn, got %d" % [zone, w.x])

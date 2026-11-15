@@ -2145,7 +2145,7 @@ The pass 550 grade (and the pass 540 one before it) said the frame tiles "repeat
 - **The High Boughs' wood is the Heartwood's strands.** `paint_bough` drew a sine grain down every column and a dark line every 6 world pixels, the "striped dirt". It now calls `paint_wood` (12.28) two steps up the bark ramp: broad strands, long grain lines, and its sprigs of young leaves. The Heartwood's own tiles are unchanged; they have been calm since pass 534.
 - **The scatter has no beat.** `TilesetFactory.ground` chose a variant from `hash % 4`, and that hash's low bits followed the cell's own, so every fourth cell along a row drew the same tile. With most blocks one value, a worn block then marched across a floor at a fixed step. `TilesetFactory.scatter` mixes the hash first. Every zone's fields are rescattered by this; the tiles themselves are the same.
 
-Only `assets/tiles/tower.png`, `vorrhallow.png` and `boughs.png` are regenerated. Collision, edges, caps and outlines are untouched. `tests/test_calm_frame_tiles.gd` holds all four: under a quarter of the Tower's and Vorrhallow's interior blocks are worn and at least two are, the tide stain is on at most half the interior tiles and on no wall face, the bough fill changes colour between under 23% of neighbouring pixels and hardly at all down a column, and cells one to eight apart along a row or down a column match about as often as chance.
+Only `assets/tiles/tower.png`, `vorrhallow.png` and `boughs.png` are regenerated. Collision, edges, caps and outlines are untouched. (The Tower's plates changed again in pass 566: 12.54.) `tests/test_calm_frame_tiles.gd` holds all four: under a quarter of Vorrhallow's interior blocks are worn and at least two are, the tide stain is on at most half the interior tiles and on no wall face, the bough fill changes colour between under 23% of neighbouring pixels and hardly at all down a column, and cells one to eight apart along a row or down a column match about as often as chance.
 
 ### 12.46 Brick fields with structure: one body, a string course, gold on the surface (pass 556)
 
@@ -2244,6 +2244,16 @@ Every painted zone's `assets/tiles/<zone>.png` is regenerated (nine rows now); c
 
 Not done from that grade item: cracks in the grown zones' fields, and a second trim profile per zone.
 
+
+### 12.54 The Tower's plates are a tile wide, and a worn one is pitted (pass 566)
+
+The pass 565 grade said of the smelter: "the ceiling and floor are a noisy grid of small square plates with scattered dark squares, a test pattern that competes with the crucible". 12.45 had made the plates one value; the grid itself was still the loudest thing in the room. A plate of 8 world pixels puts four seams, sixteen rivets and their rust in every tile, and a floor or a ceiling three tiles thick repeats that from wall to wall.
+
+- **A plate is a whole tile** (`PLATE`, 16 world pixels). The seam is the tile's left column and top row, so a field has half the seams and a quarter of the rivets, and the frame's grid is the room's own tile grid, the calmest one it can have.
+- **The detail sits lower.** The lit bevel is one step over the body (it was two), the rivet head is on step 5 of the ramp (`PLATE_RIVET`, was 6), and rust runs from about one rivet in ten (`PLATE_RUST`, was nearly one in five).
+- **A worn plate is pitted, not darker.** With a plate the size of a tile, 12.45's worn block a shade down is a dark square a tile wide. A worn plate (`WORN_PLATE`, about one in five) keeps the body value and has about a quarter of its face pitted with the shade below (`PLATE_PITTED`): seen close it is rough iron, seen from across the room it is the same value as its neighbours. This replaces 12.45's worn block for the Tower only; Vorrhallow's blocks keep it (`WORN_BLOCK`).
+
+The girder cap, the riveted flange (12.53) and the soffit are unchanged, so the built lines now carry the Tower's detail and the fields behind them rest. Only `assets/tiles/tower.png` is regenerated. `tests/test_tower_plates.gd` holds it: no seam crosses the middle of an interior tile, no plate's mean stands a ramp step off its tier's body, at least one interior plate is pitted and at most half are, a sound plate is clean, and at most four rivet heads in a tile stand over the bevel.
 
 ## 13. Asset Production Plan
 

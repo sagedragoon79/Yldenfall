@@ -148,6 +148,19 @@ def masonry_shade(x, y, seed, dark, body, light, cell=16):
 # loud grid, Tower and Vorrhallow checkered stone"). Most blocks now share the
 # body value and about one in seven is worn a shade darker.
 WORN_BLOCK = 0.86
+# The Tower's plates (design bible 12.54, pass 566). Plates of 8 world pixels put
+# four seams, sixteen rivets and their rust in every tile, and a floor or a
+# ceiling three tiles thick read as a test pattern that fought the crucible
+# (independent grade, pass 565). A plate is now a whole tile: half the seams and
+# a quarter of the rivets. The rivet and the bevel sit a step lower, rust runs
+# from fewer rivets. A worn plate was a whole shade darker, and a plate the size
+# of a tile made that a dark square a tile wide; it is now pitted instead, the
+# body value with a share of its pixels a shade down.
+PLATE = 16        # world pixels to a plate's side
+PLATE_RIVET = 5   # the rivet head's step on the ramp (was 6)
+PLATE_RUST = 0.9  # a rivet rusts above this (was 0.82)
+WORN_PLATE = 0.8  # a plate is worn above this (Vorrhallow keeps WORN_BLOCK)
+PLATE_PITTED = 0.72  # a worn plate's world pixel is pitted above this (0.96 on a sound one)
 # The share of Vorrhallow's tiles that carry the teal tide stain. Drawn in every
 # tile it ruled a stripe across the field every 16 world pixels.
 TIDE_TILES = 0.35
@@ -785,20 +798,21 @@ def cap_stone(img, ox, oy, seed, x0, x1, ramp="stone"):
 
 
 def paint_plates(img, ox, oy, seed, ramp):
-    """Dwarven iron: square plates of 8x8 world pixels, bevelled and lit from the
-    top left, a rivet at each corner, and rust bleeding down from the odd rivet.
-    The plates share one body value; the odd one is worn a shade darker
-    (WORN_BLOCK, design bible 12.45)."""
-    pw = 8 * D
+    """Dwarven iron: one square plate of 16x16 world pixels to a tile (PLATE,
+    design bible 12.54), bevelled and lit from the top left, a dim rivet at each
+    corner, and rust bleeding down from the odd rivet. Every plate has one body
+    value; the odd one is worn, pitted with the shade below (WORN_PLATE)."""
+    pw = PLATE * D
     for y in range(T):
         for x in range(T):
             px, py = x // pw, y // pw
             lx, ly = x % pw, y % pw
-            shade = 2 if hash2(px + ox // T * 2, py + oy // T * 2, seed) > WORN_BLOCK else 3
+            worn = hash2(px + ox // T * 2, py + oy // T * 2, seed) > WORN_PLATE
+            shade = 3
             if lx == 0 or ly == 0:
                 col = f"{ramp}-1"
             elif lx == 1 or ly == 1:
-                col = f"{ramp}-{shade + 2}"
+                col = f"{ramp}-{shade + 1}"
             elif lx == pw - 1 or ly == pw - 1:
                 col = f"{ramp}-{shade - 1}"
             else:
@@ -806,16 +820,16 @@ def paint_plates(img, ox, oy, seed, ramp):
                 # Brushed grain across the plate.
                 if (y * 7 + x // 5) % 13 == 0:
                     col = f"{ramp}-{shade + 1}"
-                elif hash2(x, y, seed + 2) > 0.96:
+                elif hash2(x // D, y // D, seed + 2) > (PLATE_PITTED if worn else 0.96):
                     col = f"{ramp}-{shade - 1}"
             img.putpixel((ox + x, oy + y), c(col))
     for py in range(T // pw):
         for px in range(T // pw):
             for rx, ry in [(3, 3), (pw - 4, 3), (3, pw - 4), (pw - 4, pw - 4)]:
                 x, y = px * pw + rx, py * pw + ry
-                img.putpixel((ox + x, oy + y), c(f"{ramp}-6"))
+                img.putpixel((ox + x, oy + y), c(f"{ramp}-{PLATE_RIVET}"))
                 img.putpixel((ox + x + 1, oy + y + 1), c(f"{ramp}-1"))
-                if hash2(x, y, seed + 5) > 0.82:
+                if hash2(x, y, seed + 5) > PLATE_RUST:
                     # A rust streak running down from the rivet.
                     for k in range(2, 2 + int(hash2(x, y, seed + 6) * 9)):
                         if y + k < T and (x, y + k) != (x, py * pw + pw - 1):
