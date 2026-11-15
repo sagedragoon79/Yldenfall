@@ -56,7 +56,16 @@ fails "at least one interior plate is pitted"; a worn plate a shade darker fails
 a step off its tier's body". The generator was restored and the atlas checked byte for byte
 against the one looked at.
 
-FULL_SUITE_RESULT
+Full suite: 15672 checks passed, 47 failed, in seven tests. Five of them read the design bible
+(`test_every_guardians_numbers_are_written_in_bible_8` and four more) and failed on the working
+copy only: the script that added 12.54 saved the bible with Windows line endings, which the
+parsers do not expect. The committed file has none; with it checked out again all five pass (342
+checks). The other two are wall-clock budgets (`test_every_room_loads_and_settles_inside_the_budget`,
+`test_every_foes_spoils_rest_in_its_room`). The second passes alone. The first failed again in
+three reruns, each time on rooms of other zones (`gym/gym`, `evercrown/proving_scar`,
+`spires/sky_steps`) as well as the Tower's, while another project ran some eighty scripts on this
+PC (processor load up to 78%). Nothing in this pass draws or loads more: a cell still draws one
+tile from an atlas of the same size. CI's full suite on a quiet machine is the check for it.
 
 ## Rubric (design bible 15.3)
 
