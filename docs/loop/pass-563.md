@@ -54,6 +54,15 @@ from the face, and no lit rim lies farther from a seat than a leader reaches) an
 Mutation check: far seats at a random x fail the first ("on no pillar's face"); a 3 px leader
 fails it ("no lit rim"); a one-colour body fails the second ("two facets").
 
+Full suite: 15270 checks passed and 3 failed, all three in `tests/test_reachability.gd`
+(`test_the_throne_lies_behind_the_flesh_only_the_severance_cuts`,
+`test_the_sunken_spring_lies_under_the_last_stone_of_the_rise`,
+`test_ladders_never_open_a_gated_room`) and all with the same leak report: "saves changed
+(save_8.json, save_8.json.bak)". None of them writes a save. Another worktree on this PC was
+running the test runner at the same time, and the suite shares `user://` with every checkout
+(pass 399), so its test saves showed up as this run's leaks in the three slowest tests. Rerun with
+no other Godot process running, each of the three passes.
+
 ## Rubric (design bible 15.3)
 
 | Category | Weight | Score | Notes |
