@@ -249,7 +249,7 @@ def test_atlas_has_the_variant_row():
     # The atlas must carry row 7 (8 rows of 32 px tiles), or the factory's variant
     # coords would point past the texture. (Leaving the atlas at 7 rows fails here.)
     img = _build_atlas()
-    assert img.size[1] == tg.T * 8, f"atlas is 8 rows tall for the variant row, got {img.size}"
+    assert img.size[1] == tg.T * 9, f"atlas is 9 rows tall (the variant row and the edge row, 12.53), got {img.size}"
 
 
 def test_full_variants_differ_from_the_base_and_each_other():
@@ -1366,6 +1366,97 @@ def test_a_stillglass_shard_has_two_facets_and_a_lit_rim():
         pts = [(x, y) for y in range(0, tg.BG_H, tg.D) for x in range(0, tg.BG_W, tg.D) if img.getpixel((x, y)) == tg.c(col)]
         return sum(x + y for x, y in pts) / len(pts)
     assert mean("crystal-6") < mean("crystal-2"), "the rim faces the top-left light"
+
+
+# --- Wear on the Sunken Spring's ashlar (bible 12.55, pass 568) --------------------
+def _spring_wear(seed):
+    """What spring_wear alone draws for one seed: {(x, y): colour} in render px."""
+    img = tg.Image.new("RGBA", (tg.T, tg.T), tg.CLEAR)
+    tg.spring_wear(img, 0, 0, seed, "umber")
+    px = img.load()
+    return {(x, y): px[x, y] for y in range(tg.T) for x in range(tg.T) if px[x, y] != tg.CLEAR}
+
+
+def _moss_run(marks):
+    """The longest run of the moss's body colour along one row, in world px."""
+    body, best = tg.c(f"{tg.SPRING_MOSS}-3"), 0
+    for y in range(0, tg.T, tg.D):
+        run = 0
+        for x in range(0, tg.T, tg.D):
+            run = run + 1 if marks.get((x, y)) == body else 0
+            best = max(best, run)
+    return best
+
+
+def test_sunken_wear_is_on_tiles_that_have_variants_only():
+    # A mark on a tile with no variants repeats down every pier (12.47): the 47
+    # blob tiles (seeds 11 to 57) and the top and bottom edge variants stay
+    # clean. The scattered field variants and the two face variants carry wear.
+    for seed in list(range(11, 58)) + [61, 62, 63, 71, 72, 73]:
+        assert not _spring_wear(seed), f"seed {seed} has no variants and must stay clean"
+    worn = [seed for seed in (201, 202, 203, 211, 212, 221, 222, 81, 82) if _spring_wear(seed)]
+    assert len(worn) >= 6, f"most of the variants carry a mark: {worn}"
+
+
+def test_sunken_moss_sits_in_a_bed_joint_of_the_lit_tiles():
+    # A clump is a run of four world pixels or more of moss along a bed joint
+    # (the drips of 12.39 are one world pixel wide). Two of the three surface
+    # variants and both face variants grow one; the third surface variant and
+    # the darkened tiers grow none.
+    beds = {(tg.SPRING_COURSE - 1) * tg.D, (2 * tg.SPRING_COURSE - 1) * tg.D}
+    body = tg.c(f"{tg.SPRING_MOSS}-3")
+    for seed in tg.SPRING_MOSS_SEEDS:
+        marks = _spring_wear(seed)
+        assert _moss_run(marks) >= 4, f"seed {seed}: a clump of moss ({_moss_run(marks)} world px)"
+        rows = {}
+        for (x, y), col in marks.items():
+            if col == body:
+                rows[y] = rows.get(y, 0) + 1
+        assert max(rows, key=rows.get) in beds, f"seed {seed}: the clump lies along a bed joint"
+        xs = [x for (x, y), col in marks.items() if col[:3] in [tg.c(f"{tg.SPRING_MOSS}-{k}")[:3] for k in (2, 3, 4)]]
+        assert min(xs) >= 2 * tg.D and max(xs) < tg.T - 2 * tg.D, f"seed {seed}: the moss clears the face's outline"
+    for seed in (202, 211, 212, 221, 222):
+        assert _moss_run(_spring_wear(seed)) == 0, f"seed {seed} grows no moss"
+
+
+def test_sunken_blocks_chip_at_a_head_joint():
+    # A chip is the block's lit corner broken away, in the joint's colour, right
+    # of a head joint and under a bed joint. Between a third and four fifths of
+    # the variants carry one, so a pier is worn but not peppered.
+    joint, chipped = tg.c("umber-1"), 0
+    seeds = range(300, 400)
+    for seed in seeds:
+        marks = _spring_wear(seed)
+        found = False
+        for course in range(tg.T // (tg.SPRING_COURSE * tg.D)):
+            j = tg.spring_joints(seed, course)[0]
+            y0 = course * tg.SPRING_COURSE * tg.D
+            corner = [marks.get((j + tg.D + dx, y0 + dy)) for dx in range(tg.D) for dy in range(tg.D)]
+            if all(col == joint for col in corner):
+                # Two world pixels along the top, one fewer on the next row down.
+                assert marks.get((j + 2 * tg.D, y0)) == joint, f"seed {seed}: the chip is two wide at the top"
+                found = True
+        chipped += found
+    share = chipped / len(seeds)
+    assert 0.33 < share < 0.8, f"the share of variants with a chipped block: {share:.2f}"
+
+
+def test_sunken_wear_is_drawn_in_whole_world_pixels():
+    # 12.28: the chip and the moss are blocks of whole world pixels. (The crack
+    # is a hairline one render pixel wide, as in the other masonry, so the tiles
+    # that carry one are left out.)
+    D = tg.D
+    checked = 0
+    for seed in list(range(101, 131)) + list(tg.SPRING_MOSS_SEEDS):
+        if seed >= tg.INTERIOR_SEED and tg.hash2(seed, 0, 31) > tg.FIELD_CRACK:
+            continue
+        marks = _spring_wear(seed)
+        for (x, y), col in marks.items():
+            bx, by = x - x % D, y - y % D
+            assert all(marks.get((bx + dx, by + dy)) == col for dx in range(D) for dy in range(D)), (
+                f"seed {seed}: a mark at {(x, y)} is not a whole world pixel")
+        checked += 1
+    assert checked >= 10
 
 
 if __name__ == "__main__":
