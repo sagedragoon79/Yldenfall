@@ -25,11 +25,17 @@ const ANIMS := {"idle": "idle", "walk": "walk", "windup": "windup", "rooted": "r
 ## The raised crystal fist in the windup (world px from his feet, facing right), where it blazes.
 const FIST_AT := Vector2(6, -30)
 const CRYSTAL_LIGHT := Color("f0a0f0")
+## The crystal on his back (world px from his feet, facing right): where his glow sits
+## (`FoeGlow`, bible 12.52), and its half extents.
+const CRYSTAL_AT := Vector2(-3, -20)
+const GLOW_REACH := Vector2(40, 34)
 
 var _struck := false
 var _behind_time := 0.0
 var _cool := 0.0
 var _died_at := -1.0
+## The light his crystal throws on the dark behind him.
+var glow: FoeGlow
 
 
 func _init() -> void:
@@ -41,6 +47,24 @@ func _init() -> void:
 	contact_damage = 14
 	body_size = Vector2(20, 28)
 	knockback = 30.0
+
+
+func _ready() -> void:
+	super._ready()
+	glow = FoeGlow.new()
+	glow.color = CRYSTAL_LIGHT
+	glow.reach = GLOW_REACH
+	glow.at = CRYSTAL_AT
+	add_child(glow)
+
+
+## How strongly his crystal glows now: out when he is dead, swelling through the windup.
+func glow_strength() -> float:
+	if dead:
+		return 0.0
+	if state == "windup":
+		return 1.0 + clampf(state_time / WINDUP, 0.0, 1.0)
+	return 1.0
 
 
 ## True while his fist is rooted in the floor.
@@ -137,6 +161,8 @@ func die() -> void:
 
 
 func _process(_delta: float) -> void:
+	if glow != null:
+		glow.strength = glow_strength()
 	# The dissolve runs after death, when the body no longer redraws itself: keep
 	# the collapse playing under it.
 	if dead and dissolving():
