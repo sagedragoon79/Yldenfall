@@ -607,6 +607,58 @@ def paint_spring(img, ox, oy, seed, ramp):
             for y in range(y0, min(y0 + dlen, y0 + ch - D)):
                 for k in range(D):
                     img.putpixel((ox + (dx + k) % T, oy + y), c("sky-3" if y < y0 + D else "moss-3"))
+    spring_wear(img, ox, oy, seed, ramp)
+
+
+# Wear on the Sunken Spring's ashlar (design bible 12.55, pass 568). The pass 565
+# grade: "brick repeats uniformly with no edge wear or moss". Only tiles that have
+# variants carry a mark (12.47): the scattered field variants, and the row-8
+# variant of each wall face (12.53), so nothing repeats down a pier.
+# - A chipped arris: the lit corner of one block, at its head joint, broken away.
+# - A hairline crack, as in the other masonry (FIELD_CRACK).
+# - Moss in a bed joint: a clump a few world pixels long, creeping up over the
+#   block's shadow and hanging a pixel or two below. On two of the three surface
+#   variants and both face variants; the darkened tiers grow none (12.47).
+SPRING_CHIP = 0.45
+SPRING_FACE_SEEDS = (81, 82)
+SPRING_MOSS_SEEDS = (201, 203) + SPRING_FACE_SEEDS
+SPRING_MOSS = "moss"
+
+
+def spring_wear(img, ox, oy, seed, ramp):
+    if seed < INTERIOR_SEED and seed not in SPRING_FACE_SEEDS:
+        return
+    W = T // D  # the tile in world pixels
+
+    def wp(wx, wy, name):
+        if 0 <= wy < W:
+            for dy in range(D):
+                for dx in range(D):
+                    img.putpixel((ox + (wx * D + dx) % T, oy + wy * D + dy), c(name))
+
+    if hash2(seed, 0, 71) > SPRING_CHIP:
+        course = int(hash2(seed, 1, 71) * (W // SPRING_COURSE))
+        j = spring_joints(seed, course)[0] // D
+        n = 2 + int(hash2(seed, 2, 71) * 2)                      # 2 or 3 world px
+        for wy in range(n):
+            for wx in range(n - wy):
+                wp(j + 1 + wx, course * SPRING_COURSE + wy, f"{ramp}-1")
+        # The broken face under the chip catches a little shade.
+        for wx in range(n):
+            wp(j + 1 + wx, course * SPRING_COURSE + n - wx, f"{ramp}-3")
+    if seed >= INTERIOR_SEED and hash2(seed, 0, 31) > FIELD_CRACK:
+        crack(img, ox, oy, seed, 0, c(f"{ramp}-1"))
+    if seed in SPRING_MOSS_SEEDS:
+        n = 4 + int(hash2(seed, 1, 72) * 4)                      # 4 to 7 world px
+        mx = 2 + int(hash2(seed, 2, 72) * (W - n - 4))
+        bed = SPRING_COURSE - 1 if hash2(seed, 3, 72) > 0.5 else 2 * SPRING_COURSE - 1
+        for i in range(n):
+            wp(mx + i, bed, f"{SPRING_MOSS}-3")
+            if 0 < i < n - 1 and hash2(seed, i, 73) > 0.35:
+                wp(mx + i, bed - 1, f"{SPRING_MOSS}-4")
+            drop = int(hash2(seed, i, 74) * 3)                    # 0 to 2 world px
+            for k in range(drop):
+                wp(mx + i, bed + 1 + k, f"{SPRING_MOSS}-{2 if k == drop - 1 else 3}")
 
 
 SPRING_COURSE = 8

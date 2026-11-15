@@ -2165,7 +2165,7 @@ The rest of 12.46's grade item. A masonry floor had one built line, but it stopp
 
 - **The course in Vorrhallow and the Sunken Spring.** `COURSE_ZONES` now holds every masonry zone that is painted in code: the Spires, the Inner Rings, the gym, Vorrhallow and the Sunken Spring. In Vorrhallow the pale course is also the floor's one light value against a dark field, which helps the zone's narrow value range.
 - **A footing.** The tile under a wall's foot (solid above and to both sides, open air on an upper diagonal) carries the floor's course on (`footing`). With one diagonal open it closes with a head joint one world pixel wide (`FOOT_JOINT`) on the side that runs on into the wall, so the course is bonded into the wall and does not trail off; under a pillar two tiles wide the two joints meet as one. A ceiling's inner corner carries nothing. This is the footing a 47-tile blob set can draw: the wall's own bottom tile is the same tile as the rest of its face, so a plinth that projects from the wall above the floor would need a new tile and a rule in `TilesetFactory`. Not built.
-- **Cracks and moss in the field** (`field_wear`). About four in ten of the scattered variants of `paint_bricks` and `paint_drowned` carry one hairline crack. The gym's surface variants carry a tuft of moss in a bed joint, drawn in whole world pixels (12.28). Edge tiles carry neither (a mark on a tile with no variants repeats down every wall face), the darkened tiers grow no moss, and the Inner Rings grow nothing. The Spires already had cracks; the Sunken Spring has its pores and drips (12.39).
+- **Cracks and moss in the field** (`field_wear`). About four in ten of the scattered variants of `paint_bricks` and `paint_drowned` carry one hairline crack. The gym's surface variants carry a tuft of moss in a bed joint, drawn in whole world pixels (12.28). Edge tiles carry neither (a mark on a tile with no variants repeats down every wall face), the darkened tiers grow no moss, and the Inner Rings grow nothing. The Spires already had cracks; the Sunken Spring has its pores and drips (12.39), and since pass 568 its own chips, cracks and moss (12.55).
 
 `assets/tiles/gym.png`, `spires.png`, `sunken.png`, `trials.png` and `vorrhallow.png` are regenerated; collision and edges are untouched. `tests/test_brick_structure.gd` holds it: the course test covers all five zones, a foot tile's lit line runs the tile but for its joint, the mirrored foot closes on the other side, a ceiling corner has no course, and moss is in the gym's surface variants only.
 
@@ -2254,6 +2254,29 @@ The pass 565 grade said of the smelter: "the ceiling and floor are a noisy grid 
 - **A worn plate is pitted, not darker.** With a plate the size of a tile, 12.45's worn block a shade down is a dark square a tile wide. A worn plate (`WORN_PLATE`, about one in five) keeps the body value and has about a quarter of its face pitted with the shade below (`PLATE_PITTED`): seen close it is rough iron, seen from across the room it is the same value as its neighbours. This replaces 12.45's worn block for the Tower only; Vorrhallow's blocks keep it (`WORN_BLOCK`).
 
 The girder cap, the riveted flange (12.53) and the soffit are unchanged, so the built lines now carry the Tower's detail and the fields behind them rest. Only `assets/tiles/tower.png` is regenerated. `tests/test_tower_plates.gd` holds it: no seam crosses the middle of an interior tile, no plate's mean stands a ramp step off its tier's body, at least one interior plate is pitted and at most half are, a sound plate is clean, and at most four rivet heads in a tile stand over the bevel.
+
+### 12.55 The aqueduct's stone is worn and mossed, and its fall is a sheet of threads (pass 568)
+
+The pass 565 grade said of the Drowned Aqueduct: "brick repeats uniformly with no edge wear or moss, the waterfall is a flat cyan strip".
+
+**Wear on the ashlar** (`spring_wear`, `tools/art/tilegen.py`). 12.39 gave the Sunken Spring's blocks pores and mineral drips and nothing else, so a pier was clean from cap to foot. Only a tile that has variants carries a mark (12.47), so nothing repeats down a pier: the scattered field variants, and the row-8 variant of each wall face (12.53). The 47 blob tiles and the top and bottom edge variants stay clean.
+
+- **A chipped arris.** In about half of the variants (`SPRING_CHIP`) the lit corner of one block is broken away at its head joint: two or three world pixels in the joint's colour, with a shaded pixel under the break.
+- **A hairline crack** in about four field variants in ten (`FIELD_CRACK`), as in the other masonry.
+- **Moss in a bed joint** (`SPRING_MOSS_SEEDS`): a clump four to seven world pixels long in the `moss` ramp, creeping a pixel up over the block's shadow and hanging a pixel or two below. On two of the three surface variants and on both face variants, so a pier's faces are mossed and its field is mossed in places. The darkened tiers grow none. A clump keeps two world pixels clear of a tile's sides, so it never touches a face's outline.
+- The chip and the moss are whole world pixels (12.28); the crack is the one hairline.
+
+**The fall** (`AqueductSpill`). The fall was one cyan strip with three light dashes, under a blue-grey trough in a room of warm travertine.
+
+- **A sheet drawn a column at a time.** Each column has a tone by how far it is from the middle (`Tone`): dark rims, a body, a light core. The sheet spreads by `SPREAD` (4 px) on its way down, so the outer columns start lower.
+- **Every column runs its own streaks** (`streak`): a light thread and a dark gap, each with its own spacing, length and speed (130 to 202 px/s). The sheet runs in threads and never slides down as one block.
+- **The rims tear** into falling drops over the last `TEAR` (26 px) above the water.
+- **Where it lands:** a pale plunge driven under the surface with bubbles carried down and out (`PLUNGE`), mist in three flat bands (`MIST`, stepped, never a gradient), foam, spray, and rings that run out along the surface, thinning and fading (`ring`, `RING_REACH`).
+- **The trough is the aqueduct's stone**: the `umber` ramp of the room's blocks, jointed, with the spring sliding along its bed and moss hanging under it. The water is the palette's `sky` ramp.
+
+The fall is still scenery: it never pushes the player, and its sound (13.3) is unchanged. Only `assets/tiles/sunken.png` is regenerated. Judged by eye at 1x and 3x in `sunken/drowned_aqueduct`. `tests/test_aqueduct_fall.gd` (the tones, the streaks, the tear, the rings and mist, the trough's colour, and the moss in the atlas and in the room) and four `test_sunken_` tests in `tools/art/test_tilegen.py` hold it.
+
+Not done from that grade item: the underwater area ("an empty dithered gradient with one fish") beyond the plunge, and cracks in the grown zones' fields.
 
 ## 13. Asset Production Plan
 
