@@ -2,6 +2,7 @@ name: Gear Pit
 zone: tower
 map: 16, -4
 sign: 4, 19, The great gears turned the winch from here. Their teeth still bite.
+prop: 27, 19, gear_train
 door: 1, tower/gear_shaft, 3
 door: 2, tower/winch_hall, 5
 ---

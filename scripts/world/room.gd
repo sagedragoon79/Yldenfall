@@ -418,6 +418,8 @@ func _add_prop(kind: String, pos: Vector2) -> void:
 			_spawn(Crucible.new(), pos)
 		"fallen_bell":
 			_spawn(FallenBell.new(), pos)
+		"gear_train":
+			_spawn(GearTrain.new(), pos)
 		"winch":
 			_spawn(Winch.new(), pos)
 		"forge":

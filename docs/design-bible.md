@@ -2291,6 +2291,20 @@ The pass 565 grade: "nearly every room uses one kit (rope or chain swings, a fou
 
 It is scenery (z -2, no collision, no sound). The sign moved three tiles west to stand clear of it. A fourth Tower landmark beside 3.3's three; `test_every_zone_has_its_three_landmarks` is unchanged. Judged by eye at 1x and 3x in `tower/bell_loft`. `tests/test_fallen_bell.gd`.
 
+### 12.57 The Gear Pit's great gears stand in its back wall (pass 570)
+
+The second room by 12.56's rule (a set piece of its own, and a room whose name or sign already promises one comes first). The Gear Pit's sign has always read "The great gears turned the winch from here. Their teeth still bite", and the room showed a table over a bed of spikes and two bats. Winch Hall lies under its floor door.
+
+`GearTrain` (`scripts/world/gear_train.gd`, room prop `gear_train`) is that train, painted like the crucible (12.35) and the bell: whole world pixels on master palette ramps, lit from the upper left, baked once.
+
+- **Three wheels in mesh** on the back wall east of the floor door: a great gear 112 px across its tips (26 teeth, six spokes), a second of 16 teeth and five spokes up and to its left, and a pinion of 9 teeth above that. Their tooth counts are in the ratio of their radii, so they share one pitch; each stands off its driver by the sum of their radii, with its tooth in the driver's gap. No two wheels ever share a pixel.
+- **The great gear sinks into the floor**, toward the winch it turned in the hall below. The upper two hang from the ceiling in riveted iron hangers; a post carries the great one.
+- **Iron** is the stone ramp, lighter to each wheel's upper left with a narrow 2 x 2 dither between tones, a tone up on an edge that faces the light and a tone down on one that faces away. Each wheel is a slab: two pixels of dark side show down and to the right. A groove runs round each rim. Brass caps (the ochre ramp) cover the bearings.
+- **They are seized.** Rust (two tones of the bark ramp) lies in streaks that run round the wheels, only in the shade. One tooth of the great gear, on its upper side where it shows, has snapped to a stub and lies on the floor beside it. The drive chain hangs parted from the pinion and sways at its end.
+- **"Their teeth still bite":** every 7 s the train strains a sixth of a tooth and falls back, twice in a quarter of a second. Each wheel turns against its driver, faster by the ratio of their teeth (a second baked image, so the wheels stay whole pixels).
+
+It is scenery (z -2, no collision, no sound), and it is kept clear of the room's bed of spikes so that nothing about it reads as a hazard: the wheels are behind the hero, darker than the floor, and nothing on them is the spikes' white. A fifth Tower landmark; `test_every_zone_has_its_three_landmarks` is unchanged. Judged by eye at 1x and 3x in `tower/gear_pit`. `tests/test_gear_train.gd`.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
