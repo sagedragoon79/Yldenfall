@@ -340,7 +340,7 @@ static func open_pause(tree: SceneTree, p: Player, on_quit: Callable) -> bool:
 			{"label": "Resume", "detail": "Back to the Tree."},
 			oint,
 			{"label": "Equipment", "detail": "Swap between the blades, armor, shields and helmets you have, and dye your cloak."},
-			{"label": "Inventory", "detail": "Your abilities, spells, relics, rings, keys and shards, and what each does."},
+			{"label": "Inventory", "detail": "Your spells, relics, rings, keys and shards, and what each does."},
 			{"label": "Options", "detail": OPTIONS_DETAIL},
 			{"label": "Controls", "detail": CONTROLS_DETAIL},
 			{"label": "Journey", "detail": "How much of the world you have seen, and the guardians you have found."},
@@ -478,6 +478,14 @@ static func equipment_rows() -> Array:
 			var held := i == int(GameState.data.belt_at)
 			out.append({"label": item.name, "right": ("In hand  x%d" if held else "x%d") % n,
 				"detail": String(item.desc) + ("" if held else "  Choose it to take it in hand."), "enabled": true, "id": BELT_PREFIX + str(i)})
+	# Abilities (design bible 5.6): the signature finds take no slot and are never
+	# taken off, so they are listed here to read, not to choose.
+	var found: Array = ABILITIES.filter(func(id: String) -> bool: return bool(GameState.data.abilities.get(id, false)))
+	if not found.is_empty():
+		out.append({"label": "Abilities, always on", "header": true})
+		for id: String in found:
+			var info := ability_info(id)
+			out.append({"label": info[0], "right": "Always on", "detail": info[1], "enabled": true})
 	out.append({"label": "Cloak", "header": true})
 	for id: String in cloak_dyes():
 		var item := GameData.item(id)
@@ -569,11 +577,14 @@ static func open_journey(tree: SceneTree, back: Callable) -> bool:
 
 
 ## The Inventory page (pause menu, pass 205): what you have found and carry,
-## that the Equipment page does not show. Abilities, spells, relics, the rings
+## that the Equipment page does not show. Spells, relics, the rings
 ## for the gate of the Evercrown, keys and shards, each with what it does, so a found
 ## thing is never known only by its banner. Read only; Back returns.
+## The signature finds, in the order they are found. They take no slot: the
+## Equipment page lists them as always on (design bible 5.6). The Rune Dagger
+## left this list for the projectile slot.
+const ABILITIES := ["glove", "delvers_pick", "boots", "stride", "seers_lens", "stillstone"]
 const INVENTORY_GROUPS := [
-	["Abilities", ["glove", "delvers_pick", "boots", "stride", "seers_lens", "stillstone", "rune_dagger"]],
 	["Spells", ["torrent", "fire", "fracture", "wisplight", "thunder", "death"]],
 	["Relics", ["pendant", "briar_wand"]],
 ]
