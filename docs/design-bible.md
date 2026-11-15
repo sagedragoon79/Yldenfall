@@ -2216,7 +2216,20 @@ The independent grade taken after pass 560: "magenta stillglass shards scattered
 
 Judged by eye at 1x and 2x in `vorrhallow/gate_hall` and `vorrhallow/throne_hall`, before and after: the glass reads as clusters broken out of the columns, not as loose spears. `assets/bg/vorrhallow_far.png` and `vorrhallow_mid.png` are regenerated. `test_vorrhallows_stillglass_is_seated_on_the_stone` and `test_a_stillglass_shard_has_two_facets_and_a_lit_rim` in `tools/art/test_tilegen.py` hold it.
 
-Not done: the wading foe at the waterline, the other half of the same grade line, stays with the waterline item (ripples and a splash at each waterline).
+Not done: the wading foe at the waterline, the other half of the same grade line, stays with the waterline item (ripples and a splash at each waterline). Done in 12.52.
+
+### 12.52 A stillglass foe carries its crystal's light (pass 564)
+
+The pass 560 grade, the half 12.51 left: "the foe at the waterline is nearly invisible against the dark pillars." The Crystal Dwarf is dark steel in a dark hall, and the room's light (12.43) sinks his darks toward the hall's haze, so at 1x only the crystal on his back told him from a pillar.
+
+Stillglass is a light in this world (the shards on the floor glow), so the crystal he is made of lights the dark behind him and his body stands against it:
+
+- **`FoeGlow`**, a child of the foe drawn behind it, additive, in the crystal's colour (`CrystalDwarf.CRYSTAL_LIGHT`). It sits on the crystal on his back (`CRYSTAL_AT`, mirrored with his facing) and reaches 40 by 34 px (`GLOW_REACH`), wider than his body, so it shows all round him.
+- **Steps, not a gradient.** Four tones (`LEVELS`) fall off from the centre through a 4 x 4 ordered dither in 2-pixel blocks, the grain of the fire seal's halo (12.40) and the water (12.39, 12.41). The inmost fifth is the top tone whole. Drawn once per size as a texture.
+- **How bright.** `PEAK` 0.44 at rest, breathing 12% down and back slowly; the light it adds behind him is brighter than his steel is in the hall's light, which is what makes him a silhouette. It swells through his windup to `PEAK_TELL` 0.6, so the tell starts to read before the fist blazes, and it goes out when he dies.
+- **Not a rim light.** Nothing is drawn on the figure, and no other foe gets a glow for being hard to see: this is for foes made of stillglass (style guide 1). Rim light on figures stays a watched call.
+
+Judged by eye at 1x and 3x in `vorrhallow/flooded_hall`, at rest and in the windup, before and after. `tests/test_foe_glow.gd` checks the steps, the dither and its blocks, the breath, the tell and the dark, that the light outweighs his steel, and on a dwarf in the hall that the glow is behind him, additive, on his back whichever way he faces, swelling with the windup and gone at his death.
 
 ## 13. Asset Production Plan
 

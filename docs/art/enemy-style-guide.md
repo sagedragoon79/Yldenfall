@@ -28,6 +28,10 @@ starting another foe.
 - **Corruption** (the Evercrown's grown-through foes) is a code tint and a code growth
   (`CorruptionGrowth`). Do not draw stillglass into a foe's base art unless the foe is made
   of it (Crystal Dwarf, Glass Slug).
+- **A foe made of stillglass is a light.** It carries a `FoeGlow` (bible 12.52): a stepped,
+  dithered glow in its crystal's colour, drawn behind it and never on it, brighter in its tell
+  and out at its death. Give one to a foe only when it is made of stillglass, never to fix a
+  foe that is hard to see.
 
 ## 2. Scale
 
