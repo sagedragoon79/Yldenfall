@@ -2203,6 +2203,19 @@ Left over from 12.48 and 12.49: the Evercrown's tiles were violet on a wine back
 
 After: the mean hue of the atlas's opaque pixels goes from 261 to 246, 49 degrees off the haze; the floor of `evercrown/threshold` measures hue 237 where it measured 251, at the same luminance. Judged by eye at 1x and 3x in `threshold`, `veins`, `heart` and `proving_scar`, before and after: the rock reads as an indigo mass with a cool glint on each cell, and the wine tendrils and ridge fall behind it. `assets/tiles/evercrown.png` is regenerated. `test_the_evercrowns_tiles_stand_off_its_wine_haze` holds the atlas to the haze; `test_the_evercrown_cells_are_lit_by_their_pores` in `tools/art/test_tilegen.py` holds the painter.
 
+### 12.51 Vorrhallow's stillglass grows out of the stone (pass 563)
+
+The independent grade taken after pass 560: "magenta stillglass shards scattered at random angles like floating spears, attached to no rock." They were in the backdrops. `vorrhallow_far` put nine clusters at random points, the open air between pillars included, and `vorrhallow_mid` ran one needle 30 to 70 px long and 7 px wide from the middle of each column.
+
+- **Every growth has a seat.** A seat is a point on a pillar's face. The far layer seats nine clusters on the far pillars' faces; the mid layer seats one on each broken column, and on about half of them a lesser one lower down on the other face. `STILLGLASS_SEATS` records them.
+- **A growth is a cluster with a root** (`stillglass_growth`): cracks run back into the stone, a leader leans up and away from the pillar with two or three shorter shards fanned beside it, their roots spread along the face, and a ragged crust of wine glass (crystal-1) lies on the face across the roots. No shard leans back into the stone.
+- **A shard is a prism** (`stillglass_shard`): broad at the root (12 to 16 px on a mid leader, where the needle had 7), tapering to a point, with a lit facet and a bright rim toward the top-left light and a facet in shade. Painted in whole world pixels.
+- The floor shards of the decor atlas and the ceiling's hanging glass were already seated and are unchanged. Nothing on the play layer moves.
+
+Judged by eye at 1x and 2x in `vorrhallow/gate_hall` and `vorrhallow/throne_hall`, before and after: the glass reads as clusters broken out of the columns, not as loose spears. `assets/bg/vorrhallow_far.png` and `vorrhallow_mid.png` are regenerated. `test_vorrhallows_stillglass_is_seated_on_the_stone` and `test_a_stillglass_shard_has_two_facets_and_a_lit_rim` in `tools/art/test_tilegen.py` hold it.
+
+Not done: the wading foe at the waterline, the other half of the same grade line, stays with the waterline item (ripples and a splash at each waterline).
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

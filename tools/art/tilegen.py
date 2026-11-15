@@ -1953,6 +1953,69 @@ def spires_mid():
     return img
 
 
+# Vorrhallow's stillglass grows out of the stone (design bible 12.51, pass 563). The
+# independent grade (pass 560) read the backdrops' crystals as "floating spears,
+# attached to no rock": the far layer scattered its clusters anywhere, sky included,
+# and the mid layer ran one thin needle from the middle of each column. A growth now
+# has a seat (a point on a pillar's face and the way the face looks), a fan of
+# broad-based shards around that normal, cracks run back into the stone, and a dark
+# crust across the root. The painters record their seats here so the guard in
+# test_tilegen.py can find them.
+STILLGLASS_SEATS = {}
+
+
+def stillglass_shard(img, rx, ry, ang, length, width, cols):
+    """One faceted shard in world pixels: rooted at rx, ry, pointing along `ang`
+    (0 is up, positive leans right), `width` across at the root and tapering to a
+    point. The facet turned to the top-left light is `cols[1]` with a rim of
+    `cols[0]`; the facet turned away is `cols[2]`."""
+    ax, ay = math.sin(ang), -math.cos(ang)
+    px, py = math.cos(ang), math.sin(ang)
+    lit_side = -1 if (px + py) > 0 else 1
+    steps = int(length * 2)
+    for i in range(-4, steps + 1):  # starts two pixels inside the stone
+        t = i / 2
+        half = max(0.5, (1 - max(t, 0) / length) * width / 2)
+        n = int(half * 2)
+        for j in range(-n, n + 1):
+            k = j / 2
+            edge = half - abs(k) < 1.0 and half > 1.0
+            # Two facets meet on a ridge down the middle: the one turned to the
+            # light is the body colour with a bright rim, the other is in shade.
+            col = cols[1] if k * lit_side >= 0 else cols[2]
+            if edge and k * lit_side > 0:
+                col = cols[0]
+            block(img, int(round(rx + ax * t + px * k)), int(round(ry + ay * t + py * k)), c(col))
+
+
+def stillglass_growth(img, rx, ry, face, lean, rng, reach, width, cols, crust="crystal-1"):
+    """A seated cluster of stillglass at world pixel rx, ry on a stone face whose
+    normal is `face` (0 is up, positive turns right; a pillar's right face is pi/2):
+    cracks into the stone, a leader along `lean` with shorter shards fanned beside
+    it, their roots spread along the face, and a crust laid on the face over them."""
+    tx, ty = math.cos(face), math.sin(face)  # along the face
+    nx, ny = math.sin(face), -math.cos(face)  # out of it
+    span = width * 0.9
+    # Cracks run back into the stone from the root.
+    for _ in range(3):
+        a = face + math.pi + rng.uniform(-0.9, 0.9)
+        u = rng.uniform(-span, span)
+        for t in range(rng.randint(3, 7)):
+            block(img, int(round(rx + tx * u + math.sin(a) * t)), int(round(ry + ty * u - math.cos(a) * t)), c("night-0"))
+    # The lesser shards first, so the leader lies over them. None leans back into
+    # the stone: each stays within 1.2 rad of the face's normal.
+    for f in sorted((rng.uniform(-0.7, 0.7) for _ in range(rng.randint(2, 3))), key=abs, reverse=True):
+        u = (f / 0.7) * span
+        ang = face + max(-1.2, min(1.2, lean + f - face))
+        stillglass_shard(img, rx + tx * u, ry + ty * u, ang, reach * rng.uniform(0.45, 0.7), width * rng.uniform(0.55, 0.8), cols)
+    stillglass_shard(img, rx, ry, lean, reach, width, cols)
+    # The crust: a ragged dark knuckle of wine glass on the face, across the roots.
+    for h in range(int(-span * 2) - 4, int(span * 2) + 5):
+        u = h / 2
+        for t in range(-1, rng.randint(2, 4)):
+            block(img, int(round(rx + tx * u + nx * t)), int(round(ry + ty * u + ny * t)), c(crust))
+
+
 def vorrhallow_far():
     img = Image.new("RGBA", (BG_W, BG_H), c("night-0"))
     gradient(img, "night-0", "sky-1")
@@ -1960,9 +2023,11 @@ def vorrhallow_far():
     # The drowned capital's great hall: rows of colossal pillars and arches
     # sunk to their knees in dark water, crystal light glowing between them.
     water = int(BG_H * 0.72)
+    pillars = []
     for i in range(7):
         x0 = int((i + rng.uniform(0.0, 0.4)) * BG_W / 7)
         w = rng.randrange(24, 40) * D
+        pillars.append((x0, w))
         cs = masonry_courses(0, BG_H, 440 + i, 18 * D)
         for y in range(BG_H):
             for dx in range(w):
@@ -1981,18 +2046,19 @@ def vorrhallow_far():
             top = int(60 * D + math.sin(k * math.pi) * -40 * D) + 90 * D
             for y in range(top - 10 * D, top):
                 put(img, x0 + w + dx, y, c("night-1"))
-    # Crystal clusters on the far walls, glowing magenta.
-    for _ in range(9):
-        cx, cy = rng.randrange(BG_W), rng.randrange(80, water // D - 20) * D
-        for k in range(rng.randint(3, 6)):
-            h = rng.randrange(10, 34) * D
-            ang = rng.uniform(-0.7, 0.7)
-            for t in range(h):
-                wdt = max(D, int((h - t) / h * 9 * D))
-                x = cx + int(math.sin(ang) * t) - wdt // 2
-                y = cy - int(math.cos(ang) * t)
-                for dx in range(wdt):
-                    put(img, x + dx, y, c("crystal-5" if dx < D else ("crystal-2" if dx >= wdt - D else "crystal-3")))
+    # Stillglass grown out of the far pillars' faces, glowing magenta: each cluster
+    # is seated on a pillar's face and leans up and away from it (bible 12.51).
+    seats = []
+    for k in range(9):
+        x0, w = pillars[(k * 3 + rng.randrange(2)) % len(pillars)]
+        side = rng.choice([-1, 1])
+        rx = (x0 if side < 0 else x0 + w - D) // D
+        ry = rng.randrange(80, water // D - 30)
+        seats.append((rx, ry, side))
+        stillglass_growth(img, rx, ry, side * math.pi / 2, side * rng.uniform(0.5, 1.0), rng,
+                          rng.randrange(14, 30), rng.randrange(6, 9),
+                          ("crystal-5", "crystal-3", "crystal-2"))
+    STILLGLASS_SEATS["vorrhallow_far"] = {"pillars": [(x // D, w // D) for x, w in pillars], "seats": seats}
     # Dark water with glints and the crystals' smeared reflections.
     for y in range(water, BG_H):
         for x in range(BG_W):
@@ -2009,7 +2075,8 @@ def vorrhallow_mid():
     img = Image.new("RGBA", (BG_W, BG_H), CLEAR)
     rng = random.Random(62)
     # Broken colonnades and toppled statues of dwarf kings, nearer and darker,
-    # with crystal spears grown through them.
+    # with stillglass grown out of them.
+    columns = []
     for i in range(6):
         x0 = int((i + rng.uniform(0.1, 0.7)) * BG_W / 6)
         w = rng.randrange(14, 24) * D
@@ -2023,16 +2090,25 @@ def vorrhallow_mid():
                 if y in cs:
                     col = "night-0"  # a weathered mortar course
                 put(img, x0 + dx, y, c(col))
-        # A crystal spear through the column.
-        sx, sy = x0 + w // 2, top + rng.randrange(20, 80) * D
-        ln = rng.randrange(30, 70) * D
-        ang = rng.choice([-1, 1]) * rng.uniform(0.4, 0.9)
-        for t in range(ln):
-            x = sx + int(math.sin(ang) * t)
-            y = sy - int(math.cos(ang) * t)
-            wdt = max(D, int((ln - t) / ln * 7 * D))
-            for k in range(wdt):
-                put(img, x + k - wdt // 2, y, c("crystal-6" if k < D else ("crystal-2" if k >= wdt - D else "crystal-4")))
+        columns.append((x0, w, top))
+    # Stillglass bursting from the columns' faces: a broad-based cluster seated on
+    # the stone, leaning up and out, and on some columns a lesser one lower down on
+    # the other face (bible 12.51). Drawn after every column so none is painted over.
+    seats = []
+    for x0, w, top in columns:
+        side = rng.choice([-1, 1])
+        ry = top // D + rng.randrange(24, 80)
+        for n, s_ in enumerate((side, -side)):
+            if n and rng.random() < 0.45:
+                continue
+            rx = (x0 if s_ < 0 else x0 + w - D) // D
+            seats.append((rx, ry, s_))
+            stillglass_growth(img, rx, ry, s_ * math.pi / 2, s_ * rng.uniform(0.5, 0.95), rng,
+                              rng.randrange(12, 18) if n else rng.randrange(22, 36),
+                              rng.randrange(7, 10) if n else rng.randrange(12, 17),
+                              ("crystal-6", "crystal-4", "crystal-2"))
+            ry += rng.randrange(50, 110)
+    STILLGLASS_SEATS["vorrhallow_mid"] = {"pillars": [(x // D, w // D) for x, w, _ in columns], "seats": seats}
     # Hanging chains from the vault.
     for _ in range(8):
         x = rng.randrange(BG_W)
