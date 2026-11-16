@@ -108,20 +108,26 @@ func test_ore_road_stands_on_its_bents() -> void:
 	var px := _pixels()
 	check(OreRoad.BENTS.size() == 8, "eight bents")
 	check(OreRoad.GIRTS.size() == 3, "three girts a bent")
+	check(OreRoad.FOOT_Y.size() == OreRoad.BENTS.size(), "every bent has its footing's level")
 	var last := OreRoad.WEST
-	for bx: int in OreRoad.BENTS:
+	for i in OreRoad.BENTS.size():
+		var bx := OreRoad.BENTS[i]
+		var foot_y := OreRoad.FOOT_Y[i]
 		check(bx - last >= 120 and bx - last <= 180, "the bent at %d stands a span from the one before (%d px)" % [bx, bx - last])
 		last = bx
 		check(OreRoad.deck_at(bx - 30) and OreRoad.deck_at(bx + 30), "the bent at %d and its knees carry whole deck" % bx)
 		for side: int in [-1, 1]:
 			var foot := bx + side * OreRoad.LEG_FOOT
-			check(px.has(Vector2i(foot, -1)), "its %s leg stands on the floor" % ("west" if side < 0 else "east"))
+			check(px.has(Vector2i(foot, foot_y - 1)), "its %s leg stands on its floor, %d px under the road's origin" % ["west" if side < 0 else "east", foot_y])
+			check(not px.has(Vector2i(foot, foot_y)), "and goes no deeper")
+			check(px.get(Vector2i(foot + 3, foot_y - 3), Color.BLACK) == OreRoad.IRON[2], "on a stone footing")
 			var mid := -70
-			var cx := bx + side * OreRoad.leg_off(mid)
+			var cx := bx + side * OreRoad.leg_off(mid, foot_y)
 			check(px.get(Vector2i(cx - 2, mid), Color.BLACK) == OreRoad.WOOD[2], "and is lit down its left")
 			check(px.get(Vector2i(cx + 2, mid), Color.BLACK) == OreRoad.WOOD[0], "and shaded down its right")
-		for g: int in OreRoad.GIRTS:
+		for g: int in OreRoad.girts_for(foot_y):
 			check(px.get(Vector2i(bx, g), Color.BLACK) == OreRoad.WOOD[2], "a girt crosses it at %d" % g)
+		check(OreRoad.leg_off(foot_y - 1, foot_y) == OreRoad.LEG_FOOT, "its legs reach their full splay at its own floor")
 	check(OreRoad.EAST - last <= 180, "the last bent stands a span from the east wall")
 	check(OreRoad.leg_off(-1) > OreRoad.leg_off(OreRoad.DECK_BOTTOM + 5) + 8, "the legs splay toward the floor")
 	check(OreRoad.DECK_BOTTOM < -180, "the road is carried over every head and ledge (%d px up)" % -OreRoad.DECK_BOTTOM)
@@ -208,6 +214,184 @@ func test_ore_road_chain_hangs_from_the_stringer() -> void:
 	check(OreRoad.CHAIN_TOP.y + OreRoad.CHAIN_LENGTH + 16.0 < -96.0, "its hook hangs over every head")
 
 
+## Pass 577 (bible 12.64): the gallery's floor is not level, and the trestle
+## crosses it on legs of the length each footing needs.
+func test_ore_road_bents_follow_the_floor() -> void:
+	var px := _pixels()
+	var levels := {}
+	var deepest := 0
+	for y: int in OreRoad.FOOT_Y:
+		levels[y] = true
+		deepest = maxi(deepest, y)
+		check(y % 16 == 0, "a footing stands on a whole tile's floor (%d)" % y)
+	check(levels.size() >= 3, "the bents stand at three levels (%s)" % [levels.keys()])
+	check(deepest == OreRoad.DEEPEST and OreRoad.IMG.end.y == deepest, "the picture reaches the deepest footing and no further")
+	var lowest := -1000
+	for c: Vector2i in px:
+		lowest = maxi(lowest, c.y)
+	check(lowest == deepest - 1, "nothing is drawn under the deepest floor (%d)" % lowest)
+	var sills := 0
+	for i in OreRoad.BENTS.size():
+		var bx := OreRoad.BENTS[i]
+		var foot_y := OreRoad.FOOT_Y[i]
+		var girts := OreRoad.girts_for(foot_y)
+		check(foot_y - girts[-1] < OreRoad.SILL_FROM, "the bent at %d has a girt within %d px of its feet (%d)" % [bx, OreRoad.SILL_FROM, foot_y - girts[-1]])
+		check(girts[-1] + 5 < foot_y - 8, "and its last girt stands clear over its footings")
+		if girts.size() > 3:
+			sills += 1
+			check(foot_y == deepest, "only a bent in the pit has a sill girt")
+			# A cross in the tier the sill makes, behind the legs.
+			var braced := 0
+			for y in range(OreRoad.GIRTS[2] + 8, girts[-1] - 2):
+				for x in range(bx - 8, bx + 9):
+					if px.get(Vector2i(x, y), Color.BLACK) in OreRoad.WOOD:
+						braced += 1
+			check(braced >= 60, "with a cross in the tier under the third girt (%d px)" % braced)
+		# Under the level floor a sunk bent's legs are still drawn, lit and shaded.
+		if foot_y > 0:
+			var y := foot_y - 8
+			for side: int in [-1, 1]:
+				var cx := bx + side * OreRoad.leg_off(y, foot_y)
+				check(px.get(Vector2i(cx - 2, y), Color.BLACK) == OreRoad.WOOD[2] and px.get(Vector2i(cx + 2, y), Color.BLACK) == OreRoad.WOOD[0], "the bent at %d runs on under the level floor (%d px down)" % [bx, y])
+		else:
+			check(not px.has(Vector2i(bx - OreRoad.LEG_FOOT, 4)) and not px.has(Vector2i(bx + OreRoad.LEG_FOOT, 4)), "the bent at %d ends at the level floor" % bx)
+	check(sills == 1, "one bent stands in the pit (%d)" % sills)
+	# What fell from the span lies on the floor west of the pit's brink, the
+	# timber's east end out over it by less than a third of its length.
+	var over := 0
+	var on_floor := 0
+	for x in range(OreRoad.BREAK.x - 12, OreRoad.BREAK.y):
+		if px.get(Vector2i(x, -3), Color.BLACK) in OreRoad.WOOD:
+			if x + OreRoad.PROP_X >= OreRoad.PIT.x:
+				over += 1
+			else:
+				on_floor += 1
+	check(on_floor >= 24 and over > 0 and over <= 10, "the fallen timber lies on the floor with its end over the brink (%d px on, %d over)" % [on_floor, over])
+
+
+func _grid() -> Array[String]:
+	var rows: Array[String] = []
+	var text := FileAccess.get_file_as_string("res://levels/tower/rail_gallery.room").replace("\r", "")
+	for line: String in text.split("---\n")[1].split("\n"):
+		if line != "":
+			rows.append(line)
+	return rows
+
+
+## The independent grade after pass 575: "most rooms are a rectangular tile
+## frame around a dead-level floor". The second room changed for it (12.63's
+## rule): the floor stands at three heights, with a ramped dip under the first
+## spikes and a pit two tiles deep under the second, and the ceiling is
+## vaulted in three places.
+func test_the_rail_gallery_is_not_a_level_box() -> void:
+	var grid := _grid()
+	check(grid.size() == 23 and grid[0].length() == 80, "the gallery keeps its size")
+	var floors := {}
+	var ceilings := {}
+	var ramps: Array[Vector2i] = []
+	var floor_of: Array[int] = []
+	for x in grid[0].length():
+		var y := grid.size() - 1
+		while y > 0 and grid[y][x] in "#/\\":
+			y -= 1
+		floor_of.append(y)
+		if x == 0 or x == grid[0].length() - 1 or grid[grid.size() - 1][x] != "#" or grid[y + 1][x] in "/\\" or grid[y][x] == "#":
+			continue  # the walls, the vault's shaft, a ramp
+		if y < 16:
+			continue  # the pillar
+		floors[y] = true
+		var top := 0
+		while top < grid.size() and grid[top][x] == "#":
+			top += 1
+		ceilings[top] = true
+	for x in grid[0].length():
+		for row in grid.size():
+			if grid[row][x] in "/\\":
+				ramps.append(Vector2i(x, row))
+	check(floors.size() >= 3, "the floor stands at three heights (%s)" % [floors.keys()])
+	check(ceilings.size() >= 3, "the ceiling's underside stands at three heights (%s)" % [ceilings.keys()])
+	for x in range(1, grid[0].length() - 1):
+		if grid[4][x] == "B":
+			check(grid[3][x] == "#", "the Gear Bat at %d still roosts under the ceiling" % x)
+	check(ramps.size() == 2 and grid[ramps[0].y][ramps[0].x] == "\\" and grid[ramps[1].y][ramps[1].x] == "/", "two ramps, into the dip and out of it (%s)" % [ramps])
+	if ramps.size() != 2:
+		return
+	for r: Vector2i in ramps:
+		var high := -1 if grid[r.y][r.x] == "\\" else 1
+		check(grid[r.y + 1][r.x] == "#" and grid[r.y][r.x + high] == "#", "the ramp at %s has ground under it and on its high side" % r)
+		check(grid[r.y][r.x - high] == "." and grid[r.y + 1][r.x - high] == "#", "and starts on open floor")
+	# The dip: a tile down, spikes on its floor, footing either side of them.
+	var level := floor_of[1]
+	var dip := 0
+	var dip_spikes := 0
+	for x in range(ramps[0].x + 1, ramps[1].x):
+		if grid[level + 1][x] in ".^" and grid[level + 2][x] == "#":
+			dip += 1
+		if grid[level + 1][x] == "^":
+			dip_spikes += 1
+	check(dip == ramps[1].x - ramps[0].x - 1 and dip >= 12, "between them the floor lies a tile down (%d tiles)" % dip)
+	check(dip_spikes == 8, "with the first spikes on it, as wide as they were (%d)" % dip_spikes)
+	check(grid[level + 1][ramps[0].x + 1] == "." and grid[level + 1][ramps[1].x - 1] == ".", "and footing at the foot of each ramp")
+	# The pit: two tiles down, spiked from wall to wall, under the hung plank.
+	var pit: Array[int] = []
+	for x in range(1, grid[0].length() - 1):
+		if grid[level + 1][x] == "." and grid[level + 2][x] in ".^" and grid[grid.size() - 1][x] == "#":
+			pit.append(x)
+	check(pit.size() == 10 and pit[-1] - pit[0] == 9, "the pit is ten tiles of floor two tiles down (%s)" % [pit])
+	if pit.is_empty():
+		return
+	check(pit[0] * Room.TILE == OreRoad.PIT.x and (pit[-1] + 1) * Room.TILE == OreRoad.PIT.y, "where the road's painter takes it to be")
+	var bare := 0
+	var planked := 0
+	for x: int in pit:
+		if grid[level + 2][x] != "^":
+			bare += 1
+		for row in range(0, level):
+			if grid[row][x] == "-":
+				planked += 1
+	check(bare == 0, "spiked from wall to wall: nowhere in it to stand (%d bare)" % bare)
+	check(planked == pit.size(), "and the hung plank still crosses all of it")
+	# Walked for real: out of the dip by its east ramp, with no jump.
+	var w := make_world({}, "tower/rail_gallery")
+	await frames(3)
+	for e: Node in runner.get_tree().get_nodes_in_group("enemy"):
+		e.queue_free()
+	await frames(2)
+	var p := w.player
+	p.global_position = cell_feet(ramps[1].x - 2, ramps[1].y)
+	p.velocity = Vector2.ZERO
+	await frames(10)
+	var from_y := p.global_position.y
+	var hp := p.hp
+	check(p.is_on_floor(), "east of the spikes the dip has footing")
+	p.input.move_x = 1
+	var steps := 0
+	while p.global_position.x < (ramps[1].x + 3) * Room.TILE and steps < 300:
+		await frames(1)
+		steps += 1
+	p.input.move_x = 0
+	await frames(10)
+	check(p.global_position.x >= (ramps[1].x + 3) * Room.TILE, "a walk east climbs out of the dip (x %.0f after %d frames)" % [p.global_position.x, steps])
+	check_near(from_y - p.global_position.y, float(Room.TILE), 2.0, "a tile higher than it began, by the ramp alone")
+	check(p.is_on_floor(), "standing")
+	# And into it from the west door's floor.
+	p.global_position = cell_feet(ramps[0].x - 3, ramps[0].y - 1)
+	p.velocity = Vector2.ZERO
+	await frames(10)
+	from_y = p.global_position.y
+	p.input.move_x = 1
+	steps = 0
+	while p.global_position.x < (ramps[0].x + 2) * Room.TILE and steps < 300:
+		await frames(1)
+		steps += 1
+	p.input.move_x = 0
+	await frames(10)
+	check_near(p.global_position.y - from_y, float(Room.TILE), 2.0, "a walk east from the door goes down into the dip")
+	check(p.is_on_floor() and p.hp == hp, "and stops short of the spikes unhurt")
+	w.queue_free()
+	await frames(2)
+
+
 ## In the room: the road runs from wall to wall under the ceiling, every bent
 ## stands on solid floor in open air, and the sign tells of it.
 func test_the_rail_gallery_has_its_ore_road() -> void:
@@ -229,15 +413,20 @@ func test_the_rail_gallery_has_its_ore_road() -> void:
 	check(in_wall == 0, "between the walls it and its cart stand in open air (%d points in a wall)" % in_wall)
 	check(room.is_solid_at(at + Vector2(OreRoad.CART_X, OreRoad.CEILING - 4)), "the ceiling is over the cart")
 	check(not room.is_solid_at(at + Vector2(OreRoad.CART_X, OreRoad.CEILING + 4)), "and the cart is under it")
-	for bx: int in OreRoad.BENTS:
+	check(at.x == OreRoad.PROP_X, "the road's origin is where its painter takes it to be (%.0f)" % at.x)
+	for i in OreRoad.BENTS.size():
+		var bx := OreRoad.BENTS[i]
+		var foot_y := OreRoad.FOOT_Y[i]
 		var buried := 0
-		for y in range(OreRoad.DECK_BOTTOM, -2, 12):
+		for y in range(OreRoad.DECK_BOTTOM, foot_y - 1, 6):
 			for side: int in [-1, 1]:
-				if room.is_solid_at(at + Vector2(bx + side * OreRoad.leg_off(y), y)):
+				if room.is_solid_at(at + Vector2(bx + side * OreRoad.leg_off(y, foot_y), y)):
 					buried += 1
-		check(buried == 0, "the bent at %d stands in open air (%d points in a wall)" % [bx, buried])
+		check(buried == 0, "the bent at %d stands in open air down to its feet (%d points in a wall)" % [bx, buried])
 		for side: int in [-1, 1]:
-			check(room.is_solid_at(at + Vector2(bx + side * OreRoad.LEG_FOOT, 4)), "its %s foot is on solid floor" % ("west" if side < 0 else "east"))
+			var foot := at + Vector2(bx + side * OreRoad.LEG_FOOT, foot_y)
+			check(room.is_solid_at(foot + Vector2(0, 4)), "its %s foot is on solid floor, %d px under the origin" % ["west" if side < 0 else "east", foot_y])
+			check(not room.is_solid_at(foot + Vector2(-7, -3)) and not room.is_solid_at(foot + Vector2(7, -3)), "and its footing is not let into a wall")
 	var tablets := 0
 	for n: Node in room.get_children():
 		if n is LoreTablet:
