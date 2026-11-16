@@ -424,6 +424,8 @@ func _add_prop(kind: String, pos: Vector2) -> void:
 			_spawn(GearTrain.new(), pos)
 		"ore_road":
 			_spawn(OreRoad.new(), pos)
+		"ore_bin":
+			_spawn(OreBin.new(), pos)
 		"bloom_stalk":
 			_spawn(BloomStalk.new(), pos)
 		"winch":

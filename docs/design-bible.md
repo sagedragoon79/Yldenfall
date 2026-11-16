@@ -2341,6 +2341,18 @@ Painted like the crucible (12.35) and the great gears: whole world pixels on mas
 
 Tests: `tests/test_ore_road.gd`.
 
+### 12.61 Ore Bin 3 stands half full (pass 574)
+
+The sixth room by 12.56's rule. The Ore Bin's sign has always read "ORE BIN 3. Raw ore down the chute, sorted ore up the winch. The bin is half full still. Nobody came to empty it", and the room showed a flat floor, two hung ledges and a chest: no bin, no chute, no winch.
+
+`OreBin` (`scripts/world/ore_bin.gd`, room prop `ore_bin`) is the bin. It stands in the open east half of the room, clear of both ledges, from the floor to the ceiling: a box of nine planks under a cap beam, on two heavy posts with stone footings, a cross and a low tie between them. An iron hopper hangs under the box and narrows to a spout 52 px over the floor, closed by a slide gate with a lever. A boxed chute bound with iron comes down from the ceiling into the bin's mouth, leaning from the west, where the Ore Chute is.
+
+The sign's words are drawn. Four planks of the front have sprung, their ends ragged and one hanging by a nail, and through the breach the ore lies to exactly half the box's height, heaped a little where the chute dropped it, under a dark empty half. The gate was left a crack open: a thread of ore still falls from it to a low spill on the floor (8 px high, between the posts). East of the bin the winch's kibble, an empty iron bucket, hangs on its chain from the ceiling over the shelf and sways at its end; it is the only part drawn live.
+
+Painted like the ore road (12.60): whole world pixels on master palette ramps, lit from the upper left, baked once for the whole run. Timber is the wood ramp; the hopper, the straps and the gate are the stone ramp with bark-2 rust in the hopper's shade only; the ore is the ochre ramp with its lit top on ochre-3 and ochre-4; the dark inside is stone-1. Nothing on it is on the ember ramp. Scenery only: z -2, behind the Minecart Rider and the hero, no collision, no sound. The hopper, the gate and the kibble are over every head, and the spill is too low to read as a step. Judged by eye at 1x and 2x in `tower/ore_bin`.
+
+Tests: `tests/test_ore_bin.gd`.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
