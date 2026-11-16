@@ -2393,6 +2393,18 @@ The Minecart Rider's stretch is three tiles shorter (11 tiles, from the ramp to 
 
 Tests: `tests/test_ore_road.gd` (`test_ore_road_bents_follow_the_floor`, `test_the_rail_gallery_is_not_a_level_box`).
 
+### 12.65 Ore Bin 3 stands over a sorting floor and a sump (pass 578)
+
+The third room changed for the pass 575 grade's top defect, by 12.63's rule. Ore Bin 3 had its landmark (12.61) in a plain box: a floor at one height from the door to the shelf, and a ceiling ruled straight.
+
+The floor now stands at three heights. The door's landing runs level for ten tiles, past the sign and under the west end of the plank. A ramp goes down to a sorting floor a tile lower, four tiles long, where the plank's east leg stands; a second ramp goes down to a sump two tiles under the landing, three tiles long, on the room's last row of ground. One ramp two tiles long climbs out of the sump to the bin's floor, which is as it was from there to the shelf. Nothing in the room is spiked: the sump is a low place, not a hazard. The first take put the sump under the plank's east end, so that end hung from a chain and the west stood on a leg; the second sank the floor under the whole plank, which left the plank five tiles over its floor and the chest out of reach (the reachability sweep caught it). The plank's west end now stays over the landing, a jump straight up through it as before.
+
+The ceiling's underside stands at five heights. It hangs two tiles low over the door and over the east end of the shelf, each with a shoulder a tile deep, and between the door and the Gear Bat's roost it is vaulted two tiles up, a tile at its shoulders. From the bat east to the kibble's chain it is as it was: the chute comes out of it, and the chain hangs from it.
+
+Nothing that can be picked up moved, and the bin's own picture is unchanged: both posts, the spill and the chute stand where they did. The Minecart Rider's stretch is the bin's floor, nine tiles from the long ramp's head to the shelf (it was the whole floor, 30 tiles). A charge west ends at the ramp's head, where his cart stops with no more than half a tile of it over the ramp; he never rolls down into the sump. Judged by eye at 1x in `tower/ore_bin`, which is one screen.
+
+Tests: `tests/test_ore_bin.gd` (`test_the_ore_bin_is_not_a_level_box`).
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
