@@ -517,6 +517,62 @@ func test_the_belt_three_places_cycled_and_used() -> void:
 ## Design bible 5.6: the neck, two rings and a relic. Each is an icon in the
 ## menu with one fixed rule; a relic sleeps until its ability is found; an
 ## older save comes over with the places empty.
+func test_circlets_are_worn_on_the_head_and_shape_spells() -> void:
+	var w := make_world(_town(), "test/town")
+	var p := w.player
+	await frames(3)
+	p.gold = 9000
+	p.abilities.torrent = true
+	p.abilities.death = true
+	p.equipped_spell = "torrent"
+	GameState.refresh_stats(p)
+	var base_cost := p.spell_cost("torrent")
+	var base_hp := p.max_hp
+	check(is_equal_approx(p.spell_power, 1.0), "bare-headed, spells hit as written")
+	# The Moonthread Circlet is bought in Sylvarre and goes on the head.
+	var stock: Array = GameData.shop("sylvarre_items").stock
+	var at := stock.find_custom(func(e: Dictionary) -> bool: return e.item == "moonthread_circlet")
+	check(at >= 0 and Shop.buy("sylvarre_items", at, p), "the Moonthread Circlet is bought in Sylvarre")
+	check(GameState.data.equipment.helmet == "moonthread_circlet" and is_equal_approx(p.spell_cost("torrent"), base_cost * 0.85),
+		"it goes on the head, and Deluge costs 15%% less (%.2f of %.2f)" % [p.spell_cost("torrent"), base_cost])
+	check(Shop.status("sylvarre_items", at, p) == "owned", "and is not sold twice")
+	# The Stormglass Circlet takes its place: one head, one thing on it.
+	var scrolls: Array = GameData.shop("spires_scrolls").stock
+	at = scrolls.find_custom(func(e: Dictionary) -> bool: return e.item == "stormglass_circlet")
+	check(at >= 0 and Shop.buy("spires_scrolls", at, p), "the Stormglass Circlet is bought in the Scriptorium")
+	check(GameState.data.equipment.helmet == "stormglass_circlet" and is_equal_approx(p.spell_cost("torrent"), base_cost) and is_equal_approx(p.spell_power, 1.15),
+		"it replaces the first: full cost again, 15%% harder (%.2f)" % p.spell_power)
+	var bolts := Spells.cast_all("torrent", p)
+	check(bolts.size() == 1 and int(bolts[0].damage) == roundi(int(Spells.DATA.torrent.damage) * 1.15), "a Deluge bolt carries the share (%d)" % int(bolts[0].damage))
+	var wave := Spells.cast_all("death", p)
+	check(int(wave[0].damage) == roundi(36 * 1.15) and int(wave[0].boss_damage) == roundi(18 * 1.15), "Witherbloom too, on a guardian as well (%d, %d)" % [int(wave[0].damage), int(wave[0].boss_damage)])
+	for n: Node in bolts + wave:
+		n.free()
+	# The Elven Helm shares the place: armor and a mask, or a circlet's sorcery.
+	GameState.obtain_gear("elven_helm", p)
+	check(GameState.data.equipment.helmet == "elven_helm" and is_equal_approx(p.spell_power, 1.0) and p.max_hp == base_hp + 20, "the Elven Helm takes the circlet off: its mask, and no share")
+	GameState.wear("stormglass_circlet", p)
+	check(p.max_hp == base_hp and is_equal_approx(p.defense, 0.0) and is_equal_approx(p.spell_power, 1.15), "and a circlet takes the helm off: no mask or armor from the head")
+	var cloak := Cloak.new()
+	cloak.player = p
+	check(is_equal_approx(cloak.hood_target(), 0.0) == (w.room.is_town()), "the hood is not kept down by a thin band")
+	cloak.free()
+	# The Equipment page lists all three under Head, and a circlet comes off.
+	var rows := Menus.equipment_rows()
+	var head := rows.find_custom(func(r: Dictionary) -> bool: return r.label == "Head" and r.get("header", false))
+	check(head >= 0 and rows.slice(head + 1, head + 4).map(func(r: Dictionary) -> String: return r.label) == ["Elven Helm", "Moonthread Circlet", "Stormglass Circlet"],
+		"the Head section lists the helm and both circlets")
+	Menus.choose_equipment("stormglass_circlet", p)
+	check(GameState.data.equipment.helmet == "" and is_equal_approx(p.spell_power, 1.0), "choosing a worn circlet takes it off")
+	# Every circlet is magic-themed: one spell rule and nothing for the body.
+	var items := GameData.table("items")
+	for id: String in items:
+		if bool(items[id].get("circlet", false)):
+			var rules := ["spell_cost", "spell_power"].filter(func(k: String) -> bool: return items[id].has(k))
+			check(rules.size() == 1 and String(items[id].kind) == "helmet", "%s has one spell rule (%s)" % [id, rules])
+			check(not items[id].has("defense") and not items[id].has("ward") and not items[id].has("hp") and not items[id].has("melee"), "%s gives the body nothing" % id)
+
+
 func test_trinkets_neck_two_rings_and_a_relic() -> void:
 	var w := make_world(_town(), "test/town")
 	var p := w.player

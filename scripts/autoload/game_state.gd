@@ -643,7 +643,9 @@ func refresh_stats(p: Player) -> void:
 	p.bloodletting = has_skill("bloodletting")
 	p.thrust = has_skill("thrust")
 	p.executioner = has_skill("executioner")
-	p.spell_cost_mult = 0.85 if has_skill("thrift") else 1.0
+	# A circlet (design bible 5.6) is worn in the helmet's place: cheaper spells, or harder ones.
+	p.spell_cost_mult = (0.85 if has_skill("thrift") else 1.0) * (1.0 - float(helmet.get("spell_cost", 0.0)))
+	p.spell_power = 1.0 + float(helmet.get("spell_power", 0.0))
 	p.chain_thunder = has_skill("chain_thunder")
 	p.time_thief = has_skill("time_thief")
 	p.ring_of_death = has_skill("ring_of_death")

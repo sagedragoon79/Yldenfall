@@ -132,6 +132,16 @@ def helm():
     return cv.finish()[0]
 
 
+def circlet(metal, stone, lit):
+    """A thin band for the brow, seen from the front, its one stone at the centre."""
+    def paint():
+        cv = icon()
+        cv.part(cv.ellipse((7.0, 7.4), 5.4, 3.6) & ~cv.ellipse((7.0, 6.6), 4.6, 2.9), metal)
+        cv.part(cv.polygon([(7.0, 6.6), (9.0, 9.6), (7.0, 12.4), (5.0, 9.6)]), stone, deep=True)
+        cv.flat(cv.ellipse((6.5, 9.1), 0.5, 0.5), lit)
+        return cv.finish()[0]
+    return paint
+
 # --- Keys, fruit, dew, balm and draught ----------------------------------------
 
 def key(metal, teeth=2, thorn=False):
@@ -320,6 +330,8 @@ BY_ID = {
     "large_shield": kite(mat("ember", 5, 4, 3, 1), IRON, device=mat("stone", 7, 6, 5, 3)),
     "magic_shield": kite(mat("night", 5, 4, 3, 1), GOLD, glow=mat("crystal", 7, 6, 4, 2)),
     "elven_helm": helm,
+    "moonthread_circlet": circlet(mat("stone", 7, 6, 4, 2), mat("sky", 7, 6, 4, 2), PAL["sky-6"]),
+    "stormglass_circlet": circlet(GOLD, mat("crystal", 7, 6, 4, 2), PAL["crystal-7"]),
     "copper_key": key(mat("ember", 6, 5, 3, 1), teeth=1),
     "silver_key": key(mat("stone", 7, 6, 4, 2)),
     "gold_key": key(mat("gold", 7, 5, 3, 1)),
