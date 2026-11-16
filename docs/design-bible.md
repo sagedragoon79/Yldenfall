@@ -2317,6 +2317,18 @@ Two lanterns hang on the outer piers and warm the stone round them: the room's l
 
 Tests: `tests/test_spring_wall.gd`.
 
+### 12.59 The Everbloom's stalk stands up the back of the Veins (pass 572)
+
+The fourth room by 12.56's rule, and the other half of the pass 570 grade's defect: "Hearthroot plaza and Evercrown veins: mostly empty dark space with flat silhouette backdrops and a handful of tiny props; no midground, no focal point". The Veins' sign has always read "The light that fled the throne runs up these veins to the core", and the shaft, 40 tiles wide and 68 high, showed six small crystals and the zone's far layer.
+
+`BloomStalk` (`scripts/world/bloom_stalk.gd`, room prop `bloom_stalk`) is what the core hangs from: three strands of stillglass flesh, braided, about 50 px across, about as thick as the hero is tall, that stand up the middle of the shaft's back wall for all of its 992 px. Each strand passes in front of the others and behind them in turn. At the floor the strands swing wide and thicken into roots, with two lesser roots running out to either side; in the vault they spread the same way into a crown round the core, with two buttresses. It is in view from every ledge of the climb, so every frame of the fight has a midground and a line that leads the eye up to the core.
+
+It is the fight's health bar at the scale of the room (8.9: the core's health is the veins still lit). Six channels are cut along the strands, two a strand, one for each `LightVein` in the room, the lowest vein first. While its vein is whole a channel carries a dim line of light with seven beads climbing it to the core, stepped at 10 frames a second like the veins' own light (12.37). Cut the vein and its channel goes dark. Once the core is starved the veins stay cut (`boss:everbloom_veins`), so the stalk stays dark for good. The Stillstone holds the light as it holds the core and its beams.
+
+Painted like the crucible (12.35) and the Three Mouths (12.58): whole world pixels on master palette ramps, baked once for the whole run. The flesh is the night ramp (night-1 its body, night-2 where the light from the upper left falls on a strand's left side, a broken glint of night-3), crystal-0 in shadow down each strand's right side and where a strand throws its shadow on the one behind it, with creases of crystal-1 ringing each strand (the Evercrown's seams, 12.48). Nothing on it is on the ember ramp, which belongs to what hurts (12.48). The light is sky-2 with beads of sky-3 and sky-4, so the veins (up to sky-7) and the core's beams stay the brightest things in the shaft. Scenery only: z -2, behind the shelves, the veins and the hero, no collision, no sound. Judged by eye at 1x and 2x at the foot, the middle and the head of `evercrown/veins`, lit and dark.
+
+Tests: `tests/test_bloom_stalk.gd`.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

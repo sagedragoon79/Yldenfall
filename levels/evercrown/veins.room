@@ -3,6 +3,7 @@ zone: evercrown
 map: 71, -13
 boss: everbloom_veins
 sign: 3, 65, The light that fled the throne runs up these veins to the core. Cut them, and it starves.
+prop: 19, 65, bloom_stalk
 door: 1, evercrown/throne, 2
 door: 2, evercrown/heart, 1
 ---
