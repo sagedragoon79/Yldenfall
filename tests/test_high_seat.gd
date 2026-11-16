@@ -295,3 +295,194 @@ func test_the_rot_dwarf_hall_has_its_high_seat() -> void:
 	check(seat.get_child_count() == 0, "scenery only: nothing to stand on, to touch or to be hurt by")
 	await frames(30)
 	check(seat.t > 0.2, "its sap drips")
+
+
+func _grid() -> Array[String]:
+	var rows: Array[String] = []
+	var text := FileAccess.get_file_as_string("res://levels/heartwood/dwarf_hall.room").replace("\r", "")
+	for line: String in text.split("---\n")[1].split("\n"):
+		if line != "":
+			rows.append(line)
+	return rows
+
+
+## The independent grade after pass 575: "most rooms are a rectangular tile
+## frame around a dead-level floor". The fourth room changed for it (12.63's
+## rule, pass 579). The root that split the high seat has heaved the floor
+## east of it into a bank, and past the bank the floor has fallen in: a ramp
+## down a tile, a ramp down another, and a broken stair of two steps up to
+## the east door's floor. The ceiling hangs in steps everywhere but over the
+## seat, which keeps its 18 open rows.
+func test_the_rot_dwarf_hall_is_not_a_level_box() -> void:
+	var grid := _grid()
+	check(grid.size() == 23 and grid[0].length() == 80, "the room keeps its size")
+	var wide := grid[0].length()
+	var floors := {}
+	var ceilings := {}
+	var floor_of: Array[int] = []
+	var top_of: Array[int] = []
+	var ramps: Array[Vector2i] = []
+	for x in wide:
+		var y := grid.size() - 1
+		while y > 0 and grid[y][x] in "#/\\":
+			y -= 1
+		floor_of.append(y)
+		var top := 0
+		while top < grid.size() and grid[top][x] == "#":
+			top += 1
+		top_of.append(top)
+		for row in grid.size():
+			if grid[row][x] in "/\\":
+				ramps.append(Vector2i(x, row))
+		if x == 0 or x == wide - 1 or grid[y + 1][x] in "/\\":
+			continue  # the walls, a ramp
+		floors[y] = true
+		ceilings[top] = true
+	var level := floor_of[1]
+	check(floors.size() == 4, "the floor stands at four heights (%s)" % [floors.keys()])
+	check(ceilings.size() >= 4, "the ceiling's underside stands at four heights (%s)" % [ceilings.keys()])
+	check(floor_of[wide - 2] == level, "both doors open on the same floor")
+	# The high seat needs its floor and its 18 open rows (levels/README.md).
+	var seat_x := 22
+	for x in range(seat_x - 6, seat_x + 7):
+		check(floor_of[x] == level and top_of[x] == 2, "the high seat's floor and ceiling are as they were at tile %d" % x)
+	check(level - 2 + 1 == 18, "18 open rows over its floor")
+	check(ramps.size() == 4, "four ramp tiles (%s)" % [ramps])
+	if ramps.size() != 4:
+		return
+	for r: Vector2i in ramps:
+		var high := -1 if grid[r.y][r.x] == "\\" else 1
+		check(grid[r.y + 1][r.x] == "#" and grid[r.y][r.x + high] == "#", "the ramp at %s has ground under it and on its high side" % r)
+		check(grid[r.y][r.x - high] == ".", "and open floor at its foot")
+	# The bank: the root has heaved the floor up a tile, east of the seat.
+	check(grid[ramps[0].y][ramps[0].x] == "/" and ramps[0].y == level, "a ramp climbs from the seat's floor")
+	check(grid[ramps[1].y][ramps[1].x] == "\\" and ramps[1].y == level, "and a ramp comes down again")
+	check(ramps[0].x > seat_x + 6 + 1, "clear of the high seat (tile %d)" % ramps[0].x)
+	var bank := 0
+	for x in range(ramps[0].x + 1, ramps[1].x):
+		if floor_of[x] == level - 1:
+			bank += 1
+	check(bank == ramps[1].x - ramps[0].x - 1 and bank >= 5, "between them the floor stands a tile higher (%d tiles)" % bank)
+	# Nothing to pick up moved, and no ledge: the low plank's west end is over
+	# the bank (a shorter jump) and its east end over the old floor.
+	var plank: Array[int] = []
+	for x in wide:
+		if grid[16][x] == "-":
+			plank.append(x)
+	check(plank.size() == 14 and plank[0] == 36 and plank[6] == 42 and plank[7] == 60 and plank[13] == 66, "the low planks are where they were (%s)" % [plank])
+	check(floor_of[plank[0]] == level - 1 and floor_of[plank[6]] == level, "the west plank stands with one leg on the bank and one on the floor")
+	check(floor_of[plank[7]] == level and floor_of[plank[13]] == level, "the east plank on the east door's floor")
+	check(grid[11][47] == "$" and grid[12].substr(44, 7) == "-------", "the chest is on its plank")
+	check(grid[10][70] == "F" and grid[12].substr(68, 5) == "-----", "the Potion Shard over its own")
+	check(grid[19][25] == "D" and grid[19][58] == "D" and grid[19].count("M") == 1, "two Rot Dwarves and the Blinkhop")
+	check(floor_of[grid[19].find("M")] == level, "the Blinkhop on the floor between the bank and the fall")
+	# The fall: a tile down, then two, on the room's last row of ground.
+	check(grid[ramps[2].y][ramps[2].x] == "\\" and ramps[2].y == level + 1, "a ramp goes down where the floor fell in")
+	check(grid[ramps[3].y][ramps[3].x] == "\\" and ramps[3].y == level + 2, "and a second, down again")
+	var shelf := 0
+	for x in range(ramps[2].x + 1, ramps[3].x):
+		if floor_of[x] == level + 1:
+			shelf += 1
+	check(shelf == ramps[3].x - ramps[2].x - 1 and shelf >= 3, "between them the floor lies a tile down (%d tiles)" % shelf)
+	var sump := 0
+	var x := ramps[3].x + 1
+	while floor_of[x] == level + 2:
+		check(grid[grid.size() - 1][x] == "#", "the low floor at %d is the room's last row of ground" % x)
+		sump += 1
+		x += 1
+	check(sump >= 4, "the low floor lies two tiles down (%d tiles)" % sump)
+	# Its east side is a broken stair, not a ramp: a Rot Dwarf turns at a
+	# step and walks down a ramp, and the east dwarf keeps the gate's floor.
+	check(floor_of[x] == level + 1 and floor_of[x + 1] == level, "a stair of two steps climbs out on the east (tiles %d and %d)" % [x, x + 1])
+	var stair := x
+	for e in range(stair + 1, wide - 1):
+		if floor_of[e] != level:
+			check(false, "the east door's floor is level (tile %d)" % e)
+	check(grid[19].rfind("D") > stair + 1, "the east dwarf starts on it")
+	var hazards := 0
+	for row: String in grid:
+		hazards += row.count("^") + row.count("o")
+	check(hazards == 0, "nothing in the hall is spiked: the fall is only a low place")
+	# The ceiling hangs low over both doors and is never ruled straight for
+	# long outside the seat's span.
+	check(top_of[1] >= 4 and top_of[wide - 2] >= 4, "the ceiling hangs low over both doors (%d and %d)" % [top_of[1], top_of[wide - 2]])
+	var run := 0
+	var longest := 0
+	for c in range(1, wide - 1):
+		run = run + 1 if c > 1 and top_of[c] == top_of[c - 1] else 1
+		longest = maxi(longest, run)
+	check(longest <= 21, "the longest straight run of ceiling is the seat's (%d tiles)" % longest)
+	for c in range(1, wide - 1):
+		check(top_of[c] <= 5, "the ceiling at %d leaves the planks their headroom" % c)
+	# Walked for real. The dwarves first, with the player out of their sight
+	# on the chest's plank: each keeps his own floor.
+	var w := make_world({}, "heartwood/dwarf_hall")
+	await frames(3)
+	var p := w.player
+	p.global_position = cell_feet(47, 11)
+	p.velocity = Vector2.ZERO
+	var dwarves: Array[RotDwarf] = []
+	for e: Node in runner.get_tree().get_nodes_in_group("enemy"):
+		if e is RotDwarf:
+			dwarves.append(e)
+	check(dwarves.size() == 2, "both Rot Dwarves are here")
+	dwarves.sort_custom(func(a: RotDwarf, b: RotDwarf) -> bool: return a.global_position.x < b.global_position.x)
+	if dwarves.size() == 2:
+		await frames(20)
+		var y0: Array[float] = [dwarves[0].global_position.y, dwarves[1].global_position.y]
+		var lo: Array[float] = [dwarves[0].global_position.x, dwarves[1].global_position.x]
+		var hi: Array[float] = lo.duplicate()
+		var drift: Array[float] = [0.0, 0.0]
+		for k in 1800:
+			await frames(1)
+			for i in 2:
+				var d := dwarves[i]
+				lo[i] = minf(lo[i], d.global_position.x)
+				hi[i] = maxf(hi[i], d.global_position.x)
+				drift[i] = maxf(drift[i], absf(d.global_position.y - y0[i]))
+		check(drift[0] <= 2.0, "the west dwarf never leaves the seat's floor (%.0f px)" % drift[0])
+		check(hi[0] <= (ramps[0].x + 1) * Room.TILE and hi[0] > (seat_x + 6) * Room.TILE, "he turns at the bank's ramp (x %.0f)" % hi[0])
+		check(lo[0] < (seat_x - 6) * Room.TILE, "and paces past the high seat (x %.0f)" % lo[0])
+		check(drift[1] <= 2.0, "the east dwarf never goes down into the fall (%.0f px)" % drift[1])
+		check(lo[1] >= (stair + 1) * Room.TILE and lo[1] < (stair + 3) * Room.TILE, "he turns at the stair's head (x %.0f)" % lo[1])
+		check(hi[1] > 70 * Room.TILE, "and paces to the east door (x %.0f)" % hi[1])
+	for e: Node in runner.get_tree().get_nodes_in_group("enemy"):
+		e.queue_free()
+	await frames(2)
+	# A walk east from the seat climbs the bank, comes down, and ends in the
+	# low floor two tiles under the doors: four heights, no jump.
+	p.global_position = cell_feet(ramps[0].x - 3, level)
+	p.velocity = Vector2.ZERO
+	await frames(10)
+	var from_y := p.global_position.y
+	var hp := p.hp
+	var highest := from_y
+	p.input.move_x = 1
+	var steps := 0
+	while p.global_position.x < (ramps[3].x + 2) * Room.TILE and steps < 900:
+		await frames(1)
+		steps += 1
+		highest = minf(highest, p.global_position.y)
+	p.input.move_x = 0
+	await frames(10)
+	check_near(from_y - highest, float(Room.TILE), 2.0, "a walk east from the seat climbs the bank, a tile up")
+	check_near(p.global_position.y - from_y, 2.0 * Room.TILE, 2.0, "and goes down both ramps to the low floor (after %d frames)" % steps)
+	check(p.is_on_floor() and p.hp == hp, "unhurt")
+	# The stair stops a walk, and two short jumps climb it.
+	p.input.move_x = 1
+	await frames(120)
+	check(p.global_position.x < (stair + 1) * Room.TILE and absf(p.global_position.y - from_y - 2.0 * Room.TILE) <= 2.0, "the stair's first step stops a walk (x %.0f)" % p.global_position.x)
+	steps = 0
+	while p.global_position.x < (stair + 3) * Room.TILE and steps < 300:
+		p.input.jump_pressed = p.is_on_floor() and steps % 20 == 0
+		p.input.jump_held = p.input.jump_pressed
+		await frames(1)
+		steps += 1
+	p.input.move_x = 0
+	p.input.jump_pressed = false
+	p.input.jump_held = false
+	await frames(30)
+	check(p.global_position.x >= (stair + 3) * Room.TILE and p.is_on_floor(), "jumps climb the stair (x %.0f after %d frames)" % [p.global_position.x, steps])
+	check_near(p.global_position.y, from_y, 2.0, "back on the doors' floor")
+	w.queue_free()
+	await frames(2)
