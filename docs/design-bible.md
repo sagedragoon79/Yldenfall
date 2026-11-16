@@ -2405,6 +2405,20 @@ Nothing that can be picked up moved, and the bin's own picture is unchanged: bot
 
 Tests: `tests/test_ore_bin.gd` (`test_the_ore_bin_is_not_a_level_box`).
 
+### 12.66 The root heaved the Rot Dwarf Hall's floor, and past it the floor fell in (pass 579)
+
+The fourth room changed for the pass 575 grade's top defect, by 12.63's rule. The Rot Dwarf Hall had its landmark (12.62) and a floor at one height for 78 tiles under a ceiling ruled straight.
+
+The shape follows the sign: "The rot came up through the roots." The floor now stands at four heights. From the west door it is as it was for 30 tiles, past the sign and under the high seat, whose 13 tiles of floor and 18 open rows are untouched. East of the seat the root has heaved the floor into a bank a tile high, six tiles long, with a ramp at each end. Past the Blinkhop's stretch the floor has fallen in: a ramp goes down a tile to a shelf four tiles long, a second goes down to a low floor two tiles under the doors, five tiles long, on the room's last row of ground. Its east side is a broken stair of two square steps up to the east door's floor, which is level from there to the door. Nothing in the hall is spiked: the fall is a low place, not a hazard.
+
+The stair is square on purpose. A Rot Dwarf turns at a wall or where the floor ends, and a ramp is a wall to him going up and floor going down (his floor check reaches 6 px under his toes). With a ramp on the east he could walk down into the fall and never climb out. So the west dwarf's stretch ends at the bank's ramp, 30 tiles, and the east dwarf's at the stair's head, 22 tiles; each keeps his own floor. The hero walks the whole way east from the seat with no jump, and takes two short jumps up the stair.
+
+The ceiling's underside stands at four heights. It hangs two tiles low over the west door and three over the east, with shoulders; east of the seat it steps down to three tiles low over the chest's plank, whose chains now hang from it, and back up over the east plank. Over the seat it is as it was for 21 tiles, the longest straight run left. It can only be hung lower: the hall is one screen tall.
+
+Nothing that can be picked up moved, and no ledge, foe or sign: the low plank over the bank is now a three-tile jump at its west end and four at its east. Reachability is as it was. Judged by eye at 1x at the seat, the bank, the fall and the east door of `heartwood/dwarf_hall`.
+
+Tests: `tests/test_high_seat.gd` (`test_the_rot_dwarf_hall_is_not_a_level_box`).
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
