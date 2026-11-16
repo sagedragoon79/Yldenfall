@@ -2329,6 +2329,18 @@ Painted like the crucible (12.35) and the Three Mouths (12.58): whole world pixe
 
 Tests: `tests/test_bloom_stalk.gd`.
 
+### 12.60 The ore road runs the length of the Rail Gallery (pass 573)
+
+The fifth room by 12.56's rule. The Rail Gallery's sign has always read "ORE ROAD. Carts run east to the Haar cut", and the gallery, 80 tiles long, showed a flat floor, two tables and the zone's far layer; the only cart was the one its guard rides.
+
+`OreRoad` (`scripts/world/ore_road.gd`, room prop `ore_road`) is the road: one rail on sleepers and a heavy stringer, carried from wall to wall 200 px over the floor, just under the ceiling, on eight timber bents. Each bent is two splayed legs on stone footings with three bolted girts, a cross brace in each tier and a knee out to the stringer on each side. The bents stand clear of the gallery's pillar and of the way down to the vault, so every one has both feet on solid floor. They fill the gallery's empty middle from floor to ceiling, and the road gives every frame of the room one long line.
+
+One cart still stands on it: a riveted iron tub on two wheels, rusted in its shade, heaped with ore. East of the cart a span has fallen. The stringer is snapped and splintered at both ends, the rail hangs bent 18 px into the gap from the west, a stub stands out from the east, and a timber and a sleeper lie on the floor below. The cart never got across: the Tower's road to the Haar is cut, as its gears are seized (12.57) and its bell is split (12.56). A hoist chain with a hook hangs from the stringer and sways at its end; it is the only part drawn live.
+
+Painted like the crucible (12.35) and the great gears: whole world pixels on master palette ramps, lit from the upper left, baked once for the whole run. Timber is the wood ramp (wood-2 its body, wood-3 along each top and down each leg's left, wood-1 underneath and down the right), so it stands apart from the Tower's violet stone and from the green-grey iron tables that can be stood on. The rail and the cart are the stone ramp with bark-2 rust; the ore is the ochre ramp. Nothing on it is on the ember ramp. Scenery only: z -2, behind the tables, the foes and the hero, no collision, no sound. The deck is out of reach by design: it is higher than any ledge in the room and nothing on it is solid. Judged by eye at 1x and 4x at the west end, the middle and the east end of `tower/rail_gallery`.
+
+Tests: `tests/test_ore_road.gd`.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
