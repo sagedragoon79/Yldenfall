@@ -2353,6 +2353,18 @@ Painted like the ore road (12.60): whole world pixels on master palette ramps, l
 
 Tests: `tests/test_ore_bin.gd`.
 
+### 12.62 The high seat of the Rot Dwarf Hall is split by the root (pass 575)
+
+The seventh room by 12.56's rule, and the first in the Heartwood. The Rot Dwarf Hall's sign has always read "These were Amberlee dwarves once. The rot came up through the roots with the sap", and the hall, 78 tiles long, showed a flat floor and four ledges: nothing of the dwarves' and no root.
+
+`HighSeat` (`scripts/world/high_seat.gd`, room prop `high_seat`) is the hall's high seat. It stands in the open west third of the hall, east of the sign, clear of every ledge: a low stone dais (6 px, too low to read as a step), two carved timber pillars, a lintel with a zigzag carved along its face, and between the pillars a tall-backed seat with a stepped crest. Two round shields hung either side of it.
+
+The sign's words are drawn. One root has come up through all of it, from the floor into the ceiling. The dais is heaved up on both sides of it. The seat's back is split, and its east half has dropped 5 px. The lintel is snapped where the root goes through and lifted on the root's shoulder, 10 px on the west and 4 px on the east, so its ends no longer meet; it still lies on both pillars. A side root has reached the east pillar, and another has come up beside the seat and grips its arm. The east shield has fallen from its nail and lies against the east pillar. Sap runs down the root in seven threads, has pooled on the seat board, and drips from the east side root to a puddle on the dais (a drop every 3.2 s; the only part drawn live). The timber rots within 14 px of the root and nowhere else.
+
+Painted like the ore bin (12.61): whole world pixels on master palette ramps, lit from the upper left, baked once for the whole run. Timber is the umber ramp (umber-1 to umber-3). The root is the bark ramp one step darker (bark-0 to bark-2), so the hall's frame stays the brighter thing and the root reads as what broke it; the first take, on bark-1 to bark-3, was brighter than the hero. The dais and the shields' iron are the stone ramp. Sap is gold-2 to gold-4, and nothing else on the piece is gold. Rot is moss-1 and moss-2. Nothing on it is on the ember ramp. Scenery only: z -2, behind the Rot Dwarves and the hero, no collision, no sound. Judged by eye at 1x and 2x in `heartwood/dwarf_hall`.
+
+Tests: `tests/test_high_seat.gd`.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
