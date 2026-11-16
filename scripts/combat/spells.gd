@@ -48,6 +48,12 @@ static func cast_all(id: String, caster: Player) -> Array[Node2D]:
 		var one := cast(id, caster)
 		if one != null:
 			out.append(one)
+	# A circlet's share (design bible 5.6) is on every spell, whatever else shaped it.
+	if not is_equal_approx(caster.spell_power, 1.0):
+		for node in out:
+			for field: String in ["damage", "boss_damage"]:
+				if field in node:
+					node.set(field, roundi(float(node.get(field)) * caster.spell_power))
 	return out
 
 

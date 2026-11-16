@@ -339,7 +339,7 @@ static func open_pause(tree: SceneTree, p: Player, on_quit: Callable) -> bool:
 		return [
 			{"label": "Resume", "detail": "Back to the Tree."},
 			oint,
-			{"label": "Equipment", "detail": "Swap between the blades, armor, shields and helmets you have, and dye your cloak."},
+			{"label": "Equipment", "detail": "Swap between the blades, armor, shields and headgear you have, and dye your cloak."},
 			{"label": "Inventory", "detail": "Your spells, relics, rings, keys and shards, and what each does."},
 			{"label": "Options", "detail": OPTIONS_DETAIL},
 			{"label": "Controls", "detail": CONTROLS_DETAIL},
@@ -428,7 +428,7 @@ const BELT_COUNTS := {"ointment": "ointments", "elixir": "elixirs", "tonic": "to
 
 
 static func equipment_rows() -> Array:
-	var names := {"blade": "Blades", "armor": "Armor", "shield": "Shield", "helmet": "Helmets", "neck": "Neck", "ring": "Rings, two worn", "relic": "Relic"}
+	var names := {"blade": "Blades", "armor": "Armor", "shield": "Shield", "helmet": "Head", "neck": "Neck", "ring": "Rings, two worn", "relic": "Relic"}
 	var out := []
 	for slot: String in GameState.GEAR_KINDS:
 		var have: Array = Array(GameState.data.gear).filter(func(id: String) -> bool: return String(GameData.item(id).get("kind", "")) == slot)

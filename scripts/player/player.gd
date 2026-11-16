@@ -190,6 +190,8 @@ var throws := 0
 ## Seconds until the next counted weapon can be thrown.
 var _throw_wait := 0.0
 var spell_cost_mult := 1.0
+## How hard your spells hit (a circlet, design bible 5.6).
+var spell_power := 1.0
 var chain_thunder := false
 var time_thief := false
 var ring_of_death := false

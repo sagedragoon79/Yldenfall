@@ -88,7 +88,8 @@
 			{"item": "copper_key", "price": 150},
 			{"item": "gold_key", "price": 900},
 			{"item": "mana_dew", "price": 1000, "once": true},
-			{"item": "life_fruit", "price": 1600, "once": true}
+			{"item": "life_fruit", "price": 1600, "once": true},
+			{"item": "moonthread_circlet", "price": 1400}
 		]
 	},
 	"sylvarre_charts": {
@@ -113,7 +114,8 @@
 		"stock": [
 			{"item": "fire_scroll", "price": 1200},
 			{"item": "wisplight_scroll", "price": 2500},
-			{"item": "dewcatch_torc", "price": 1800}
+			{"item": "dewcatch_torc", "price": 1800},
+			{"item": "stormglass_circlet", "price": 2600}
 		]
 	},
 	"spires_items": {

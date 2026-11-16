@@ -70,9 +70,10 @@ func shown() -> bool:
 	return player.visual.visible and sheet != PlayerVisual.SHEET_NAME and not Sheet.flag(sheet, "cloak", false)
 
 
-## Up outside a town, down in one or under a helmet.
+## Up outside a town, down in one or under a helmet. A circlet is a thin band: the hood goes over it.
 func hood_target() -> float:
-	if String(GameState.data.equipment.get("helmet", "")) != "":
+	var head := String(GameState.data.equipment.get("helmet", ""))
+	if head != "" and not bool(GameData.item(head).get("circlet", false)):
 		return 0.0
 	var room := player.get_parent() as Room
 	return 0.0 if room != null and room.is_town() else 1.0
