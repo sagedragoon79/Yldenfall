@@ -12,7 +12,8 @@ extends Node2D
 ## Painted like the crucible (12.35) and the great gears (12.57): whole world
 ## pixels on master palette ramps, lit from the upper left, baked once. Only
 ## the chain is drawn live. Scenery only. The origin is the floor under the
-## prop's tile, at the gallery's west end; the road runs east from it.
+## prop's tile, at the gallery's west end; the road runs east from it. Since
+## pass 577 the floor under it is not level: see `FOOT_Y`.
 
 const OUTLINE := Color("120f19")  # night-0
 ## Timber, shade to lit (wood-1 to wood-3).
@@ -43,6 +44,23 @@ const SLEEPER_WIDE := 6
 ## Where each bent stands (its middle), from the origin. They stand clear of
 ## the gallery's pillar and of the way down to the vault.
 const BENTS: Array[int] = [128, 256, 400, 544, 688, 832, 992, 1168]
+## The floor under each bent's two feet, from the origin (pass 577, bible
+## 12.64): the gallery's floor is no longer level, and the trestle crosses
+## it as a trestle does, on legs of the length each footing needs. The second
+## and third bents stand in the dip (a tile down), the fifth in the spiked pit
+## (two tiles down).
+const FOOT_Y: Array[int] = [0, 16, 16, 0, 32, 0, 0, 0]
+## Where the origin stands in the room (the middle of the prop's tile, 1),
+## and the pit's two walls in room pixels: what fell from the span lies west
+## of its brink.
+const PROP_X := 24
+const PIT := Vector2i(640, 800)
+## The deepest footing: the baked image reaches this far under the origin.
+const DEEPEST := 32
+## A bent whose feet stand this far or more under the last girt gets a sill
+## girt, and a cross in the tier it makes.
+const SILL_FROM := 70
+const SILL_STEP := 54
 ## How far a bent's legs stand from its middle, at the cap and at the floor.
 const LEG_TOP := 5
 const LEG_FOOT := 16
@@ -62,7 +80,7 @@ const WHEEL_R := 4
 ## The underside of the room's ceiling, from the origin.
 const CEILING := -256
 ## The baked image's rectangle, in world pixels from the origin.
-const IMG := Rect2i(WEST, -252, EAST - WEST, 252)
+const IMG := Rect2i(WEST, -252, EAST - WEST, 252 + DEEPEST)
 ## The hoist chain: where it hangs from the stringer, and its length.
 const CHAIN_TOP := Vector2(470, DECK_BOTTOM)
 const CHAIN_LENGTH := 60.0
@@ -92,10 +110,20 @@ static func deck_at(x: int) -> bool:
 	return x >= WEST and x < EAST and (x < BREAK.x or x >= BREAK.y)
 
 
-## How far a leg's middle stands from its bent's middle at row `y`.
-static func leg_off(y: int) -> int:
+## How far a leg's middle stands from its bent's middle at row `y`, for a bent
+## whose feet stand at `foot` (the level floor unless given).
+static func leg_off(y: int, foot := 0) -> int:
 	var top := DECK_BOTTOM + 5
-	return roundi(lerpf(LEG_TOP, LEG_FOOT, clampf(float(y - top) / float(-1 - top), 0.0, 1.0)))
+	return roundi(lerpf(LEG_TOP, LEG_FOOT, clampf(float(y - top) / float(foot - 1 - top), 0.0, 1.0)))
+
+
+## The rows of the girts of a bent whose feet stand at `foot`: the three every
+## bent has, and a sill girt where the legs run on far below them.
+static func girts_for(foot: int) -> Array[int]:
+	var rows: Array[int] = GIRTS.duplicate()
+	if foot - GIRTS[2] >= SILL_FROM:
+		rows.append(GIRTS[2] + SILL_STEP)
+	return rows
 
 
 ## How far the bent rail hangs below the rail's line, `i` pixels into the gap.
@@ -131,20 +159,22 @@ static func _brace(img: Image, a: Vector2i, b: Vector2i, col: Color) -> void:
 		_fill(img, roundi(lerpf(a.x, b.x, f)), roundi(lerpf(a.y, b.y, f)), 2, 1, col)
 
 
-static func _bent(img: Image, bx: int) -> void:
+static func _bent(img: Image, bx: int, foot: int) -> void:
 	var top := DECK_BOTTOM + 5
+	var girts := girts_for(foot)
 	# Behind the legs: a cross in each tier, and a knee out to the stringer on each side.
-	var tiers: Array[int] = [top, GIRTS[0], GIRTS[1], GIRTS[2]]
-	for k in 3:
+	var tiers: Array[int] = [top]
+	tiers.append_array(girts)
+	for k in tiers.size() - 1:
 		var y0 := tiers[k] + 5
 		var y1 := tiers[k + 1]
-		_brace(img, Vector2i(bx - leg_off(y0), y0), Vector2i(bx + leg_off(y1) - 1, y1), WOOD[0])
-		_brace(img, Vector2i(bx + leg_off(y0) - 1, y0), Vector2i(bx - leg_off(y1), y1), WOOD[1])
+		_brace(img, Vector2i(bx - leg_off(y0, foot), y0), Vector2i(bx + leg_off(y1, foot) - 1, y1), WOOD[0])
+		_brace(img, Vector2i(bx + leg_off(y0, foot) - 1, y0), Vector2i(bx - leg_off(y1, foot), y1), WOOD[1])
 	for side: int in [-1, 1]:
 		_brace(img, Vector2i(bx + side * 7, DECK_BOTTOM + 26), Vector2i(bx + side * 30, DECK_BOTTOM), WOOD[1] if side < 0 else WOOD[0])
 	# The legs, splayed, lit down their left.
-	for y in range(top, 0):
-		var off := leg_off(y)
+	for y in range(top, foot):
+		var off := leg_off(y, foot)
 		for side: int in [-1, 1]:
 			var cx := bx + side * off
 			_fill(img, cx - 3, y, 7, 1, OUTLINE)
@@ -155,8 +185,8 @@ static func _bent(img: Image, bx: int) -> void:
 			if speckle(cx, y / 3) > 0.9:
 				_fill(img, cx, y, 1, 1, WOOD[0])
 	# The girts, bolted across the legs.
-	for g: int in GIRTS:
-		var off := leg_off(g + 2)
+	for g: int in girts:
+		var off := leg_off(g + 2, foot)
 		_timber(img, bx - off - 4, g, off * 2 + 8, 5)
 		for side: int in [-1, 1]:
 			_fill(img, bx + side * off, g + 2, 1, 1, IRON[3])
@@ -167,9 +197,9 @@ static func _bent(img: Image, bx: int) -> void:
 	# A stone footing under each leg.
 	for side: int in [-1, 1]:
 		var fx := bx + side * LEG_FOOT
-		_fill(img, fx - 6, -4, 12, 4, OUTLINE)
-		_fill(img, fx - 5, -3, 10, 3, IRON[1])
-		_fill(img, fx - 5, -3, 10, 1, IRON[2])
+		_fill(img, fx - 6, foot - 4, 12, 4, OUTLINE)
+		_fill(img, fx - 5, foot - 3, 10, 3, IRON[1])
+		_fill(img, fx - 5, foot - 3, 10, 1, IRON[2])
 
 
 static func _deck(img: Image) -> void:
@@ -212,9 +242,10 @@ static func _deck(img: Image) -> void:
 	_fill(img, BREAK.y - 7, RAIL_Y - 1, 7, RAIL_DEEP + 2, OUTLINE)
 	_fill(img, BREAK.y - 6, RAIL_Y, 6, 1, IRON[3])
 	_fill(img, BREAK.y - 6, RAIL_Y + 1, 6, 1, RUST)
-	# The fallen timber, on the floor under the gap, and a sleeper beside it.
+	# The fallen timber, on the floor under the gap with its east end out over
+	# the pit's brink, and a sleeper beside it on the floor.
 	_timber(img, BREAK.x + 4, -5, 30, 5)
-	_timber(img, BREAK.x + 38, -3, SLEEPER_WIDE + 2, 3)
+	_timber(img, BREAK.x - 8, -3, SLEEPER_WIDE + 2, 3)
 
 
 static func _cart(img: Image) -> void:
@@ -283,8 +314,8 @@ static func _cart(img: Image) -> void:
 ## The road, baked.
 static func build_image() -> Image:
 	var img := Image.create(IMG.size.x, IMG.size.y, false, Image.FORMAT_RGBA8)
-	for bx: int in BENTS:
-		_bent(img, bx)
+	for i in BENTS.size():
+		_bent(img, BENTS[i], FOOT_Y[i])
 	_deck(img)
 	_cart(img)
 	return img

@@ -2379,6 +2379,20 @@ The room's shape. The floor stood at one height from the west door to a square s
 
 Tests: `tests/test_hornet_nest.gd`.
 
+### 12.64 The Rail Gallery's floor is cut, and the ore road crosses it (pass 577)
+
+The second room changed for the pass 575 grade's top defect, by 12.63's rule. The Rail Gallery had its landmark (12.60) and a floor at one height for 80 tiles, with both runs of spikes laid on it and a ceiling ruled straight from wall to wall.
+
+The floor now stands at three heights. From the west door it runs level to a ramp that goes down into a dip a tile deep, 14 tiles long: the first spikes lie on the dip's floor, as wide as they were (eight tiles), with footing at the foot of each ramp, and a second ramp climbs out to the Minecart Rider's stretch. The second spikes lie in a pit two tiles deep and ten wide, spiked from wall to wall, under the hung plank that always crossed them; the jump over the first spikes and the plank over the second are what they were. East of the pit nothing moved: the pillar, the Iron Dwarf's floor, the way down to the vault and both chests' ledges. The gallery is one screen tall with three rows of ground under its floor, so the floor could be sunk and the doors left alone.
+
+The ore road crosses the cut as a trestle does. Each bent now has its own footing level (`OreRoad.FOOT_Y`): the second and third stand in the dip on legs a tile longer, and the fifth stands in the pit among the spikes on legs two tiles longer, with a fourth girt (a sill) and a cross in the tier it makes. Every bent's legs reach their full splay at its own floor and stand on stone footings there. The timber that fell from the broken span lies on the floor with its east end out over the pit's brink, and the sleeper beside it on the floor. The first take would have left that sleeper in the air over the pit.
+
+The ceiling is vaulted in three places (over the west landing, over the rider's stretch and over the Iron Dwarf's floor), each vault two tiles high in the middle and one at its shoulders, so its underside stands at three heights. It can only be cut upward: the road runs just under it for the room's whole length. The ceiling over the cart and over both Gear Bats' roosts is as it was.
+
+The Minecart Rider's stretch is three tiles shorter (11 tiles, from the ramp to the pit's brink), and his charge now ends at a brink on the east instead of rolling on over spikes. Reachability is as it was. Judged by eye at 1x at the west end, the middle and the east end of `tower/rail_gallery`.
+
+Tests: `tests/test_ore_road.gd` (`test_ore_road_bents_follow_the_floor`, `test_the_rail_gallery_is_not_a_level_box`).
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
