@@ -2365,6 +2365,20 @@ Painted like the ore bin (12.61): whole world pixels on master palette ramps, li
 
 Tests: `tests/test_high_seat.gd`.
 
+### 12.63 The Hornet Gallery has its nests, and its floor is not level (pass 576)
+
+The eighth room by 12.56's rule, and the first changed for the pass 575 grade's top defect: "most rooms are a rectangular tile frame around a dead-level floor with 60 to 70 percent empty dark air". The Hornet Gallery's sign has always read "The hornets nest where the sap runs thickest. Mind the thorns below", and the gallery showed three hornets, no nest and no sap.
+
+`HornetNest` (`scripts/world/hornet_nest.gd`, room prop `hornet_nest`) hangs from the ceiling between the gallery's two hanging trunks, over the thorns. The great nest is a paper teardrop nine tiles long and six across, widest above its middle and blunt at its foot, built in layers that sag in the middle and have scalloped edges: grey paper and chewed bark by turns. Its mouth is low on the west of its face, with three hornets crawling round the rim (specks of 3 by 2 px, too small to be taken for a foe). A tear in its east side shows the comb: open cells in wax, some capped. Two young nests hang either side of it, each under a third of its size, clear of it. One of the room's three hornets hovers in front of the great nest.
+
+"Where the sap runs thickest": sap seeps out of the ceiling in patches along the nests' roots, and four ropes of it run from the stalk over the great nest's shoulders and down its face, each ending in a bead at its own height. The last hangs under the nest as a strand, and a drop falls from it into the thorns every 2.6 s, clear of the two planks (the drop and the crawlers are the only parts drawn live). The first take drew the ropes as straight bars, which read as poles; they now follow the nest's face and wander.
+
+Painted like the high seat (12.62): whole world pixels on master palette ramps, lit from the upper left, baked once. Paper is ash-1 to ash-3 and the bark layers umber-1 to umber-3, both muted, so the hornets (gold and night) stay the brightest things in front of it. The comb is ochre-1 to ochre-3 and shows only in the tear. Sap is gold-2 to gold-4, and nothing else on the piece is gold. Scenery only: z -2, behind the hornets and the hero, no collision, no sound.
+
+The room's shape. The floor stood at one height from the west door to a square step under the east door. It now stands at three: the thorns lie in the low west stretch, a ramp climbs out of them to a bank a tile higher where the Sap Spitter sits, and a second ramp climbs to the east door's shelf, so the way out is a walk and the spitter lobs down at whoever is crossing the planks. The ceiling met its two hanging trunks square; each trunk now has a stepped shoulder, so the ceiling's underside stands at seven heights. Every foe is still in the Rune Dagger's reach from safe ground (5.2), and reachability is as it was. The rule for the rooms that follow: one room per pass, a floor at three heights or more, a ceiling that steps, and the room's landmark in the same pass where it has none.
+
+Tests: `tests/test_hornet_nest.gd`.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
