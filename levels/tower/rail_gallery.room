@@ -4,6 +4,7 @@ map: 23, -6
 ambience: mine
 sign: 6, 19, ORE ROAD. Carts run east to the Haar cut.|Spikes laid against thieves. Dwarves walk the rails with a Delver's Pick in hand.
 sign: 76, 19, SMELTER. Mind the pour.
+prop: 1, 19, ore_road
 door: 1, tower/mine_shaft, 1
 door: 2, tower/mine_vault, 1
 door: 3, tower/smelter, 1
