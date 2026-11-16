@@ -194,3 +194,172 @@ func test_the_fountain_plaza_has_its_spring_wall() -> void:
 	check(not room.is_solid_at(wall.position + Vector2(0, SpringWall.IMG.position.y - 24)), "and there is air over its crown")
 	check(FileAccess.get_file_as_string("res://levels/hearthroot/plaza.room").contains("Fed by the three springs of the Ylden."), "the sign still tells of the three springs")
 	check(SpringWall._baked != null, "the wall is baked once for the whole run")
+
+
+func _plaza_grid() -> Array[String]:
+	var rows: Array[String] = []
+	var text := FileAccess.get_file_as_string("res://levels/hearthroot/plaza.room").replace("\r", "")
+	for line: String in text.split("---\n")[1].split("\n"):
+		if line != "":
+			rows.append(line)
+	return rows
+
+
+## The independent grade after pass 575: "most rooms are a rectangular tile
+## frame around a dead-level floor". The fifth room changed for it (12.63's
+## rule, pass 580), and the first in a town, so its shape is built, not
+## broken: the King's Hall stands on a terrace two tiles over the plaza and
+## the Ringreader temple on one a tile over it, each reached by ramps, and the
+## fountain court between them keeps the old floor. The ceiling steps down
+## over both terraces and both gates, so the court is the tallest space.
+func test_the_fountain_plaza_is_not_a_level_box() -> void:
+	var grid := _plaza_grid()
+	check(grid.size() == 23 and grid[0].length() == 80, "the room keeps its size")
+	var wide := grid[0].length()
+	var back := char(92)
+	var slopes := "/" + back
+	var posts := [35, 45]  # the low posts at the wall's feet, as they were
+	var floors := {}
+	var ceilings := {}
+	var floor_of: Array[int] = []
+	var top_of: Array[int] = []
+	var ramps: Array[Vector2i] = []
+	for x in wide:
+		var y := grid.size() - 1
+		while y > 0 and ("#" + slopes).contains(grid[y][x]):
+			y -= 1
+		floor_of.append(y)
+		var top := 0
+		while top < grid.size() and grid[top][x] == "#":
+			top += 1
+		top_of.append(top)
+		for row in grid.size():
+			if slopes.contains(grid[row][x]):
+				ramps.append(Vector2i(x, row))
+		if x == 0 or x == wide - 1 or slopes.contains(grid[y + 1][x]) or x in posts:
+			continue  # the walls, a ramp, a post
+		floors[y] = true
+		ceilings[top] = true
+	var level := floor_of[1]
+	check(level == 19 and floor_of[wide - 2] == level, "both gates open on the old floor")
+	check(floors.size() == 3, "the floor stands at three heights (%s)" % [floors.keys()])
+	check(ceilings.size() >= 4, "the ceiling's underside stands at four heights (%s)" % [ceilings.keys()])
+	check(grid[19][35] == "#" and grid[19][45] == "#" and floor_of[35] == level - 1 and floor_of[45] == level - 1, "the posts at the wall's feet are as they were")
+	# The Three Mouths need their floor and the air over their crown (12.58).
+	for x in range(33, 48):
+		check((floor_of[x] == level or x in posts) and top_of[x] == 2, "the fountain court's floor and ceiling are as they were at tile %d" % x)
+	check(ramps.size() == 6, "six ramp tiles (%s)" % [ramps])
+	if ramps.size() != 6:
+		return
+	for r: Vector2i in ramps:
+		var high := -1 if grid[r.y][r.x] == back else 1
+		check(grid[r.y + 1][r.x] == "#" and grid[r.y][r.x + high] == "#", "the ramp at %s has ground under it and on its high side" % r)
+		check(grid[r.y][r.x - high] == ".", "and open floor at its foot")
+	# The King's Hall terrace, two tiles up, west of the court.
+	check(grid[ramps[0].y][ramps[0].x] == "/" and grid[ramps[1].y][ramps[1].x] == "/" and ramps[1] == ramps[0] + Vector2i(1, -1), "two ramp tiles climb from the west gate's floor")
+	check(grid[ramps[2].y][ramps[2].x] == back and grid[ramps[3].y][ramps[3].x] == back and ramps[3] == ramps[2] + Vector2i(1, 1), "and two come down to the court")
+	check(ramps[0].x > 10, "the west landing is ten tiles of the old floor")
+	check(ramps[3].x < 33, "the ramp ends clear of the Three Mouths (tile %d)" % ramps[3].x)
+	var hall := 0
+	for x in range(ramps[1].x + 1, ramps[2].x):
+		if floor_of[x] == level - 2:
+			hall += 1
+	check(hall == ramps[2].x - ramps[1].x - 1 and hall >= 12, "between them the floor stands two tiles higher (%d tiles)" % hall)
+	var door3 := grid[level - 2].find("3")
+	check(door3 > ramps[1].x and door3 < ramps[2].x and grid[level].find("3") < 0, "the King's Hall door is on its terrace (tile %d)" % door3)
+	# The temple's terrace, a tile up, east of the court.
+	check(grid[ramps[4].y][ramps[4].x] == "/" and ramps[4].y == level and grid[ramps[5].y][ramps[5].x] == back and ramps[5].y == level, "one ramp up and one down east of the court")
+	check(ramps[4].x > 47 + 3, "clear of the Three Mouths and of Old Wena (tile %d)" % ramps[4].x)
+	var temple := 0
+	for x in range(ramps[4].x + 1, ramps[5].x):
+		if floor_of[x] == level - 1:
+			temple += 1
+	check(temple == ramps[5].x - ramps[4].x - 1 and temple >= 10, "between them the floor stands a tile higher (%d tiles)" % temple)
+	var door4 := grid[level - 1].find("4")
+	check(door4 > ramps[4].x and door4 < ramps[5].x and grid[level].find("4") < 0, "the temple door is on its terrace (tile %d)" % door4)
+	for e in range(ramps[5].x + 1, wide - 1):
+		if floor_of[e] != level:
+			check(false, "the east gate's floor is level (tile %d)" % e)
+	# Nothing to pick up moved, and nothing here hurts: it is a town.
+	check(grid[13][26] == "$" and grid[14].substr(24, 6) == "------", "the chest is on its plank, where it was")
+	check(floor_of[24] == level - 2 and floor_of[29] == level - 2, "and the plank stands over the terrace, three tiles up")
+	var hazards := 0
+	for row: String in grid:
+		hazards += row.count("^") + row.count("o")
+	check(hazards == 0, "no hazard")
+	# The ceiling: low over both gates, lower over the terraces than the court.
+	check(top_of[1] >= 5 and top_of[wide - 2] >= 5, "the ceiling hangs low over both gates (%d and %d)" % [top_of[1], top_of[wide - 2]])
+	check(top_of[door3] > 2 and top_of[door4] > 2, "and steps down over both terraces")
+	var run := 0
+	var longest := 0
+	var longest_at := 0
+	for c in range(1, wide - 1):
+		run = run + 1 if c > 1 and top_of[c] == top_of[c - 1] else 1
+		if run > longest:
+			longest = run
+			longest_at = c
+	check(longest <= 20 and longest_at >= 40 and longest_at <= 52, "the longest straight run of ceiling is the court's (%d tiles, ending at %d)" % [longest, longest_at])
+	# Done for real. The festival's people stand on their floors.
+	GameState.new_game()
+	GameState.set_flag("spring:sky")
+	var room := Room.from_file("res://levels/hearthroot/plaza.room")
+	arena.add_child(room)
+	var people := 0
+	for c in room.get_children():
+		if c is Npc:
+			people += 1
+			var at: Vector2 = (c as Npc).position
+			check(room.is_solid_at(at + Vector2(0, 4)) and not room.is_solid_at(at + Vector2(0, -4)), "%s stands on the floor, not in it" % (c as Npc).npc_id)
+	check(people == 2, "the piper and Wena")
+	room.queue_free()
+	await frames(2)
+	# Both inner doors put the hero on their terraces.
+	var w := make_world({}, "hearthroot/plaza")
+	await frames(3)
+	var p := w.player
+	w.travel_to_door("hearthroot/plaza", 3)
+	await frames(20)
+	check(p.is_on_floor(), "out of the King's Hall, the hero stands")
+	check_near(p.global_position.y, float((level - 1) * Room.TILE), 2.0, "on the terrace two tiles up")
+	w.travel_to_door("hearthroot/plaza", 4)
+	await frames(20)
+	check(p.is_on_floor(), "out of the temple, the hero stands")
+	check_near(p.global_position.y, float(level * Room.TILE), 2.0, "on the terrace a tile up")
+	# Walked with no jump, in two legs: the posts at the wall's feet are a hop,
+	# as they always were. West gate to the court, over the King's Hall terrace.
+	p.global_position = cell_feet(3, level)
+	p.velocity = Vector2.ZERO
+	await frames(10)
+	var from_y := p.global_position.y
+	var hp := p.hp
+	var highest := from_y
+	p.input.move_x = 1
+	var steps := 0
+	while p.global_position.x < 34 * Room.TILE and steps < 900:
+		await frames(1)
+		steps += 1
+		highest = minf(highest, p.global_position.y)
+	p.input.move_x = 0
+	await frames(10)
+	check(p.global_position.x >= 34 * Room.TILE, "a walk east from the west gate reaches the court with no jump (x %.0f after %d frames)" % [p.global_position.x, steps])
+	check_near(from_y - highest, 2.0 * Room.TILE, 2.0, "it climbs the King's Hall terrace, two tiles up")
+	check_near(p.global_position.y, from_y, 2.0, "and comes down to the old floor")
+	# The court to the east gate, over the temple's terrace.
+	p.global_position = cell_feet(47, level)
+	p.velocity = Vector2.ZERO
+	await frames(10)
+	highest = p.global_position.y
+	p.input.move_x = 1
+	steps = 0
+	while p.global_position.x < 76 * Room.TILE and steps < 900:
+		await frames(1)
+		steps += 1
+		highest = minf(highest, p.global_position.y)
+	p.input.move_x = 0
+	await frames(10)
+	check(p.global_position.x >= 76 * Room.TILE, "a walk east from the court reaches the east gate with no jump (x %.0f after %d frames)" % [p.global_position.x, steps])
+	check_near(from_y - highest, float(Room.TILE), 2.0, "it climbs the temple's terrace, one up")
+	check_near(p.global_position.y, from_y, 2.0, "and ends on the old floor")
+	check(p.is_on_floor() and p.hp == hp, "unhurt")
+	w.queue_free()
+	await frames(2)

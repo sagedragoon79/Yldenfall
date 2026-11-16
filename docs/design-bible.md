@@ -2421,6 +2421,20 @@ Nothing that can be picked up moved, and no ledge, foe or sign: the low plank ov
 
 Tests: `tests/test_high_seat.gd` (`test_the_rot_dwarf_hall_is_not_a_level_box`).
 
+### 12.67 The King's Hall and the temple stand on terraces over the Fountain Plaza (pass 580)
+
+The fifth room changed for the pass 575 grade's top defect, by 12.63's rule, and the first in a town. The Fountain Plaza had its landmark (12.58) and a floor at one height for 78 tiles under a ceiling ruled straight, with a stone plinth three tiles high in the middle of the way that had to be jumped on every crossing.
+
+A town's floor is built, not broken, so the shape is terraces. The floor now stands at three heights. From the west gate it is level for ten tiles. Two ramp tiles climb to the King's Hall terrace, two tiles over the plaza and 17 tiles long: the hall's door stands on it, and the festival's piper plays on it once the last spring flows. Two ramp tiles come down to the fountain court, which is as it was from tile 32 to tile 54: the Three Mouths, the fountain, the two low posts at the wall's feet, the sign and Old Wena. East of her one ramp climbs to the temple's terrace, a tile over the plaza and 14 tiles long, with the Ringreader temple's door on it, and one ramp comes down to the east gate's floor. The king sits higher than the temple, and the water lies lowest.
+
+The plinth is gone. It was there to reach the chest's plank; the plank now stands over the King's Hall terrace, three tiles up, a jump straight up through it. So the plaza, the room crossed more than any other, is a walk from the west gate to the court and from the court to the east gate with no jump; only the two posts at the fountain are a hop, as they were. The chest is on the tile it was on.
+
+The ceiling's underside stands at four heights. It hangs three tiles low over both gates and two over both terraces, with a shoulder a tile deep at each end, and over the fountain court it is as it was for 19 tiles, the longest straight run left, so the court is the tallest space in the room and the Three Mouths keep the air over their crown. It can only be hung lower: the plaza is one screen tall.
+
+Nothing here hurts: no hazard and no foe. Reachability is as it was. Judged by eye at 1x at the west gate, the King's Hall door, the fountain and the temple door of `hearthroot/plaza`: the plank now stands on legs on the terrace instead of hanging from chains, and each door reads as a building's own threshold.
+
+Tests: `tests/test_spring_wall.gd` (`test_the_fountain_plaza_is_not_a_level_box`).
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
