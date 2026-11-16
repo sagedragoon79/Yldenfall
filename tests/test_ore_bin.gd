@@ -305,3 +305,155 @@ func test_the_ore_bin_has_its_bin() -> void:
 	check(bin.get_child_count() == 0, "scenery only: nothing to stand on, to touch or to be hurt by")
 	await frames(30)
 	check(bin.t > 0.2, "its kibble moves")
+
+
+func _grid() -> Array[String]:
+	var rows: Array[String] = []
+	var text := FileAccess.get_file_as_string("res://levels/tower/ore_bin.room").replace("", "")
+	for line: String in text.split("---
+")[1].split("
+"):
+		if line != "":
+			rows.append(line)
+	return rows
+
+
+## The independent grade after pass 575: "most rooms are a rectangular tile
+## frame around a dead-level floor". The third room changed for it (12.63's
+## rule, pass 578): a ramp goes down from the door's landing, under the
+## plank, to a sorting floor a tile down, a second to a sump two tiles down,
+## and one long ramp
+## climbs out of the sump to the bin's floor. The ceiling hangs low over the
+## door and over the shelf and is vaulted between them.
+func test_the_ore_bin_is_not_a_level_box() -> void:
+	var grid := _grid()
+	check(grid.size() == 23 and grid[0].length() == 40, "the room keeps its size")
+	var floors := {}
+	var ceilings := {}
+	var floor_of: Array[int] = []
+	var ramps: Array[Vector2i] = []
+	for x in grid[0].length():
+		var y := grid.size() - 1
+		while y > 0 and grid[y][x] in "#/\\":
+			y -= 1
+		floor_of.append(y)
+		for row in grid.size():
+			if grid[row][x] in "/\\":
+				ramps.append(Vector2i(x, row))
+		if x == 0 or x == grid[0].length() - 1 or grid[y + 1][x] in "/\\":
+			continue  # the walls, a ramp
+		if y >= 16:
+			floors[y] = true  # the shelf over the secret is not the floor
+		var top := 0
+		while top < grid.size() and grid[top][x] == "#":
+			top += 1
+		ceilings[top] = true
+	check(floors.size() == 3, "the floor stands at three heights (%s)" % [floors.keys()])
+	check(ceilings.size() >= 5, "the ceiling's underside stands at five heights (%s)" % [ceilings.keys()])
+	for x in range(1, grid[0].length() - 1):
+		if grid[4][x] == "B":
+			check(grid[3][x] == "#", "the Gear Bat at %d still roosts under the ceiling" % x)
+	check(ramps.size() == 4, "four ramp tiles (%s)" % [ramps])
+	if ramps.size() != 4:
+		return
+	for r: Vector2i in ramps:
+		var high := -1 if grid[r.y][r.x] == "\\" else 1
+		check(grid[r.y + 1][r.x] == "#" and grid[r.y][r.x + high] == "#", "the ramp at %s has ground under it and on its high side" % r)
+		check(grid[r.y][r.x - high] == ".", "and open floor at its foot")
+	var level := floor_of[1]
+	check(grid[ramps[0].y][ramps[0].x] == "\\" and ramps[0].y == level + 1, "the first goes down from the door's landing")
+	check(grid[ramps[1].y][ramps[1].x] == "\\" and ramps[1].y == level + 2, "the second down into the sump")
+	check(grid[ramps[2].y][ramps[2].x] == "/" and grid[ramps[3].y][ramps[3].x] == "/" and ramps[3] == ramps[2] + Vector2i(1, -1), "and one ramp two tiles long climbs out to the bin's floor")
+	check(ramps[0].x >= 6, "the landing inside the door is level (%d tiles)" % (ramps[0].x - 1))
+	# The sorting floor: a tile down, and the plank stands over it from end to end.
+	var bench := 0
+	for x in range(ramps[0].x + 1, ramps[1].x):
+		if floor_of[x] == level + 1:
+			bench += 1
+	check(bench == ramps[1].x - ramps[0].x - 1 and bench >= 4, "between the first two the floor lies a tile down (%d tiles)" % bench)
+	var plank: Array[int] = []
+	for x in grid[0].length():
+		if grid[16][x] == "-":
+			plank.append(x)
+	# The way up to the chest is a jump straight up through the plank's west
+	# end, four tiles, so that end stays over the landing; its east leg stands
+	# on the sorting floor.
+	check(plank.size() == 6 and plank[0] == ramps[0].x - 1, "the plank's west end is over the landing, a jump up through it as before (%s)" % [plank])
+	check(plank[-1] == ramps[1].x - 1, "and its east end over the sorting floor, short of the sump")
+	var sump := 0
+	for x in range(ramps[1].x + 1, ramps[2].x):
+		if floor_of[x] == level + 2 and grid[grid.size() - 1][x] == "#":
+			sump += 1
+	check(sump == ramps[2].x - ramps[1].x - 1 and sump >= 3, "the sump lies two tiles down, on the room's last row of ground (%d tiles)" % sump)
+	var hazards := 0
+	for row: String in grid:
+		hazards += row.count("^") + row.count("o")
+	check(hazards == 0, "nothing in the room is spiked: the sump is only a low place")
+	# The bin's floor is as it was: level from the long ramp's head to the shelf.
+	var bin_floor := 0
+	for x in range(ramps[3].x + 1, 31):
+		if floor_of[x] == level:
+			bin_floor += 1
+	check(bin_floor == 30 - ramps[3].x and bin_floor >= 9, "the bin's floor is level, and the Minecart Rider's stretch (%d tiles)" % bin_floor)
+	check((ramps[3].x + 1) * Room.TILE <= 26 * Room.TILE + 8 - OreBin.POST_X - 8, "the west post's footing is clear of the ramp")
+	check(grid[19].find("K") > ramps[3].x + 1, "the rider starts on it")
+	# Walked for real: out of the sump by the long ramp, with no jump.
+	var w := make_world({}, "tower/ore_bin")
+	await frames(3)
+	var rider: Node2D = null
+	for e: Node in runner.get_tree().get_nodes_in_group("enemy"):
+		if e is MinecartRider:
+			rider = e
+	check(rider != null, "the Minecart Rider is here")
+	var p := w.player
+	# The rider first: with the player level with him at the long ramp's foot
+	# he charges west, and the ramp's head is the end of his floor.
+	if rider != null:
+		var rider_y := rider.global_position.y
+		var lowest := rider_y
+		var west := rider.global_position.x
+		p.global_position = cell_feet(2, level)
+		for k in 600:
+			await frames(1)
+			if not is_instance_valid(rider):
+				break
+			lowest = maxf(lowest, rider.global_position.y)
+			west = minf(west, rider.global_position.x)
+		check(lowest <= rider_y + 2.0, "the rider never rolls down off his floor (%.0f px lower)" % (lowest - rider_y))
+		check(west >= (ramps[3].x + 1) * Room.TILE - 8.0 and west < (ramps[3].x + 3) * Room.TILE, "and tips at the long ramp's head, his cart no more than half a tile over it (x %.0f)" % west)
+	for e: Node in runner.get_tree().get_nodes_in_group("enemy"):
+		e.queue_free()
+	await frames(2)
+	p.global_position = cell_feet(ramps[2].x - 2, ramps[2].y)
+	p.velocity = Vector2.ZERO
+	await frames(10)
+	var from_y := p.global_position.y
+	var hp := p.hp
+	check(p.is_on_floor(), "the sump has footing")
+	check_near(from_y, float((level + 3) * Room.TILE), 2.0, "two tiles under the door's floor")
+	p.input.move_x = 1
+	var steps := 0
+	while p.global_position.x < (ramps[3].x + 3) * Room.TILE and steps < 300:
+		await frames(1)
+		steps += 1
+	p.input.move_x = 0
+	await frames(10)
+	check(p.global_position.x >= (ramps[3].x + 3) * Room.TILE, "a walk east climbs out of the sump (x %.0f after %d frames)" % [p.global_position.x, steps])
+	check_near(from_y - p.global_position.y, 2.0 * Room.TILE, 2.0, "two tiles higher than it began, by the ramp alone")
+	check(p.is_on_floor(), "standing on the bin's floor")
+	# And down from the door: a walk east ends in the sump, two ramps lower.
+	p.global_position = cell_feet(ramps[0].x - 3, level)
+	p.velocity = Vector2.ZERO
+	await frames(10)
+	from_y = p.global_position.y
+	p.input.move_x = 1
+	steps = 0
+	while p.global_position.x < (ramps[1].x + 2) * Room.TILE and steps < 400:
+		await frames(1)
+		steps += 1
+	p.input.move_x = 0
+	await frames(10)
+	check_near(p.global_position.y - from_y, 2.0 * Room.TILE, 2.0, "a walk east from the door goes down both ramps into the sump")
+	check(p.is_on_floor() and p.hp == hp, "unhurt")
+	w.queue_free()
+	await frames(2)
