@@ -3,6 +3,7 @@ zone: heartwood
 map: 10, -1
 chest_gold: 100
 sign: 10, 19, These were Amberlee dwarves once. The rot came up through the roots with the sap.|Their shields stop blows from the front. Strike after they swing, or from behind.
+prop: 22, 19, high_seat
 door: 1, heartwood/fungus_shaft, 2
 door: 2, heartwood/boss_gate, 1
 ---
