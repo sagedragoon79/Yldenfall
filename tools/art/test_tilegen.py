@@ -657,6 +657,22 @@ def test_dark_far_fields_dress_their_sky():
     )
 
 
+def test_carillons_far_lightning_is_dim():
+    # Bible 12.71 (pass 584): the bolts baked into the Spires' far layer never go
+    # out, so they are drawn as far weather, darker than a foe's accent or a tell.
+    def lum(name):
+        r, g, b, _ = tg.c(name)
+        return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
+
+    assert lum(tg.FAR_BOLT) < 0.5, f"the far bolt's core is too bright ({lum(tg.FAR_BOLT):.2f})"
+    assert lum(tg.FAR_BOLT_GLOW) < lum(tg.FAR_BOLT), "the halo is darker than the core"
+    assert tg.FAR_BOLT_GLOW_ALPHA <= 100
+    assert lum(tg.SPIRES_SKY[1]) < lum("crystal-2"), "the storm sky is a step darker than it was"
+    img = tg.spires_far().convert("RGB")
+    top = max(0.2126 * r + 0.7152 * g + 0.0722 * b for r, g, b in img.get_flattened_data()) / 255
+    assert top < 0.6, f"the far sky's brightest pixel is {top:.2f}"
+
+
 def _shrine_tile(seed):
     from PIL import Image
 

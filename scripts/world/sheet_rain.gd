@@ -24,10 +24,17 @@ const FRAMES := 32
 const FPS := 30.0
 const VIEW := Vector2(640, 360)
 
+## The most a rain layer may cover what is behind it (design bible 12.71, pass 584).
+## The rain falls in front of the play field, so every drop crosses the hero, the
+## foes and their tells. At 0.85 the near layer was a screen of white dashes over the
+## fight (the pass 580 grade: "noisy"); under this it is weather, and the figures
+## keep the brightest marks in the room.
+const MAX_ALPHA := 0.5
+
 ## Two layers: [scale, frame fps, phase (frames), alpha, wind drift px/s].
 const LAYERS := [
-	[2.0, 20.0, 16.0, 0.42, 10.0],   # far: big, slow, faint, drifts slowly
-	[1.0, 30.0, 0.0, 0.85, 24.0],    # near: crisp, fast, bright, drifts faster
+	[2.0, 20.0, 16.0, 0.26, 10.0],   # far: big, slow, faint, drifts slowly
+	[1.0, 30.0, 0.0, 0.46, 24.0],    # near: crisp, fast, drifts faster
 ]
 
 var active := false

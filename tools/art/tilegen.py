@@ -1966,7 +1966,17 @@ def boughs_mid():
     return img
 
 
-def lightning(img, x, y0, y1, rng, col="gold-7", glow="crystal-6"):
+# Carillon's lightning is far weather (design bible 12.71, pass 584). The bolts are
+# baked into the far layer and never go out, so at gold-7 with a crystal-6 halo they
+# were the brightest marks in the room: the grade (pass 580) read the fight frame as
+# noisy, three white ropes hanging behind the foes. A far bolt is now a dim violet
+# thread, darker than anything a foe or a tell is drawn with.
+FAR_BOLT = "crystal-4"
+FAR_BOLT_GLOW = "crystal-3"
+FAR_BOLT_GLOW_ALPHA = 90
+
+
+def lightning(img, x, y0, y1, rng, col=FAR_BOLT, glow=FAR_BOLT_GLOW):
     """A jagged bolt from y0 down to y1, with a faint halo and a fork or two."""
     pts = [(x, y0)]
     while pts[-1][1] < y1:
@@ -1978,7 +1988,7 @@ def lightning(img, x, y0, y1, rng, col="gold-7", glow="crystal-6"):
             xx = ax + (bx - ax) * t / max(n, 1)
             yy = ay + (by - ay) * t / max(n, 1)
             for dx in (-D, D):
-                put(img, xx + dx, yy, c(glow, 120))
+                put(img, xx + dx, yy, c(glow, FAR_BOLT_GLOW_ALPHA))
             for k in range(D):
                 put(img, xx + k, yy, c(col))
     if len(pts) > 3:
@@ -1990,7 +2000,7 @@ def lightning(img, x, y0, y1, rng, col="gold-7", glow="crystal-6"):
         for (ax, ay), (bx, by) in zip(lightning_fork, lightning_fork[1:]):
             n = max(abs(bx - ax), abs(by - ay))
             for t in range(n + 1):
-                put(img, ax + (bx - ax) * t / max(n, 1), ay + (by - ay) * t / max(n, 1), c(glow))
+                put(img, ax + (bx - ax) * t / max(n, 1), ay + (by - ay) * t / max(n, 1), c(glow, 160))
 
 
 def block(img, wx, wy, col):
@@ -2154,14 +2164,20 @@ def ruined_spire(img, sx, base, sh):
     block(img, x0 + 5, wy + 1, c(ISLAND_LINE))
 
 
+SPIRES_SKY = ("night-0", "crystal-1")
+SPIRES_CLOUD = ("crystal-2", "crystal-1", "night-1")
+
+
 def spires_far():
     img = Image.new("RGBA", (BG_W, BG_H), c("crystal-1"))
-    gradient(img, "night-1", "crystal-2")
+    # A step darker than it was (night-1 to crystal-2, pass 584): the storm sky is the
+    # ground the fight is read against, so it stays below the play field's values.
+    gradient(img, *SPIRES_SKY)
     rng = random.Random(51)
-    # Storm banks rolling across a violet sky, lit gold along their tops.
+    # Storm banks rolling across a violet sky, a step darker with it.
     for _ in range(12):
         cloud(img, rng.randrange(BG_W), rng.randrange(80, 460) * D, rng.randrange(60, 130) * D, rng.randrange(26, 54) * D, rng,
-              top="crystal-3", body="crystal-2", shade="night-2")
+              top=SPIRES_CLOUD[0], body=SPIRES_CLOUD[1], shade=SPIRES_CLOUD[2])
     for _ in range(3):
         x = rng.randrange(BG_W)
         lightning(img, x, rng.randrange(60, 160) * D, rng.randrange(260, 400) * D, rng)
@@ -2169,7 +2185,7 @@ def spires_far():
     for _ in range(5):
         x0 = rng.randrange(BG_W)
         dead_limb(img, x0, BG_H, rng.randrange(260, 420) * D, rng.randrange(8, 14) * D,
-                  -math.pi / 2 + rng.uniform(-0.3, 0.3), "night-2", rng)
+                  -math.pi / 2 + rng.uniform(-0.3, 0.3), "night-1", rng)
     far_motes(img, rng, ["crystal-2", "sky-2", "gold-3"], glows=5)
     return img
 
