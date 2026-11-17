@@ -32,6 +32,7 @@ var _args := {}
 var _frames := 0
 var _game: Node
 var _moment := -1  # the frame --when's moment came, or -1
+var _lit := 0  # frames in a row a tell has been drawn lit (--when=tell)
 
 
 func _ready() -> void:
@@ -64,8 +65,17 @@ func _process(_delta: float) -> void:
 			set_process(false)
 			get_tree().quit(3)
 			return
-		if _moment < 0 or _frames < _moment + int(_args.get("after", "2")):
+		var due := _moment + int(_args.get("after", "2"))
+		if _moment < 0 or _frames < due:
 			return
+		# A tell's pulse is on for every other sixteenth of a second: wait for a
+		# frame that shows it (at most two beats), so the picture is the warning.
+		# The viewport's picture can trail the drawing by a frame, so wait for the
+		# second lit frame in a row.
+		if String(_args["when"]) == "tell" and _frames < due + 16:
+			_lit = _lit + 1 if pulsing(get_tree()) else 0
+			if _lit < 2:
+				return
 	elif _frames < at_frame:
 		return
 	set_process(false)
@@ -124,8 +134,18 @@ static func moment(tree: SceneTree, what: String) -> bool:
 						return true
 		"tell":
 			for e in tree.get_nodes_in_group("enemy"):
-				if e is Enemy and not e.dead and TELLS.has(e.state):
+				if e is Enemy and not e.dead and (TELLS.has(e.state) or e.state.ends_with("_tell")):
 					return true
+	return false
+
+
+## True when a living foe's last drawing wore its tell's tint: the frame the
+## viewport holds now is the lit half of the pulse (`telegraph_pulse` is already
+## the next frame's).
+static func pulsing(tree: SceneTree) -> bool:
+	for e in tree.get_nodes_in_group("enemy"):
+		if e is Enemy and not e.dead and e.tell_drawn():
+			return true
 	return false
 
 

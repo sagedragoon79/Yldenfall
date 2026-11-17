@@ -27,15 +27,15 @@ const FLASH_WASH := 0.72
 const FLASH_SOFT_WASH := 0.4
 const SHEET_WHITE := 0.85
 const SHEET_SOFT_WHITE := 0.45
-## A tell's pulse (bible 6.7, pass 585) is a warm tint and a rim, never a white
-## cutout: the foe is mixed toward `TELL_TINT` by `TELL_WASH` (`SHEET_TELL` over
-## a foe drawn from a sheet), which leaves more than half of its own contrast, so the pose
-## that warns of the blow reads through the pulse. A foe drawn from a sheet also
-## wears a rim of the tint one pixel wide (`TELL_RIM`), so its shape pops off
-## the room. White stays the color of a blow that landed.
+## A tell's pulse (bible 6.7, passes 585 and 586) is a warm tint and a rim, never
+## a white cutout. A foe drawn from a sheet wears a rim of `TELL_TINT` one pixel
+## wide (`TELL_RIM`), which carries the warning, and only a light tint over its body
+## (`SHEET_TELL`), so its own colors and the pose that warns of the blow read
+## through. A code-drawn foe or guardian has no rim, so its body is mixed toward the
+## tint by `TELL_WASH`, still less than half. White stays the color of a blow that landed.
 const TELL_TINT := Color(1.0, 0.82, 0.38)
 const TELL_WASH := 0.45
-const SHEET_TELL := 0.42
+const SHEET_TELL := 0.2
 const TELL_RIM := 0.9
 const RIM_STEPS: Array[Vector2] = [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]
 

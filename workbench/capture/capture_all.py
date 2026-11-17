@@ -103,6 +103,10 @@ FIGHTS = [
     ('tower-hit', 'tower/smelter', 'I', 'hit'),
     ('evercrown-hit', 'evercrown/threshold', 'D', 'hit'),
 ]
+# Guardians' wind-ups: (picture id, arena).
+GUARDIAN_TELLS = [
+    ('roost-tell', 'spires/roost'),
+]
 
 
 def fight_spot(grid, foe, gap=2):
@@ -173,6 +177,12 @@ def jobs():
         else:
             # The hero only stands there, so the frame is the foe's wind-up and nothing else.
             add('fights', 'fights/%s.png' % fid, lambda o, g=g: shot(o, g, when='tell', after=4, frames=600))
+    # A code-drawn guardian's wind-up (its tint is the wash, TELL_WASH, with no rim):
+    # the hero stands mid-floor and the frame is cropped around the guardian.
+    for fid, rid in GUARDIAN_TELLS:
+        if rid in R:
+            g = ['--room=' + rid, '--shot-at=%d,%d' % floor_mid(R[rid]['grid'])]
+            add('fights', 'fights/%s.png' % fid, lambda o, g=g: shot(o, g, when='tell', after=4, hero='400,240', focus='boss', frames=900))
     keeper = {}
     for rid, h in R.items():
         for n in h['npcs']:

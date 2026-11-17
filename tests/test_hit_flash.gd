@@ -159,7 +159,9 @@ func test_the_tint_keeps_more_than_half_of_the_foes_contrast() -> void:
 ## and its rim is nearly solid.
 func test_the_tell_keeps_the_foes_pose_and_is_not_white() -> void:
 	check(Enemy.TELL_WASH < 0.5 and Enemy.SHEET_TELL < 0.5, "the tell keeps more than half of the foe's own contrast")
-	check(Enemy.TELL_WASH >= 0.35 and Enemy.SHEET_TELL >= 0.35, "and is still seen as a pulse")
+	check(Enemy.TELL_WASH >= 0.35, "a code-drawn foe has no rim, so its wash is still seen as a pulse")
+	check(Enemy.SHEET_TELL >= 0.12 and Enemy.SHEET_TELL <= 0.3,
+		"a sheet foe's rim carries the warning, so its body keeps most of its own colors (pass 586)")
 	var t := Enemy.TELL_TINT
 	check(t.r >= 0.95 and t.b <= 0.5 and t.g > t.b and t.g < t.r, "the tint is a warm gold, not white (%s)" % t)
 	check(t.s >= 0.5, "saturated enough to tell from a blow's white (s %.2f)" % t.s)
