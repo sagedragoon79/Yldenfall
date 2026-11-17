@@ -1,5 +1,6 @@
 extends TestSuite
-## The Tower's plates are a tile wide and quiet (design bible 12.54, pass 566).
+## The Tower's plates are a tile tall and quiet (design bible 12.54, pass 566),
+## in sheets one to three tiles long (12.70, pass 583).
 ## Plates of 8 world pixels put four seams and sixteen rivets in every tile, and
 ## a worn plate a whole shade darker made dark squares: a floor three tiles thick
 ## read as a test pattern that fought the crucible (independent grade, pass 565).
@@ -32,15 +33,16 @@ func _px(img: Image, tile: Vector2i, x: int, y: int) -> Color:
 
 
 func test_a_plate_is_a_whole_tile() -> void:
-	# The seam is the tile's left column and top row. With plates of 8 world
-	# pixels a second seam ran down column 16 and across row 16.
+	# The seam is the tile's top row (and its left column, unless the sheet runs
+	# on from the west: 12.70). With plates of 8 world pixels a second seam ran
+	# down column 16 and across row 16.
 	var img := _atlas()
 	var tiles := 0
 	for tier: Array in _tiers():
 		for tile: Vector2i in tier:
 			tiles += 1
-			var seam := _px(img, tile, 0, 9)
-			check(_px(img, tile, 9, 0).is_equal_approx(seam), "tile %s: the top row is the seam too" % tile)
+			var seam := _px(img, tile, 9, 0)
+			check(_px(img, tile, 20, 0).is_equal_approx(seam), "tile %s: the top row is one seam" % tile)
 			var mid := 0
 			for k in range(2, PX):
 				if _px(img, tile, HALF, k).is_equal_approx(seam):
@@ -49,6 +51,63 @@ func test_a_plate_is_a_whole_tile() -> void:
 					mid += 1
 			check(mid * 4 < (PX - 2) * 2, "tile %s: no seam crosses the middle of the tile (%d of %d pixels)" % [tile, mid, (PX - 2) * 2])
 	check(tiles == 12, "12 interior tiles were measured, got %d" % tiles)
+
+
+## True if the tile's left column is a seam: the colour of its top row, for
+## most of its height.
+func _west_seam(img: Image, tile: Vector2i) -> bool:
+	var seam := _px(img, tile, 9, 0)
+	var n := 0
+	for y in range(2, PX):
+		if _px(img, tile, 0, y).is_equal_approx(seam):
+			n += 1
+	return n * 2 > PX
+
+
+func test_sheets_run_longer_than_a_tile() -> void:
+	# A plate to a tile made the field graph paper (independent grade, pass 580).
+	# In every set the factory scatters, some tiles have no west seam, so the
+	# sheet from the west runs through them, and some start a sheet (12.70).
+	var img := _atlas()
+	var sets: Array = _tiers()
+	for tiles: Array in sets:
+		var joined := 0
+		for tile: Vector2i in tiles:
+			if not _west_seam(img, tile):
+				joined += 1
+				# Nothing to rivet where there is no joint: the west rivets are gone.
+				var body := _px(img, tile, 9, 9)
+				for y: int in [3, PX - 4]:
+					check(_px(img, tile, 3, y).get_luminance() < body.get_luminance() + 0.06,
+						"tile %s: no rivet head on the side with no joint" % tile)
+		check(joined >= 1, "a set of %d plates has one with no west seam, got %d" % [tiles.size(), joined])
+		check(joined < tiles.size(), "and one that starts a sheet")
+	# A floor's top and a ceiling's bottom join up too. Their top row is the cap
+	# or the soffit, so count the seam's colour down the left column instead.
+	var full_seam := _px(img, TilesetFactory.FULL_VARIANTS[0], 9, 0)
+	for variants: Array in [TilesetFactory.TOP_VARIANTS, TilesetFactory.BOTTOM_VARIANTS]:
+		var joined := 0
+		for tile: Vector2i in variants:
+			var n := 0
+			for y in range(2, PX - 2):
+				if _px(img, tile, 0, y).is_equal_approx(full_seam):
+					n += 1
+			if n * 4 < PX:
+				joined += 1
+		check(joined >= 1 and joined < variants.size(), "some edge variants join the sheet to the west, got %d of %d" % [joined, variants.size()])
+	# In a long course the sheets differ in length: one, two and three tiles.
+	var lengths := {}
+	var run := 1
+	for x in range(1, 200):
+		if _west_seam(img, TilesetFactory.ground(TilesetFactory.FULL, Vector2i(x, 5), 1)):
+			lengths[run] = true
+			run = 1
+		else:
+			run += 1
+	check(lengths.has(1) and lengths.has(2) and lengths.has(3), "a course has sheets of one, two and three tiles: %s" % [lengths.keys()])
+	# The 47 blob tiles keep their seam: an inside corner starts a sheet.
+	var corner := TilesetFactory.ground(TilesetFactory.FULL & ~TilesetFactory.NE, Vector2i.ZERO, 1)
+	check(_west_seam(img, corner), "a corner tile starts a sheet")
 
 
 ## The mean luminance (0 to 255) of one 16 px quarter of a tile.

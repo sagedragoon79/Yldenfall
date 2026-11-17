@@ -2458,6 +2458,17 @@ The pass 580 grade: characters are "too quiet for the frame", foes are "dark on 
 
 Tuned by eye on each idle frame at 3x over its zone's dark, then at 1x in `tower/rail_gallery`, `heartwood/dwarf_larder` and `vorrhallow/drowned_nave`. It is a small lift at 1x: the foe is as large and as dark as it was, with one bright part. The grade's other asks for this defect (a tighter camera or larger sprites, a rim light on the hero) are watched-session calls and stay in the queue. `test_each_foe_keeps_one_colour_of_its_own` checks each band against its sheet, the lift, what is left alone, and the materials.
 
+### 12.70 Sheets and blocks run through the tile seams (pass 583)
+
+The pass 580 grade: "tile repetition that shows the grid (the aqueduct's sandstone, the Tower's ceilings, the Spires' floating blocks)". Scattered variants (12.8) stop one tile from repeating, and they do nothing about the tile's own edge: where every tile ends its pattern at its border, the border is the pattern. Two painters did that.
+
+- **The Tower's plates are sheets one to three tiles long** (`PLATE_WIDE_SEEDS`, `paint_plates`). 12.54 made a plate a whole tile, so the frame's grid was the room's tile grid, and a ceiling four tiles thick was graph paper. Half the tiles of every set the factory scatters (the surface field, MID, DEEP, a floor's top, a ceiling's bottom) now have no seam, bevel or rivets on their west side: the sheet of the tile to their west runs on through them. Scattered by cell, a course is made of sheets of one, two and three tiles with no joint on a fixed beat. The 47 blob tiles keep their seam, so a corner or a wall face always starts a sheet. Sheets join sideways only: a tile that could also drop its top seam would make L-shaped plates. This amends 12.54's "a plate is a whole tile": a plate is a tile tall.
+- **The Spires' ashlar has one set of courses** (`SHRINE_COURSES`, `shrine_joints`, `paint_shrine`). 12.8 and 12.18 keyed the block's width and height to the seed so the variants would differ. They did, and two side by side met with their bed joints at different heights and their blocks cut off at the seam: every tile was a patch with a straight edge. The courses are now 5, 6 and 5 world pixels in every tile, so a bed joint runs the length of a wall. Each course has one or two head joints at an x keyed to the seed, never within 4 world pixels of the tile's edge, so a block passes through the seam into whichever variant is next (the Sunken Spring's rule, 12.39). Only a block that lies whole inside a tile may be worn a shade (`SHRINE_WORN`); the gold inlay is one groove in a course, short of the joints and the tile's edge (`SHRINE_GOLD`); and a crack is on about one tile in three (`SHRINE_CRACK`, it was seven in ten).
+
+**The rule for a painter of built material:** what varies between variants is where the joints fall inside the tile, never the course heights, and no joint or seam sits on the tile's edge unless the tile is meant to start a block there.
+
+Only `assets/tiles/tower.png` and `assets/tiles/spires.png` are regenerated; the factory is unchanged. `tests/test_tower_plates.gd` (`test_sheets_run_longer_than_a_tile`) and `tests/test_shrine_ashlar.gd` hold it, with `tools/art/test_tilegen.py` for the joints. Not done here: the aqueduct's sandstone, whose blocks already run through the seams (12.39); what repeats there is the moss mark down a pier's face, which has one variant.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
