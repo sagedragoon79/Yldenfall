@@ -2536,6 +2536,18 @@ The third of the four rooms the pass 585 grade called "rectangular boxes" (12.74
 
 Judged by eye at 1x, before and after. The first crag stepped down a tile on both sides and read as a ziggurat, as 12.74's first heap did; its west face is now sheer. Tests: `tests/test_storm_ledge.gd`.
 
+### 12.77 The Canopy Bridge crosses a hollow in the crown (pass 590)
+
+The last of the four rooms the pass 585 grade called "rectangular boxes" (12.74 to 12.76 came first). The Canopy Bridge, at Sylvarre's shut gate, had a ceiling ruled flat four tiles down across all 40 tiles, side walls straight from it to the doors, and its chest on a plank hung by two ropes, the hanging chest platform the grade saw as one gimmick repeated in room after room. The bridge now crosses a hollow in the Tree's crown.
+
+- **The canopy.** The ceiling is the underside of the crown's wood: it stands at six heights or more, notches up toward the room's top row over four columns or more, comes down low into the trunk at both corners, and knots of wood hang from it, each tapering to a point. The room's top row still stands.
+- **The wind.** The current over the bridge (`>`) is still a whole band, 21 by 3, over open air (levels/README.md): the knots hang only above it, never into it.
+- **The trunk walls** bulge: each wall's face stands at four depths or more between the canopy and the doors.
+- **No table.** The chest (26, 9, unmoved) stands on the tip of a bough that grows out of the east trunk: one tile thick at the tip, it thickens to six at the root. The bounce-pod still throws you up beside its tip, so you reach it as before. The Hornet moved from (33, 10), now inside the bough, to (31, 7), over it, where it guards the chest.
+- **What stays.** The doors, the sign, the bridge, the thorn pit, the Leaf Mantis, the Bark Knight, the bounce-pod and reachability are as they were.
+
+Judged by eye at 1x, before and after. The first canopy's notches were square and evenly spaced and read as battlements; the knots now taper to single columns and the notches vary in width. Tests: `tests/test_canopy_bridge.gd`.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
