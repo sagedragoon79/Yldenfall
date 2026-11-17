@@ -2325,6 +2325,10 @@ func test_a_flash_whitens_the_foe_not_a_box() -> void:
 				check(m == null, "%s washes its silhouette (%s)" % [file, "" if m == null else m.get_string().strip_edges()])
 
 
+## Enemy's constants that name a tell's look, not a length of time.
+const TELL_LOOK: Array[String] = ["SHEET_TELL", "TELL_WASH", "TELL_RIM"]
+
+
 ## Pass 234: the telegraph rule (CLAUDE.md, bible 7) held as a whole. Every
 ## wind-up a foe or guardian names (a *TELL, a WINDUP, a WARN) lasts at least
 ## Enemy.MIN_TELEGRAPH, and every guardian that quickens its tells by phase
@@ -2345,6 +2349,9 @@ func test_every_wind_up_in_the_game_is_fair() -> void:
 			var consts := script.get_script_constant_map()
 			for k: String in consts:
 				if not (k.contains("TELL") or k.begins_with("WINDUP") or k == "WARN") or not consts[k] is float or k.ends_with("_ALPHA"):
+					continue
+				# How a tell is drawn (its tint's strength and rim, bible 6.7), not how long it lasts.
+				if f == "enemy.gd" and k in TELL_LOOK:
 					continue
 				seen += 1
 				if consts[k] < Enemy.MIN_TELEGRAPH and not FOLLOW_ON_TELLS.has(f + ":" + k):
