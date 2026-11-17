@@ -2469,6 +2469,18 @@ The pass 580 grade: "tile repetition that shows the grid (the aqueduct's sandsto
 
 Only `assets/tiles/tower.png` and `assets/tiles/spires.png` are regenerated; the factory is unchanged. `tests/test_tower_plates.gd` (`test_sheets_run_longer_than_a_tile`) and `tests/test_shrine_ashlar.gd` hold it, with `tools/art/test_tilegen.py` for the joints. Not done here: the aqueduct's sandstone, whose blocks already run through the seams (12.39); what repeats there is the moss mark down a pier's face, which has one variant.
 
+### 12.71 Carillon's storm stands behind the fight (pass 584)
+
+The pass 580 grade: "the Spires fight frame is noisy (thin the rain, keep lightning in the far layer, darken the sky a step)". Three things were louder than the figures.
+
+- **The rain is weather, not a screen** (`SheetRain.MAX_ALPHA`, `SheetRain.LAYERS`). The sheet falls in front of the play field, so every drop crosses the hero, the foes and their tells. No layer may cover more than half of what is behind it: the near layer is at 0.46 (it was 0.85) and the far one at 0.26 (0.42). The drizzle after the Sky Spring is the same fraction of it as before (`density`, 4.4).
+- **Far lightning is dim** (`FAR_BOLT`, `FAR_BOLT_GLOW`, `lightning` in `tools/art/tilegen.py`). The bolts were already in the far layer, but they are baked into it and never go out, and at gold-7 they were the brightest marks in the room: three white ropes behind the foes. A far bolt is now a thread of crystal-4 with a crystal-3 halo. Lightning that matters in play (a Thunder Beetle's ring, Skyrend's strike, the Tempest Lance) is drawn by `LightningArc` on the play layer at full value, so bright lightning always means something.
+- **The sky is a step darker** (`SPIRES_SKY`, `SPIRES_CLOUD`): night-0 to crystal-1 (it was night-1 to crystal-2), with the storm banks and the far limbs a step down with it.
+
+**The rule for weather:** anything that falls or flashes across the whole screen stays under the value of a foe's accent (12.69) and a tell (12.0); only what can hurt you is bright.
+
+Only `assets/bg/spires_far.png` is regenerated. `tests/test_storm_backdrop.gd` holds the rain's alphas and the far layer's brightest pixel and mean; `tools/art/test_tilegen.py` (`test_carillons_far_lightning_is_dim`) holds the colors.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
