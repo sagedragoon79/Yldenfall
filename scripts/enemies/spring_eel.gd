@@ -151,11 +151,11 @@ func _draw() -> void:
 		ang = atan2(_dir.y, absf(_dir.x))
 	var white := flashing() or (state == "coil" and telegraph_pulse())
 	var f := Sheet.frame_at("spring_eel", a, now[1])
-	_sheet_white = white
+	var over := flash_overlay(white)
 	draw_set_transform(Vector2.ZERO, ang * facing, Vector2(facing, 1))
 	Sheet.draw(self, "spring_eel", a, f)
 	if white:
-		Sheet.draw(self, "spring_eel", a, f, Color(1, 1, 1, 0.85), true)
+		Sheet.draw(self, "spring_eel", a, f, over, true)
 	# The orb at the tip of its lure: a dim glow while it weaves, blazing as it coils.
 	if LAMP_AT.has(a) and not dead:
 		var lamp := 0.45 + 0.15 * sin(t * 3.0)

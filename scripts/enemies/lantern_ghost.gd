@@ -141,11 +141,11 @@ func _draw() -> void:
 	var f := Sheet.frame_at(SHEET, now[0], now[1])
 	# A ghost: drawn as faint as the fog lets it be seen.
 	var a := seen if not dead else 1.0
-	_sheet_white = white
+	var over := flash_overlay(white, maxf(a, 0.5))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2(facing, 1))
 	Sheet.draw(self, SHEET, now[0], f, Color(1, 1, 1, a))
 	if white:
-		Sheet.draw(self, SHEET, now[0], f, Color(1, 1, 1, 0.85 * maxf(a, 0.5)), true)
+		Sheet.draw(self, SHEET, now[0], f, over, true)
 	if state == "windup" and EYES.has(now[0]):
 		# The eyes flare in the wind-up, bright even in the murk.
 		var e: Vector2 = EYES[now[0]]
