@@ -161,6 +161,14 @@ PLATE_RIVET = 5   # the rivet head's step on the ramp (was 6)
 PLATE_RUST = 0.9  # a rivet rusts above this (was 0.82)
 WORN_PLATE = 0.8  # a plate is worn above this (Vorrhallow keeps WORN_BLOCK)
 PLATE_PITTED = 0.72  # a worn plate's world pixel is pitted above this (0.96 on a sound one)
+# Sheets longer than a tile (design bible 12.70, pass 583). A plate to a tile
+# made the frame's grid the room's own tile grid, and a ceiling four tiles thick
+# was graph paper (independent grade, pass 580: "tile repetition that shows the
+# grid ... the Tower's ceilings"). Half the tiles of every set the factory
+# scatters (the surface field, MID, DEEP, a floor's top and a ceiling's bottom)
+# carry no west seam, so a sheet runs through them from the tile to their west.
+# The 47 blob tiles keep their seam: a corner or a wall face always starts a sheet.
+PLATE_WIDE_SEEDS = frozenset({202, 203, 102, 212, 104, 222, 62, 63, 72, 73})
 # The share of Vorrhallow's tiles that carry the teal tide stain. Drawn in every
 # tile it ruled a stripe across the field every 16 world pixels.
 TIDE_TILES = 0.35
@@ -411,47 +419,88 @@ def paint_bricks(img, ox, oy, seed, ramp):
     field_wear(img, ox, oy, seed, ramp, BRICK_MOSS)
 
 
+# The Spires' ashlar (design bible 12.70): course heights in world px, top to
+# bottom, summing to a tile; the share of whole blocks left sound; and the share
+# of surface courses with no gold groove.
+SHRINE_COURSES = (5, 6, 5)
+SHRINE_WORN = 0.8
+SHRINE_GOLD = 0.8
+SHRINE_CRACK = 0.66
+
+
+def shrine_joints(seed, course):
+    """The head joints of one course of ``paint_shrine``, in render px: one at a
+    seeded x 4 to 12 world px in, and in about four courses in ten a second, at
+    least 6 world px from the first. As in ``spring_joints``, no joint sits
+    within 4 world px of the tile's edge, so the nearest two joints across a tile
+    seam are 8 apart and a block runs 6 to 24 world px."""
+    j = 4 + int(hash2(seed, course, 93) * 9)               # 4..12 world px
+    joints = [j * D]
+    pair = [v for v in range(4, 13) if abs(v - j) >= 6]
+    if pair and hash2(seed, course, 94) > 0.6:
+        joints.append(pair[int(hash2(seed, course, 95) * len(pair))] * D)
+    return sorted(joints)
+
+
 def paint_shrine(img, ox, oy, seed, ramp):
     """Carillon's ruined elf shrines: big pale ashlar blocks, weathered and
     cracked, some still carrying a groove of gold inlay along their face.
 
-    The block scale, the per-stone weathering and the gold inlay are all keyed to
-    ``seed``, so the factory's scattered row-7 variants (each a fresh seed) read as
-    differently-coursed masonry instead of one repeated stamp — the independent
-    grade's recurring "Spires brick field reads as one repeated stamp" (passes
-    497/502/504/515, bible 12.8)."""
-    # Course scale varies with the seed so adjacent scattered variants differ.
-    bw = (10 + int(hash2(seed, 7, 91) * 5)) * D  # 10..14 blocks wide
-    bh = (5 + int(hash2(seed, 8, 92) * 3)) * D   # 5..7 blocks tall
+    The courses are the same in every tile and the blocks run through the tile
+    seams (design bible 12.70, pass 583). The older painter keyed the block's
+    width and height to the seed (12.8), so two scattered variants side by side
+    met with their bed joints at different heights and their blocks cut off at
+    the seam: every tile was a patch with a straight edge, and the wall showed
+    the 16 px grid it was built on (independent grade, pass 580). Now:
+
+    - three courses to a tile (``SHRINE_COURSES``, 5, 6 and 5 world px), at the
+      same heights in every tile, so a bed joint runs the length of a wall;
+    - one or two head joints per course (``shrine_joints``), keyed to the seed
+      and never near the tile's edge, so the tile wraps on itself sideways and a
+      block passes through the seam into whichever variant is next;
+    - one body value (12.46). Only a block that lies whole inside the tile may
+      be worn a shade (``SHRINE_WORN``), since a block cut by the seam belongs
+      to two tiles;
+    - the gold inlay (surface tiles only, 12.46) is a groove in one stretch of
+      a course, ending short of the joints and of the tile's edge."""
     gold = not is_interior(seed)  # the inlay is surface dressing (bible 12.46)
-    for y in range(T):
-        row = y // bh
-        for x in range(T):
-            sx = x + (row % 2) * (bw // 2) + int(hash2(row, 0, seed) * 4) * D
-            bx, ly, lx = sx // bw, y % bh, sx % bw
-            # One body value, the odd worn block (bible 12.46): a coin toss between
-            # two values made the darkened deep tiers a checkerboard.
-            shade = 3 if hash2(bx, row, seed) > WORN_BLOCK else 4
-            if ly == bh - 1 or lx == 0:
-                col = f"{ramp}-1"
-            elif ly == 0 or lx == 1:
-                col = f"{ramp}-{shade + 1}"
-            elif ly == bh - 2:
-                col = f"{ramp}-{shade - 1}"
-            else:
-                col = f"{ramp}-{shade}"
-                if hash2(x // 2, y // 2, seed + 5) > 0.9:
+    y0 = 0
+    for course, rows in enumerate(SHRINE_COURSES):
+        ch = rows * D
+        joints = shrine_joints(seed, course)
+        # The stretches of this course inside the tile: the first and the last
+        # are the two ends of blocks that cross the seam.
+        cuts = [0] + joints + [T]
+        spans = list(zip(cuts[:-1], cuts[1:]))
+        worn = len(joints) == 2 and hash2(seed, course, 96) > SHRINE_WORN
+        groove = None
+        if gold and hash2(seed, course, 97) > SHRINE_GOLD:
+            a, b = max(spans, key=lambda sp: sp[1] - sp[0])
+            groove = (a + 3 * D, b - 3 * D)
+        for ly in range(ch):
+            for x in range(T):
+                lx = min((x - j) % T for j in joints)          # 0 at a joint
+                shade = 3 if worn and joints[0] <= x < joints[1] else 4
+                if ly == ch - 1 or lx == 0:
+                    col = f"{ramp}-1"
+                elif ly == 0 or lx == 1:
+                    col = f"{ramp}-{shade + 1}"
+                elif ly == ch - 2:
                     col = f"{ramp}-{shade - 1}"
-            # Gold inlay: a groove across the middle of a few blocks. Rare and
-            # keyed per block (not a regular course), so it reads as scattered
-            # accents, never a gold dash marching across every row.
-            if gold and ly == bh // 2 and 3 <= lx < bw - 3 and hash2(bx, row, seed + 7) > 0.82:
-                col = "gold-4" if lx % 4 else "gold-5"
-            img.putpixel((ox + x, oy + y), c(col))
+                else:
+                    col = f"{ramp}-{shade}"
+                    if hash2(x // 2, (y0 + ly) // 2, seed + 5) > 0.9:
+                        col = f"{ramp}-{shade - 1}"
+                if groove and ly == ch // 2 and groove[0] <= x < groove[1]:
+                    col = "gold-4" if x % 4 else "gold-5"
+                img.putpixel((ox + x, oy + y0 + ly), c(col))
+        y0 += ch
     # A crack or two, running down and sideways.
-    for k in range(2):
-        if hash2(seed, k, 31) > 0.55:
-            crack(img, ox, oy, seed, k, c(f"{ramp}-1"))
+    # A crack in about one tile in three (SHRINE_CRACK). Two tries at 0.55 each
+    # cracked seven tiles in ten, and with the blocks joined up the cracks were
+    # the mark on a beat.
+    if hash2(seed, 0, 31) > SHRINE_CRACK:
+        crack(img, ox, oy, seed, 0, c(f"{ramp}-1"))
 
 
 def paint_drowned(img, ox, oy, seed, ramp):
@@ -853,17 +902,23 @@ def paint_plates(img, ox, oy, seed, ramp):
     """Dwarven iron: one square plate of 16x16 world pixels to a tile (PLATE,
     design bible 12.54), bevelled and lit from the top left, a dim rivet at each
     corner, and rust bleeding down from the odd rivet. Every plate has one body
-    value; the odd one is worn, pitted with the shade below (WORN_PLATE)."""
+    value; the odd one is worn, pitted with the shade below (WORN_PLATE).
+
+    A tile in ``PLATE_WIDE_SEEDS`` has no seam, bevel or rivets on its west side
+    (design bible 12.70): the sheet of the tile to its west runs on through it.
+    The factory scatters these among the others, so a course of plates is made
+    of sheets one, two and three tiles long, with no joint on a fixed beat."""
     pw = PLATE * D
+    wide = seed in PLATE_WIDE_SEEDS
     for y in range(T):
         for x in range(T):
             px, py = x // pw, y // pw
             lx, ly = x % pw, y % pw
             worn = hash2(px + ox // T * 2, py + oy // T * 2, seed) > WORN_PLATE
             shade = 3
-            if lx == 0 or ly == 0:
+            if ly == 0 or (lx == 0 and not wide):
                 col = f"{ramp}-1"
-            elif lx == 1 or ly == 1:
+            elif ly == 1 or (lx == 1 and not wide):
                 col = f"{ramp}-{shade + 1}"
             elif lx == pw - 1 or ly == pw - 1:
                 col = f"{ramp}-{shade - 1}"
@@ -878,6 +933,8 @@ def paint_plates(img, ox, oy, seed, ramp):
     for py in range(T // pw):
         for px in range(T // pw):
             for rx, ry in [(3, 3), (pw - 4, 3), (3, pw - 4), (pw - 4, pw - 4)]:
+                if wide and rx == 3:
+                    continue  # no joint here, so nothing to rivet
                 x, y = px * pw + rx, py * pw + ry
                 img.putpixel((ox + x, oy + y), c(f"{ramp}-{PLATE_RIVET}"))
                 img.putpixel((ox + x + 1, oy + y + 1), c(f"{ramp}-1"))

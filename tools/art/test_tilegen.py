@@ -682,23 +682,30 @@ def test_shrine_gold_inlay_is_sparse():
     assert mean < 0.02, f"Spires gold inlay is not sparse: {mean:.4f} of the field"
 
 
-def test_shrine_course_scale_varies_with_seed():
-    # The ashlar block scale is keyed to the seed, so the factory's scattered row-7
-    # variants (each a fresh seed) read as differently-coursed masonry rather than
-    # one stamp. A full mortar course (ly == bh-1) paints the whole row stone-1, so
-    # the number of such rows in a tile tracks its course height — and that count
-    # must not be constant across seeds. (A fixed bh makes every seed draw the same
-    # course density and fails this.)
+def test_shrine_courses_run_through_the_tile_seams():
+    # The ashlar's bed joints sit at the same rows for every seed, and no head
+    # joint is within 4 world px of the tile's edge, so the factory's scattered
+    # variants join into one wall (bible 12.70, pass 583). The older painter keyed
+    # the block size to the seed, and every tile was a patch with a straight edge.
+    # (A course height keyed to the seed, or a joint at x 0, fails this.)
     stone1 = tg.c("stone-1")
-    counts = set()
+    beds = None
+    joints = set()
     for seed in range(200, 224):
         img = _shrine_tile(seed)
-        rows = 0
-        for y in range(tg.T):
-            if sum(1 for x in range(tg.T) if img.getpixel((x, y)) == stone1) > 0.8 * tg.T:
-                rows += 1
-        counts.add(rows)
-    assert len(counts) >= 2, f"Spires course scale does not vary with the seed: {counts}"
+        rows = tuple(
+            y for y in range(tg.T)
+            if sum(1 for x in range(tg.T) if img.getpixel((x, y)) == stone1) > 0.8 * tg.T
+        )
+        assert beds is None or rows == beds, f"seed {seed}: bed joints at {rows}, not {beds}"
+        beds = rows
+        for course in range(len(tg.SHRINE_COURSES)):
+            js = tg.shrine_joints(seed, course)
+            joints.add(tuple(js))
+            for j in js:
+                assert 4 * tg.D <= j <= tg.T - 4 * tg.D, f"seed {seed}: a head joint at {j}"
+    assert len(beds) == len(tg.SHRINE_COURSES)
+    assert len(joints) > 8, "the head joints do not vary with the seed"
 
 
 def test_hearthroot_houses_vary_rooflines():
