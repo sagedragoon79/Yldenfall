@@ -240,3 +240,137 @@ func test_the_veins_have_their_stalk() -> void:
 	check(stalk.get_child_count() == 0, "scenery only: nothing to touch or to be hurt by")
 	check(FileAccess.get_file_as_string("res://levels/evercrown/veins.room").contains("runs up these veins to the core"), "the sign still tells of the light that runs up to the core")
 	check(BloomStalk._baked != null, "the stalk is baked once for the whole run")
+
+
+func _veins_grid() -> Array[String]:
+	var rows: Array[String] = []
+	var text := FileAccess.get_file_as_string("res://levels/evercrown/veins.room").replace("\r", "")
+	for line: String in text.split("---\n")[1].split("\n"):
+		if line != "":
+			rows.append(line)
+	return rows
+
+
+## The independent grade after pass 575: "most rooms are a rectangular tile
+## frame around a dead-level floor". The sixth room changed for it (12.63's
+## rule, pass 581), and the first shaft. The stalk's roots have heaved the
+## floor: a hump west of them, and east of them a bank a tile up and a second
+## two up. The vault is a vault: it steps down from the crown to both walls,
+## lowest in the west corner. The stalk's own floor and the stone over its
+## crown are as they were, and so is every shelf and vein of the climb.
+func test_the_veins_are_not_a_level_box() -> void:
+	var grid := _veins_grid()
+	check(grid.size() == 68 and grid[0].length() == 40, "the shaft keeps its size")
+	var wide := grid[0].length()
+	var back := char(92)
+	var slopes := "/" + back
+	var floors := {}
+	var ceilings := {}
+	var floor_of: Array[int] = []
+	var top_of: Array[int] = []
+	var ramps: Array[Vector2i] = []
+	for x in wide:
+		var y := grid.size() - 1
+		while y > 0 and ("#" + slopes).contains(grid[y][x]):
+			y -= 1
+		floor_of.append(y)
+		var top := 0
+		while top < grid.size() and grid[top][x] == "#":
+			top += 1
+		top_of.append(top)
+		for row in grid.size():
+			if slopes.contains(grid[row][x]):
+				ramps.append(Vector2i(x, row))
+		if x == 0 or x == wide - 1:
+			continue  # the walls
+		ceilings[top] = true
+		if not slopes.contains(grid[y + 1][x]):
+			floors[y] = true
+	var level := 65
+	check(floor_of[1] == level and grid[level][0] == "1" and grid[level - 3][0] == "1", "the west door opens on the old floor")
+	check(floors.size() == 3, "the floor stands at three heights (%s)" % [floors.keys()])
+	check(ceilings.size() >= 5, "the vault's underside stands at five heights (%s)" % [ceilings.keys()])
+	# The stalk (12.59) is 256 px wide on the shaft's middle: tiles 12 to 27.
+	for x in range(12, 28):
+		check(floor_of[x] == level and top_of[x] == 4, "the stalk's floor and the stone over its crown are as they were at tile %d" % x)
+	# The ramps.
+	check(ramps.size() == 4, "four ramp tiles (%s)" % [ramps])
+	if ramps.size() != 4:
+		return
+	for r: Vector2i in ramps:
+		var high := -1 if grid[r.y][r.x] == back else 1
+		check(grid[r.y + 1][r.x] == "#" and grid[r.y][r.x + high] == "#", "the ramp at %s has ground under it and on its high side" % r)
+		check(grid[r.y][r.x - high] == ".", "and open floor at its foot")
+	check(grid[ramps[0].y][ramps[0].x] == "/" and grid[ramps[1].y][ramps[1].x] == back and ramps[0].y == level and ramps[1].y == level, "a hump west of the roots, a ramp up and a ramp down")
+	check(ramps[0].x > 8 and ramps[1].x < 12 and ramps[1].x - ramps[0].x <= 3, "between the door's landing and the stalk (tiles %d to %d)" % [ramps[0].x, ramps[1].x])
+	check(grid[ramps[2].y][ramps[2].x] == "/" and ramps[2].y == level and ramps[2].x > 27, "east of the roots a ramp climbs to a bank (tile %d)" % ramps[2].x)
+	check(grid[ramps[3].y][ramps[3].x] == "/" and ramps[3].y == level - 1 and ramps[3].x >= ramps[2].x + 4, "and a second climbs from the bank to the east wall's (tile %d)" % ramps[3].x)
+	for x in range(ramps[2].x + 1, ramps[3].x):
+		check(floor_of[x] == level - 1, "the bank stands a tile up at tile %d" % x)
+	for x in range(ramps[3].x + 1, wide - 1):
+		check(floor_of[x] == level - 2, "the east wall's bank stands two up at tile %d" % x)
+	# The vault: highest over the crown, stepping down to both walls, lowest in the west.
+	var steps_west := 0
+	var steps_east := 0
+	for x in range(1, wide - 2):
+		if x < 12:
+			check(top_of[x] >= top_of[x + 1], "the vault never rises toward the west wall (tile %d)" % x)
+			steps_west += 1 if top_of[x] > top_of[x + 1] else 0
+		elif x >= 27:
+			check(top_of[x + 1] >= top_of[x], "nor toward the east wall (tile %d)" % x)
+			steps_east += 1 if top_of[x + 1] > top_of[x] else 0
+	check(steps_west >= 3 and steps_east >= 2, "it steps down three times to the west and twice to the east (%d and %d)" % [steps_west, steps_east])
+	check(top_of[1] > top_of[wide - 2], "and hangs lowest in the west corner (%d rows against %d)" % [top_of[1], top_of[wide - 2]])
+	# The east door, its shelf, and the air a jump to it needs.
+	check(grid[8][wide - 1] == "2" and grid[11][wide - 1] == "2" and grid[12].substr(25, 14) == "--------------", "the east door and its shelf are where they were")
+	for x in range(25, wide - 1):
+		check(12 - top_of[x] >= 6, "six open rows over the shelf at tile %d" % x)
+	# Nothing of the climb moved: the shelves, the veins, the sign.
+	var planks := 0
+	var veins: Array[Vector2i] = []
+	var hazards := 0
+	for row in grid.size():
+		planks += grid[row].count("-")
+		hazards += grid[row].count("^") + grid[row].count("o")
+		for x in wide:
+			if grid[row][x] == "x":
+				veins.append(Vector2i(x, row))
+	check(planks == 150, "every shelf of the climb is as it was (%d plank tiles)" % planks)
+	check(veins == [Vector2i(21, 12), Vector2i(32, 21), Vector2i(21, 30), Vector2i(4, 39), Vector2i(14, 48), Vector2i(32, 57)], "the six veins are where they were (%s)" % [veins])
+	check(hazards == 0, "no hazard in the floor: the fight is the veins")
+	for x in range(18, 22):
+		check(top_of[x] == 4 and grid[7][x] == ".", "the core hangs in open air at tile %d" % x)
+	# Done for real: with the core starved, a walk east from the door crosses
+	# the hump, passes the roots and climbs both banks with no jump.
+	GameState.new_game()
+	GameState.set_flag("boss:everbloom_veins")
+	var w := make_world({}, "evercrown/veins", cell_feet(3, level))
+	await frames(12)
+	var p := w.player
+	var from_y := p.global_position.y
+	var hp := p.hp
+	check(p.is_on_floor(), "in from the west door, the hero stands on the old floor")
+	var on_hump := from_y
+	var past_roots := -1.0
+	p.input.move_x = 1
+	var steps := 0
+	while p.global_position.x < 37 * Room.TILE and steps < 900:
+		await frames(1)
+		steps += 1
+		if p.global_position.x < 12 * Room.TILE:
+			on_hump = minf(on_hump, p.global_position.y)
+		elif p.global_position.x > 19 * Room.TILE and past_roots < 0.0:
+			past_roots = p.global_position.y
+	p.input.move_x = 0
+	await frames(10)
+	check(p.global_position.x >= 37 * Room.TILE, "a walk east from the west door reaches the east wall with no jump (x %.0f after %d frames)" % [p.global_position.x, steps])
+	check_near(from_y - on_hump, float(Room.TILE), 2.0, "it goes over the hump, a tile up")
+	check_near(past_roots, from_y, 2.0, "passes the roots on the old floor")
+	check_near(from_y - p.global_position.y, 2.0 * Room.TILE, 2.0, "and ends two tiles up, on the east wall's bank")
+	check(p.is_on_floor() and p.hp == hp, "unhurt")
+	var stalk := _stalk(w.room)
+	check(stalk != null and w.room.is_solid_at(stalk.position + Vector2(BloomStalk.AXIS, 4)) and not w.room.is_solid_at(stalk.position + Vector2(BloomStalk.AXIS, -4)), "the stalk's roots still stand on the floor")
+	check(stalk != null and w.room.is_solid_at(stalk.position + Vector2(BloomStalk.AXIS, -BloomStalk.HEIGHT - 4)) and not w.room.is_solid_at(stalk.position + Vector2(BloomStalk.AXIS, -BloomStalk.HEIGHT + 4)), "and its crown still meets the vault")
+	w.queue_free()
+	await frames(2)
+	GameState.new_game()

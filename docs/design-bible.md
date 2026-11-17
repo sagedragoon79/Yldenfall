@@ -2435,6 +2435,18 @@ Nothing here hurts: no hazard and no foe. Reachability is as it was. Judged by e
 
 Tests: `tests/test_spring_wall.gd` (`test_the_fountain_plaza_is_not_a_level_box`).
 
+### 12.68 The stalk's roots heaved the Veins' floor, and the vault steps down to its walls (pass 581)
+
+The sixth room changed for the pass 575 grade's top defect, by 12.63's rule, and the first shaft. The Veins had their landmark (12.59) in a plain box 40 tiles wide and 68 high: a floor at one height from wall to wall, and a vault ruled straight.
+
+A shaft's floor and vault are one screen each of a climb three screens tall, so each is shaped on its own. The floor is the roots' work and stands at three heights. From the west door it is level for eight tiles. A hump one tile high, a ramp up and a ramp down, lies between the door's landing and the stalk. Under the stalk the floor is as it was for 16 tiles (tiles 12 to 27, the width of the stalk's picture), so the roots stand where they stood. East of them a ramp climbs to a bank a tile up, four tiles long, and a second ramp climbs to a bank two tiles up against the east wall. The stalk's east root runs in under the first bank.
+
+The vault's underside stands at five heights. Over the stalk's crown and the core it is as it was. It steps down a tile over each side, a second tile nearer each wall, and on the west, where no shelf stands under it, twice more, so the west corner hangs six tiles lower than the crown and the core hangs in the tallest part of the vault. The east side stops at two steps: the east door's shelf keeps six open rows over it.
+
+The climb is as it was: every shelf, every vein, the sign and both doors are on the tiles they were on, so the fight (8.9) plays the same. Nothing in the floor hurts. Reachability is as it was. Judged by eye at 1x at the foot and the head of `evercrown/veins`: the vault reads as a vault with the core at its keystone, and the banks give the foot a ground line that is not a ruled edge.
+
+Tests: `tests/test_bloom_stalk.gd` (`test_the_veins_are_not_a_level_box`).
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
