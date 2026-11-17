@@ -126,7 +126,7 @@ func _ready() -> void:
 		_corrupt()
 	hp = max_hp
 	home = global_position
-	_rest_material = FoeLight.material_for(FoeLight.zone_of(self))
+	_rest_material = FoeLight.material_for(FoeLight.zone_of(self), FoeLight.id_of(self))
 	material = _rest_material
 
 
