@@ -200,8 +200,11 @@ var second_wind := false
 ## Wanderer's Grace (skill): longer dash invulnerability, and a kill gives the
 ## air dashes back.
 var wanderers_grace := false
-## Feather Fall (skill): glide after the double jump by holding Jump.
+## Feather Fall (the Thistledown Cloak): glide after the double jump by holding Jump.
 var feather_fall := false
+## The Hollowmist Cloak (design bible 5.6): lesser ghosts and undead do not see
+## you until you strike them (`Enemy.ignores_player`).
+var spectral := false
 ## True while gliding (set each frame).
 var is_gliding := false
 var _glide_feather_timer := 0.0
@@ -1827,6 +1830,8 @@ func _check_hazards() -> void:
 			take_damage(combat.hazard_damage, true)
 			return
 		if c.is_in_group("enemy") and "contact_damage" in c and c.contact_damage > 0 and not c.dead:
+			if c is Enemy and c.ignores_player():
+				continue
 			receive_attack(c.contact_damage, c, false)
 			return
 

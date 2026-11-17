@@ -89,7 +89,8 @@
 			{"item": "gold_key", "price": 900},
 			{"item": "mana_dew", "price": 1000, "once": true},
 			{"item": "life_fruit", "price": 1600, "once": true},
-			{"item": "moonthread_circlet", "price": 1400}
+			{"item": "moonthread_circlet", "price": 1400},
+			{"item": "thistledown_cloak", "price": 1800}
 		]
 	},
 	"sylvarre_charts": {
@@ -152,7 +153,8 @@
 			{"item": "copper_key", "price": 150},
 			{"item": "silver_key", "price": 400},
 			{"item": "ointment", "price": 300},
-			{"item": "elixir", "price": 1500}
+			{"item": "elixir", "price": 1500},
+			{"item": "hollowmist_cloak", "price": 1500}
 		]
 	},
 	"lampwick_charts": {

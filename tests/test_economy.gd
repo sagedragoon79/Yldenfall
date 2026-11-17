@@ -573,6 +573,118 @@ func test_circlets_are_worn_on_the_head_and_shape_spells() -> void:
 			check(not items[id].has("defense") and not items[id].has("ward") and not items[id].has("hp") and not items[id].has("melee"), "%s gives the body nothing" % id)
 
 
+## The cloak (design bible 5.6): always one worn, each with one piece of
+## utility and its own pair of colors, which a dye changes.
+func test_a_cloak_is_worn_with_its_own_colors_and_one_use() -> void:
+	var w := make_world(_town(), "test/town")
+	var p := w.player
+	await frames(3)
+	p.gold = 9000
+	check(GameState.data.equipment.cloak == "warden_cloak" and GameState.dye() == "warden_dye" and PlayerVisual.dye_look().is_empty(),
+		"a new game wears the Warden's Cloak in Warden Green, the art's own")
+	check(not p.feather_fall and not p.spectral, "and it does nothing else")
+	# The Thistledown Cloak is sold in Sylvarre and goes on in its own colors.
+	var stock: Array = GameData.shop("sylvarre_items").stock
+	var at := stock.find_custom(func(e: Dictionary) -> bool: return e.item == "thistledown_cloak")
+	check(at >= 0 and Shop.buy("sylvarre_items", at, p), "the Thistledown Cloak is bought in Sylvarre")
+	check(GameState.data.equipment.cloak == "thistledown_cloak" and GameState.dye() == "" and PlayerVisual.dye_look()[0] == Color("8a7aa8"),
+		"it goes on, in its own thistle color (%s)" % [PlayerVisual.dye_look()])
+	check(Cloak.trim() == Color("dcdce8"), "with its own trim")
+	check(p.feather_fall and Shop.status("sylvarre_items", at, p) == "owned", "it is Feather Fall, and is not sold twice")
+	p.abilities.erase("boots")
+	var row: Dictionary = Menus.equipment_rows().filter(func(r: Dictionary) -> bool: return r.get("id", "") == "thistledown_cloak")[0]
+	check(row.right == "Worn" and String(row.detail).contains("sleeps until you find the Featherstep Boots"), "it glides only with the Boots, and its row says so (%s)" % row.detail)
+	# A dye colors the cloth; the trim stays the cloak's.
+	GameState.data.dyes = ["tide_dye"]
+	Menus.choose_equipment("tide_dye", p)
+	check(GameState.dye() == "tide_dye" and PlayerVisual.dye_look()[0] == Color("4a8ad0") and Cloak.trim() == Color("dcdce8"), "a dye colors the cloth and leaves the trim")
+	var own: Array = Menus.equipment_rows().filter(func(r: Dictionary) -> bool: return r.get("id", "") == Menus.OWN_COLORS)
+	check(own.size() == 1 and own[0].right == "", "a row takes the dye off")
+	Menus.choose_equipment(Menus.OWN_COLORS, p)
+	check(GameState.dye() == "" and PlayerVisual.dye_look()[0] == Color("8a7aa8"), "back to its own colors")
+	# Choosing the worn cloak keeps it on: a cloak is always worn.
+	Menus.choose_equipment("thistledown_cloak", p)
+	check(GameState.data.equipment.cloak == "thistledown_cloak", "choosing the worn cloak keeps it on")
+	# The Warden's Cloak again: Warden Green, and no glide.
+	GameState.data.dye = "tide_dye"
+	Menus.choose_equipment("warden_cloak", p)
+	check(GameState.data.equipment.cloak == "warden_cloak" and GameState.dye() == "warden_dye" and not p.feather_fall and Cloak.trim() == Cloak.TRIM,
+		"the Warden's Cloak goes back on in its own green and gold, and the glide comes off")
+	check(not Menus.equipment_rows().any(func(r: Dictionary) -> bool: return r.get("id", "") == Menus.OWN_COLORS), "its own colors are Warden Green, so no second row")
+	# The Hollowmist Cloak, sold in Lampwick.
+	stock = GameData.shop("lampwick_keys").stock
+	at = stock.find_custom(func(e: Dictionary) -> bool: return e.item == "hollowmist_cloak")
+	check(at >= 0 and Shop.buy("lampwick_keys", at, p) and p.spectral and not p.feather_fall, "the Hollowmist Cloak is bought in Lampwick, and hides you from the undead")
+	# The page lists cloaks, then dyes under their own header.
+	var heads := Menus.equipment_rows().filter(func(r: Dictionary) -> bool: return r.get("header", false)).map(func(r: Dictionary) -> String: return String(r.label))
+	check(heads.find("Dye") == heads.find("Cloak") + 1, "the Cloak section is followed by the Dye section (%s)" % [heads])
+	# Every cloak has at most one piece of utility, and none a stat.
+	var items := GameData.table("items")
+	for id: String in items:
+		if String(items[id].kind) == "cloak":
+			var uses := ["glide", "spectral"].filter(func(k: String) -> bool: return items[id].has(k))
+			check(uses.size() <= 1 and (uses.size() == 1 or id == "warden_cloak"), "%s has one use (%s)" % [id, uses])
+			check(not items[id].has("defense") and not items[id].has("ward") and not items[id].has("melee"), "%s gives no stat" % id)
+
+
+## The Hollowmist Cloak (design bible 5.6): lesser ghosts and undead do not see
+## or touch you until you strike them. Other foes see you as ever.
+func test_the_hollowmist_cloak_hides_you_from_the_undead() -> void:
+	var w := make_world(_town({Vector2i(7, 17): "A", Vector2i(30, 19): "D"}), "test/town", cell_feet(6, 19))
+	var p := w.player
+	await frames(2)
+	var ghost: LanternGhost = _find(w.room, LanternGhost)
+	var dwarf: RotDwarf = _find(w.room, RotDwarf)
+	check(ghost != null and ghost.undead and dwarf != null and not dwarf.undead, "a Lantern Ghost is undead, a Rot Dwarf is not")
+	check(not ghost.ignores_player() and ghost.player_offset().x != INF, "without the cloak the ghost sees you")
+	GameState.obtain_gear("hollowmist_cloak", p)
+	check(p.spectral and ghost.ignores_player() and ghost.player_offset().x == INF, "with it, the ghost does not")
+	# (A wind-up begun before the cloak went on plays out; start from rest.)
+	ghost.set_state("idle")
+	check(dwarf.player_offset().x != INF, "but the Rot Dwarf still does")
+	# Left alone side by side, the ghost does not hurt you.
+	var hp0 := p.hp
+	ghost.global_position = p.global_position + Vector2(0, -20)
+	ghost.contact_damage = 5
+	for i in 30:
+		ghost.global_position = p.global_position + Vector2(0, -20)
+		await frames(1)
+	check(p.hp == hp0 and ghost.state != "windup" and ghost.state != "lunge", "it drifts through you without a touch or a lunge (%d of %d, %s)" % [p.hp, hp0, ghost.state])
+	# Strike it and it knows you.
+	ghost.take_hit(1, Vector2.RIGHT)
+	check(not ghost.ignores_player() and ghost.player_offset().x != INF, "struck, it sees you")
+	for need: String in ["LanternGhost", "DrownedDwarf", "ShadeKnight"]:
+		var foe: Enemy = {"LanternGhost": LanternGhost, "DrownedDwarf": DrownedDwarf, "ShadeKnight": ShadeKnight}[need].new()
+		check(foe.undead, "%s is undead" % need)
+		foe.free()
+
+
+## Feather Fall left the skill tree for the Thistledown Cloak (design bible
+## 5.6): a save that learned it gets its points back and the cloak on.
+func test_feather_fall_moved_to_a_cloak() -> void:
+	check(not Skills.nodes().any(func(n: Dictionary) -> bool: return n.id == "feather_fall"), "the skill is gone from the tree")
+	var sense: Array = Skills.nodes().filter(func(n: Dictionary) -> bool: return n.id == "treasure_sense")
+	check(sense.size() == 1 and sense[0].needs == "second_stride", "Treasure Sense follows Second Stride now")
+	var src := GameState.fresh()
+	src.skills = ["deep_pockets", "gold_sense", "quick_draught", "second_stride", "feather_fall"]
+	src.skill_points = 1
+	src.equipment.erase("cloak")
+	src.gear = ["short_sword"]
+	var out := GameState.sanitize(src)
+	check(not Array(out.skills).has("feather_fall") and int(out.skill_points) == 1 + GameState.FEATHER_FALL_POINTS, "its points come back (%d)" % int(out.skill_points))
+	check(out.equipment.cloak == "thistledown_cloak" and Array(out.gear).has("thistledown_cloak") and Array(out.gear).has("warden_cloak"),
+		"the Thistledown Cloak is on, and the Warden's Cloak kept (%s)" % [out.gear])
+	check(out.dye == "warden_dye", "in the Warden Green it wore")
+	var plain := GameState.fresh()
+	plain.equipment.erase("cloak")
+	plain.gear = ["short_sword"]
+	var kept := GameState.sanitize(plain)
+	check(kept.equipment.cloak == "warden_cloak" and Array(kept.gear).has("warden_cloak") and kept.dye == "", "an older save without it wears the Warden's Cloak")
+	var wrong := GameState.fresh()
+	wrong.equipment.cloak = "short_sword"
+	check(GameState.sanitize(wrong).equipment.cloak == "warden_cloak", "and a blade worn as a cloak comes off")
+
+
 func test_trinkets_neck_two_rings_and_a_relic() -> void:
 	var w := make_world(_town(), "test/town")
 	var p := w.player
@@ -713,7 +825,7 @@ func test_the_skill_tree_says_what_a_skill_waits_on() -> void:
 			if String(node.desc).contains(names[a]):
 				untagged.append("%s: %s" % [node.id, a])
 	check(untagged.is_empty(), "a skill that names an ability says it uses it: %s" % [untagged])
-	check(users.size() == 9, "nine skills work through something found (%d)" % users.size())
+	check(users.size() == 8, "eight skills work through something found (%d)" % users.size())
 	var rows := Menus.skill_rows()
 	var by_id := {}
 	for row: Dictionary in rows:
@@ -721,7 +833,6 @@ func test_the_skill_tree_says_what_a_skill_waits_on() -> void:
 	for id: String in users:
 		check(String(by_id[id].detail).contains("Does nothing until you find the " + Skills.waits_on(id) + "."), "on a new game %s says what it waits on" % id)
 	check(not String(by_id.keen_edge.detail).contains("Does nothing"), "a skill that needs nothing says nothing")
-	check(String(by_id.feather_fall.detail).ends_with("Does nothing until you find the Featherstep Boots."), "Feather Fall waits on the Featherstep Boots")
 	check(String(by_id.delvers_pick_mastery.detail).contains("the Delver's Pick."), "Pick Mastery on the Delver's Pick")
 	for id: String in GameState.data.abilities:
 		GameState.data.abilities[id] = true
@@ -2608,7 +2719,7 @@ func test_act_three_skills_chain_and_apply() -> void:
 		check(Skills.status(id) == "locked", id + " waits on the end of its branch")
 	for id: String in ["keen_edge", "fourth_strike", "rising_cut", "delvers_pick_mastery", "riposte", "keener_edge", "bloodletting",
 			"clear_mind", "siphon", "torrent_pierce", "wisplight_swarm", "thrift", "chain_thunder", "time_thief",
-			"deep_pockets", "gold_sense", "quick_draught", "second_stride", "feather_fall", "treasure_sense", "resilience", "last_stand", "second_wind"]:
+			"deep_pockets", "gold_sense", "quick_draught", "second_stride", "treasure_sense", "resilience", "last_stand", "second_wind"]:
 		check(Skills.learn(id, p), "learned " + id)
 	check(p.riposte and p.bloodletting and p.chain_thunder and p.time_thief, "Riposte, Bloodletting, Forked Storm and Time Thief switch on")
 	check(p.last_stand and p.second_wind and GameState.has_skill("treasure_sense"), "Treasure Sense, Last Stand and Second Wind are learned")
@@ -2631,7 +2742,7 @@ func _learn_all(p: Player, ids: Array) -> void:
 
 const BLADE_TO := ["keen_edge", "fourth_strike", "rising_cut", "delvers_pick_mastery", "riposte", "keener_edge", "bloodletting"]
 const ARCANA_TO := ["clear_mind", "siphon", "torrent_pierce", "wisplight_swarm", "thrift", "chain_thunder", "time_thief"]
-const WANDERER_TO := ["deep_pockets", "gold_sense", "quick_draught", "second_stride", "feather_fall", "treasure_sense", "resilience", "last_stand", "second_wind"]
+const WANDERER_TO := ["deep_pockets", "gold_sense", "quick_draught", "second_stride", "treasure_sense", "resilience", "last_stand", "second_wind"]
 
 
 func test_riposte_answers_a_parry_with_a_heavy_cut() -> void:
@@ -3376,8 +3487,9 @@ func test_the_equipment_page_shows_blade_numbers_and_changes_the_cloak() -> void
 	var rows := Menus.equipment_rows()
 	var labels: Array = rows.map(func(r: Dictionary) -> String: return r.label)
 	var at := labels.find("Cloak")
-	check(at > 0 and rows[at].get("header", false) and labels.slice(at + 1, at + 5) == ["Warden Green", "Tide Blue", "Crown Gold", "Grain Slate"]
-		and labels[at + 5] == "Hair", "the page ends with the Cloak and its dyes, then the Hair (%s)" % [labels])
+	check(at > 0 and rows[at].get("header", false) and labels[at + 1] == "Warden's Cloak" and labels[at + 2] == "Dye"
+		and labels.slice(at + 3, at + 7) == ["Warden Green", "Tide Blue", "Crown Gold", "Grain Slate"]
+		and labels[at + 7] == "Hair", "the page ends with the Cloak, its dyes, then the Hair (%s)" % [labels])
 	check(rows[labels.find("Grain Slate")].right == "Worn", "marking the one on")
 	check(String(rows[1].detail).contains("Cuts 8, heavy 14."), "a blade's row gives its numbers")
 	# Every row's detail fits the menu's box (three lines), the longest gear
@@ -3410,7 +3522,7 @@ func test_gear_is_kept_and_swapped_and_the_broad_sword_takes_both_hands() -> voi
 	await frames(3)
 	GameState.set_flag("spring:sky")
 	p.gold = 20000
-	check(GameState.data.gear == ["short_sword"], "you start with the Short Sword (%s)" % [GameState.data.gear])
+	check(GameState.data.gear == ["short_sword", "warden_cloak"], "you start with the Short Sword and the Warden's Cloak (%s)" % [GameState.data.gear])
 	var buy := func(shop: String, id: String) -> bool:
 		var stock: Array = GameData.shop(shop).stock
 		for i in stock.size():
@@ -3449,7 +3561,7 @@ func test_gear_is_kept_and_swapped_and_the_broad_sword_takes_both_hands() -> voi
 	src.erase("gear")
 	var got := GameState.sanitize(JSON.parse_string(JSON.stringify(src)))
 	check(got.equipment.blade == "dwarvish_broad_sword" and int(got.tempers.dwarvish_broad_sword) == 1, "the Giant Blade is the Dwarvish Broad Sword, tempers kept")
-	check(got.gear == ["short_sword", "dwarvish_broad_sword", "leather_armor", "large_shield"], "an old save keeps what it wore (%s)" % [got.gear])
+	check(got.gear == ["short_sword", "warden_cloak", "dwarvish_broad_sword", "leather_armor", "large_shield"], "an old save keeps what it wore, and gets the Warden's Cloak (%s)" % [got.gear])
 
 
 ## The gold sheet (design bible 10.1, pass 197): along the critical path, a

@@ -88,6 +88,10 @@ const LAUNCH_STUN := 0.5
 const LAUNCH_MAX_HP := 40
 ## False for foes rooted in place (Sap Spitter): Rising Cut can't lift them.
 var launchable := true
+## A lesser ghost or undead (design bible 5.6): the Hollowmist Cloak hides you
+## from it until you strike it.
+var undead := false
+var _provoked := false
 var knockback := 140.0
 var hits_taken := 0
 ## True once it has gone down with its master (`perish`), not to a blow.
@@ -241,6 +245,7 @@ func take_throw(damage: int, dir: Vector2) -> void:
 func take_hit(damage: int, dir: Vector2) -> void:
 	if dead:
 		return
+	_provoked = true
 	hits_taken += 1
 	var dealt := _modify_damage(damage, dir)
 	if dealt <= 0:
@@ -435,16 +440,25 @@ func _respawn() -> void:
 
 
 ## Damages the player if `rect` overlaps them. Returns the player's resolution.
+## True while the hero, under the Hollowmist Cloak, is hidden from this foe:
+## it is undead and has not been struck. It neither sees nor touches them.
+func ignores_player() -> bool:
+	if not undead or _provoked:
+		return false
+	var p := player()
+	return p != null and p.spectral
+
+
 func hit_player_in_rect(rect: Rect2, damage: int, parryable := true) -> String:
 	var p := player()
-	if p == null or p.dead or not rect.intersects(p.body_rect()):
+	if p == null or p.dead or ignores_player() or not rect.intersects(p.body_rect()):
 		return ""
 	return p.receive_attack(damage, self, parryable)
 
 
 func face_player() -> void:
 	var p := player()
-	if p:
+	if p and not ignores_player():
 		var dx := p.global_position.x - global_position.x
 		if absf(dx) > 2.0:
 			facing = int(signf(dx))
@@ -452,7 +466,7 @@ func face_player() -> void:
 
 func player_offset() -> Vector2:
 	var p := player()
-	if p == null or p.dead:
+	if p == null or p.dead or ignores_player():
 		return Vector2(INF, INF)
 	return p.global_position + Vector2(0, -20) - center()
 
@@ -461,7 +475,7 @@ func player_offset() -> Vector2:
 ## feet, standing or crouched): where a blow meant to be ducked is aimed.
 func player_head_offset() -> Vector2:
 	var p := player()
-	if p == null or p.dead:
+	if p == null or p.dead or ignores_player():
 		return Vector2(INF, INF)
 	return p.global_position + Vector2(0, -HEAD_HEIGHT) - center()
 

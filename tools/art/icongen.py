@@ -142,6 +142,18 @@ def circlet(metal, stone, lit):
         return cv.finish()[0]
     return paint
 
+def cloak(cloth, trim):
+    """A cloak hung from its shoulders, seen from behind: the hood down, trim at the hem."""
+    def paint():
+        cv = icon()
+        body = cv.polygon([(4.6, 3.0), (9.4, 3.0), (12.4, 13.2), (1.6, 13.2)])
+        cv.part(body, cloth, deep=True)
+        cv.part(cv.ellipse((7.0, 3.4), 3.4, 2.0), cloth)
+        cv.part(cv.polygon([(1.9, 12.0), (12.1, 12.0), (12.4, 13.2), (1.6, 13.2)]), trim)
+        cv.flat(cv.ellipse((7.0, 4.6), 0.8, 0.7), PAL["gold-7"])
+        return cv.finish()[0]
+    return paint
+
 # --- Keys, fruit, dew, balm and draught ----------------------------------------
 
 def key(metal, teeth=2, thorn=False):
@@ -330,6 +342,9 @@ BY_ID = {
     "large_shield": kite(mat("ember", 5, 4, 3, 1), IRON, device=mat("stone", 7, 6, 5, 3)),
     "magic_shield": kite(mat("night", 5, 4, 3, 1), GOLD, glow=mat("crystal", 7, 6, 4, 2)),
     "elven_helm": helm,
+    "warden_cloak": cloak(mat("leaf", 5, 4, 3, 1), GOLD),
+    "hollowmist_cloak": cloak(mat("sky", 5, 4, 3, 1), mat("crystal", 7, 6, 5, 3)),
+    "thistledown_cloak": cloak(mat("night", 6, 5, 4, 2), mat("stone", 7, 6, 5, 3)),
     "moonthread_circlet": circlet(mat("stone", 7, 6, 4, 2), mat("sky", 7, 6, 4, 2), PAL["sky-6"]),
     "stormglass_circlet": circlet(GOLD, mat("crystal", 7, 6, 4, 2), PAL["crystal-7"]),
     "copper_key": key(mat("ember", 6, 5, 3, 1), teeth=1),

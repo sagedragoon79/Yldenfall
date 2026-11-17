@@ -377,13 +377,16 @@ static func draw_frame(ci: CanvasItem, name: String, f: int, tint: Color, flat: 
 	Sheet.draw(ci, SHEET_NAME, name, f, tint, flat)
 
 
-## The cloak dye worn (pass 136): [lit color, glows]. Warden Green, the
-## sheet's own cloak, returns an empty array: nothing to recolor.
+## The cloak dye worn (pass 136): [lit color, glows]. With no dye on, the
+## worn cloak's own color (design bible 5.6). Warden Green, the sheet's own
+## cloak, returns an empty array: nothing to recolor.
 static func dye_look() -> Array:
-	var item := GameData.item(GameState.dye())
-	if String(item.get("color", "")) == "":
+	var id := GameState.dye()
+	var item := GameData.item(id) if id != "" else GameState.cloak()
+	var tone := String(item.get("color" if id != "" else "body", ""))
+	if tone == "":
 		return []
-	return [Color(String(item.color)), bool(item.get("glow", false))]
+	return [Color(tone), bool(item.get("glow", false))]
 
 
 ## The hair color chosen (an id of HAIR): [lit color], or empty for the art's own violet.
@@ -398,12 +401,12 @@ static func hair_look() -> Array:
 ## body sets' greens are a tunic and elven steel, so they are drawn undyed.
 func _sync_dye() -> void:
 	var keyed: bool = sheet != SHEET_NAME and Sheet.flag(sheet, "key_cloak", false)
-	var worn := GameState.dye() if sheet == SHEET_NAME or keyed else ""
-	var state := "%s|%s|%s" % [worn, GameState.hair() if keyed else "", keyed]
+	# The look itself is the key: a dye, or a cloak's own colors with none on (5.6).
+	var look := dye_look() if sheet == SHEET_NAME or keyed else []
+	var state := "%s|%s|%s" % [look, GameState.hair() if keyed else "", keyed]
 	if state == _dye_worn:
 		return
 	_dye_worn = state
-	var look := dye_look() if worn != "" else []
 	if keyed:
 		var mat := ShaderMaterial.new()
 		mat.shader = KEY_SHADER

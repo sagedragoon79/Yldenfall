@@ -152,6 +152,13 @@ func _step(points: Array[Vector2], prev: Array[Vector2], top: Vector2, length: f
 			points[i].y = minf(points[i].y, player.global_position.y - 0.5)
 
 
+## The trim's tone: the worn cloak's accent, or the Warden's gold. A dye
+## colors the cloth; the trim stays the cloak's own (design bible 5.6).
+static func trim() -> Color:
+	var tone := String(GameState.cloak().get("trim", ""))
+	return TRIM if tone == "" else Color(tone)
+
+
 ## The cloth's lit tone: the worn dye's, or Warden Green.
 static func color() -> Color:
 	var look := PlayerVisual.dye_look()
@@ -182,8 +189,9 @@ func _draw() -> void:
 	draw_polyline(PackedVector2Array(_inner), OUTLINE, 1.0)
 	draw_line(hem[0], hem[1], OUTLINE, 1.5)
 	# Gold down the front edge and along the hem.
-	draw_polyline(PackedVector2Array(_inner.slice(1)), TRIM, 0.5)
-	draw_line(hem[0] + Vector2(0, -0.5), hem[1] + Vector2(0, -0.5), TRIM, 0.5)
+	var edge := trim()
+	draw_polyline(PackedVector2Array(_inner.slice(1)), edge, 0.5)
+	draw_line(hem[0] + Vector2(0, -0.5), hem[1] + Vector2(0, -0.5), edge, 0.5)
 
 
 ## Draws the hood on the visual (its local space: facing right, feet at the
@@ -198,6 +206,7 @@ func draw_hood(ci: CanvasItem, info: Dictionary, tint: Color) -> void:
 	for i in HOOD_UP.size():
 		shape.append((back + HOOD_DOWN[i]).lerp(head + HOOD_UP[i], t))
 	var base := color() * tint
+	var edge := trim()
 	var outline := shape.duplicate()
 	outline.append(shape[0])
 	if Geometry2D.triangulate_polygon(shape).is_empty():
@@ -208,12 +217,12 @@ func draw_hood(ci: CanvasItem, info: Dictionary, tint: Color) -> void:
 		# Up: the rim of the face opening, gold.
 		var lip := shape.slice(8)
 		lip.append(shape[0])
-		ci.draw_polyline(lip, TRIM * tint, 0.5)
+		ci.draw_polyline(lip, edge * tint, 0.5)
 	else:
 		# Down: the cowl's gold rim on top.
-		ci.draw_polyline(shape.slice(0, 5), TRIM * tint, 0.5)
+		ci.draw_polyline(shape.slice(0, 5), edge * tint, 0.5)
 	# The brooch at the front of the shoulder.
 	if info.has("neck"):
 		var brooch := Vector2(info.neck[0] + 1.5, info.neck[1] + 2.5)
 		ci.draw_circle(brooch, 1.3, OUTLINE)
-		ci.draw_circle(brooch, 0.8, TRIM.lightened(0.2) * tint)
+		ci.draw_circle(brooch, 0.8, edge.lightened(0.2) * tint)
