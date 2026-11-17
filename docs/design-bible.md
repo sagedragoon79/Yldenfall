@@ -2120,7 +2120,7 @@ Hitboxes, the burn, the runes, the coals, the pools and the douse are unchanged.
 
 The pass 550 grade saw foes (the hornet, the Silt Adder, the Bark Knight) "more saturated and detailed than the muted rooms, so they look pasted in". The zone grade (12.9) is a gentle multiply over everything, so it never brought a foe's own colours toward its room.
 
-- **One light per zone.** Every `Enemy` in a zone's room rests in one shared material (`FoeLight`, `shaders/foe_light.gdshader`). The gym, and a foe outside any room, has none and draws as painted.
+- **One light per zone.** Every `Enemy` in a zone's room rests in one shared material (`FoeLight`, `shaders/foe_light.gdshader`). The gym, and a foe outside any room, has none and draws as painted. Since pass 582 a foe with an accent has the zone's material with its own band in it (12.69).
 - **Muted.** A foe's colour is pulled `MUTE` (0.2) of the way toward its own grey.
 - **Darks sink.** Black sinks `SINK` (0.55) of the way toward the deep of the zone's haze (`Backdrop.ZONE_HAZE` at `DEEP` 0.6 of its value): the hue of the room's own shadows, never as light as them, so an outline stays an outline. The pull falls with the square of the darkness; a mid tone moves a little, a light hardly at all, and white not at all.
 - **What a fight reads is left alone.** The hit flash and the tell (the white wash, or a sheet drawn white) and the death's dissolve replace the material or pass through it unchanged. The hero, pickups, hazards and shots are not foes and are not touched.
@@ -2446,6 +2446,17 @@ The vault's underside stands at five heights. Over the stalk's crown and the cor
 The climb is as it was: every shelf, every vein, the sign and both doors are on the tiles they were on, so the fight (8.9) plays the same. Nothing in the floor hurts. Reachability is as it was. Judged by eye at 1x at the foot and the head of `evercrown/veins`: the vault reads as a vault with the core at its keystone, and the banks give the foot a ground line that is not a ruled edge.
 
 Tests: `tests/test_bloom_stalk.gd` (`test_the_veins_are_not_a_level_box`).
+
+### 12.69 Each foe keeps one color of its own (pass 582)
+
+The pass 580 grade: characters are "too quiet for the frame", foes are "dark on dark" (worst in the plaza, the Rail Gallery and the aqueduct), and each foe wants "one saturated color". The room's light (12.43) mutes every color of a foe alike, so the one bright thing the enemy style guide asks of each foe, its hostile accent, was muted with its body.
+
+- **An accent is a band of hue on the foe's own sheet** (`FoeLight.ACCENTS`, by the foe's script name): a hue, the band's half width (at most 35 degrees), and the least saturation and value a pixel needs to count. A pixel in the band is left out of the mute and the sink, and its saturation and value rise toward 1 (by 0.7 to 0.8 and 0.4 to 0.65). The band's edge and both floors are soft (12 degrees, 0.12), so no hard line shows inside a ramp. The hue is never turned: the foe keeps the color it was painted in.
+- **Nothing is drawn that the sheet does not hold.** The Rot Dwarf's orange cloth, the Grub Lump's and the Sap Spitter's fungus cyan, the Iron Dwarf's bronze edges, the Minecart Rider's gloves and cart bands, the Silt Adder's bands, the Mothling's wings, the Thunder Beetle's seams, the Meteor Slug's fire, and so on for twenty foes. The accent is a part of the foe, between 0.3 and 20 percent of its sheet, never its body.
+- **Five foes have none.** The Lantern Ghost is meant to be faint (7). The Crystal Dwarf carries a `FoeGlow` (12.52). The Bog Puffcap, the Bark Knight and the Spring Eel have no saturated color on their sheets; theirs waits for a redraw of the sheet (an art-loop item), not for a color painted on in code.
+- **One material per foe and zone**, built once; a foe with no accent shares the zone's plain one, and outside a zone a foe still draws as painted. The hit flash, the tell and the death replace the material as before (12.43), so nothing a fight reads has changed. The outline, white and every grey are lit exactly as they were.
+
+Tuned by eye on each idle frame at 3x over its zone's dark, then at 1x in `tower/rail_gallery`, `heartwood/dwarf_larder` and `vorrhallow/drowned_nave`. It is a small lift at 1x: the foe is as large and as dark as it was, with one bright part. The grade's other asks for this defect (a tighter camera or larger sprites, a rim light on the hero) are watched-session calls and stay in the queue. `test_each_foe_keeps_one_colour_of_its_own` checks each band against its sheet, the lift, what is left alone, and the materials.
 
 ## 13. Asset Production Plan
 

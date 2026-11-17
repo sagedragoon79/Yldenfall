@@ -25,6 +25,10 @@ starting another foe.
   yellow; High Boughs leaf green and sky blue; Carillon storm violet and gold; Vorrhallow
   flooded teal and stillglass magenta; the Evercrown black-violet, cyan and blood red), with
   one hostile accent (eyes, a glow, a blade's edge) brighter than anything else on it.
+- **The accent is kept in play.** The room's light mutes a foe (bible 12.43) but leaves its
+  accent out and lifts it (`FoeLight.ACCENTS`, bible 12.69): a band of hue on the sheet. So
+  paint the accent saturated (above 0.6) and in a hue the body does not use, and give a new
+  foe a row in `ACCENTS`. A sheet with no such color gets no accent in code: redraw the sheet.
 - **Corruption** (the Evercrown's grown-through foes) is a code tint and a code growth
   (`CorruptionGrowth`). Do not draw stillglass into a foe's base art unless the foe is made
   of it (Crystal Dwarf, Glass Slug).
