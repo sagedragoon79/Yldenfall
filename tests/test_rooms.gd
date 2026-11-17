@@ -1960,6 +1960,10 @@ func test_vorrhallow_drains_when_thane_vorrund_is_at_rest() -> void:
 		check(w.room.tide != null and w.room.tide.drained() and not w.room.tide.has_point(wade + Vector2(0, -8)), "%s drains once Thane Vorrund is at rest" % id)
 		check(w.room.surface_at(wade) == "stone", "%s: and the floor is stone again (%s)" % [id, w.room.surface_at(wade)])
 		GameState.data.flags.erase(Tide.DRAIN_FLAG)
+		# Pass 587: free the hall before the next, or the next room's step reads
+		# this one's ground (Player._ground takes the first room in the tree).
+		w.queue_free()
+		await frames(2)
 	# No hall above the flood, and no room outside Vorrhallow, stands in it.
 	for zone in DirAccess.get_directories_at("res://levels"):
 		for f in DirAccess.get_files_at("res://levels/" + zone):
