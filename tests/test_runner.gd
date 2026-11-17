@@ -36,6 +36,7 @@ const SUITES := [
 	preload("res://tests/test_ore_bin.gd"),
 	preload("res://tests/test_high_seat.gd"),
 	preload("res://tests/test_hornet_nest.gd"),
+	preload("res://tests/test_flooded_hall.gd"),
 	preload("res://tests/test_spring_wall.gd"),
 	preload("res://tests/test_bloom_stalk.gd"),
 	preload("res://tests/test_fire_seal_art.gd"),
