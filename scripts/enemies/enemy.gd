@@ -27,6 +27,17 @@ const FLASH_WASH := 0.72
 const FLASH_SOFT_WASH := 0.4
 const SHEET_WHITE := 0.85
 const SHEET_SOFT_WHITE := 0.45
+## A tell's pulse (bible 6.7, pass 585) is a warm tint and a rim, never a white
+## cutout: the foe is mixed toward `TELL_TINT` by `TELL_WASH` (`SHEET_TELL` over
+## a foe drawn from a sheet), which leaves more than half of its own contrast, so the pose
+## that warns of the blow reads through the pulse. A foe drawn from a sheet also
+## wears a rim of the tint one pixel wide (`TELL_RIM`), so its shape pops off
+## the room. White stays the color of a blow that landed.
+const TELL_TINT := Color(1.0, 0.82, 0.38)
+const TELL_WASH := 0.45
+const SHEET_TELL := 0.42
+const TELL_RIM := 0.9
+const RIM_STEPS: Array[Vector2] = [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]
 
 @export var max_hp := 24
 @export var contact_damage := 20
@@ -95,6 +106,7 @@ var _respawn_timer := 0.0
 var _dissolver: Tween
 static var _wash_material: ShaderMaterial
 static var _soft_wash_material: ShaderMaterial
+static var _tell_wash_material: ShaderMaterial
 ## The hit flash as it was last drawn, and the frame its white pop was drawn on
 ## (`_flash_is_soft`).
 var _flash_drawn := 0.0
@@ -103,6 +115,8 @@ var _flash_pop_frame := -1
 ## white, or a foe's own white overlay (`drawn_white`).
 var _sheet_white := false
 var _sheet_white_alpha := 0.0
+## Whether this foe's last drawing wore the tell's tint (and not a blow's white).
+var _tell_drawn := false
 ## The material this foe rests in: its room's light (`FoeLight`, bible 12.43),
 ## or null outside a zone. The flash, the tell and the death replace it.
 var _rest_material: ShaderMaterial
@@ -474,7 +488,8 @@ func _flash_is_soft() -> bool:
 
 ## Washes everything this foe draws white while `on` (call it from `_draw`): a
 ## code-drawn foe's flash follows its own silhouette, never a box around it.
-## Leaves the death's dissolve alone.
+## With no blow behind it, in a state named for a tell, the wash is the tell's
+## tint (`TELL_TINT`, `TELL_WASH`). Leaves the death's dissolve alone.
 func wash(on: bool) -> void:
 	if _wash_material == null:
 		_wash_material = ShaderMaterial.new()
@@ -483,24 +498,46 @@ func wash(on: bool) -> void:
 		_soft_wash_material = ShaderMaterial.new()
 		_soft_wash_material.shader = WASH_SHADER
 		_soft_wash_material.set_shader_parameter("amount", FLASH_SOFT_WASH)
+		_tell_wash_material = ShaderMaterial.new()
+		_tell_wash_material.shader = WASH_SHADER
+		_tell_wash_material.set_shader_parameter("amount", TELL_WASH)
+		_tell_wash_material.set_shader_parameter("tint", TELL_TINT)
 	var soft := _flash_is_soft()
-	if on and not dead:
+	_tell_drawn = on and not dead and _telling()
+	if _tell_drawn:
+		material = _tell_wash_material
+	elif on and not dead:
 		material = _soft_wash_material if soft else _wash_material
 	elif washed():
 		material = _rest_material
 
 
+## True when a whitened drawing is a tell's pulse: no blow is flashing, and the
+## foe is in a state named for a wind-up.
+func _telling() -> bool:
+	return _flash <= 0.0 and (state.ends_with("_tell") or state == "windup")
+
+
 ## True while this foe's drawing is washed white.
 func washed() -> bool:
-	return _wash_material != null and (material == _wash_material or material == _soft_wash_material)
+	return _wash_material != null and (material == _wash_material or material == _soft_wash_material
+			or material == _tell_wash_material)
 
 
 ## How strongly this foe's last drawing was whitened, 0 to 1: the wash's amount,
 ## or a sheet's white overlay. 0 when it was drawn in its own colors.
 func white_strength() -> float:
 	if washed():
+		if material == _tell_wash_material:
+			return TELL_WASH
 		return FLASH_SOFT_WASH if material == _soft_wash_material else FLASH_WASH
 	return _sheet_white_alpha if _sheet_white else 0.0
+
+
+## True when this foe's last drawing wore the tell's tint: a warning, where
+## white is a blow that landed.
+func tell_drawn() -> bool:
+	return _tell_drawn and drawn_white()
 
 
 ## True when this foe's last drawing went white, washed (`wash`) or drawn
@@ -518,12 +555,29 @@ func telegraph_pulse() -> bool:
 ## Returns the frame drawn.
 func draw_sheet(sheet: String, anim: String, t: float, white := false, offset := Vector2.ZERO) -> int:
 	var f := Sheet.frame_at(sheet, anim, t)
-	_sheet_white = white
+	var over := flash_overlay(white)
+	if _tell_drawn:
+		for step: Vector2 in RIM_STEPS:
+			draw_set_transform(offset + step, 0.0, Vector2(facing, 1))
+			Sheet.draw(self, sheet, anim, f, Color(TELL_TINT, TELL_RIM), true)
 	draw_set_transform(offset, 0.0, Vector2(facing, 1))
 	Sheet.draw(self, sheet, anim, f)
-	var soft := _flash_is_soft()
-	_sheet_white_alpha = SHEET_SOFT_WHITE if soft else SHEET_WHITE
 	if white:
-		Sheet.draw(self, sheet, anim, f, Color(1, 1, 1, _sheet_white_alpha), true)
+		Sheet.draw(self, sheet, anim, f, over, true)
 	draw_set_transform(Vector2.ZERO)
 	return f
+
+
+## The color of the flat overlay a foe drawn from a sheet wears while `white`:
+## the white pop on the frame a blow lands, the pale tint for the rest of a hit
+## flash, the tell's tint with no blow behind it. `k` scales its alpha (a foe
+## half seen). Call it once per drawing, whether `white` or not.
+func flash_overlay(white: bool, k := 1.0) -> Color:
+	var soft := _flash_is_soft()
+	_sheet_white = white
+	_tell_drawn = white and _flash <= 0.0
+	if _tell_drawn:
+		_sheet_white_alpha = SHEET_TELL
+		return Color(TELL_TINT, SHEET_TELL * k)
+	_sheet_white_alpha = SHEET_SOFT_WHITE if soft else SHEET_WHITE
+	return Color(1, 1, 1, _sheet_white_alpha * k)

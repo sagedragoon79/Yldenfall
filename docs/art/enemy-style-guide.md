@@ -91,7 +91,7 @@ gets them the same way:
   on the same ground line" in every request, and in the three-quarter stance turn the body, never the
   camera. Retake a frame whose back foot floats.
 - **Effects stay out of the art.** Projectiles, spells, mist, sparks, glows that pulse,
-  shockwaves and the tell's white flash are code or shader, drawn over the sheet. If a clip
+  shockwaves and the tell's flash are code or shader, drawn over the sheet. If a clip
   bakes one in, cut it at import (`"erase"`, `pick` around it). A glow that is part of the
   body (eyes, a lamp, crystal) stays in the art and may also get a code glow on top.
 
@@ -122,8 +122,10 @@ Bible 7: every tell is a pose, a flash and a sound, at least 0.35 s.
 
 - **The pose is the art's job.** The tell animation must not look like idle or walk: it is
   the frame the player learns. Draw the weapon back, the body coiled.
-- **The flash is the code's job.** `draw_sheet(..., white)` pulses the foe white
-  (`telegraph_pulse()`); never draw a white or flashing frame into the art.
+- **The flash is the code's job.** `draw_sheet(..., white)` pulses the foe in the tell's
+  gold tint with a one-pixel rim (`telegraph_pulse()`, `Enemy.TELL_TINT`; bible 6.7 and
+  12.72), which leaves the pose readable, so the pose must carry the warning. Never draw a
+  white, gold or flashing frame into the art. White is kept for a blow that lands.
 - **A charge glow** (the Shade Knight's blade point, an eye lighting up) is code, drawn at a
   point the art gives in the frame's metadata or at a fixed offset, so it tracks the pose.
 

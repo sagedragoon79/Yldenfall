@@ -257,7 +257,7 @@ func _draw() -> void:
 	var f := Sheet.frame_at(SHEET, anim, t)
 	draw_set_transform(feet.round(), _angle, Vector2(facing, 1))
 	Sheet.draw(self, SHEET, anim, f)
-	_sheet_white = white
+	var over := flash_overlay(white)
 	if white:
-		Sheet.draw(self, SHEET, anim, f, Color(1, 1, 1, 0.85), true)
+		Sheet.draw(self, SHEET, anim, f, over, true)
 	draw_set_transform(Vector2.ZERO)
