@@ -67,8 +67,7 @@ test (2 checks); the sheet drawn upright again fails the second (3 checks); the 
 toward the blow instead of away fails the second (3 checks).
 
 Full suite: 18,630 checks passed and 1 failed: `test_the_stillstone_holds_every_loosed_hazard`,
-which reads every foe script for `class_name Enemy
-`. The pass's own edit had saved `enemy.gd`
+which reads every foe script for `class_name Enemy` and a newline. The pass's own edit had saved `enemy.gd`
 with Windows line endings (Python's text mode on this PC); with LF restored it passes, as do
 this pass's two tests. The index was LF throughout, so CI sees the same files.
 
