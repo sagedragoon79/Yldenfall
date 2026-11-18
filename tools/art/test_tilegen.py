@@ -444,6 +444,105 @@ def test_ridge_is_seamless_at_the_seam():
             f"{z}: the seam jump {m['wrap_jump']} exceeds the roughest interior join {m['max_interior_jump']}"
 
 
+# --- The ridge's body (bible 12.83, pass 598) --------------------------------------
+def _ridge_planes(zone):
+    """One zone's ridge, measured per column: the far crest y, the y where the
+    opaque near plane starts, the far plane's pixels between them that are not
+    the flat body, and the far plane's distant-light pixels."""
+    img = tg.ridge(zone)
+    a = img.getchannel("A").load()
+    px = img.load()
+    w, h = img.size
+    body, _ = tg.RIDGE_COLOR[zone]
+    flat = tg.c(body)[:3]
+    light = tg.RIDGE_LIGHT.get(zone)
+    lit_rgb = tg.blend(tg.c(body, tg.RIDGE_A), tg.c(light), 230)[:3] if light else None
+    far, near = [], []
+    varied = total = lit = 0
+    for x in range(w):
+        y = 0
+        while y < h and a[x, y] == 0:
+            y += 1
+        far.append(y)
+        y += 2 * tg.D
+        while y < h and a[x, y] != 255:
+            y += 1
+        near.append(y)
+        for yy in range(far[-1] + 1, y):
+            total += 1
+            rgb = px[x, yy][:3]
+            varied += rgb != flat
+            lit += rgb == lit_rgb
+    return {"far": far, "near": near, "varied": varied / max(1, total), "lit": lit}
+
+
+def test_ridge_steps_into_two_planes():
+    # The grade after pass 595 read the ridge as a flat silhouette with an empty
+    # stretch below its crest. A second, nearer crest now runs the whole width,
+    # well below the far one, and opaque to the bottom. (Painting one plane, as
+    # before pass 598, fails here: nothing below the crest is opaque.)
+    for z in tg.RIDGE_KIND:
+        m = _ridge_planes(z)
+        gaps = [n - f for f, n in zip(m["far"], m["near"])]
+        assert min(gaps) >= 12 * tg.D, f"{z}: the near crest comes within {min(gaps) / tg.D:.0f} px of the far one"
+        assert sum(gaps) / len(gaps) >= 50 * tg.D, f"{z}: the near crest sits only {sum(gaps) / len(gaps) / tg.D:.0f} px below"
+        assert max(m["near"]) < tg.BG_H, f"{z}: the near plane does not reach every column"
+
+
+def test_ridge_far_plane_is_not_one_flat_colour():
+    # Mist, lit faces and the zone's distant detail break the far plane: at least
+    # an eighth of it is something other than the flat body. (Removing the mist,
+    # the faces and the detail leaves it flat and fails here.)
+    for z in tg.RIDGE_KIND:
+        share = _ridge_planes(z)["varied"]
+        assert share >= 0.12, f"{z}: only {share:.3f} of the far plane differs from the flat body"
+
+
+def test_ridge_carries_the_zones_distant_lights():
+    # Lit windows in the town and the Spires, forge lamps in the Tower and the
+    # Trials, crystal glints in the two crystal halls; none in the woods and mists.
+    for z in tg.RIDGE_KIND:
+        lit = _ridge_planes(z)["lit"]
+        if z not in tg.RIDGE_LIGHT:
+            assert lit == 0, f"{z} has no distant lights"
+        elif tg.RIDGE_KIND[z] == "roof":
+            assert lit >= 600, f"{z}: only {lit} px of lit windows"
+        else:
+            assert lit >= 30, f"{z}: only {lit} px of distant lights"
+    for z, name in tg.RIDGE_LIGHT.items():
+        assert max(tg.c(name)[:3]) < 150, f"{z}: the light {name} is too bright for a receding ridge"
+
+
+def test_ridge_houses_have_level_roofs():
+    # A roofline's houses stand level on the ground at their centres, so a row of
+    # them never rides the roll like waving cloth. (Restoring roll + block, which
+    # tilts every roof, fails here.)
+    for z in [z for z, k in tg.RIDGE_KIND.items() if k == "roof"]:
+        far = _ridge_planes(z)["far"]
+        runs, run = [], 1
+        for a, b in zip(far, far[1:]):
+            if a == b:
+                run += 1
+            else:
+                runs.append(run)
+                run = 1
+        level = [r for r in runs if r >= 12 * tg.D]
+        assert len(level) >= 6, f"{z}: only {len(level)} level roofs ({sorted(runs)[-6:]})"
+
+
+def test_hearthroot_town_is_lit_and_roofed():
+    # The grade's "flat grey city": the far town's houses now catch the light on
+    # their west faces and wear warm tiled roofs. (The pass 597 town, every house
+    # one dark grey under grey roofs, fails both.)
+    from collections import Counter
+    img = tg.hearthroot_far()
+    w, h = img.size
+    px = img.load()
+    seen = Counter(px[x, y] for x in range(w) for y in range(h // 3, h))
+    assert seen[tg.c("bark-1")] >= 4000 and seen[tg.c("bark-2")] >= 400, "the houses wear tiled roofs"
+    assert seen[tg.c("stone-1")] >= 80000, f"the west faces are lit ({seen[tg.c('stone-1')]} px)"
+
+
 def _course_gaps(spacing, seed=7, top=0, bottom=4000):
     """Gaps between consecutive mortar-course starts from tg.masonry_courses, with
     the 1-2px course thickness collapsed to one start per course (bible 12.14)."""
