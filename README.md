@@ -41,7 +41,7 @@ From source:
 | Talk, read, use doors, rest at shrines | Up | Up |
 | Map | Tab / M | Back |
 | Toggle Glove, Delver's Pick, Featherstep Boots, Elven Stride, Deluge (debug builds) | F1 to F4, F7 | |
-| Reset to spawn | R / F5 | Back |
+| Refill and go back to where you enter the room (debug builds) | F5 | |
 | Toggle debug HUD | F6 | |
 | Fullscreen | F11 / Alt+Enter | |
 

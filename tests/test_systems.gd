@@ -333,6 +333,60 @@ func test_fullscreen_toggle_keys() -> void:
 	check(not game.is_fullscreen_toggle(key.call(KEY_F11, false, false)), "releasing F11 does not")
 
 
+## Sean pressed R for T (the Stillstone) in Thane Vorrund's fight (2026-11-17).
+## The debug reset stood the hero on the Throne Hall's unset spawn, (0, 0): the
+## top-left corner, on top of its ceiling, with no way back in and nothing to
+## die to. A fresh arrival now stands where a door would put you, and the reset
+## is on F5 alone.
+func test_a_fresh_arrival_never_stands_on_top_of_the_room() -> void:
+	check(_has_key("debug_reset", KEY_F5) and not _has_key("debug_reset", KEY_R), "the debug reset is on F5 alone, away from T")
+	var w := make_world({}, "vorrhallow/throne_hall")
+	await frames(2)
+	var p := w.player
+	var door_one := World.door_arrival(w.room.doors[1])
+	check(w.room.spawn_position == Vector2.ZERO and World.arrival_point(w.room) == door_one,
+		"the Throne Hall has no spawn marker, so you arrive through its first door (%s)" % World.arrival_point(w.room))
+	# The reset itself, from the roof where it used to leave you.
+	var game: Node2D = preload("res://scripts/game.gd").new()
+	game.set("world", w)
+	p.teleport(Vector2(320, 0))
+	p.hp = 1
+	game.call("debug_reset")
+	check(p.global_position == door_one and p.safe_position == door_one and p.hp == p.max_hp, "the reset refills you and stands you inside the first door (%s)" % p.global_position)
+	await frames(10)
+	check(w.room.pixel_rect().has_point(p.global_position + Vector2(0, -1)) and not w._embedded_at(p.global_position) and p.is_on_floor(),
+		"on the hall's floor, inside its walls (%s)" % p.global_position)
+	game.free()
+	# Every room without a marker: the arrival is inside it, clear of its walls.
+	var bad: Array[String] = []
+	var dir := DirAccess.open("res://levels")
+	for zone: String in dir.get_directories():
+		for file: String in DirAccess.get_files_at("res://levels/" + zone):
+			if not file.ends_with(".room"):
+				continue
+			var id := zone + "/" + file.get_basename()
+			var parsed := Room.parse(FileAccess.get_file_as_string(World.room_path(id)))
+			var grid: Array[String] = parsed.grid
+			var found := Room.scan_doors(grid)
+			var room := Room.new()
+			for spec: String in parsed.lists.get("door", []):
+				var n := int(spec.split(",")[0])
+				if found.has(n):
+					var r: Rect2i = found[n].rect
+					room.doors[n] = {"rect": Rect2(Vector2(r.position * Room.TILE), Vector2(r.size * Room.TILE)), "edge": found[n].edge}
+			if room.doors.is_empty() or "\n".join(grid).contains("P"):
+				room.free()
+				continue
+			var at := World.arrival_point(room)
+			room.free()
+			var feet := Vector2i(floori(at.x / Room.TILE), floori((at.y - 4.0) / Room.TILE))
+			var head := Vector2i(feet.x, floori((at.y - Player.BODY_SIZE.y + 4.0) / Room.TILE))
+			var inside := head.y >= 0 and feet.y < grid.size() and feet.x >= 0 and feet.x < grid[feet.y].length()
+			if not inside or grid[feet.y][feet.x] == "#" or grid[head.y][head.x] == "#":
+				bad.append("%s %s" % [id, at])
+	check(bad.is_empty(), "every room's arrival is inside it, clear of its walls (%s)" % [bad])
+
+
 func test_ointment_is_bought_used_and_wears_off() -> void:
 	var w := make_world(_town(), "test/town")
 	var p := w.player

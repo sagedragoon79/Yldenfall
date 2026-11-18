@@ -39,7 +39,7 @@ that blocks you, and say so in the report.
 | Key | What |
 | --- | --- |
 | F1 / F2 / F3 / F4 / F7 | Toggle Climbing Glove / Delver's Pick / Featherstep Boots / Elven Stride / Torrent |
-| R or F5 | Refill health, magic and potions, and go back to the room's spawn |
+| F5 | Refill health, magic and potions, and go back to where you enter the room |
 | F6 | Debug HUD (speeds, state, room) |
 
 ## Launch options

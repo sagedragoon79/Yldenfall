@@ -45,7 +45,8 @@ const BINDINGS := {
 	"debug_delvers_pick": {"keys": [KEY_F2]},
 	"debug_boots": {"keys": [KEY_F3]},
 	"debug_stride": {"keys": [KEY_F4]},
-	"debug_reset": {"keys": [KEY_F5, KEY_R]},
+	# F5 only: R sat beside T, the Stillstone, and one slip mid-fight reset you (2026-11-17).
+	"debug_reset": {"keys": [KEY_F5]},
 	"debug_hud": {"keys": [KEY_F6]},
 	"debug_torrent": {"keys": [KEY_F7]},
 }
