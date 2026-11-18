@@ -169,3 +169,22 @@ func test_the_tell_keeps_the_foes_pose_and_is_not_white() -> void:
 	check(Enemy.RIM_STEPS.size() == 4, "and stands on all four sides")
 	for step: Vector2 in Enemy.RIM_STEPS:
 		check(is_equal_approx(step.length(), 1.0), "one pixel wide (%s)" % step)
+
+
+## Pass 602 (bible 6.7): a hit flash's white overlay also washed out a sheet foe's
+## dark outline, so the pass 600 grade read the struck foe as going see-through.
+## Through the flash a sheet foe wears a dark rim, as a tell wears its warm one.
+func test_a_struck_foe_keeps_a_dark_edge() -> void:
+	var h := _hornet()
+	await frames(2)
+	check(not h.hit_rim_drawn(), "a hornet at rest wears no rim")
+	h.take_hit(1, Vector2(1, 0))
+	await frames(1)
+	check(h.hit_rim_drawn() and h.white_strength() == Enemy.SHEET_WHITE, "struck, it wears the dark rim with the white pop")
+	await frames(2)
+	check(h.hit_rim_drawn() and h.white_strength() == Enemy.SHEET_SOFT_WHITE, "and through the pale tint")
+	var c := Enemy.HIT_RIM_COLOR
+	check(c.v <= 0.12 and Enemy.HIT_RIM >= 0.9, "the rim is near-black and nearly solid (%s, %.2f)" % [c, Enemy.HIT_RIM])
+	check(c.v < Enemy.TELL_TINT.v * 0.2, "never to be taken for a tell's warm rim")
+	await frames(14)
+	check(not h.hit_rim_drawn() and not h.drawn_white(), "and it goes with the flash")
