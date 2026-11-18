@@ -410,7 +410,7 @@ func use_door(n: int) -> void:
 	var arrive: Dictionary = room.doors.get(d.target_door, {})
 	if arrive.is_empty():
 		push_warning("Room %s has no door %d" % [room.id, d.target_door])
-		player.teleport(room.spawn_position)
+		player.teleport(arrival_point(room))
 	else:
 		_place_at_door(arrive, vel)
 	_ignored_door = d.target_door
@@ -459,7 +459,7 @@ func travel_to_door(room_id: String, n: int) -> void:
 	_enter(room_id)
 	var arrive: Dictionary = room.doors.get(n, {})
 	if arrive.is_empty():
-		player.teleport(room.spawn_position)
+		player.teleport(arrival_point(room))
 	else:
 		_place_at_door(arrive, Vector2.ZERO)
 	_ignored_door = n
@@ -517,25 +517,47 @@ func _scroll(old_view: Texture2D, edge: String) -> void:
 	curtain.queue_free()
 
 
-func _place_at_door(door: Dictionary, vel: Vector2) -> void:
+## Where the hero stands, arriving through `door` (a room's door dictionary).
+static func door_arrival(door: Dictionary) -> Vector2:
 	var r: Rect2 = door.rect
 	var pos := Vector2(r.get_center().x, r.end.y)
 	match door.edge:
 		"left":
 			pos.x = r.end.x + ARRIVE_INSET
+		"right":
+			pos.x = r.position.x - ARRIVE_INSET
+		"top":
+			pos.y = r.end.y + 40.0
+		"bottom":
+			pos.y = r.position.y + 8.0
+	return pos
+
+
+## Where a hero arriving fresh stands in `in_room`: on its spawn marker, or,
+## with none, just inside its first door. Never the unset (0, 0), the room's
+## top-left corner, which is on top of its walls: the debug reset sent a
+## playtester there in the middle of Thane Vorrund's fight (2026-11-17), out of
+## reach of everything, with no way back in.
+static func arrival_point(in_room: Room) -> Vector2:
+	if in_room.spawn_position != Vector2.ZERO or in_room.doors.is_empty():
+		return in_room.spawn_position
+	return door_arrival(in_room.doors[in_room.doors.keys().min()])
+
+
+func _place_at_door(door: Dictionary, vel: Vector2) -> void:
+	var pos := door_arrival(door)
+	match door.edge:
+		"left":
 			player.facing = 1
 			vel.y = minf(vel.y, 0.0)
 		"right":
-			pos.x = r.position.x - ARRIVE_INSET
 			player.facing = -1
 			vel.y = minf(vel.y, 0.0)
 		"top":
-			pos.y = r.end.y + 40.0
 			# Down through a floor door you come falling, even into water that
 			# would otherwise float you straight back up through it.
 			vel.y = maxf(vel.y, TOP_ARRIVE_FALL)
 		"bottom":
-			pos.y = r.position.y + 8.0
 			vel.y = RISE_SPEED
 		"inner":
 			vel = Vector2.ZERO
@@ -620,7 +642,7 @@ func _respawn_player() -> void:
 	if target != room.id or _fight_under_way():
 		_enter(target)
 	if pos == Vector2.INF:
-		pos = room.spawn_position
+		pos = arrival_point(room)
 	player.teleport(pos)
 	player.safe_position = pos
 	camera.snap_to_target()

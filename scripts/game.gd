@@ -655,13 +655,21 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("debug_torrent"):
 		_toggle("torrent")
 	elif event.is_action_pressed("debug_reset"):
-		player.hp = player.max_hp
-		player.mp = player.max_mp
-		player.flask_charges = player.flask_max
-		player.teleport(room.spawn_position)
-		camera.snap_to_target()
+		debug_reset()
 	elif event.is_action_pressed("debug_hud"):
 		debug_hud.visible = not debug_hud.visible
+
+
+## The debug reset (F5): health, magic and Sapflasks refilled, and the hero
+## stood where a fresh arrival in the room stands (World.arrival_point).
+func debug_reset() -> void:
+	player.hp = player.max_hp
+	player.mp = player.max_mp
+	player.flask_charges = player.flask_max
+	var pos := World.arrival_point(room)
+	player.teleport(pos)
+	player.safe_position = pos
+	camera.snap_to_target()
 
 
 ## F11 or Alt+Enter switches between a window and fullscreen.
