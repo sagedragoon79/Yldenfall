@@ -1613,15 +1613,27 @@ def hearthroot_far():
         cs = masonry_courses(top, BG_H, 300 + (x % 97), 22)
         for yy in range(top, BG_H):
             for xx in range(x, min(x + w, BG_W)):
-                col = "stone-1" if (xx - x) < 2 * D else masonry_shade(xx, yy, 3, "night-0", "night-1", "stone-2")
+                # Each house is lit on its west face and falls into shadow at its
+                # east edge (pass 598): the grade read the town as one flat grey.
+                lit = (xx - x) < w // 3
+                if (xx - x) < 2 * D:
+                    col = "stone-2"
+                elif x + w - xx <= 2 * D:
+                    col = "night-0"
+                elif lit:
+                    col = masonry_shade(xx, yy, 3, "night-1", "stone-1", "stone-2")
+                else:
+                    col = masonry_shade(xx, yy, 3, "night-0", "night-1", "stone-2")
                 # Weathered courses of stone: jittered rows, still broken horizontally.
                 if (xx - x) > 2 * D and yy in cs and hash2(xx // 12, yy, 3) > 0.4:
-                    col = "night-0"
+                    col = "night-1" if lit else "night-0"
                 img.putpixel((xx, yy), c(col))
         # Roofline: one of several silhouettes per house, so a row of distant
         # houses stops reading as the same arch copied across (independent grade,
         # pass 515: "Hearthroot background buildings are the same two silhouettes").
         style = rng.choice(("arch", "gable", "battlement", "stepped", "arch"))
+        # A battlement is stone; every other roof is tiled, a dark warm red-brown.
+        crest, roof = ("stone-2", "night-1") if style == "battlement" else ("bark-2", "bark-1")
         peak = rng.randrange(10, 22) * D
         for xx in range(x, min(x + w, BG_W)):
             k = (xx - x) / max(w - 1, 1)
@@ -1636,7 +1648,7 @@ def hearthroot_far():
                 rise = peak // 2 if ((xx - x) // (5 * D)) % 2 == 0 else peak // 2 - 4 * D
                 rise = max(0, rise)
             for yy in range(top - rise, top):
-                img.putpixel((xx, yy), c("stone-1" if yy - (top - rise) < 2 else "night-1"))
+                img.putpixel((xx, yy), c(crest if yy - (top - rise) < 2 else roof))
         # A chimney on some houses, a little smoke-dark stack above the roof.
         if rng.random() < 0.4:
             cx = x + rng.randrange(6, max(7, w // D - 6)) * D
@@ -2867,6 +2879,7 @@ def _ridge_profile(kind, rng):
     baseline with the zone's teeth raised onto it, seamless across the seam."""
     roll = _ridge_roll(rng)
     teeth = [0.0] * BG_W
+    roofs = [None] * BG_W
     x = rng.randint(0, 20) * D
     while x < BG_W:
         if kind == "mound":
@@ -2882,24 +2895,170 @@ def _ridge_profile(kind, rng):
             _jag(teeth, x, rng.randint(10, 22) * D, rng.randint(14, 40) * D, rng)
             x += rng.randint(14, 30) * D
         else:  # roof
-            _block(teeth, x, rng.randint(9, 18) * D, rng.randint(18, 44) * D)
+            half, peak = rng.randint(9, 18) * D, rng.randint(18, 44) * D
+            _block(teeth, x, half, peak)
+            # A house's roof is level (pass 598): it stands at its centre's ground,
+            # not riding the roll, so a row of houses never reads as waving cloth.
+            for dx in range(-half, half + 1):
+                i = (x + dx) % BG_W
+                roofs[i] = max(roofs[i] or 0.0, roll[x % BG_W] + peak)
             x += rng.randint(16, 32) * D
-    return [roll[i] + teeth[i] for i in range(BG_W)]
+    return [max(roll[i], roofs[i]) if roofs[i] is not None else roll[i] + teeth[i] for i in range(BG_W)]
+
+
+# The ridge's body (design bible 12.83, pass 598). The grade after pass 595 read
+# the ridge as a flat silhouette with an empty stretch under its crest (the plaza,
+# the gear pit, the flooded hall): one colour from the crest to the bottom edge.
+# Below the far crest a second, nearer crest of the same material now steps the
+# ground into two planes, a band of valley mist parts them, each crest's west
+# faces catch the light, and the zone's own distant detail sits in the far plane.
+RIDGE_NEAR_DROP = 70 * D       # the near crest's resting y, below RIDGE_BASE
+RIDGE_NEAR_SCALE = 0.55        # the near crest's height, as a share of the far one's
+RIDGE_MIST = (3 * D, 3 * D, 3 * D, 4 * D)  # the mist bands above the near crest, nearest first
+RIDGE_MIST_A = (88, 64, 42, 22)            # their rim alpha, thinning upward
+RIDGE_FACE = 6 * D             # how far a lit west face reaches below its crest
+RIDGE_FACE_A = 96
+## The distant lights in a ridge's far plane, by zone: lit windows in the town and
+## the Spires' halls, forge lamps in the Tower, crystal glints in the two crystal
+## halls. Dark shades (index 2), so the ridge stays under the haze.
+RIDGE_LIGHT = {
+    "hearthroot": "gold-2", "spires": "ember-2", "tower": "ember-2", "trials": "gold-2",
+    "vorrhallow": "crystal-2", "evercrown": "crystal-2",
+}
+
+
+def _over(img, x, y, name, alpha):
+    """Lays palette colour `name` at `alpha` over what is there (wrapping sideways)."""
+    if not 0 <= y < BG_H:
+        return
+    x = int(x) % BG_W
+    under = img.getpixel((x, int(y)))
+    img.putpixel((x, int(y)), blend(under, c(name), alpha) if under[3] else c(name, alpha))
+
+
+def _ridge_shade(name):
+    """One step darker on `name`'s ramp (index 0 stays itself)."""
+    ramp, i = name.rsplit("-", 1)
+    return f"{ramp}-{max(0, int(i) - 1)}"
+
+
+def _ridge_plane(img, h, base, body, rim, body_a, faces=True):
+    """One crest plane: `h` (canvas px above `base` per column) filled down to the
+    bottom edge in `body`, rimmed in `rim`, with each west face lit below the crest
+    (unless `faces` is off: a roofline's houses light their walls instead)."""
+    for x in range(BG_W):
+        top = base - int(round(h[x]))
+        for y in range(max(0, top), BG_H):
+            put(img, x, y, c(body, body_a))
+        # A face that rises to the east looks west, toward the light: it is lit
+        # for RIDGE_FACE below the crest, deeper on a steep face.
+        rise = h[x] - h[x - 1]
+        if faces and rise > 0.5:
+            depth = min(RIDGE_FACE * 2, int(RIDGE_FACE * (1 + min(rise, 4) / 4)))
+            for y in range(top + 1, min(BG_H, top + depth)):
+                _over(img, x, y, rim, RIDGE_FACE_A * (top + depth - y) // depth)
+        put(img, x, top, c(rim, RIDGE_RIM_A))
+
+
+def _ridge_detail(img, zone, far_h, near_tops, rng):
+    """The zone's distant detail in the far plane, between its crest and the mist."""
+    kind = RIDGE_KIND[zone]
+    body, rim = RIDGE_COLOR[zone]
+    seam = _ridge_shade(body)
+    light = RIDGE_LIGHT.get(zone)
+    far_tops = [RIDGE_BASE - int(round(v)) for v in far_h]
+    if kind == "roof":
+        # Houses: each block of the roofline is a building, its west wall lit, its
+        # east edge in shadow and its face set with rows of windows, a few lit.
+        edges = [x for x in range(BG_W) if abs(far_h[x] - far_h[x - 1]) > 3 * D]
+        for i, x0 in enumerate(edges):
+            x1 = edges[(i + 1) % len(edges)] + (BG_W if i + 1 == len(edges) else 0)
+            if far_h[x0] < far_h[x0 - 1]:
+                # A falling edge: the east wall of the house before it, in shadow.
+                for x in (x0 - 1, x0 - 2):
+                    for y in range(far_tops[x % BG_W] + D, near_tops[x % BG_W] - 10 * D):
+                        _over(img, x, y, seam, 150)
+                continue
+            if x1 - x0 < 10 * D:
+                continue
+            for dx in range(2 * D):
+                x = (x0 + dx) % BG_W
+                for y in range(far_tops[x] + D, near_tops[x] - 10 * D):
+                    _over(img, x, y, rim, 64 - dx * 8)
+            for wx in range(x0 + 4 * D, x1 - 4 * D, 8 * D):
+                x = wx % BG_W
+                for wy in range(far_tops[x] + 6 * D, near_tops[x] - 14 * D, 12 * D):
+                    lit = light and hash2(wx // D, wy // D, 59) > 0.72
+                    for yy in range(wy, wy + 3 * D):
+                        for xx in range(wx, wx + 2 * D):
+                            _over(img, xx, yy, light if lit else seam, 230 if lit else 170)
+        return
+    if kind == "crag":
+        # Strata: short broken ledges slanting through the rock, each a dark
+        # bedding line under a lit lip.
+        for k in range(5):
+            y0 = RIDGE_BASE - 24 * D + k * 18 * D + rng.randint(-5, 5) * D
+            slope = rng.choice((-0.3, -0.2, 0.2, 0.3))
+            for x in range(BG_W):
+                y = int(y0 + slope * (((x + k * 97 * D) % (90 * D)) - 45 * D))
+                if far_tops[x] + 6 * D < y < near_tops[x] - 12 * D and hash2(x // (14 * D), k, 41) > 0.5:
+                    _over(img, x, y - D, rim, 56)
+                    for th in range(D):
+                        _over(img, x, y + th, seam, 170)
+    elif kind == "shard":
+        # Facets: a dark cleft down the middle of each spire of crystal.
+        for x in range(1, BG_W - 1):
+            if far_h[x] > far_h[x - 1] and far_h[x] >= far_h[x + 1] and far_h[x] > 18 * D:
+                for y in range(far_tops[x] + 3 * D, min(near_tops[x] - 8 * D, far_tops[x] + int(far_h[x] * 0.8))):
+                    _over(img, x, y, seam, 220)
+                    _over(img, x + 1, y, seam, 140)
+    if not light:
+        return
+    # Distant lights: small and few, a dark shade that the haze recedes further.
+    count = 14
+    placed = 0
+    for _ in range(count * 20):
+        if placed >= count:
+            break
+        x = rng.randrange(BG_W)
+        y = rng.randrange(RIDGE_BASE - 100 * D, RIDGE_BASE + RIDGE_NEAR_DROP)
+        if not (far_tops[x] + 6 * D < y < near_tops[x] - 12 * D):
+            continue
+        w, hh = (D, 2 * D) if kind == "shard" else (D, D)
+        for yy in range(y, y + hh):
+            for xx in range(x, x + w):
+                _over(img, xx, yy, light, 230)
+        placed += 1
 
 
 def ridge(zone):
     """The distant ridgeline silhouette for `zone` (design bible 12.12): the
     zone's far crest filled from the horizon down, over a transparent sky, so
-    Backdrop can recede it into the haze between the far and mid layers."""
+    Backdrop can recede it into the haze between the far and mid layers. Its
+    body (12.83) is two planes, the near one under a band of valley mist, with
+    lit west faces and the zone's distant detail."""
     img = Image.new("RGBA", (BG_W, BG_H), CLEAR)
     body, rim = RIDGE_COLOR[zone]
     rng = random.Random(sum(ord(ch) for ch in zone) + 1300)
     h = _ridge_profile(RIDGE_KIND[zone], rng)
+    faces = RIDGE_KIND[zone] != "roof"
+    _ridge_plane(img, h, RIDGE_BASE, body, rim, RIDGE_A, faces)
+    # The nearer crest, of the same material and lower, and its own seed.
+    near_rng = random.Random(sum(ord(ch) for ch in zone) + 2600)
+    near = [v * RIDGE_NEAR_SCALE for v in _ridge_profile(RIDGE_KIND[zone], near_rng)]
+    near_base = RIDGE_BASE + RIDGE_NEAR_DROP
+    near_tops = [near_base - int(round(v)) for v in near]
+    _ridge_detail(img, zone, h, near_tops, near_rng)
+    # Valley mist over the far plane's foot, thinning upward from the near crest.
     for x in range(BG_W):
-        top = RIDGE_BASE - int(round(h[x]))
-        for y in range(top, BG_H):
-            put(img, x, y, c(body, RIDGE_A))
-        put(img, x, top, c(rim, RIDGE_RIM_A))
+        y = near_tops[x]
+        for band, alpha in zip(RIDGE_MIST, RIDGE_MIST_A):
+            for yy in range(max(0, y - band), y):
+                under = img.getpixel((x, yy))
+                if under[3]:
+                    img.putpixel((x, yy), blend(under, c(rim), alpha))
+            y -= band
+    _ridge_plane(img, near, near_base, _ridge_shade(body), body, 255, faces)
     return img
 
 
