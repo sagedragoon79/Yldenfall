@@ -25,6 +25,13 @@ const WASH_SHADER := preload("res://shaders/wash.gdshader")
 ## the same pair for a foe drawn from a sheet (the alpha of its white overlay).
 const FLASH_WASH := 0.72
 const FLASH_SOFT_WASH := 0.4
+## The recoil (bible 6.7, pass 592): through its hitstun a foe drawn from a sheet
+## leans away from the blow, its head thrown back along the push (`RECOIL_LEAN`, a
+## shear: world pixels across per pixel up) and squashed wide (`RECOIL_SQUASH`),
+## easing upright as the hitstun runs out. The knockback alone moved the whole
+## body a few pixels, so a struck foe stood still in the hit frame.
+const RECOIL_LEAN := 0.3
+const RECOIL_SQUASH := 0.1
 const SHEET_WHITE := 0.85
 const SHEET_SOFT_WHITE := 0.45
 ## A tell's pulse (bible 6.7, passes 585 and 586) is a warm tint and a rim, never
@@ -104,6 +111,11 @@ var thrown := false
 
 var _flash := 0.0
 var _hitstun := 0.0
+## The hitstun the last blow set, and the way it pushed (1 right, -1 left).
+var _hitstun_full := 0.0
+var _blow_side := 1.0
+## The shear the last sheet frame was drawn with (`recoil_lean` as drawn).
+var _lean_drawn := 0.0
 var _stagger := 0.0
 var _slow := 0.0
 var _respawn_timer := 0.0
@@ -267,6 +279,8 @@ func take_hit(damage: int, dir: Vector2) -> void:
 		velocity.y = -knockback
 	# A heavy blow comes in longer (dir 1.8x, the combo finisher): it reels longer.
 	_hitstun = HITSTUN * maxf(dir.length(), 1.0)
+	_hitstun_full = _hitstun
+	_blow_side = signf(dir.x) if dir.x != 0.0 else float(-facing)
 
 
 func _on_blocked(dir: Vector2) -> void:
@@ -295,6 +309,7 @@ func launch() -> bool:
 		return false
 	velocity = Vector2(0, -LAUNCH_SPEED)
 	_hitstun = LAUNCH_STUN
+	_hitstun_full = 0.0
 	return true
 
 
@@ -572,14 +587,45 @@ func draw_sheet(sheet: String, anim: String, t: float, white := false, offset :=
 	var over := flash_overlay(white)
 	if _tell_drawn:
 		for step: Vector2 in RIM_STEPS:
-			draw_set_transform(offset + step, 0.0, Vector2(facing, 1))
+			draw_set_transform_matrix(_sheet_transform(offset + step))
 			Sheet.draw(self, sheet, anim, f, Color(TELL_TINT, TELL_RIM), true)
-	draw_set_transform(offset, 0.0, Vector2(facing, 1))
+	draw_set_transform_matrix(_sheet_transform(offset))
 	Sheet.draw(self, sheet, anim, f)
 	if white:
 		Sheet.draw(self, sheet, anim, f, over, true)
 	draw_set_transform(Vector2.ZERO)
 	return f
+
+
+## How far into its recoil this foe is, 0 to 1: 1 the frame a blow lands, easing
+## to 0 as the hitstun runs out (quadratic, so the snap back is quick at the end).
+func recoil() -> float:
+	if dead or _hitstun <= 0.0 or _hitstun_full <= 0.0:
+		return 0.0
+	var k := clampf(_hitstun / _hitstun_full, 0.0, 1.0)
+	return k * k
+
+
+## The shear a sheet foe is drawn with now: world pixels its head moves along the
+## blow per pixel up (positive is right). 0 outside a recoil.
+func recoil_lean() -> float:
+	return _blow_side * RECOIL_LEAN * recoil()
+
+
+## The shear this foe's last sheet frame was drawn with (0 drawn upright).
+func lean_drawn() -> float:
+	return _lean_drawn
+
+
+## Where a sheet frame is drawn: facing this foe's way, at `offset`, leaning and
+## squashed through a recoil about its feet (the sheet's origin).
+func _sheet_transform(offset: Vector2) -> Transform2D:
+	var k := recoil()
+	_lean_drawn = recoil_lean()
+	var sx := float(facing) * (1.0 + RECOIL_SQUASH * k)
+	var sy := 1.0 - RECOIL_SQUASH * 0.6 * k
+	# A point h pixels up (y = -h) moves recoil_lean() * h along x.
+	return Transform2D(Vector2(sx, 0.0), Vector2(-recoil_lean() * sy, sy), offset)
 
 
 ## The color of the flat overlay a foe drawn from a sheet wears while `white`:
