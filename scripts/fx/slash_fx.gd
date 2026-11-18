@@ -21,6 +21,8 @@ const HEAVY_SHEET := "res://assets/vfx/heavy_smear"
 const DENSITY := 2.0
 
 const LIFE := 0.12
+## Above the hero and the foes at rest, under a foe in its hit flash (Enemy.STRUCK_Z).
+const Z := 2
 const COLOR := Color("f6eed2")
 const EDGE := Color("ffffff")
 const HEAVY := Color("ffe9a8")
@@ -55,7 +57,8 @@ func setup(kind: String, facing: int, combo := 1, heavy := false, size := 1.0) -
 	_facing = facing
 	_combo = combo
 	_heavy = heavy
-	z_index = 3
+	# Under a struck foe (Enemy.STRUCK_Z, pass 599), so the foe's flash shows whole.
+	z_index = Z
 	if kind != "thrust" and uses_sheet():
 		_sheet = HitSpark.load_sheet(HEAVY_SHEET if heavy else SHEET)
 		life = _sheet.frames.size() / float(_sheet.fps)
