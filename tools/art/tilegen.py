@@ -1385,7 +1385,7 @@ def build_tileset(zone):
     paint_haunch(img, 0, 9 * T, zone, True, 91)
     paint_haunch(img, T, 9 * T, zone, False, 92)
     TILES.mkdir(parents=True, exist_ok=True)
-    img.save(TILES / f"{zone}.png")
+    save_png(img, TILES / f"{zone}.png")
 
 
 # --- Backgrounds ---------------------------------------------------------------------
@@ -1439,6 +1439,20 @@ def gradient(img, top, bottom, dither=True):
     for y in range(BG_H):
         for x in range(BG_W):
             img.putpixel((x, y), c(gradient_pixel(ramp, x, y, BG_H, dither)))
+
+
+def save_png(img, path):
+    """Saves `img` to `path` unless the picture there already holds the same pixels,
+    and says whether it wrote. Pillow on this PC encodes an unchanged picture to other
+    bytes than the committed one, so a whole run used to rewrite five mid layers no
+    painter had touched (pass 600; found in passes 563 and 584)."""
+    path = Path(path)
+    if path.exists():
+        with Image.open(path) as old:
+            if old.size == img.size and old.convert("RGBA").tobytes() == img.convert("RGBA").tobytes():
+                return False
+    img.save(path)
+    return True
 
 
 def put(img, x, y, col):
@@ -3082,13 +3096,13 @@ def main():
         build_tileset(zone)
     BG.mkdir(parents=True, exist_ok=True)
     for zone, (far, mid) in BACKGROUNDS.items():
-        far().save(BG / f"{zone}_far.png")
+        save_png(far(), BG / f"{zone}_far.png")
         if mid:
-            mid().save(BG / f"{zone}_mid.png")
+            save_png(mid(), BG / f"{zone}_mid.png")
     for zone in RIDGE_KIND:
-        ridge(zone).save(BG / f"{zone}_ridge.png")
+        save_png(ridge(zone), BG / f"{zone}_ridge.png")
     for zone in FORE_KIND:
-        foreground(zone).save(BG / f"{zone}_fore.png")
+        save_png(foreground(zone), BG / f"{zone}_fore.png")
 
 
 if __name__ == "__main__":

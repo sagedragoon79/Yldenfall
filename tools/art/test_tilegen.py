@@ -444,6 +444,30 @@ def test_ridge_is_seamless_at_the_seam():
             f"{z}: the seam jump {m['wrap_jump']} exceeds the roughest interior join {m['max_interior_jump']}"
 
 
+# --- A run leaves unchanged pictures alone (pass 600) ------------------------------
+def test_a_run_leaves_an_unchanged_picture_alone():
+    # Pillow on this PC encodes an unchanged picture to other bytes than the
+    # committed one, so every whole run rewrote five mid layers that no painter had
+    # touched (passes 563 and 584). save_png writes only when the pixels change.
+    # (Saving unconditionally fails the second and third checks.)
+    import tempfile
+    from PIL import Image
+    with tempfile.TemporaryDirectory() as d:
+        p = Path(d) / "picture.png"
+        img = Image.new("RGBA", (8, 8), (10, 20, 30, 255))
+        assert tg.save_png(img, p), "a new picture is written"
+        # The committed file: the same pixels, encoded another way.
+        img.save(p, optimize=True, compress_level=1)
+        committed = p.read_bytes()
+        assert not tg.save_png(img.copy(), p), "the same pixels are not written again"
+        assert p.read_bytes() == committed, "and the committed bytes are left as they are"
+        changed = img.copy()
+        changed.putpixel((0, 0), (200, 0, 0, 255))
+        assert tg.save_png(changed, p), "a changed picture is written"
+        with Image.open(p) as back:
+            assert back.convert("RGBA").getpixel((0, 0)) == (200, 0, 0, 255), "with its change"
+
+
 # --- The ridge's body (bible 12.83, pass 598) --------------------------------------
 def _ridge_planes(zone):
     """One zone's ridge, measured per column: the far crest y, the y where the
