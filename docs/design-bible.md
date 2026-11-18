@@ -2573,6 +2573,21 @@ The pass 590 grade called the shop's "Jump: choose / Dash: leave" odd. It named 
 
 Judged by eye in the 21 shop pictures at 1x and 4x. The first caps were a pixel too short and clipped the top of their letters. Tests: `test_a_menu_names_its_keys_and_what_they_do` (`tests/test_shop_pictures.gd`). The title screen's save picker keeps its own line of words for now.
 
+### 12.80 Every zone houses its own chest (pass 595)
+
+The pass 585 grade saw "the same chest on the same thin table ... in nearly every room": one brown domed trunk stood in all 68 chest cells, in colors from outside the master palette. `Chest` (`scripts/pickups/chest.gd`) now draws a chest in its room's zone look, the way each zone carves its own stele (12.31). Eight kinds:
+
+- **Domed trunk**, oak with a brass band and iron corners: the gym and the Trials.
+- **Root coffer**, red root-wood with moss along its lid and roots coiled round its feet: the Heartwood.
+- **Woven hamper**, wicker a touch wider at the rim, a green leaf strap down its front, a flat lid and a bent-cane handle: the High Boughs.
+- **Sea chest**, salt-grey driftwood with tarnished green bands, a rope handle on its side and barnacles along its foot: the Haar.
+- **Dwarf strongbox**, squared and riveted stone under a heavy flat lid whose cornice overhangs the box, banded in its zone's metal: bronze under the Hearthroot, sea-blue in the Sunken Spring, magenta in Vorrhallow.
+- **Ore crate**, boards across and two iron straps standing up its face: the Tower.
+- **Sandstone reliquary**, a carved arcade along its face under a pitched roof with a gold finial: the Spires.
+- **Geode casket**, violet stone with cyan crystal shards grown up through its lid and crystal in its seams: the Evercrown.
+
+Each lock glows in its zone's accent. An open chest throws its lid back the same way in every zone. The chest is drawn as data (`Chest.parts`, half-pixel rects), so tests read the exact pixels. Every tone is a master palette value. Judged by eye on a contact sheet of every zone at 4x (`tools/art/chest_sheet.tscn`) and in game at 1x in `boughs/leaf_landing` and `haar/marsh_road`. `tests/test_chest.gd` checks that every zone has a look in the palette, that the zones use at least seven kinds with no two silhouettes alike, that every part stays in the chest's box and on its ground line, that the lock's light sits on its plate, and that a room's chest takes its zone.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

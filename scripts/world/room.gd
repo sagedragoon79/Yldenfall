@@ -782,6 +782,7 @@ func _place(ch: String, cell: Vector2i, grid: Array[String]) -> void:
 		"$":
 			var chest := Chest.new()
 			chest.pickup_id = _pickup_id(cell)
+			chest.zone = zone
 			chest.value = _chest_gold.get(cell, int(header.get("chest_gold", "100")))
 			_spawn(chest, bottom_center)
 		"G", "X", "O", "d", "h", "n", "z", "L", "W", "F", "*", "&", "{", "(", "}", ":":
