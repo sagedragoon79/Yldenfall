@@ -2830,7 +2830,9 @@ RIDGE_KIND = {
     "haar": "mound", "sunken": "mound",
     "evercrown": "shard", "vorrhallow": "shard",
     "tower": "crag", "trials": "crag",
-    "hearthroot": "roof", "spires": "roof",
+    # The Spires stand on ruined spires of their own (pass 601): with one roofline
+    # each, the town's window-dotted skyline repeated in the storm (pass 600 grade).
+    "hearthroot": "roof", "spires": "spire",
 }
 # Body silhouette and a one-step-lighter crest rim: a dark shade of each zone's
 # dominant ramp, so the ridge belongs to its world even before the haze recedes
@@ -2908,6 +2910,16 @@ def _ridge_profile(kind, rng):
         elif kind == "crag":
             _jag(teeth, x, rng.randint(10, 22) * D, rng.randint(14, 40) * D, rng)
             x += rng.randint(14, 30) * D
+        elif kind == "spire":
+            # A ruined spire: a tall narrow tower standing level on the ground at
+            # its centre, under a steep point or a broken, notched crown.
+            half, peak = rng.randint(3, 6) * D, rng.randint(30, 60) * D
+            pointed = rng.random() < 0.55
+            for dx in range(-half, half + 1):
+                i = (x + dx) % BG_W
+                crown = peak + (half - abs(dx)) * 1.6 if pointed else peak - (2 * D if (dx + half) // (2 * D) % 2 else 0)
+                roofs[i] = max(roofs[i] or 0.0, roll[x % BG_W] + crown)
+            x += rng.randint(26, 48) * D
         else:  # roof
             half, peak = rng.randint(9, 18) * D, rng.randint(18, 44) * D
             _block(teeth, x, half, peak)
@@ -3007,6 +3019,32 @@ def _ridge_detail(img, zone, far_h, near_tops, rng):
                         for xx in range(wx, wx + 2 * D):
                             _over(img, xx, yy, light if lit else seam, 230 if lit else 170)
         return
+    if kind == "spire":
+        # Each spire: its west wall lit, its east edge in shadow, and one or two
+        # slit windows high in it, some lit; no rows of windows, which are the town's.
+        edges = [x for x in range(BG_W) if abs(far_h[x] - far_h[x - 1]) > 3 * D]
+        for i, x0 in enumerate(edges):
+            x1 = edges[(i + 1) % len(edges)] + (BG_W if i + 1 == len(edges) else 0)
+            if far_h[x0] < far_h[x0 - 1]:
+                for x in (x0 - 1, x0 - 2):
+                    for y in range(far_tops[x % BG_W] + D, near_tops[x % BG_W] - 10 * D):
+                        _over(img, x, y, seam, 150)
+                continue
+            if x1 - x0 < 5 * D or far_h[(x0 + x1) // 2 % BG_W] < 24 * D:
+                continue
+            for x in range(x0, x0 + D):
+                for y in range(far_tops[x % BG_W] + D, near_tops[x % BG_W] - 10 * D):
+                    _over(img, x, y, rim, 72)
+            cx = (x0 + x1) // 2 - D // 2
+            top = max(far_tops[(x0 + k) % BG_W] for k in range(x1 - x0))
+            for k, wy in enumerate((top + 8 * D, top + 22 * D)):
+                if wy + 5 * D >= near_tops[cx % BG_W] - 12 * D or (k and hash2(cx // D, 7, 61) < 0.5):
+                    continue
+                lit = light and hash2(cx // D, k, 67) > 0.4
+                for yy in range(wy, wy + 5 * D):
+                    for xx in range(cx, cx + D):
+                        _over(img, xx, yy, light if lit else seam, 230 if lit else 170)
+        return
     if kind == "crag":
         # Strata: short broken ledges slanting through the rock, each a dark
         # bedding line under a lit lip.
@@ -3055,7 +3093,7 @@ def ridge(zone):
     body, rim = RIDGE_COLOR[zone]
     rng = random.Random(sum(ord(ch) for ch in zone) + 1300)
     h = _ridge_profile(RIDGE_KIND[zone], rng)
-    faces = RIDGE_KIND[zone] != "roof"
+    faces = RIDGE_KIND[zone] != "roof"  # a roofline lights its walls, not its slopes
     _ridge_plane(img, h, RIDGE_BASE, body, rim, RIDGE_A, faces)
     # The nearer crest, of the same material and lower, and its own seed.
     near_rng = random.Random(sum(ord(ch) for ch in zone) + 2600)
