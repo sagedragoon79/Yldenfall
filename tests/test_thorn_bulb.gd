@@ -129,3 +129,43 @@ func test_thorn_every_bulb_in_the_game_is_rooted() -> void:
 	check(total > 150, "the game has its thorn bulbs: %d" % total)
 	check(rooted * 10 > total * 8, "most bulbs grow from a surface: %d of %d" % [rooted, total])
 	check(linked * 10 > rooted * 8, "most rooted bulbs share a vine with a neighbour: %d of %d" % [linked, rooted])
+
+
+## Pass 593 (bible 12.32): a row of pods read as strawberries (the pass 590
+## grade): a bright red body, pale thorn-tip dots like seeds, a green stem.
+## The husk is now dark and woody, the red lives only in the ember seam that
+## splits it from stem to tip, five long thorns bristle from it, and the vine
+## is bark, not leaf.
+func test_thorn_the_husk_is_dark_and_bristles() -> void:
+	for a: Vector2i in [Vector2i.DOWN, Vector2i.LEFT, Vector2i.ZERO]:
+		var bulb := ThornBulb.new()
+		bulb.anchor = a
+		bulb.position = Vector2(88, 88)
+		arena.add_child(bulb)
+		var husk := [ThornBulb.POD_DARK, ThornBulb.POD, ThornBulb.POD_MID, ThornBulb.POD_LIT, ThornBulb.SHINE]
+		var lum := 0.0
+		var n := 0
+		var tips: Array[Vector2i] = []
+		for px: Array in bulb.pod_pixels():
+			var col: Color = px[1]
+			check(not (col.r > 0.6 and col.r > col.g * 2.0), "%s: no bright red on the husk (#%s)" % [a, col.to_html(false)])
+			if husk.has(col):
+				lum += col.get_luminance()
+				n += 1
+			if col == ThornBulb.THORN_TIP:
+				tips.append(px[0])
+		check(n > 50 and lum / n < 0.25, "%s: the husk is dark (mean luminance %.2f)" % [a, lum / maxf(n, 1)])
+		check(tips.size() == (6 if a == Vector2i.ZERO else 5), "%s: five long thorns, six on a free pod (%d)" % [a, tips.size()])
+		for tip: Vector2i in tips:
+			check(Vector2(tip).length() >= 8.0, "%s: a thorn reaches well past the husk (%s)" % [a, tip])
+		var dir := ThornBulb.pod_dir(a, ThornBulb.tilt_for(Vector2i(5, 5), a))
+		var along := []
+		for c: Vector2i in bulb.seam_pixels():
+			along.append((Vector2(c) + Vector2(0.5, 0.5)).dot(dir))
+		check(along.size() >= 6, "%s: the seam is a crack, not a dot (%d px)" % [a, along.size()])
+		if along.size() > 0:
+			check(along.min() < -2.0 and along.max() > 3.0, "%s: the seam splits the husk from stem to tip (%.1f to %.1f)" % [a, along.min(), along.max()])
+		for px: Array in bulb.vine_pixels():
+			var col: Color = px[1]
+			check(col.g <= col.r, "%s: the vine is bark, not leaf (#%s)" % [a, col.to_html(false)])
+		bulb.queue_free()

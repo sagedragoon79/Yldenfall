@@ -12,26 +12,38 @@ extends Area2D
 ## column of them reads as a bramble climbing the wall. A pod with no surface
 ## beside it floats free, thorned all round. The hitbox is unchanged: a circle
 ## of radius 6 at the cell's center, where the pod sits.
+##
+## Pass 593 (bible 12.32): a row of the red pods read as strawberries. The
+## husk is now dark bark split by an ember seam, with five long bone thorns,
+## on a bark-brown vine.
 
-## The pod's ramp, dark to lit, plus its outline. Master palette reds.
-const OUTLINE := Color("1f0a11")
-const POD_DARK := Color("501623")
-const POD := Color("861d25")
-const POD_MID := Color("c02a20")
-const POD_LIT := Color("e55439")
-const SHINE := Color("e68c75")
-## The seam's glow pulses between these.
-const GLOW := Color("e55439")
-const GLOW_HOT := Color("ecbdac")
-## Thorns: the outline tone with a pale bone tip.
-const THORN_TIP := Color("ccbe8e")
-## The woody stem and the bramble vine.
-const VINE_OUT := Color("121613")
-const VINE := Color("2f392d")
-const VINE_LIT := Color("4f5c47")
-const VINE_THORN := Color("b2b8a2")
+## The husk's ramp, dark to lit, plus its outline. Pass 593: the husk was a
+## four-step bright red, and with pale thorn-tip dots and a green stem a row
+## of pods read as strawberries (the pass 590 grade). It is now a dark woody
+## husk, so the red lives only in the ember seam that splits it.
+const OUTLINE := Color("1c0d0f")
+const POD_DARK := Color("200b09")
+const POD := Color("48201e")
+const POD_MID := Color("783c2b")
+const POD_LIT := Color("aa6336")
+const SHINE := Color("cd8c51")
+## The seam's ember glow pulses between these; its core is hotter.
+const GLOW := Color("c02a20")
+const GLOW_HOT := Color("e55439")
+const EMBER := Color("f0c02e")
+## Thorns: long bone spikes, a shadowed flank, a lit flank and a pale point.
+const THORN_DARK := Color("797767")
+const THORN := Color("ccbe8e")
+const THORN_TIP := Color("f1eee4")
+## The woody stem and the bramble vine: bark, not leaf.
+const VINE_OUT := Color("161413")
+const VINE := Color("432d23")
+const VINE_LIT := Color("6e5135")
+const VINE_THORN := Color("ccbe8e")
 ## Every tone above, for the palette test.
-const TONES := [OUTLINE, POD_DARK, POD, POD_MID, POD_LIT, SHINE, GLOW, GLOW_HOT, THORN_TIP, VINE_OUT, VINE, VINE_LIT, VINE_THORN]
+const TONES := [OUTLINE, POD_DARK, POD, POD_MID, POD_LIT, SHINE, GLOW, GLOW_HOT, EMBER, THORN_DARK, THORN, THORN_TIP, VINE_OUT, VINE, VINE_LIT, VINE_THORN]
+## How far a thorn reaches past the husk, in pixels.
+const THORN_LEN := 4
 
 ## Half a tile: the surface the pod grows from is this far from its center.
 const HALF := 8
@@ -53,6 +65,7 @@ var _squish := 0.0
 var _vine_px: Array = []
 var _pod_px: Array = []
 var _seam_px: Array[Vector2i] = []
+var _core_px: Array[Vector2i] = []
 
 
 func _ready() -> void:
@@ -142,6 +155,7 @@ func _build() -> void:
 	var light := Vector2(-0.6, -0.8)
 	_pod_px.clear()
 	_seam_px.clear()
+	_core_px.clear()
 	for c: Vector2i in body:
 		var p := Vector2(c) + Vector2(0.5, 0.5)
 		var u := p.dot(dir) - 0.3
@@ -157,9 +171,13 @@ func _build() -> void:
 		elif lit > 0.2:
 			col = POD_MID
 		_pod_px.append([c, col])
-		# The hot tip: the bud glows where it splits.
-		if u > 2.4 and absf(v) < 1.3:
+		# The seam: an ember crack down the husk's spine from the stem to the
+		# tip, kinked once so it reads as a split, not a stripe.
+		var kink := 0.35 if u < 0.8 else -0.45
+		if u > -3.2 and absf(v - kink) < 0.75:
 			_seam_px.append(c)
+			if u > -1.0 and u < 3.0:
+				_core_px.append(c)
 	# Outline every empty pixel beside the body.
 	var rim := {}
 	for c: Vector2i in body:
@@ -168,26 +186,45 @@ func _build() -> void:
 				rim[c + s] = true
 	for c: Vector2i in rim:
 		_pod_px.insert(0, [c, OUTLINE])
-	# A glint up and left of the center.
-	var g := Vector2i((light * 2.2).floor())
-	if body.has(g):
+	# A glint up and left of the center, off the seam.
+	var g := Vector2i((light * 2.6).floor())
+	if body.has(g) and not _seam_px.has(g):
 		_pod_px.append([g, SHINE])
-	# Thorns: hooked, a dark spine and a pale tip, round all but the stem.
-	var angles := [0.0, 0.8, -0.8, 1.65, -1.65, 2.45, -2.45]
+	# Thorns: five long spikes, two pixels thick at the husk and tapering to a
+	# pale point, lit on their upper-left flank and outlined, so a row of pods
+	# bristles instead of being dotted like a berry. Round all but the stem.
+	var angles := [0.0, 1.05, -1.05, 2.15, -2.15]
 	if anchor == Vector2i.ZERO:
 		angles.append(PI)
+	var spikes: Array = []
 	for ang: float in angles:
 		var d := dir.rotated(ang)
 		var r := 1.0
 		while body.has(Vector2i((d * r).floor())) and r < HALF:
 			r += 0.5
-		var base := d * r
-		var tip := base + d * 3.0 + d.orthogonal() * 1.2
-		for i in range(4):
-			var q := Vector2i(base.lerp(tip, i / 3.0).floor())
-			if not body.has(q):
-				_pod_px.insert(0, [q, OUTLINE])
-		_pod_px.append([Vector2i(tip.floor()), THORN_TIP])
+		var base := d * (r - 0.5)
+		var flank := d.orthogonal()
+		if flank.dot(light) < 0.0:
+			flank = -flank
+		for i in range(THORN_LEN + 1):
+			var q := base + d * i
+			var core := Vector2i(q.floor())
+			if not body.has(core):
+				spikes.append([core, THORN_TIP if i == THORN_LEN else THORN])
+			if i < 2:
+				var w := Vector2i((q - flank).floor())
+				if not body.has(w) and w != core:
+					spikes.append([w, THORN_DARK])
+	var spiked := {}
+	for px: Array in spikes:
+		spiked[px[0]] = true
+	for px: Array in spikes:
+		for s: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var o: Vector2i = px[0] + s
+			if not body.has(o) and not spiked.has(o) and not rim.has(o):
+				_pod_px.insert(0, [o, OUTLINE])
+				rim[o] = true
+	_pod_px.append_array(spikes)
 	_build_vine()
 
 
@@ -226,6 +263,16 @@ func _build_vine() -> void:
 				_vine_px.append([c + out * 3 + d, VINE_THORN])
 
 
+## The husk's, outline's and thorns' [pixel, color] pairs. For tests.
+func pod_pixels() -> Array:
+	return _pod_px
+
+
+## The ember seam's pixels. For tests.
+func seam_pixels() -> Array[Vector2i]:
+	return _seam_px
+
+
 ## The stem's and vine's [pixel, color] pairs. For tests.
 func vine_pixels() -> Array:
 	return _vine_px
@@ -238,7 +285,11 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, sq)
 	for px: Array in _pod_px:
 		draw_rect(Rect2(Vector2(px[0]), Vector2.ONE), px[1])
-	var glow := GLOW.lerp(GLOW_HOT, 0.5 + 0.5 * sin(_t))
+	var pulse := 0.5 + 0.5 * sin(_t)
+	var glow := GLOW.lerp(GLOW_HOT, pulse)
 	for c: Vector2i in _seam_px:
 		draw_rect(Rect2(Vector2(c), Vector2.ONE), glow)
+	var core := GLOW_HOT.lerp(EMBER, pulse)
+	for c: Vector2i in _core_px:
+		draw_rect(Rect2(Vector2(c), Vector2.ONE), core)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
