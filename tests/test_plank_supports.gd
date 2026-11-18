@@ -51,7 +51,7 @@ func test_plank_a_low_run_stands_on_posts() -> void:
 	var size := Vector2i(16, 12)
 	# The floor is row 11; the run at row 8 has two empty rows (9, 10) under it.
 	var plan := PlankSupports.plan(_planks(8, 5, 9), _box(size), size)
-	check(_kinds(plan) == ["post", "post"], "two posts: %s" % [_kinds(plan)])
+	check(_kinds(plan) == ["post", "post", "frame"], "two posts and the frame between them: %s" % [_kinds(plan)])
 	check(is_equal_approx(plan[0].bottom, 11.0 * T), "down to the floor's top")
 
 
@@ -121,6 +121,8 @@ func test_plank_every_run_in_the_game_is_held_up() -> void:
 			for run: Vector3i in PlankSupports.runs(planks):
 				runs += 1
 				var held := plan.any(func(s: Dictionary) -> bool:
+					if s.kind == "frame":
+						return false
 					if s.kind == "brace":
 						return s.cell.y == run.x and s.cell.x in [run.y, run.z]
 					var x: float = s.x
@@ -170,3 +172,103 @@ func test_plank_the_evercrown_hangs_its_grown_shelves_on_sinew() -> void:
 	arena.add_child(room)
 	var holds := room.get_node_or_null("PlankSupports") as PlankSupports
 	check(holds != null and holds._look.hang == "sinew", "an Evercrown room takes the sinew look")
+
+
+func _palette() -> Dictionary:
+	var palette := {}
+	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://art/palette/master.json"))
+	for c: String in data.colors:
+		palette[c.trim_prefix("#").to_lower()] = true
+	return palette
+
+
+func _bounds(parts: Array) -> Rect2:
+	var box: Rect2 = parts[0][0]
+	for p: Array in parts:
+		box = box.merge(p[0])
+	return box
+
+
+## Pass 596 (bible 12.81): every support tone, the bolts and footings too, is a master palette value.
+func test_plank_every_support_tone_is_in_the_palette() -> void:
+	var palette := _palette()
+	for zone: String in PlankSupports.LOOKS:
+		var look: Dictionary = PlankSupports.LOOKS[zone]
+		var tones: Array = [look.lit, look.mid, look.dark, look.bolt]
+		tones.append_array(look.wood)
+		tones.append_array(look.foot)
+		for t: String in tones:
+			check(palette.has(t), "%s: %s is a palette value" % [zone, t])
+		check(not (look.bolt in look.wood), "%s: its bolts stand out from the timber" % zone)
+
+
+## Pass 596: a post is squared timber with a cap under the board and a footing stone, not a stick.
+func test_plank_a_post_is_built_timber() -> void:
+	var look: Dictionary = PlankSupports.LOOKS["tower"]
+	var parts := PlankSupports.post_parts(100.0, 50.0, 98.0, look)
+	var body: Rect2 = parts[0][0]
+	check(body.size.x >= PlankSupports.POST_W and PlankSupports.POST_W >= 4.0, "the post is at least 4 px wide: %s" % body.size.x)
+	var foot := parts.filter(func(p: Array) -> bool: return p[1] == look.foot[1])
+	check(foot.size() == 1 and foot[0][0].size.x > body.size.x and is_equal_approx(foot[0][0].end.y, 98.0), "a footing stone, wider than the post, on the floor")
+	var bolts := parts.filter(func(p: Array) -> bool: return p[1] == look.bolt)
+	check(bolts.size() >= 1 and bolts[0][0].position.y < 53.0, "a bolt in the cap under the board")
+	var box := _bounds(parts)
+	check(box.position.y >= 50.0 and box.end.y <= 98.0, "it stays between the board and the floor: %s" % box)
+	check(box.position.x < 100.0 - 6.0 and box.end.x > 100.0 + 6.0, "knee brackets reach out on both sides by default: %s" % box)
+	var right := _bounds(PlankSupports.post_parts(100.0, 50.0, 98.0, look, [1]))
+	check(right.position.x >= 100.0 - PlankSupports.POST_W * 0.5 - 2.0, "with knees to the right only, nothing reaches past the cap on the left: %s" % right)
+
+
+## Pass 596: two posts under a run are tied by a rail and cross-braced bay by bay.
+func test_plank_two_posts_are_framed_together() -> void:
+	var look: Dictionary = PlankSupports.LOOKS["gym"]
+	var size := Vector2i(16, 12)
+	var plan := PlankSupports.plan(_planks(8, 2, 13), _box(size), size)
+	var frames := plan.filter(func(s: Dictionary) -> bool: return s.kind == "frame")
+	check(frames.size() == 1, "one frame between the two posts: %s" % [_kinds(plan)])
+	if frames.is_empty():
+		return
+	var f: Dictionary = frames[0]
+	var parts := PlankSupports.frame_parts(f.left, f.right, f.top, f.bottom, look)
+	var box := _bounds(parts)
+	check(box.position.x >= f.left and box.end.x <= f.right, "the frame stays between its posts: %s" % box)
+	check(box.position.y >= f.top and box.end.y <= f.bottom, "and between the board and the floor: %s" % box)
+	var rails := parts.filter(func(p: Array) -> bool: return p[1] == look.wood[1] and p[0].size.x > 100.0)
+	check(rails.size() == 1, "one rail spans the posts")
+	var studs := parts.filter(func(p: Array) -> bool: return p[1] == look.wood[1] and p[0].size.y > 8.0 and p[0].size.x <= 2.0)
+	var bays := studs.size() + 1
+	check((f.right - f.left) / bays <= PlankSupports.BAY_MAX + PlankSupports.POST_W, "no bay is wider than BAY_MAX (%d bays over %s px)" % [bays, f.right - f.left])
+	# A run too close to the floor for a frame gets posts alone.
+	plan = PlankSupports.plan(_planks(9, 2, 13), _box(size), size)
+	check(_kinds(plan) == ["post", "post"], "one empty row under the run: no frame: %s" % [_kinds(plan)])
+
+
+## Pass 596: in every room, no post's knee bracket juts past the end of the board it holds.
+func test_plank_no_post_juts_past_its_run() -> void:
+	var posts := 0
+	for zone: String in DirAccess.get_directories_at("res://levels"):
+		for file: String in DirAccess.get_files_at("res://levels/" + zone):
+			if not file.ends_with(".room"):
+				continue
+			var grid: Array[String] = Room.parse(FileAccess.get_file_as_string("res://levels/%s/%s" % [zone, file])).grid
+			var planks := {}
+			var solid := {}
+			var size := Vector2i(0, grid.size())
+			for y in grid.size():
+				size.x = maxi(size.x, grid[y].length())
+				for x in grid[y].length():
+					if grid[y][x] == "-":
+						planks[Vector2i(x, y)] = true
+					elif grid[y][x] in ["#", "%", "u", "/", "\\"]:
+						solid[Vector2i(x, y)] = true
+			var look: Dictionary = PlankSupports.LOOKS.get(zone, PlankSupports.LOOKS["gym"])
+			var runs := PlankSupports.runs(planks)
+			for s: Dictionary in PlankSupports.plan(planks, solid, size):
+				if s.kind != "post":
+					continue
+				posts += 1
+				var box := _bounds(PlankSupports.post_parts(s.x, s.top, s.bottom, look, s.knees))
+				var row := int(s.top / T)
+				var inside := runs.any(func(r: Vector3i) -> bool: return r.x == row and box.position.x >= r.y * T - 0.01 and box.end.x <= (r.z + 1) * T + 0.01)
+				check(inside, "%s/%s: the post at x %s stays under its board: %s" % [zone, file, s.x, box])
+	check(posts > 20, "the game has posts to check: %d" % posts)

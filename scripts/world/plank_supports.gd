@@ -13,6 +13,12 @@ extends Node2D
 ##   hanger with nothing above it within `HANG_MAX` tiles fades out into the
 ##   dark, as if hung from beyond the view.
 ##
+## Posts are built timber, not sticks (design bible 12.81, pass 596): a squared
+## post with a cap block and knee brackets under the board, a footing stone where
+## it meets the floor, and bolts in the zone's accent. Two posts under one run
+## are tied by a rail and cross-braced, bay by bay, so the run reads as a built
+## trestle rather than a table on legs.
+##
 ## Drawn once per room load behind the tiles (z -1, like the ladders), so the
 ## plank sits over the hanger's foot and actors pass in front. Collision is
 ## untouched; it is dressing only.
@@ -31,25 +37,33 @@ const BOARD := 3.0
 ## The board's full depth with its dark underside, world px: a hanger taken from
 ## a plank above is fixed here, not below that plank's trestle.
 const BOARD_UNDER := 5.0
+## A post's width, world px (pass 596: it was 2.5, and read as a stick).
+const POST_W := 4.0
+## A frame's widest bay, world px; a longer span is split into bays.
+const BAY_MAX := 48.0
+## A frame needs this much height between board and footing, world px (a post
+## over one empty row, 29 px, is too squat to cross-brace).
+const FRAME_MIN_H := 40.0
 
 ## Per-zone support look. `hang` is rope, chain or sinew (a strand drawn like rope); `lit`, `mid`, `dark` are the
 ## hanger's three tones; `wood` the post and brace timber (lit, mid, dark), in
 ## the plank's own strut ramp (tilegen PLANK) so the support reads as the same
-## build as the board it carries.
+## build as the board it carries; `bolt` the fastener accent (tilegen PLANK
+## `nail`), and `foot` the footing stone (lit, mid, dark).
 const LOOKS := {
-	"gym": {"hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"]},
-	"heartwood": {"hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"]},
-	"boughs": {"hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"]},
-	"hearthroot": {"hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["aa6336", "783c2b", "48201e"]},
-	"haar": {"hang": "rope", "lit": "aa9173", "mid": "8a6e56", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"]},
-	"sunken": {"hang": "chain", "lit": "aa9173", "mid": "634a41", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"]},
-	"spires": {"hang": "rope", "lit": "bea860", "mid": "9c7f44", "dark": "432d23", "wood": ["8a6e56", "634a41", "3c2c2a"]},
-	"vorrhallow": {"hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"]},
-	"trials": {"hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"]},
-	"tower": {"hang": "chain", "lit": "aca1ba", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"]},
+	"gym": {"hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "aca1ba", "foot": ["797767", "58544c", "363330"]},
+	"heartwood": {"hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "f0c02e", "foot": ["797767", "58544c", "363330"]},
+	"boughs": {"hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "a1d684", "foot": ["797767", "58544c", "363330"]},
+	"hearthroot": {"hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "f0c02e", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"haar": {"hang": "rope", "lit": "aa9173", "mid": "8a6e56", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "989885", "foot": ["797767", "58544c", "363330"]},
+	"sunken": {"hang": "chain", "lit": "aa9173", "mid": "634a41", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "84cbd6", "foot": ["797767", "58544c", "363330"]},
+	"spires": {"hang": "rope", "lit": "bea860", "mid": "9c7f44", "dark": "432d23", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "edce6e", "foot": ["797767", "58544c", "363330"]},
+	"vorrhallow": {"hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "d684c6", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"trials": {"hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "b4b4a7", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"tower": {"hang": "chain", "lit": "aca1ba", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "84cbd6", "foot": ["867ba2", "645e82", "2f2c3a"]},
 	# The Evercrown's shelves are grown, not built (bible 12.34, pass 542): they hang on
 	# sinew strands (night-5, night-3, crystal-1: wine, not red, bible 12.48), not hot crystal chains.
-	"evercrown": {"hang": "sinew", "lit": "af92c9", "mid": "5d4997", "dark": "421e48", "wood": ["8265b8", "5d4997", "2c2541"]},
+	"evercrown": {"hang": "sinew", "lit": "af92c9", "mid": "5d4997", "dark": "421e48", "wood": ["8265b8", "5d4997", "2c2541"], "bolt": "b5e3e1", "foot": ["8265b8", "5d4997", "2c2541"]},
 }
 
 ## The plan, one Dictionary per support: {kind: "brace", "post" or "hang", ...}.
@@ -101,6 +115,7 @@ static func plan(planks: Dictionary, solid: Dictionary, size: Vector2i) -> Array
 		# Short runs carried at one end need nothing more.
 		if (held[0] or held[1]) and run.z - run.y < 3:
 			continue
+		var posts: Array[Dictionary] = []
 		for i in 2:
 			if held[i] or (i == 1 and run.y == run.z):
 				continue
@@ -110,7 +125,11 @@ static func plan(planks: Dictionary, solid: Dictionary, size: Vector2i) -> Array
 				x = col * TILE + TILE * 0.5
 			var below := PlankSupports._gap(col, row, 1, planks, solid, size)
 			if below >= 1 and below <= POST_MAX:
-				out.append({"kind": "post", "x": x, "top": row * TILE + BOARD, "bottom": float((row + 1 + below) * TILE)})
+				# Knee brackets toward the run's middle only, so none juts past its end.
+				var knees: Array = [-1, 1] if run.y == run.z else [1 if i == 0 else -1]
+				var post := {"kind": "post", "x": x, "top": row * TILE + BOARD, "bottom": float((row + 1 + below) * TILE), "knees": knees}
+				out.append(post)
+				posts.append(post)
 				continue
 			var above := PlankSupports._gap(col, row, -1, planks, solid, size)
 			var anchored := above >= 0 and above <= HANG_MAX
@@ -120,6 +139,11 @@ static func plan(planks: Dictionary, solid: Dictionary, size: Vector2i) -> Array
 			if not anchored:
 				top = maxf(top, 0.0)
 			out.append({"kind": "hang", "x": x, "top": top, "bottom": row * TILE + BOARD, "anchored": anchored})
+		# Two posts under one run are tied by a rail and cross-braced (pass 596).
+		if posts.size() == 2:
+			var low := minf(posts[0].bottom, posts[1].bottom)
+			if low - posts[0].top >= FRAME_MIN_H:
+				out.append({"kind": "frame", "left": posts[0].x, "right": posts[1].x, "top": posts[0].top, "bottom": low})
 	return out
 
 
@@ -143,7 +167,9 @@ func _draw() -> void:
 			"brace":
 				_draw_brace(s.cell, s.side)
 			"post":
-				_draw_post(s.x, s.top, s.bottom)
+				_draw_parts(PlankSupports.post_parts(s.x, s.top, s.bottom, _look, s.get("knees", [-1, 1])))
+			"frame":
+				_draw_parts(PlankSupports.frame_parts(s.left, s.right, s.top, s.bottom, _look))
 			"hang":
 				if _look.hang == "chain":
 					_draw_chain(s.x, s.top, s.bottom, s.anchored)
@@ -214,14 +240,91 @@ func _draw_cleat(x: float, top: float) -> void:
 	draw_rect(Rect2(x - 1.5, top, 3.5, 0.5), _c(_look.lit))
 
 
-func _draw_post(x: float, top: float, bottom: float) -> void:
-	var w: Array = _look.wood
-	draw_rect(Rect2(x - 1.0, top, 2.5, bottom - top), _c(w[1]))
-	draw_rect(Rect2(x - 1.0, top, 0.5, bottom - top), _c(w[0]))
-	draw_rect(Rect2(x + 1.0, top, 0.5, bottom - top), _c(w[2]))
-	# A wider foot where it meets the floor, and a cap block under the board.
-	draw_rect(Rect2(x - 2.0, bottom - 1.5, 4.5, 1.5), _c(w[2]))
-	draw_rect(Rect2(x - 2.0, top, 4.5, 1.5), _c(w[2]))
+func _draw_parts(parts: Array) -> void:
+	for p: Array in parts:
+		draw_rect(p[0], _c(p[1]))
+
+
+## The rects of a post, each [Rect2, hex tone], back to front (pass 596): a
+## squared post with a lit and a shaded edge and grain ticks, a cap block under
+## the board with a bolt, knee brackets on the `knees` sides (-1 left, 1 right),
+## and a footing stone.
+static func post_parts(x: float, top: float, bottom: float, look: Dictionary, knees: Array = [-1, 1]) -> Array:
+	var w: Array = look.wood
+	var f: Array = look.foot
+	var h := bottom - top
+	var half := POST_W * 0.5
+	var out: Array = []
+	out.append([Rect2(x - half, top, POST_W, h), w[1]])
+	out.append([Rect2(x - half, top, 1.0, h), w[0]])
+	out.append([Rect2(x + half - 1.0, top, 1.0, h), w[2]])
+	# Grain: short dark ticks down the face, alternating sides.
+	var y := top + 6.0
+	var k := 0
+	while y < bottom - 6.0:
+		out.append([Rect2(x - 0.5 + (0.5 if k % 2 else -0.5), y, 1.0, 1.5), w[2]])
+		y += 5.0
+		k += 1
+	# Knee brackets: a short strut from the post up to the board, on the `knees` sides.
+	if h >= 12.0:
+		for side: int in knees:
+			for i in 6:
+				var px := x + side * (half + i * 0.75) - (1.0 if side < 0 else 0.0)
+				var py := top + 6.5 - i * 0.75
+				out.append([Rect2(px, py, 1.5, 1.5), w[1]])
+				out.append([Rect2(px, py, 1.5, 0.5), w[0]])
+	# The cap block the board rests on, with a bolt through it.
+	out.append([Rect2(x - half - 2.0, top, POST_W + 4.0, 2.0), w[2]])
+	out.append([Rect2(x - half - 2.0, top + 1.5, POST_W + 4.0, 0.5), w[1]])
+	out.append([Rect2(x - 0.5, top + 0.5, 1.0, 1.0), look.bolt])
+	# The footing stone: wider than the post, lit along its top.
+	out.append([Rect2(x - half - 2.0, bottom - 3.0, POST_W + 4.0, 3.0), f[1]])
+	out.append([Rect2(x - half - 2.0, bottom - 3.0, POST_W + 4.0, 0.5), f[0]])
+	out.append([Rect2(x - half - 2.0, bottom - 0.5, POST_W + 4.0, 0.5), f[2]])
+	out.append([Rect2(x + half + 1.0, bottom - 2.5, 1.0, 2.5), f[2]])
+	return out
+
+
+## The rects of the frame between a run's two posts: a rail low down and a
+## cross-brace in every bay (no bay wider than BAY_MAX), with a stud between bays
+## and a bolt where each brace meets a post or the rail.
+static func frame_parts(left: float, right: float, top: float, bottom: float, look: Dictionary) -> Array:
+	var w: Array = look.wood
+	var half := POST_W * 0.5
+	var x0 := left + half
+	var x1 := right - half
+	var out: Array = []
+	if x1 - x0 < 8.0:
+		return out
+	var rail := bottom - 9.0
+	var high := top + 9.0
+	var bays := maxi(1, ceili((x1 - x0) / BAY_MAX))
+	var bay := (x1 - x0) / bays
+	for b in bays:
+		var a := x0 + b * bay
+		var e := a + bay
+		for diag: int in 2:
+			var ya := high if diag == 0 else rail
+			var ye := rail if diag == 0 else high
+			var n := maxi(2, ceili(maxf(e - a, absf(ye - ya)) / 0.75))
+			for i in n + 1:
+				var t := float(i) / n
+				var px := lerpf(a, e, t)
+				var py := lerpf(ya, ye, t)
+				out.append([Rect2(px - 0.75, py - 0.75, 1.5, 1.5), w[1]])
+				out.append([Rect2(px - 0.75, py - 0.75, 1.5, 0.5), w[0]])
+		if b > 0:
+			out.append([Rect2(a - 1.0, top, 2.0, rail - top), w[1]])
+			out.append([Rect2(a - 1.0, top, 0.5, rail - top), w[0]])
+			out.append([Rect2(a + 0.5, top, 0.5, rail - top), w[2]])
+	# The rail, over the braces' feet.
+	out.append([Rect2(x0, rail - 1.0, x1 - x0, 2.5), w[1]])
+	out.append([Rect2(x0, rail - 1.0, x1 - x0, 0.5), w[0]])
+	out.append([Rect2(x0, rail + 1.0, x1 - x0, 0.5), w[2]])
+	for bx: float in [x0 + 1.0, x1 - 2.0]:
+		out.append([Rect2(bx, rail - 0.5, 1.0, 1.0), look.bolt])
+		out.append([Rect2(bx, high - 0.5, 1.0, 1.0), look.bolt])
+	return out
 
 
 func _draw_brace(cell: Vector2i, side: int) -> void:

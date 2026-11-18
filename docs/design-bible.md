@@ -1982,7 +1982,7 @@ The independent grade (pass 535) read rooms as "empty boxes of unsupported float
 
 - **A knee brace** where a run's end butts against a wall that continues below it: a diagonal strut from the wall, a tile below the board, up to the plank's underside. A run of 3 tiles or fewer braced at one end needs nothing else; a run braced at both ends needs nothing else.
 - **Posts** down to footing (a floor or another plank) when it is at most 4 tiles below the plank's end.
-- Otherwise **hangers** up to the first solid cell or plank above, one inset 4 px from each end of the run (a lone cell hangs from its middle). A hanger taken from a plank above is fixed under that plank's board, not below its trestle. Rope in the timber and water zones (the gym, the Heartwood, the High Boughs, the Haar, the Spires), chain in the stone and iron ones (Hearthroot, the Sunken Spring, Vorrhallow, the Trials, the Tower), and sinew in the Evercrown (12.34), each in its zone's tones; posts and braces in the plank's own strut timber. A hanger with nothing above it within 22 tiles runs 5 tiles up and fades into the dark, as if hung from beyond the view.
+- Otherwise **hangers** up to the first solid cell or plank above, one inset 4 px from each end of the run (a lone cell hangs from its middle). A hanger taken from a plank above is fixed under that plank's board, not below its trestle. Posts are built timber with a cap, knee brackets, a footing and, in pairs, a cross-braced frame (12.81). Rope in the timber and water zones (the gym, the Heartwood, the High Boughs, the Haar, the Spires), chain in the stone and iron ones (Hearthroot, the Sunken Spring, Vorrhallow, the Trials, the Tower), and sinew in the Evercrown (12.34), each in its zone's tones; posts and braces in the plank's own strut timber. A hanger with nothing above it within 22 tiles runs 5 tiles up and fades into the dark, as if hung from beyond the view.
 
 The layer draws once per room load behind the tiles (z -1, like the ladders), so the board sits over the hanger's foot and actors pass in front; collision is untouched. Ladder tops, drowned boardwalks and hidden planks are not given supports (the ladder carries its own plank; the others are deliberate). Judged by eye at 1x and 2x in `spires/sky_steps`, `tower/bat_belfry`, `haar/drowned_stair`, `heartwood/amber_falls`, `evercrown/drift_well` and `sunken/drowned_aqueduct`: the planks read as hung, propped or braced, and foes and pickups still pop in front of the thin supports. `tests/test_plank_supports.gd` checks each rule and that every plank run in the game is held up.
 
@@ -2587,6 +2587,18 @@ The pass 585 grade saw "the same chest on the same thin table ... in nearly ever
 - **Geode casket**, violet stone with cyan crystal shards grown up through its lid and crystal in its seams: the Evercrown.
 
 Each lock glows in its zone's accent. An open chest throws its lid back the same way in every zone. The chest is drawn as data (`Chest.parts`, half-pixel rects), so tests read the exact pixels. Every tone is a master palette value. Judged by eye on a contact sheet of every zone at 4x (`tools/art/chest_sheet.tscn`) and in game at 1x in `boughs/leaf_landing` and `haar/marsh_road`. `tests/test_chest.gd` checks that every zone has a look in the palette, that the zones use at least seven kinds with no two silhouettes alike, that every part stays in the chest's box and on its ground line, that the lock's light sits on its plate, and that a room's chest takes its zone.
+
+### 12.81 A plank stands on a built trestle (pass 596)
+
+The independent grade (pass 595) read the one-way planks in the Hearthroot plaza, the Tower's gear pit and the Lampwick causeway as "bare debug-like sticks on posts": the posts of 12.30 were 2.5 px rods with nothing between them, so a plank on two posts read as a table. `PlankSupports` now draws its posts as built timber (`post_parts`, half-pixel rects in the plank's strut ramp):
+
+- **The post** is 4 px of squared timber (`POST_W`) with a lit and a shaded edge and grain ticks down its face.
+- **A cap block** under the board, wider than the post, with a bolt through it in the zone's fastener accent (tilegen `PLANK` `nail`: gold in the Heartwood and Hearthroot, leaf in the Boughs, sky in the Tower and the Sunken Spring, crystal in Vorrhallow).
+- **Knee brackets**, short struts from the post up to the board, only toward the run's middle at a run's end so nothing juts past the board (both ways under a one-cell plank).
+- **A footing stone** where the post meets the floor, wider than the post and lit along its top: the zone's stone in the stone and iron zones, grey ash stone in the timber and water ones, tissue in the Evercrown.
+- **A frame** between a run's two posts when there are at least 40 px between board and footing (`FRAME_MIN_H`): a rail low down and a cross-brace in every bay, no bay wider than 48 px (`BAY_MAX`), with a stud between bays and bolts where the braces meet the posts and the rail.
+
+Every tone is a master palette value. Hangers and wall braces are unchanged. Judged by eye at 1x and 3x in `hearthroot/plaza`, `tower/gear_pit` and `haar/lampwick_causeway`: each run now reads as a trestle somebody built. `tests/test_plank_supports.gd` checks that every support tone is in the palette, that a post is at least 4 px with a cap, a bolt and a footing, that two posts are framed with no bay wider than `BAY_MAX`, and that in every room no post's parts reach past the board it holds.
 
 ## 13. Asset Production Plan
 
