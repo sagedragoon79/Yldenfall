@@ -2595,7 +2595,7 @@ The pass 585 grade saw "the same chest on the same thin table ... in nearly ever
 
 Each lock glows in its zone's accent. An open chest throws its lid back the same way in every zone. The chest is drawn as data (`Chest.parts`, half-pixel rects), so tests read the exact pixels. Every tone is a master palette value. Judged by eye on a contact sheet of every zone at 4x (`tools/art/chest_sheet.tscn`) and in game at 1x in `boughs/leaf_landing` and `haar/marsh_road`. `tests/test_chest.gd` checks that every zone has a look in the palette, that the zones use at least seven kinds with no two silhouettes alike, that every part stays in the chest's box and on its ground line, that the lock's light sits on its plate, and that a room's chest takes its zone.
 
-### 12.81 A plank stands on a built trestle (pass 596)
+### 12.81 A plank stands on a built trestle (pass 596; each zone frames it its own way since pass 604, 12.85)
 
 The independent grade (pass 595) read the one-way planks in the Hearthroot plaza, the Tower's gear pit and the Lampwick causeway as "bare debug-like sticks on posts": the posts of 12.30 were 2.5 px rods with nothing between them, so a plank on two posts read as a table. `PlankSupports` now draws its posts as built timber (`post_parts`, half-pixel rects in the plank's strut ramp):
 
@@ -2636,6 +2636,19 @@ The pass 600 grade found "the same skyline of window-dotted rectangles" in the p
 - **Their detail.** Each tower's west wall is lit, its east edge falls to shadow, and it carries one or two slit windows high up (1 by 5 px), some lit ember-2; never the town's rows of windows. The ground between catches the light on its west faces like any other ridge.
 
 Judged by eye at 1x and 2x in the storm ledge and the Fallen Bridge: a field of ruined spires behind the islands, with red slits, and a darker row in front. `tools/art/test_tilegen.py` checks that the Spires' ridge kind is not the town's, that its tall runs are all narrow (six or more), and that its lit windows are fewer than a quarter of the town's.
+
+### 12.85 Each zone builds its own trestle (pass 604)
+
+The pass 600 grade found "the same X-braced trestle" under the plaza, the dwarf hall, the canopy bridge, the gear pit, the causeway and both hit frames: pass 596 (12.81) framed every pair of posts with a rail and a cross-brace per bay, the same build in every zone, only in the zone's timber and stone. Each family of zones now frames two posts its own way (`PlankSupports.FRAMES`, a `frame` per zone in `LOOKS`):
+
+- **The carpenter's trestle** (`x`; Hearthroot, the gym): the pass 596 frame, a rail and a cross-brace per bay, bolted.
+- **Lashed timber** (`lashed`; the Heartwood, the High Boughs, the Spires): a low rail, studs between bays and one diagonal per bay, leaning the other way in the next, with three wraps of the zone's rope at every joint and no bolts.
+- **Pilings** (`piling`; the Haar, the Sunken Spring): stout piles between the posts, their feet darkened by water, and two stringers, high and low, with no bracing: a boardwalk standing in the marsh.
+- **An iron truss** (`truss`; the Tower, the Trials): a top chord under the board, a bottom chord and a zigzag web of struts, panels about 16 px wide, riveted at every node.
+- **A stone arch** (`arch`; Vorrhallow): a band of the footing's stone 4 px deep springing from beside the posts' feet to a keystone under the board, with a joint between voussoirs every few stones and no timber; on its steep flanks each column also covers the drop to the next, so the band stays whole.
+- **Grown sinew** (`web`; the Evercrown): two strands sag from post to post, crossing low in the middle, with a knot of tissue where each takes a post (the shelves are grown, 12.34).
+
+Judged by eye at 1x and 3x in the canopy bridge (lashed), the gear pit (the truss over the spikes), the causeway (pilings in the fog), the drowned market (the arch over the snail) and the Everbloom's heart (sinew). `tests/test_plank_supports.gd`, `test_plank_each_zone_family_frames_its_own_way`, checks that every zone takes a known style and every style is used, that the town, the woods, the Tower and the marsh each build their own, that every style stays between its posts, the board and the floor, and each style's own signature (one rail and cross-braces; rope wraps and no bolts; two stringers and no bracing; two chords, a web and rivets; a keystone at the crown and no timber; sagging strands and no beams), and that no two styles draw the same frame.
 
 ## 13. Asset Production Plan
 
