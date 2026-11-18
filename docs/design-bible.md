@@ -2564,6 +2564,15 @@ The pass 590 grade no longer called the four reshaped rooms (12.74 to 12.77) box
 
 Judged by eye at 1x and 2x before and after: the vaults read as curves, and the diagonals join the soffit trim of the flat ceiling beside them. The first haunches left the square rim in their open half, a dark block under every diagonal. Tests: `tests/test_haunches.gd`.
 
+### 12.79 A menu names its keys (pass 594)
+
+The pass 590 grade called the shop's "Jump: choose / Dash: leave" odd. It named the hero's moves, not the keys a player presses, and "choose" is not what a shop does. Every `ListMenu` now ends its last line with **key caps**: the bound key in a small framed cap (its pad button while a pad is plugged in, so the shop reads "A Buy  B Leave" on a pad and "Space Buy  C Leave" on a keyboard), then a verb for what it does there.
+
+- **The caps.** `ListMenu.cap_name` reads the binding from `Controls`, so a rebound key shows at once. A cap is the font's ascent plus two rows clear above a capital and below it, where a "p" descends (`cap_rect_at`), with a one-pixel edge, a dark face and a drop shadow, so it reads as a key and not a box. Left and Right are drawn as `<` and `>`.
+- **The verbs.** Each menu sets `confirm_verb` and `back_verb` after it opens; both reset on each open. A shop buys and leaves, a Ringreader leaves, the skill tree learns, the Inner Rings begin, the Grain Road travels, the lift rides, Equipment equips, and the pause menu resumes. A plain menu chooses and closes, a sub menu goes back, and a page you only read (Journey, Inventory) names no confirm. A page of values (Options) names Left and Right: Change. While the Controls page listens for a key, it says "Press a key or button" and names the key that cancels.
+
+Judged by eye in the 21 shop pictures at 1x and 4x. The first caps were a pixel too short and clipped the top of their letters. Tests: `test_a_menu_names_its_keys_and_what_they_do` (`tests/test_shop_pictures.gd`). The title screen's save picker keeps its own line of words for now.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

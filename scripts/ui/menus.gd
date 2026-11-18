@@ -88,6 +88,8 @@ static func open_shop(tree: SceneTree, shop_id: String, p: Player) -> bool:
 				Sfx.play("cloth", 0.0)
 			GameState.toast.emit(("Wearing: " if wearing else "Bought: ") + String(GameData.item(shop.stock[i].item).name))
 	menu.open(shop.name, shop.greeting, provider, on_select, _gold_footer(p))
+	menu.confirm_verb = "Buy"
+	menu.back_verb = "Leave"
 	menu.portrait = keeper(shop_id)
 	return true
 
@@ -144,6 +146,7 @@ static func open_ringreader(tree: SceneTree, greeting: String, p: Player, shrine
 			4:
 				menu.close()
 	menu.open("Ringreader", greeting, provider, on_select, _gold_footer(p))
+	menu.back_verb = "Leave"
 	return true
 
 
@@ -211,6 +214,7 @@ static func open_trials(tree: SceneTree, p: Player) -> bool:
 		menu.close()
 		start_trial(world, p, t)
 	menu.open("Inner Rings", "The trial begins the moment you arrive. Hazards cost time, not health.", provider, on_select)
+	menu.confirm_verb = "Begin"
 	return true
 
 
@@ -259,6 +263,7 @@ static func open_grain_road(tree: SceneTree, p: Player) -> bool:
 		world.travel(stops[i], Vector2(float(at[0]) + GRAIN_STEP, float(at[1])))
 		p.velocity = Vector2.ZERO
 	menu.open("Grain Road", "Every Ringreader hears every other.", provider, on_select)
+	menu.confirm_verb = "Travel"
 	return true
 
 
@@ -277,6 +282,7 @@ static func open_lift(tree: SceneTree, p: Player, cage: LiftCage) -> bool:
 		menu.close()
 		cage.ride(p, String(stops[i][0]))
 	menu.open("Kettleforge Lift", "The dwarves' chain runs the length of the trunk.", provider, on_select)
+	menu.confirm_verb = "Ride"
 	return true
 
 
@@ -320,6 +326,7 @@ static func open_skills(tree: SceneTree, p: Player) -> bool:
 			GameState.toast.emit("Learned: " + String(GameData.skill(ids[i]).name))
 	var footer := func() -> String: return "Skill points %d" % int(GameState.data.skill_points)
 	menu.open("Skills", "Each branch deepens in order. Choose well: points are scarce.", provider, on_select, footer)
+	menu.confirm_verb = "Learn"
 	return true
 
 
@@ -385,6 +392,7 @@ static func open_pause(tree: SceneTree, p: Player, on_quit: Callable) -> bool:
 				else:
 					leave_trial(tree)
 	menu.open("Paused", "%s. Rank %s." % [_room_title(tree), GameState.rank_name()], provider, on_select, _gold_footer(p))
+	menu.back_verb = "Resume"
 	return true
 
 
@@ -582,6 +590,7 @@ static func open_equipment(tree: SceneTree, p: Player, back: Callable) -> bool:
 		choose_equipment(String(row.id), p)
 	var footer := func() -> String: return worn_totals(p)
 	menu.open("Equipment", "What you wear and hold. Armor stops blows; a ward turns sorcery. Tempers stay with each blade.", provider, on_select, footer)
+	menu.confirm_verb = "Equip"
 	menu.on_back = back
 	return true
 
@@ -597,6 +606,7 @@ static func open_journey(tree: SceneTree, back: Callable) -> bool:
 		return Completion.journey_rows(Completion.tally(world.catalog), Completion.guardians_found(world.catalog))
 	menu.open("Journey", "Rank %s. %d deaths." % [GameState.rank_name(), int(GameState.data.get("deaths", 0))], provider,
 		func(_i: int) -> void: pass)
+	menu.confirm_verb = ""
 	menu.on_back = back
 	return true
 
@@ -724,6 +734,7 @@ static func open_inventory(tree: SceneTree, p: Player, back: Callable) -> bool:
 		return false
 	menu.open("Inventory", "What you have found, and what it does.", func() -> Array: return inventory_rows(p),
 		func(_i: int) -> void: pass)
+	menu.confirm_verb = ""
 	menu.on_back = back
 	return true
 
