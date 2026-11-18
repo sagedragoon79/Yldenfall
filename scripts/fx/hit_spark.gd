@@ -35,14 +35,21 @@ const RAYS := 5
 ## the spark; it crosses the swing at STREAK_TILT, so a level swing cuts a diagonal.
 ## The sheet spark alone was 30 render pixels across on a 1280-wide frame.
 const STREAK_LIFE := 0.16
-const STREAK_LEN := 40.0
+## Since pass 599 it runs behind the foe (STREAK_Z), so it is long enough to come
+## out past a 24 to 40 px body on the far side: the cut passes through.
+const STREAK_LEN := 60.0
 const STREAK_WIDTH := 3.0
 const STREAK_TILT := 0.75
 const STREAK_HOLD := 0.5
 ## The spark sits on the foe's near edge; the streak's middle is this far on, over its body.
-const STREAK_AHEAD := 8.0
+const STREAK_AHEAD := 12.0
 const STREAK := Color("ffffff")
 const STREAK_GLOW := Color("ffe9a8")
+## The streak's layer (pass 599): an absolute z under every actor (the hero and the
+## foes draw at 0, a struck foe at Enemy.STRUCK_Z), with the room's decor, so the
+## struck body covers the cut where they cross and the streak shows only where it
+## passes beyond the silhouette. The spark itself stays on top, at the contact.
+const STREAK_Z := -1
 
 var dir := Vector2.RIGHT
 var size := 1.0
@@ -54,6 +61,8 @@ var _sheet := {}
 var life := LIFE
 ## How strong the streak was in the last drawing (0 when none was drawn).
 var streak_drawn := 0.0
+## The node the streak is drawn on, at STREAK_Z.
+var streak_layer: Node2D
 
 static var _sheets := {}
 
@@ -94,6 +103,11 @@ static func spawn(parent: Node, at: Vector2, swing_dir: Vector2, scale_by := 1.0
 
 func _ready() -> void:
 	z_index = 4
+	streak_layer = Node2D.new()
+	streak_layer.z_as_relative = false
+	streak_layer.z_index = STREAK_Z
+	streak_layer.draw.connect(_draw_streak)
+	add_child(streak_layer)
 	if uses_sheet():
 		_sheet = load_sheet(HEAVY_SHEET if size >= HEAVY_AT else SHEET)
 		life = _sheet.frames.size() / float(_sheet.fps)
@@ -112,6 +126,7 @@ func _physics_process(delta: float) -> void:
 	if _life <= 0.0:
 		queue_free()
 	queue_redraw()
+	streak_layer.queue_redraw()
 
 
 ## The sheet frame showing now.
@@ -154,13 +169,12 @@ func _draw_streak() -> void:
 	var half := STREAK_LEN * size * (0.5 + 0.1 * (1.0 - k))
 	var w := STREAK_WIDTH * size * (0.4 + 0.6 * k)
 	var glow := PackedVector2Array([c + a * (half + 3.0), c + n * (w + 1.5), c - a * (half + 3.0), c - n * (w + 1.5)])
-	draw_colored_polygon(glow, Color(STREAK_GLOW, 0.75 * k))
+	streak_layer.draw_colored_polygon(glow, Color(STREAK_GLOW, 0.75 * k))
 	var core := PackedVector2Array([c + a * half, c + n * w, c - a * half, c - n * w])
-	draw_colored_polygon(core, Color(STREAK, k))
+	streak_layer.draw_colored_polygon(core, Color(STREAK, k))
 
 
 func _draw() -> void:
-	_draw_streak()
 	if not _sheet.is_empty():
 		_draw_sheet()
 		return

@@ -110,6 +110,16 @@ var fell := false
 var thrown := false
 
 var _flash := 0.0
+## The struck foe reads through the cut (bible 6.7, pass 599): for STRUCK_TIME
+## after a blow lands (or a parry staggers it), a foe draws at STRUCK_Z, above the
+## swing's smear (SlashFx, z 2) and the hero, under the spark (z 4), so its flash
+## and recoil show whole and the smear shows only either side of it. Its own z
+## comes back after. Counted on the game clock, so the hit-stop holds it.
+const STRUCK_Z := 3
+const STRUCK_TIME := 0.2
+var _struck_for := 0.0
+var _struck_raised := false
+var _rest_z := 0
 var _hitstun := 0.0
 ## The hitstun the last blow set, and the way it pushed (1 right, -1 left).
 var _hitstun_full := 0.0
@@ -185,6 +195,7 @@ func center() -> Vector2:
 
 
 func _physics_process(delta: float) -> void:
+	_raise_while_struck(delta)
 	if dead:
 		if respawn_time > 0.0:
 			_respawn_timer -= delta
@@ -265,6 +276,7 @@ func take_hit(damage: int, dir: Vector2) -> void:
 		return
 	hp -= dealt
 	_flash = 0.08
+	_struck_for = STRUCK_TIME
 	# A heavy blow comes in at 1.8x (the finisher, a thrust): its number is gold.
 	DamageNumber.spawn(get_parent(), center() + Vector2(0, -14), dealt, "heavy" if dir.length() > 1.5 else "hit")
 	var d := Dust.new()
@@ -319,8 +331,29 @@ func stagger() -> void:
 		return
 	_stagger = 1.0
 	_flash = 0.1
+	_struck_for = STRUCK_TIME
 	set_state("stagger")
 	velocity.x = -facing * 80.0
+
+
+## Draws this foe at STRUCK_Z while a blow's flash and recoil play (pass 599), and
+## at its own z again after; z is only touched as the window opens and closes.
+func _raise_while_struck(delta: float) -> void:
+	_struck_for = maxf(0.0, _struck_for - delta)
+	var struck := _struck_for > 0.0
+	if struck == _struck_raised:
+		return
+	_struck_raised = struck
+	if struck:
+		_rest_z = z_index
+		z_index = maxi(z_index, STRUCK_Z)
+	else:
+		z_index = _rest_z
+
+
+## True while a blow's flash and recoil draw this foe above the swing (pass 599).
+func drawn_struck() -> bool:
+	return _struck_raised
 
 
 func is_staggered() -> bool:

@@ -81,3 +81,40 @@ func test_a_struck_foe_leans_away_from_the_blow() -> void:
 	h.stagger()
 	await frames(2)
 	check(h.lean_drawn() == 0.0, "a stagger with no blow behind it does not lean")
+
+
+## Pass 599 (bible 6.7): the pass 595 grade read the slash and spark as covering
+## the struck foe. The streak now runs behind the actors and comes out past the
+## body, and a foe in its hit flash draws above the swing's smear.
+func test_the_cut_runs_behind_the_struck_foe() -> void:
+	var s := HitSpark.spawn(arena, Vector2(100, 100), Vector2.RIGHT)
+	await frames(1)
+	check(not s.streak_layer.z_as_relative and s.streak_layer.z_index < 0, "the streak draws on its own layer, under the actors (z %d)" % s.streak_layer.z_index)
+	check(s.streak_drawn == 1.0, "and is drawn there at full")
+	check(s.z_index > Enemy.STRUCK_Z, "the spark itself stays on top of a struck foe")
+	var tip := s.streak_center() + s.streak_axis() * HitSpark.STREAK_LEN * 0.5
+	check(tip.x >= 30.0 and tip.y <= -18.0, "its far tip comes out past a foe's body, up and on (%s)" % tip)
+	check(SlashFx.Z < Enemy.STRUCK_Z, "the swing's smear draws under a struck foe")
+
+	var h := _hornet()
+	await frames(2)
+	var rest := h.z_index
+	check(not h.drawn_struck() and rest < SlashFx.Z, "a hornet at rest draws under the smear (z %d)" % rest)
+	h.take_hit(1, Vector2(1, 0))
+	await frames(1)
+	check(h.drawn_struck() and h.z_index == Enemy.STRUCK_Z, "struck, it draws above the smear (z %d)" % h.z_index)
+	await frames(int(ceil(Enemy.STRUCK_TIME * 60.0)) + 2)
+	check(not h.drawn_struck() and h.z_index == rest, "and goes back to its own z when the blow has played (z %d)" % h.z_index)
+
+	# A foe with a z of its own gets it back.
+	h.z_index = 1
+	h.take_hit(1, Vector2(-1, 0))
+	await frames(1)
+	check(h.z_index == Enemy.STRUCK_Z, "a raised foe is raised again when struck")
+	await frames(int(ceil(Enemy.STRUCK_TIME * 60.0)) + 2)
+	check(h.z_index == 1, "and comes back to its own z of 1 (%d)" % h.z_index)
+
+	# A tell is not a blow: winding up never raises a foe.
+	h.set_state("windup")
+	await frames(3)
+	check(not h.drawn_struck() and h.z_index == 1, "a tell leaves it where it was")
