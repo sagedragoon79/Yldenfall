@@ -290,6 +290,15 @@ func build(text: String) -> void:
 		add_child(holds)
 		holds.setup(zone, _planks, _solid_look, size_tiles)
 
+	# A floating stone hangs on a keel of the rock it tore free with (design bible 12.82).
+	if zone in StoneKeel.ZONES:
+		var blocked := _solid_look.duplicate()
+		blocked.merge(_planks)
+		var keel := StoneKeel.new()
+		keel.name = "StoneKeel"
+		add_child(keel)
+		keel.setup(_solid_look, blocked, size_tiles, id.hash())
+
 	var found := Room.scan_doors(grid)
 	for spec: String in lists.get("door", []):
 		var parts := spec.split(",")
