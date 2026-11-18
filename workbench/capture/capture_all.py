@@ -171,12 +171,14 @@ def jobs():
             add('fights', 'fights/%s.png' % fid, lambda o, rid=rid, foe=foe: 'FAIL %s (no %s with floor beside it in %s)' % (os.path.relpath(o, CAT), foe, rid))
             continue
         g = ['--room=' + rid, '--shot-at=%d,%d' % spot[:2]] + (['--face-left'] if spot[2] < 0 else [])
+        # A fight frame is the game as played, so it keeps the HUD (ui, the whole
+        # window; bible 12.0, pass 600): the pass 595 grade found none in the frames.
         if when == 'hit':
             # A real swing: the smear, the spark and the foe's flash share the frame.
-            add('fights', 'fights/%s.png' % fid, lambda o, g=g: shot(o, g + ['--shot-attack=24'], when='hit', after=2, frames=600))
+            add('fights', 'fights/%s.png' % fid, lambda o, g=g: shot(o, g + ['--shot-attack=24'], when='hit', after=2, frames=600, ui=''))
         else:
             # The hero only stands there, so the frame is the foe's wind-up and nothing else.
-            add('fights', 'fights/%s.png' % fid, lambda o, g=g: shot(o, g, when='tell', after=4, frames=600))
+            add('fights', 'fights/%s.png' % fid, lambda o, g=g: shot(o, g, when='tell', after=4, frames=600, ui=''))
     # A code-drawn guardian's wind-up (its tint is the wash, TELL_WASH, with no rim):
     # the hero stands mid-floor and the frame is cropped around the guardian.
     for fid, rid in GUARDIAN_TELLS:

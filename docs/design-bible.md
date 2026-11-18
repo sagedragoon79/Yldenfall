@@ -1615,6 +1615,13 @@ staged: the hero is stood beside a foe and swings, and the capture waits for the
 swing's smear, the hit spark and the foe's flash are all drawn (`--when=hit`), or stands and waits
 for a foe's wind-up (`--when=tell`). A capture whose moment never comes saves nothing.
 
+**The grade sees the HUD (pass 600).** The pass 595 grade found no HUD in the room shots or the fight
+frames: the workbench saves the world's own render target, which holds none. Since pass 600 the fight
+frames save the whole window (`--ui`), HUD included, at 1280x720; the guardians' wind-ups stay cropped
+close-ups. The catalogue's room pictures stay clean, so a room can be browsed whole, and a grade set
+takes its room frames through the game window instead (`tools/screenshot.sh`), HUD and minimap
+included, as the player sees them.
+
 ### 12.1 Resolution and scale
 
 - **World resolution:** 640x360 world pixels. All gameplay numbers (movement, hitboxes, rooms, tiles) are in world pixels.
