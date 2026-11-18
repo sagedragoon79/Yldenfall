@@ -239,11 +239,17 @@ func _hpoly(at: Vector2, pts: Array, grow: float = 0.0) -> PackedVector2Array:
 	return out
 
 
-## A faint backing plate so the HUD reads over bright rooms.
+## A faint backing plate so the HUD reads over bright rooms. Since pass 603 it is
+## framed like the minimap: a faint edge all round and gold corner brackets, where
+## the pass 600 grade saw "a plain translucent box".
 func _draw_plate(r: Rect2) -> void:
 	draw_rect(r, PLATE)
 	draw_rect(Rect2(r.position, Vector2(r.size.x, 0.5)), PLATE_EDGE)
 	draw_rect(Rect2(r.position + Vector2(0, r.size.y - 0.5), Vector2(r.size.x, 0.5)), Color(PLATE_EDGE, 0.12))
+	draw_rect(Rect2(r.position, Vector2(0.5, r.size.y)), Color(PLATE_EDGE, 0.12))
+	draw_rect(Rect2(r.position + Vector2(r.size.x - 0.5, 0), Vector2(0.5, r.size.y)), Color(PLATE_EDGE, 0.12))
+	for b: Rect2 in Minimap.bracket_rects(r):
+		draw_rect(b, Minimap.BRACKET_COLOR)
 
 
 ## One health mask: ivory fills from the chin up as health returns; green when poisoned.

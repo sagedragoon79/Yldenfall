@@ -3241,6 +3241,40 @@ func test_the_flasks_sound_like_flasks() -> void:
 		check(not others.has(cue), "%s is the shelf's own, played nowhere else" % cue)
 
 
+## Pass 603: the pass 600 grade saw the minimap as "an empty dark panel holding one
+## flat coloured rectangle". It shows the ways on: a stub out of each door of your
+## room that leads to a room the map does not show yet, gone once you walk it. The
+## map's grid lies under it, and gold brackets frame it and the HUD's plate.
+func test_the_minimap_shows_the_ways_on() -> void:
+	var w := make_world({}, "heartwood/dwarf_hall")
+	await frames(3)
+	var info: Dictionary = w.catalog["heartwood/dwarf_hall"]
+	var lay := Minimap.layout(w)
+	var here: Rect2 = lay.rooms.filter(func(r: Dictionary) -> bool: return r.id == "heartwood/dwarf_hall")[0].rect
+	var sides: Array = (info.doors as Dictionary).values().filter(func(d: Dictionary) -> bool: return d.edge != "inner")
+	check(lay.exits.size() == sides.size() and sides.size() >= 2, "every door out of a fresh room is a way on (%d of %d)" % [lay.exits.size(), sides.size()])
+	for e: Dictionary in lay.exits:
+		var p: Vector2 = e.at
+		var on_edge := is_equal_approx(p.x, here.position.x) or is_equal_approx(p.x, here.end.x) \
+			or is_equal_approx(p.y, here.position.y) or is_equal_approx(p.y, here.end.y)
+		check(on_edge and here.grow(0.01).has_point(p), "a way on starts on the room's edge, at its door (%s, %s)" % [p, e.edge])
+	var first: Dictionary = sides[0]
+	GameState.visit(String(first.target))
+	var after := Minimap.layout(w)
+	check(after.exits.size() == lay.exits.size() - 1, "a door into a room you walked is no longer a way on (%d)" % after.exits.size())
+	check(Minimap.GRID.a > 0.0 and Minimap.GRID.a <= 0.1, "the grid is faint")
+	var map_at: Vector2 = MapScreen.room_rect(info).position * Minimap.SCALE
+	check((lay.origin as Vector2).is_equal_approx(here.position - map_at), "the grid is laid from the map's own origin, so it scrolls with the map (%s)" % lay.origin)
+	var frame := Rect2(10, 10, 96, 54)
+	var bars := Minimap.bracket_rects(frame)
+	check(bars.size() == 8, "four corner brackets, two bars each")
+	for corner: Vector2 in [frame.position, Vector2(frame.end.x - 1, frame.position.y), Vector2(frame.position.x, frame.end.y - 1), frame.end - Vector2.ONE]:
+		var held := bars.filter(func(b: Rect2) -> bool: return b.grow(0.01).has_point(corner + Vector2(0.5, 0.5)))
+		check(held.size() == 2, "the corner at %s holds a bracket" % corner)
+	for b: Rect2 in bars:
+		check(frame.encloses(b), "inside the frame (%s)" % b)
+
+
 ## Bible 12's UI list (pass 373): the minimap. A window in the HUD's top right
 ## shows the map around you at half scale: your room in the middle, a room you
 ## walked beside it, a charted room dimmed, nothing you have neither walked nor
