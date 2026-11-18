@@ -272,3 +272,64 @@ func test_plank_no_post_juts_past_its_run() -> void:
 				var inside := runs.any(func(r: Vector3i) -> bool: return r.x == row and box.position.x >= r.y * T - 0.01 and box.end.x <= (r.z + 1) * T + 0.01)
 				check(inside, "%s/%s: the post at x %s stays under its board: %s" % [zone, file, s.x, box])
 	check(posts > 20, "the game has posts to check: %d" % posts)
+
+
+## Pass 604: the pass 600 grade saw "the same X-braced trestle" in nearly every
+## area. Each family of zones frames two posts its own way: the town's carpenter's
+## trestle, lashed timber in the woods and the Spires, pilings in the marsh and the
+## spring, a riveted iron truss in the Tower and the Trials, a stone arch in the
+## dwarf halls and grown sinew in the Evercrown.
+func test_plank_each_zone_family_frames_its_own_way() -> void:
+	var by_style := {}
+	for zone: String in PlankSupports.LOOKS:
+		var style := String(PlankSupports.LOOKS[zone].get("frame", ""))
+		check(style in PlankSupports.FRAMES, "%s frames its runs a known way (%s)" % [zone, style])
+		if not by_style.has(style):
+			by_style[style] = zone
+	check(by_style.size() == PlankSupports.FRAMES.size(), "every style is used (%s)" % [by_style.keys()])
+	var graded := ["hearthroot", "heartwood", "tower", "haar"].map(func(z: String) -> String: return PlankSupports.LOOKS[z].frame)
+	var distinct := {}
+	for s: String in graded:
+		distinct[s] = true
+	check(distinct.size() == 4, "the town, the woods, the Tower and the marsh each build their own (%s)" % [graded])
+	var left := 100.0
+	var right := 260.0
+	var top := 50.0
+	var bottom := 110.0
+	var seen := {}
+	for style: String in by_style:
+		var look: Dictionary = PlankSupports.LOOKS[by_style[style]]
+		var parts := PlankSupports.frame_parts(left, right, top, bottom, look)
+		var box := _bounds(parts)
+		check(box.position.x >= left and box.end.x <= right and box.position.y >= top and box.end.y <= bottom,
+			"%s: the frame stays between its posts, the board and the floor (%s)" % [style, box])
+		var w: Array = look.wood
+		var beams := parts.filter(func(p: Array) -> bool: return p[1] == w[1] and p[0].size.x > 100.0)
+		var struts := parts.filter(func(p: Array) -> bool: return p[0].size == Vector2(1.5, 1.5))
+		var bolts := parts.filter(func(p: Array) -> bool: return p[1] == look.bolt)
+		match style:
+			"x":
+				check(beams.size() == 1 and struts.size() > 40, "the trestle: one rail and cross-braces")
+			"lashed":
+				var wraps := parts.filter(func(p: Array) -> bool: return p[0].size == Vector2(3.0, 0.5))
+				check(wraps.size() >= 16 and bolts.is_empty(), "lashed timber: rope wrapped at the joints, no bolts (%d wraps)" % wraps.size())
+			"piling":
+				check(beams.size() == 2 and struts.is_empty(), "pilings: two stringers and no bracing (%d, %d)" % [beams.size(), struts.size()])
+			"truss":
+				check(beams.size() == 2 and bolts.size() >= 6 and struts.size() > 40, "an iron truss: two chords, a web, rivets at its nodes (%d rivets)" % bolts.size())
+			"arch":
+				var f: Array = look.foot
+				var stone := parts.filter(func(p: Array) -> bool: return p[1] == f[1])
+				var key := stone.filter(func(p: Array) -> bool: return p[0].size == Vector2(4.0, 5.0))
+				check(stone.size() > 100 and key.size() == 1 and absf(key[0][0].get_center().x - (left + right) * 0.5) < 1.0,
+					"a stone arch with its keystone at the crown")
+				check(beams.is_empty() and struts.is_empty(), "and no timber")
+			"web":
+				var strand := parts.filter(func(p: Array) -> bool: return p[1] == w[1])
+				var mids := strand.filter(func(p: Array) -> bool: return absf(p[0].get_center().x - (left + right) * 0.5) < 4.0)
+				var ys: Array = mids.map(func(p: Array) -> float: return p[0].get_center().y)
+				check(beams.is_empty() and struts.is_empty() and strand.size() > 100, "grown sinew: strands, no beams or struts")
+				check(not ys.is_empty() and ys.max() > top + 20.0, "and they sag toward the middle")
+		var key_str := str(parts.map(func(p: Array) -> String: return "%s%s" % [p[0], p[1]]))
+		check(not seen.has(key_str), "%s draws a frame of its own" % style)
+		seen[key_str] = true

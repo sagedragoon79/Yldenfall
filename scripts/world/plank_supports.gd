@@ -51,20 +51,30 @@ const FRAME_MIN_H := 40.0
 ## build as the board it carries; `bolt` the fastener accent (tilegen PLANK
 ## `nail`), and `foot` the footing stone (lit, mid, dark).
 const LOOKS := {
-	"gym": {"hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "aca1ba", "foot": ["797767", "58544c", "363330"]},
-	"heartwood": {"hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "f0c02e", "foot": ["797767", "58544c", "363330"]},
-	"boughs": {"hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "a1d684", "foot": ["797767", "58544c", "363330"]},
-	"hearthroot": {"hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "f0c02e", "foot": ["867ba2", "645e82", "2f2c3a"]},
-	"haar": {"hang": "rope", "lit": "aa9173", "mid": "8a6e56", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "989885", "foot": ["797767", "58544c", "363330"]},
-	"sunken": {"hang": "chain", "lit": "aa9173", "mid": "634a41", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "84cbd6", "foot": ["797767", "58544c", "363330"]},
-	"spires": {"hang": "rope", "lit": "bea860", "mid": "9c7f44", "dark": "432d23", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "edce6e", "foot": ["797767", "58544c", "363330"]},
-	"vorrhallow": {"hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "d684c6", "foot": ["867ba2", "645e82", "2f2c3a"]},
-	"trials": {"hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "b4b4a7", "foot": ["867ba2", "645e82", "2f2c3a"]},
-	"tower": {"hang": "chain", "lit": "aca1ba", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "84cbd6", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"gym": {"frame": "x", "hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "aca1ba", "foot": ["797767", "58544c", "363330"]},
+	"heartwood": {"frame": "lashed", "hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "f0c02e", "foot": ["797767", "58544c", "363330"]},
+	"boughs": {"frame": "lashed", "hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "a1d684", "foot": ["797767", "58544c", "363330"]},
+	"hearthroot": {"frame": "x", "hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "f0c02e", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"haar": {"frame": "piling", "hang": "rope", "lit": "aa9173", "mid": "8a6e56", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "989885", "foot": ["797767", "58544c", "363330"]},
+	"sunken": {"frame": "piling", "hang": "chain", "lit": "aa9173", "mid": "634a41", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "84cbd6", "foot": ["797767", "58544c", "363330"]},
+	"spires": {"frame": "lashed", "hang": "rope", "lit": "bea860", "mid": "9c7f44", "dark": "432d23", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "edce6e", "foot": ["797767", "58544c", "363330"]},
+	"vorrhallow": {"frame": "arch", "hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "d684c6", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"trials": {"frame": "truss", "hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "b4b4a7", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"tower": {"frame": "truss", "hang": "chain", "lit": "aca1ba", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "84cbd6", "foot": ["867ba2", "645e82", "2f2c3a"]},
 	# The Evercrown's shelves are grown, not built (bible 12.34, pass 542): they hang on
 	# sinew strands (night-5, night-3, crystal-1: wine, not red, bible 12.48), not hot crystal chains.
-	"evercrown": {"hang": "sinew", "lit": "af92c9", "mid": "5d4997", "dark": "421e48", "wood": ["8265b8", "5d4997", "2c2541"], "bolt": "b5e3e1", "foot": ["8265b8", "5d4997", "2c2541"]},
+	"evercrown": {"frame": "web", "hang": "sinew", "lit": "af92c9", "mid": "5d4997", "dark": "421e48", "wood": ["8265b8", "5d4997", "2c2541"], "bolt": "b5e3e1", "foot": ["8265b8", "5d4997", "2c2541"]},
 }
+
+## How each zone frames two posts under one run (pass 604): the pass 600 grade saw
+## "the same X-braced trestle" in nearly every area. The town keeps the carpenter's
+## trestle ("x", a rail and a cross-brace per bay); the woods and the Spires lash
+## timber with rope ("lashed", one diagonal per bay, rope wrapped at its joints); the
+## marsh and the spring stand on pilings ("piling", two stringers, no bracing); the
+## Tower and the Trials rivet an iron truss ("truss", two chords and a zigzag web);
+## the dwarf halls spring a stone arch ("arch", voussoirs and a keystone); and the
+## Evercrown's shelves are grown ("web", two sagging strands of sinew).
+const FRAMES := ["x", "lashed", "piling", "truss", "arch", "web"]
 
 ## The plan, one Dictionary per support: {kind: "brace", "post" or "hang", ...}.
 var supports: Array[Dictionary] = []
@@ -296,6 +306,17 @@ static func frame_parts(left: float, right: float, top: float, bottom: float, lo
 	var out: Array = []
 	if x1 - x0 < 8.0:
 		return out
+	match String(look.get("frame", "x")):
+		"lashed":
+			return PlankSupports._lashed_parts(x0, x1, top, bottom, look)
+		"piling":
+			return PlankSupports._piling_parts(x0, x1, top, bottom, look)
+		"truss":
+			return PlankSupports._truss_parts(x0, x1, top, bottom, look)
+		"arch":
+			return PlankSupports._arch_parts(x0, x1, top, bottom, look)
+		"web":
+			return PlankSupports._web_parts(x0, x1, top, bottom, look)
 	var rail := bottom - 9.0
 	var high := top + 9.0
 	var bays := maxi(1, ceili((x1 - x0) / BAY_MAX))
@@ -324,6 +345,159 @@ static func frame_parts(left: float, right: float, top: float, bottom: float, lo
 	for bx: float in [x0 + 1.0, x1 - 2.0]:
 		out.append([Rect2(bx, rail - 0.5, 1.0, 1.0), look.bolt])
 		out.append([Rect2(bx, high - 0.5, 1.0, 1.0), look.bolt])
+	return out
+
+
+## A strut of 1.5 px squares from `a` to `b`, lit along its top (a brace, a diagonal).
+static func _strut(out: Array, a: Vector2, b: Vector2, body: String, lit: String) -> void:
+	var n := maxi(2, ceili(maxf(absf(b.x - a.x), absf(b.y - a.y)) / 0.75))
+	for i in n + 1:
+		var q := a.lerp(b, float(i) / n)
+		out.append([Rect2(q.x - 0.75, q.y - 0.75, 1.5, 1.5), body])
+		out.append([Rect2(q.x - 0.75, q.y - 0.75, 1.5, 0.5), lit])
+
+
+## A level beam from x0 to x1 at y, 2.5 px deep, lit on top, shaded beneath.
+static func _beam(out: Array, x0: float, x1: float, y: float, w: Array) -> void:
+	out.append([Rect2(x0, y - 1.0, x1 - x0, 2.5), w[1]])
+	out.append([Rect2(x0, y - 1.0, x1 - x0, 0.5), w[0]])
+	out.append([Rect2(x0, y + 1.0, x1 - x0, 0.5), w[2]])
+
+
+## How many bays a span takes and how wide each is (no bay over BAY_MAX).
+static func _bays(x0: float, x1: float) -> Vector2:
+	var n := maxi(1, ceili((x1 - x0) / BAY_MAX))
+	return Vector2(n, (x1 - x0) / n)
+
+
+## Rope lashing where two timbers meet: three wraps in the hanger's rope tones.
+static func _lashing(out: Array, at: Vector2, look: Dictionary) -> void:
+	for k in 3:
+		out.append([Rect2(at.x - 1.5, at.y - 1.5 + k, 3.0, 0.5), look.mid if k != 1 else look.lit])
+	out.append([Rect2(at.x - 1.5, at.y + 1.5, 3.0, 0.5), look.dark])
+
+
+## Lashed timber (the woods, the Spires): a low rail, studs between bays, and one
+## diagonal per bay, leaning the other way in the next, rope wrapped at each joint.
+static func _lashed_parts(x0: float, x1: float, top: float, bottom: float, look: Dictionary) -> Array:
+	var w: Array = look.wood
+	var out: Array = []
+	var rail := bottom - 9.0
+	var high := top + 7.0
+	var bays := PlankSupports._bays(x0, x1)
+	for b in int(bays.x):
+		var a := x0 + b * bays.y
+		var e := a + bays.y
+		var up := b % 2 == 0
+		PlankSupports._strut(out, Vector2(a, rail if up else high), Vector2(e, high if up else rail), w[1], w[0])
+		if b > 0:
+			out.append([Rect2(a - 1.0, top, 2.0, rail - top), w[1]])
+			out.append([Rect2(a - 1.0, top, 0.5, rail - top), w[0]])
+	PlankSupports._beam(out, x0, x1, rail, w)
+	for b in int(bays.x):
+		var a := x0 + b * bays.y
+		var e := a + bays.y
+		var up := b % 2 == 0
+		PlankSupports._lashing(out, Vector2(a + 2.0, (rail if up else high)), look)
+		PlankSupports._lashing(out, Vector2(e - 2.0, (high if up else rail)), look)
+	return out
+
+
+## Pilings (the marsh, the spring): stout piles between the posts and two
+## stringers, high and low, and no bracing: a boardwalk standing in water.
+static func _piling_parts(x0: float, x1: float, top: float, bottom: float, look: Dictionary) -> Array:
+	var w: Array = look.wood
+	var out: Array = []
+	var bays := PlankSupports._bays(x0, x1)
+	for b in range(1, int(bays.x)):
+		var a := x0 + b * bays.y
+		out.append([Rect2(a - 1.5, top, 3.0, bottom - top - 1.0), w[1]])
+		out.append([Rect2(a - 1.5, top, 1.0, bottom - top - 1.0), w[0]])
+		out.append([Rect2(a + 0.5, top, 1.0, bottom - top - 1.0), w[2]])
+		# The pile's foot, darkened by water.
+		out.append([Rect2(a - 1.5, bottom - 7.0, 3.0, 6.0), w[2]])
+	for y: float in [top + 7.0, bottom - 11.0]:
+		PlankSupports._beam(out, x0, x1, y, w)
+		out.append([Rect2(x0 + 1.0, y - 0.5, 1.0, 1.0), look.bolt])
+		out.append([Rect2(x1 - 2.0, y - 0.5, 1.0, 1.0), look.bolt])
+	return out
+
+
+## An iron truss (the Tower, the Trials): a top chord under the board, a bottom
+## chord, and a zigzag web of struts between them, riveted at every node.
+static func _truss_parts(x0: float, x1: float, top: float, bottom: float, look: Dictionary) -> Array:
+	var w: Array = look.wood
+	var out: Array = []
+	var hi := top + 5.0
+	var lo := bottom - 9.0
+	var panels := maxi(2, roundi((x1 - x0) / 16.0))
+	var step := (x1 - x0) / panels
+	var nodes: Array[Vector2] = []
+	for i in panels + 1:
+		nodes.append(Vector2(x0 + i * step, lo if i % 2 == 0 else hi))
+	for i in panels:
+		PlankSupports._strut(out, nodes[i], nodes[i + 1], w[1], w[0])
+	PlankSupports._beam(out, x0, x1, hi, w)
+	PlankSupports._beam(out, x0, x1, lo, w)
+	for n: Vector2 in nodes:
+		out.append([Rect2(n.x - 0.5, n.y - 0.5, 1.0, 1.0), look.bolt])
+	return out
+
+
+## A stone arch (the dwarf halls): voussoirs springing from the posts' feet side
+## and rising to a keystone under the board, a band of the footing's stone.
+static func _arch_parts(x0: float, x1: float, top: float, bottom: float, look: Dictionary) -> Array:
+	var f: Array = look.foot
+	var out: Array = []
+	var spring := bottom - 8.0
+	var crown := top + 4.0
+	var mid := (x0 + x1) * 0.5
+	var half := (x1 - x0) * 0.5
+	var n := maxi(8, ceili(half * 2.0 / 0.5))
+	var deep := 4.0
+	for i in n + 1:
+		var t := float(i) / n
+		var x := lerpf(x0, x1, t)
+		var u := (x - mid) / half
+		var y := crown + (spring - crown) * u * u
+		# On the steep flanks a column also covers the drop to the next, so the
+		# band stays whole instead of stepping apart.
+		var drop := absf(2.0 * (spring - crown) * u / half) * 0.5
+		var h := minf(deep + drop, spring + deep - y)
+		out.append([Rect2(x - 0.25, y, 0.5, h), f[1]])
+		out.append([Rect2(x - 0.25, y, 0.5, 0.5), f[0]])
+		out.append([Rect2(x - 0.25, y + h - 0.5, 0.5, 0.5), f[2]])
+		# A joint between voussoirs every few stones.
+		if i % 10 == 5:
+			out.append([Rect2(x - 0.25, y, 0.5, h), f[2]])
+	# The keystone, a shade lighter, standing proud at the crown.
+	out.append([Rect2(mid - 2.0, crown - 1.0, 4.0, 5.0), f[1]])
+	out.append([Rect2(mid - 2.0, crown - 1.0, 4.0, 1.0), f[0]])
+	out.append([Rect2(mid + 1.5, crown - 1.0, 0.5, 5.0), f[2]])
+	return out
+
+
+## Grown sinew (the Evercrown): two strands sag from post to post, crossing low
+## in the middle, with a knot of tissue where each takes a post.
+static func _web_parts(x0: float, x1: float, top: float, bottom: float, look: Dictionary) -> Array:
+	var w: Array = look.wood
+	var out: Array = []
+	var hi := top + 6.0
+	var lo := bottom - 10.0
+	for strand in 2:
+		var a := Vector2(x0, hi if strand == 0 else lo)
+		var e := Vector2(x1, lo if strand == 0 else hi)
+		var sag := (bottom - top) * 0.18
+		var n := maxi(8, ceili((x1 - x0) / 0.75))
+		for i in n + 1:
+			var t := float(i) / n
+			var q := a.lerp(e, t) + Vector2(0, sag * 4.0 * t * (1.0 - t))
+			q.y = minf(q.y, bottom - 2.0)
+			out.append([Rect2(q.x - 0.75, q.y - 0.5, 1.5, 1.0), w[1]])
+			out.append([Rect2(q.x - 0.75, q.y - 0.5, 1.5, 0.5), w[0]])
+		for end: Vector2 in [a, e]:
+			out.append([Rect2(end.x - 1.5, end.y - 1.5, 3.0, 3.0), w[2]])
+			out.append([Rect2(end.x - 1.0, end.y - 1.0, 1.0, 1.0), look.bolt])
 	return out
 
 
