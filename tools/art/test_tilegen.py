@@ -554,6 +554,28 @@ def test_ridge_houses_have_level_roofs():
         assert len(level) >= 6, f"{z}: only {len(level)} level roofs ({sorted(runs)[-6:]})"
 
 
+def test_the_spires_stand_on_a_ridge_of_their_own():
+    # The pass 600 grade found the town's window-dotted skyline repeated in the
+    # Spires, which shared Hearthroot's roofline. The Spires' ridge is a row of
+    # ruined spires: tall narrow towers, a slit window or two, no rows of windows.
+    # (Giving the Spires the roofline again fails it.)
+    assert tg.RIDGE_KIND["spires"] != tg.RIDGE_KIND["hearthroot"], "the Spires have a ridge kind of their own"
+    far = _ridge_planes("spires")["far"]
+    tall = [y < tg.RIDGE_BASE - 28 * tg.D for y in far]
+    runs, run = [], 0
+    for t in tall + [False]:
+        if t:
+            run += 1
+        elif run:
+            runs.append(run)
+            run = 0
+    narrow = [r for r in runs if r <= 14 * tg.D]
+    assert len(narrow) >= 6 and len(narrow) == len(runs), f"the spires are tall and narrow ({sorted(runs)})"
+    town = _ridge_planes("hearthroot")["lit"]
+    spires = _ridge_planes("spires")["lit"]
+    assert 30 <= spires < town // 4, f"a few slit windows ({spires} px), not the town's rows ({town} px)"
+
+
 def test_hearthroot_town_is_lit_and_roofed():
     # The grade's "flat grey city": the far town's houses now catch the light on
     # their west faces and wear warm tiled roofs. (The pass 597 town, every house
