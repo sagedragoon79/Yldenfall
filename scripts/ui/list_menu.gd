@@ -36,6 +36,26 @@ const ICON_INSET := 18.0
 const PORTRAIT_PAD := 2.0
 const PORTRAIT_MARGIN := 10.0
 const PORTRAIT_BACK := Color("2a2440")
+## The frame (pass 605): the pass 600 grade saw the shop as "a plain dark box, two
+## thirds empty, with a thin flat border". Every menu now wears a double frame, a
+## dark line either side of the light one, with gold corner brackets (`BRACKET` px,
+## as the HUD's plate and the minimap wear them) and a rule under its heading.
+const FRAME_DARK := Color("1d1a2b")
+const BRACKET := 8.0
+const BRACKET_COLOR := Color("d8b060")
+## The counter (pass 605): in a list of items with room to spare below its rows,
+## the chosen item stands on a lit shelf at COUNTER_SCALE times its icon's size, so
+## a shop of three wares no longer leaves its middle empty. It needs COUNTER_MIN
+## px of room.
+const COUNTER_SCALE := 3.0
+const COUNTER_MIN := 56.0
+## The lamplight pooled on the counter: a smooth radial glow, never hard rings.
+const COUNTER_LIGHT := Color(1.0, 0.82, 0.45, 0.22)
+static var _glow: GradientTexture2D
+const SHELF := Color("5a4a3c")
+const SHELF_LIT := Color("8a7458")
+## The portrait's backing, lit warm from above like a shop's lamp (pass 605).
+const PORTRAIT_LAMP := Color("4a3a4e")
 ## The key caps in the panel's corner.
 const CAP_FACE := Color("2a2440")
 const CAP_EDGE := Color("8a7f9e")
@@ -231,6 +251,87 @@ func subtitle_width() -> float:
 	return panel.size.x - 28.0 - (portrait_frame().size.x + 8.0 if shows_portrait() else 0.0)
 
 
+## Where the rows begin (below the heading, the subtitle and any portrait), in
+## panel space, as `_draw` lays them out.
+func rows_top() -> float:
+	var y := panel.position.y + 22 + 14
+	if subtitle != "":
+		var lines := PixelFont.wrap_lines(subtitle, subtitle_width(), 9).size()
+		y += (PixelFont.height() + 1) * lines + 2
+	y += 4
+	if shows_portrait():
+		y = maxf(y, portrait_frame().end.y + 6.0)
+	return y
+
+
+## The description box at the panel's foot.
+func detail_box() -> Rect2:
+	return Rect2(panel.position.x + 8, panel.end.y - 62, panel.size.x - 16, 38)
+
+
+## The counter where the chosen item stands (pass 605): the room between the last
+## row and the description, when the rows carry icons, the chosen row has one and
+## there is at least COUNTER_MIN px of room. Rect2() when there is none.
+func counter_rect(top: float = -1.0) -> Rect2:
+	if rows.is_empty() or not has_icons():
+		return Rect2()
+	if String(rows[cursor].get("icon", "")) == "" or not UiArt.has_icon(String(rows[cursor].icon)):
+		return Rect2()
+	var start := rows_top() if top < 0.0 else top
+	var fit := maxi(1, int((panel.end.y - 66 - start) / ROW_H))
+	var shown := mini(rows.size() - _scroll, fit)
+	var below := start + shown * ROW_H + 2.0
+	var room := detail_box().position.y - 2.0 - below
+	if room < COUNTER_MIN:
+		return Rect2()
+	return Rect2(panel.position.x + 8, below, panel.size.x - 16, room)
+
+
+## The item on the counter (pass 605), or "" when there is no counter.
+func counter_item() -> String:
+	return String(rows[cursor].icon) if counter_rect() != Rect2() else ""
+
+
+## Draws the chosen item on its shelf in `r`, in a pool of lamplight.
+func _draw_counter(r: Rect2) -> void:
+	var side := UiArt.ICON_SIZE * COUNTER_SCALE
+	var c := r.get_center()
+	# The icon's art stops a few texels short of its cell's foot, so the shelf
+	# rises into the cell and the item stands on it.
+	var shelf_y := roundf(c.y + side * 0.5 - 3.0)
+	var glow := ListMenu.counter_glow()
+	draw_texture_rect(glow, Rect2(c.x - side, shelf_y - side * 1.45, side * 2.0, side * 2.0), false)
+	draw_rect(Rect2(c.x - side * 0.7, shelf_y + 3.0, side * 1.4, 1.0), Color(0, 0, 0, 0.35))
+	draw_rect(Rect2(c.x - side * 0.65, shelf_y, side * 1.3, 3.0), SHELF)
+	draw_rect(Rect2(c.x - side * 0.65, shelf_y, side * 1.3, 1.0), SHELF_LIT)
+	var at := Vector2(roundf(c.x - side * 0.5), shelf_y - side + 3.0)
+	var id := String(rows[cursor].icon)
+	var enabled: bool = rows[cursor].get("enabled", true)
+	draw_texture_rect_region(UiArt.icon_texture(), Rect2(at, Vector2.ONE * side), UiArt.icon_region(id), Color.WHITE if enabled else UiArt.DIM)
+
+
+## The counter's pool of lamplight: a radial gradient from COUNTER_LIGHT at the
+## middle to clear at the rim, made once.
+static func counter_glow() -> GradientTexture2D:
+	if _glow == null:
+		var g := Gradient.new()
+		g.set_color(0, COUNTER_LIGHT)
+		g.set_color(1, Color(COUNTER_LIGHT, 0.0))
+		_glow = GradientTexture2D.new()
+		_glow.gradient = g
+		_glow.fill = GradientTexture2D.FILL_RADIAL
+		_glow.fill_from = Vector2(0.5, 0.5)
+		_glow.fill_to = Vector2(1.0, 0.5)
+		_glow.width = 64
+		_glow.height = 64
+	return _glow
+
+
+## The gold corner brackets of the frame, as rects (pass 605).
+func frame_brackets() -> Array[Rect2]:
+	return Minimap.bracket_rects(panel.grow(3), BRACKET)
+
+
 ## Whether any row carries an icon, so every label is set in.
 func has_icons() -> bool:
 	for row: Dictionary in rows:
@@ -247,8 +348,12 @@ func icon_pos(index: int, y: float) -> Vector2:
 func _draw() -> void:
 	if not is_open:
 		return
+	draw_rect(panel.grow(3), FRAME_DARK)
 	draw_rect(panel.grow(2), BORDER)
+	draw_rect(panel.grow(1), FRAME_DARK)
 	draw_rect(panel, BG)
+	for b: Rect2 in frame_brackets():
+		draw_rect(b, BRACKET_COLOR)
 	var x := panel.position.x + 14
 	var y := panel.position.y + 22
 	_text(Vector2(x, y), title, 14, ACCENT)
@@ -259,11 +364,22 @@ func _draw() -> void:
 	y += 4
 	if shows_portrait():
 		var frame := portrait_frame()
+		draw_rect(frame.grow(2), FRAME_DARK)
 		draw_rect(frame.grow(1), BORDER)
 		draw_rect(frame, PORTRAIT_BACK)
+		# Lamplight from above: four bands from the lamp's warmth down to the dark.
+		for k in 4:
+			var band := Rect2(frame.position.x, frame.position.y + frame.size.y * k / 8.0, frame.size.x, frame.size.y / 8.0)
+			draw_rect(band, PORTRAIT_LAMP.lerp(PORTRAIT_BACK, k / 4.0))
 		UiArt.draw_portrait(self, portrait, frame.position + Vector2.ONE * PORTRAIT_PAD)
+		for b: Rect2 in Minimap.bracket_rects(frame.grow(2), 4.0):
+			draw_rect(b, BRACKET_COLOR)
 		# The rows start under the portrait, so no price runs behind it.
 		y = maxf(y, frame.end.y + 6.0)
+	# A rule under the heading, from a small diamond, so the list stands apart from it.
+	var rule_y := roundf(y - 4.0)
+	draw_rect(Rect2(x, rule_y, panel.end.x - 14 - x, 1), Color(BORDER, 0.22))
+	draw_colored_polygon(PackedVector2Array([Vector2(x - 6, rule_y + 0.5), Vector2(x - 3, rule_y - 2.5), Vector2(x, rule_y + 0.5), Vector2(x - 3, rule_y + 3.5)]), Color(BRACKET_COLOR, 0.8))
 	var inset := ICON_INSET if has_icons() else 0.0
 	# Long lists scroll to keep the cursor in view.
 	var fit := maxi(1, int((panel.end.y - 66 - y) / ROW_H))
@@ -294,9 +410,13 @@ func _draw() -> void:
 		if right != "":
 			var w := PixelFont.width(right, 10)
 			_text(Vector2(panel.end.x - 14 - w, top + 12), right, 10, ACCENT if enabled else DIM)
+	# The chosen item on its counter, in the room the rows leave.
+	var counter := counter_rect(y)
+	if counter != Rect2():
+		_draw_counter(counter)
 	# Description of the selected row.
 	var detail: String = rows[cursor].get("detail", "") if not rows.is_empty() else ""
-	var box := Rect2(panel.position.x + 8, panel.end.y - 62, panel.size.x - 16, 38)
+	var box := detail_box()
 	draw_rect(box, Color(1, 1, 1, 0.04))
 	PixelFont.draw_wrapped(self, box.position + Vector2(6, 12), detail, box.size.x - 12, 9, Color("c9b98f"), 1)
 	var foot: String = _footer.call() if _footer.is_valid() else ""
