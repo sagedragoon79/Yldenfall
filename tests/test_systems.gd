@@ -818,8 +818,8 @@ func test_every_save_field_survives_a_round_trip() -> void:
 	d.skill_points = 3
 	d.skills = ["keen_edge", "torrent_pierce", "wisplight_swarm"]
 	d.respecs = 2
-	d.equipment = {"blade": "severance", "armor": "full_plate", "shield": "magic_shield", "helmet": "elven_helm", "neck": "dewcatch_torc", "ring1": "whetstone_ring", "ring2": "amber_band", "relic": "stride_knot", "projectile": "hawthorn_spikes"}
-	d.gear = ["short_sword", "dwarvish_broad_sword", "severance", "full_plate", "magic_shield", "elven_helm", "dewcatch_torc", "whetstone_ring", "amber_band", "stride_knot"]
+	d.equipment = {"blade": "severance", "armor": "full_plate", "shield": "magic_shield", "helmet": "elven_helm", "neck": "dewcatch_torc", "ring1": "whetstone_ring", "ring2": "amber_band", "relic": "stride_knot", "projectile": "hawthorn_spikes", "cloak": "hollowmist_cloak"}
+	d.gear = ["short_sword", "dwarvish_broad_sword", "severance", "full_plate", "magic_shield", "elven_helm", "dewcatch_torc", "whetstone_ring", "amber_band", "stride_knot", "warden_cloak", "hollowmist_cloak"]
 	d.tempers = {"dwarvish_broad_sword": 2, "long_sword": 1}
 	d.keys = {"copper": true, "lantern": true}
 	d.rings = ["thaw", "sun"]
@@ -1219,10 +1219,10 @@ func test_a_save_with_gear_in_the_wrong_slots_plays_on() -> void:
 	var errors := ErrorCatcher.start()
 	GameState.data = GameState.sanitize(JSON.parse_string(JSON.stringify(src)))
 	var eq: Dictionary = GameState.data.equipment
-	check(eq.blade == "short_sword" and eq.armor == "" and eq.shield == "" and eq.helmet == "",
-		"gear worn in the wrong slot comes off, and the hand holds the Short Sword (%s)" % [eq])
-	check(GameState.data.gear == ["ghost_blade", "long_sword", "magic_shield", "lord_dye", "short_sword"],
-		"the kept gear is strings, once each, with the Short Sword (%s)" % [GameState.data.gear])
+	check(eq.blade == "short_sword" and eq.armor == "" and eq.shield == "" and eq.helmet == "" and eq.cloak == "warden_cloak",
+		"gear worn in the wrong slot comes off, the hand holds the Short Sword, and the Warden's Cloak is worn (%s)" % [eq])
+	check(GameState.data.gear == ["ghost_blade", "long_sword", "magic_shield", "lord_dye", "short_sword", "warden_cloak"],
+		"the kept gear is strings, once each, with the Short Sword and the Warden's Cloak (%s)" % [GameState.data.gear])
 	GameState.refresh_stats(p)
 	check(p.max_hp > 0 and p.defense == 0.0 and not p.has_shield, "and plays as nothing worn (defense %.2f)" % p.defense)
 	var rows := Menus.equipment_rows()
