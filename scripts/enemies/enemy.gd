@@ -45,6 +45,13 @@ const TELL_WASH := 0.45
 const SHEET_TELL := 0.2
 const TELL_RIM := 0.9
 const RIM_STEPS: Array[Vector2] = [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]
+## A struck foe keeps its edge (bible 6.7, pass 602): a hit flash's white overlay
+## also washed out a sheet foe's own dark outline, so its pale body melted into the
+## white sword, the arc and a pale sky, and the pass 600 grade read it as going
+## see-through. Through the flash a sheet foe wears a dark rim one pixel wide, in the
+## outline's near-black, as a tell wears its warm one.
+const HIT_RIM_COLOR := Color("120c16")
+const HIT_RIM := 0.95
 
 @export var max_hp := 24
 @export var contact_damage := 20
@@ -143,6 +150,8 @@ var _sheet_white := false
 var _sheet_white_alpha := 0.0
 ## Whether this foe's last drawing wore the tell's tint (and not a blow's white).
 var _tell_drawn := false
+## Whether this foe's last sheet drawing wore the dark rim of a hit flash (pass 602).
+var _hit_rim_drawn := false
 ## The material this foe rests in: its room's light (`FoeLight`, bible 12.43),
 ## or null outside a zone. The flash, the tell and the death replace it.
 var _rest_material: ShaderMaterial
@@ -349,6 +358,11 @@ func _raise_while_struck(delta: float) -> void:
 		z_index = maxi(z_index, STRUCK_Z)
 	else:
 		z_index = _rest_z
+
+
+## True when this foe's last sheet drawing wore a hit flash's dark rim (pass 602).
+func hit_rim_drawn() -> bool:
+	return _hit_rim_drawn
 
 
 ## True while a blow's flash and recoil draw this foe above the swing (pass 599).
@@ -618,10 +632,12 @@ func telegraph_pulse() -> bool:
 func draw_sheet(sheet: String, anim: String, t: float, white := false, offset := Vector2.ZERO) -> int:
 	var f := Sheet.frame_at(sheet, anim, t)
 	var over := flash_overlay(white)
-	if _tell_drawn:
+	_hit_rim_drawn = white and not _tell_drawn
+	if _tell_drawn or _hit_rim_drawn:
+		var rim := Color(TELL_TINT, TELL_RIM) if _tell_drawn else Color(HIT_RIM_COLOR, HIT_RIM)
 		for step: Vector2 in RIM_STEPS:
 			draw_set_transform_matrix(_sheet_transform(offset + step))
-			Sheet.draw(self, sheet, anim, f, Color(TELL_TINT, TELL_RIM), true)
+			Sheet.draw(self, sheet, anim, f, rim, true)
 	draw_set_transform_matrix(_sheet_transform(offset))
 	Sheet.draw(self, sheet, anim, f)
 	if white:
