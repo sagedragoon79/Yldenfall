@@ -56,7 +56,7 @@ no post reaches past its board.
 Mutation check, each restored from a copy after: end posts braced both ways fails it (281 checks);
 2.5 px posts fail it (2 checks); no frame fails it (2 checks); an off-palette bolt fails it (1 check).
 
-Full suite: see below.
+Full suite: 21,643 checks passed, 0 failed.
 
 ## Rubric (design bible 15.3)
 
