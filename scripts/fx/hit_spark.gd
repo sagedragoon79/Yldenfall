@@ -29,6 +29,20 @@ const RING := Color("ffe9a8")
 ## A hot rim under each ray, so the spark reads even over a foe's white hit flash.
 const RIM := Color("f07a28")
 const RAYS := 5
+## The impact streak (bible 6.7, pass 592): a long, thin, tapered blaze laid across
+## the struck foe, the cut itself, for the first STREAK_LIFE of every spark, in
+## both looks. Its length is in world pixels (a foe is 24 to 40 tall), scaled with
+## the spark; it crosses the swing at STREAK_TILT, so a level swing cuts a diagonal.
+## The sheet spark alone was 30 render pixels across on a 1280-wide frame.
+const STREAK_LIFE := 0.16
+const STREAK_LEN := 40.0
+const STREAK_WIDTH := 3.0
+const STREAK_TILT := 0.75
+const STREAK_HOLD := 0.5
+## The spark sits on the foe's near edge; the streak's middle is this far on, over its body.
+const STREAK_AHEAD := 8.0
+const STREAK := Color("ffffff")
+const STREAK_GLOW := Color("ffe9a8")
 
 var dir := Vector2.RIGHT
 var size := 1.0
@@ -38,6 +52,8 @@ var _angles: Array[float] = []
 var _sheet := {}
 ## How long this spark lives: LIFE for the code look, the sheet's run for the sheet.
 var life := LIFE
+## How strong the streak was in the last drawing (0 when none was drawn).
+var streak_drawn := 0.0
 
 static var _sheets := {}
 
@@ -105,7 +121,46 @@ func frame() -> int:
 	return clampi(int((life - _life) * float(_sheet.fps)), 0, _sheet.frames.size() - 1)
 
 
+## How much of the impact streak shows now, 1 to 0 (0 once it is gone): full
+## for the first STREAK_HOLD of its life, then fading.
+func streak() -> float:
+	var t := (life - _life) / STREAK_LIFE
+	if t >= 1.0:
+		return 0.0
+	return 1.0 if t <= STREAK_HOLD else 1.0 - (t - STREAK_HOLD) / (1.0 - STREAK_HOLD)
+
+
+## The streak's axis: across the swing, tilted so its far end leans forward.
+func streak_axis() -> Vector2:
+	var side := -1.0 if dir.x < 0.0 else 1.0
+	return dir.rotated(-STREAK_TILT * side)
+
+
+## The streak's middle, relative to the spark: on along the swing, over the foe.
+func streak_center() -> Vector2:
+	return dir * STREAK_AHEAD * size
+
+
+## The streak's tapered blaze: pointed ends, widest at the middle, a warm glow
+## under a white core. It stretches a little as it fades.
+func _draw_streak() -> void:
+	var k := streak()
+	streak_drawn = k
+	if k <= 0.0:
+		return
+	var a := streak_axis()
+	var n := Vector2(-a.y, a.x)
+	var c := streak_center()
+	var half := STREAK_LEN * size * (0.5 + 0.1 * (1.0 - k))
+	var w := STREAK_WIDTH * size * (0.4 + 0.6 * k)
+	var glow := PackedVector2Array([c + a * (half + 3.0), c + n * (w + 1.5), c - a * (half + 3.0), c - n * (w + 1.5)])
+	draw_colored_polygon(glow, Color(STREAK_GLOW, 0.75 * k))
+	var core := PackedVector2Array([c + a * half, c + n * w, c - a * half, c - n * w])
+	draw_colored_polygon(core, Color(STREAK, k))
+
+
 func _draw() -> void:
+	_draw_streak()
 	if not _sheet.is_empty():
 		_draw_sheet()
 		return
