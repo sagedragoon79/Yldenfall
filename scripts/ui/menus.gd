@@ -339,7 +339,7 @@ static func open_pause(tree: SceneTree, p: Player, on_quit: Callable) -> bool:
 		return [
 			{"label": "Resume", "detail": "Back to the Tree."},
 			oint,
-			{"label": "Equipment", "detail": "Swap between the blades, armor, shields and headgear you have, and dye your cloak."},
+			{"label": "Equipment", "detail": "Swap between the blades, armor, shields, headgear and cloaks you have, and dye your cloak."},
 			{"label": "Inventory", "detail": "Your spells, relics, rings, keys and shards, and what each does."},
 			{"label": "Options", "detail": OPTIONS_DETAIL},
 			{"label": "Controls", "detail": CONTROLS_DETAIL},
@@ -414,6 +414,8 @@ static func cloak_dyes() -> Array:
 
 ## Equipment rows for a hair color carry this before the PlayerVisual.HAIR id.
 const HAIR_PREFIX := "hair:"
+## The Equipment row that takes a dye off, back to the worn cloak's own colors.
+const OWN_COLORS := "dye:own"
 ## An Equipment row for the projectile slot carries this before what it throws.
 const PROJECTILE_PREFIX := "projectile:"
 
@@ -431,6 +433,9 @@ static func equipment_rows() -> Array:
 	var names := {"blade": "Blades", "armor": "Armor", "shield": "Shield", "helmet": "Head", "neck": "Neck", "ring": "Rings, two worn", "relic": "Relic"}
 	var out := []
 	for slot: String in GameState.GEAR_KINDS:
+		# The cloak is listed with its dyes, near the end of the page.
+		if slot == "cloak":
+			continue
 		var have: Array = Array(GameState.data.gear).filter(func(id: String) -> bool: return String(GameData.item(id).get("kind", "")) == slot)
 		if have.is_empty():
 			continue
@@ -486,7 +491,23 @@ static func equipment_rows() -> Array:
 		for id: String in found:
 			var info := ability_info(id)
 			out.append({"label": info[0], "right": "Always on", "detail": info[1], "enabled": true})
+	# The cloak (design bible 5.6): one is always worn, each with one piece of
+	# utility and its own colors, which a dye changes.
+	var cloaks: Array = Array(GameState.data.gear).filter(func(id: String) -> bool: return String(GameData.item(id).get("kind", "")) == "cloak")
+	cloaks.sort_custom(func(a: String, b: String) -> bool: return int(GameData.item(a).get("tier", 0)) < int(GameData.item(b).get("tier", 0)))
 	out.append({"label": "Cloak", "header": true})
+	for id: String in cloaks:
+		var item := GameData.item(id)
+		var detail := String(item.desc)
+		var needs := String(item.get("needs", ""))
+		if needs != "" and not bool(GameState.data.abilities.get(needs, false)):
+			detail += "  It sleeps until you find the %s." % ability_info(needs)[0]
+		out.append({"label": item.name, "right": "Worn" if GameState.is_worn(id) else "", "detail": detail, "enabled": true, "id": id})
+	out.append({"label": "Dye", "header": true})
+	var worn_cloak := GameState.cloak()
+	if String(worn_cloak.get("body", "")) != "":
+		out.append({"label": "Its own colors", "right": "Worn" if GameState.dye() == "" else "",
+			"detail": "The %s as it was woven." % worn_cloak.name, "enabled": true, "id": OWN_COLORS})
 	for id: String in cloak_dyes():
 		var item := GameData.item(id)
 		out.append({"label": item.name, "right": "Worn" if GameState.dye() == id else "", "detail": String(item.desc), "enabled": true, "id": id})
@@ -522,6 +543,10 @@ static func choose_equipment(id: String, p: Player) -> void:
 		GameState.data.hair = id.trim_prefix(HAIR_PREFIX)
 		Sfx.play("cloth", 0.0)
 		return
+	if id == OWN_COLORS:
+		GameState.data.dye = ""
+		Sfx.play("cloth", 0.0)
+		return
 	if GameData.item(id).get("kind", "") == "dye":
 		if cloak_dyes().has(id):
 			GameState.data.dye = id
@@ -537,7 +562,7 @@ static func equipment_sound(id: String) -> String:
 	match String(GameData.item(id).get("kind", "")):
 		"blade":
 			return "sheathe"
-		"dye":
+		"dye", "cloak":
 			return "cloth"
 	return "gear_on"
 

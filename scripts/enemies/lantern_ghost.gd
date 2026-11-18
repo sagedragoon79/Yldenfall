@@ -40,6 +40,8 @@ var _died_at := -1.0
 
 
 func _init() -> void:
+	# Undead: the Hollowmist Cloak hides you from it (design bible 5.6).
+	undead = true
 	max_hp = 18
 	gold_min = 3
 	gold_max = 6

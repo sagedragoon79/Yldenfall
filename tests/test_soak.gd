@@ -1627,10 +1627,12 @@ func _clear_the_game(w: World) -> void:
 		GameState.set_flag("spring:" + spring)
 	GameState.set_flag("cleared")
 	var skills: Array = GameState.data.skills
-	for id: String in ["deep_pockets", "gold_sense", "quick_draught", "second_stride", "feather_fall", "treasure_sense",
+	for id: String in ["deep_pockets", "gold_sense", "quick_draught", "second_stride", "treasure_sense",
 			"resilience", "last_stand", "second_wind", "wanderers_grace"]:
 		if not skills.has(id):
 			skills.append(id)
+	# Feather Fall, which the tree gave until it became a cloak (design bible 5.6).
+	GameState.obtain_gear("thistledown_cloak")
 	GameState.refresh_stats(w.player)
 
 

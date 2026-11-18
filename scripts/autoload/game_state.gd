@@ -83,7 +83,13 @@ const GROWN_GATES := {
 	"tower/sorting_floor:9,9": "tower/sorting_floor:9,10",
 }
 ## The equipment slots, in the order the Equipment page lists them.
-const GEAR_SLOTS := ["blade", "armor", "shield", "helmet"]
+const GEAR_SLOTS := ["blade", "armor", "shield", "helmet", "cloak"]
+## What a slot that is never empty holds when a save has nothing there: you
+## always hold a blade and always wear a cloak.
+const STARTING_GEAR := {"blade": "short_sword", "cloak": "warden_cloak"}
+## The points Feather Fall cost before it left the skill tree for the
+## Thistledown Cloak (design bible 5.6); a save that learned it gets them back.
+const FEATHER_FALL_POINTS := 2
 ## The trinkets (design bible 5.6): icons in the menu only, each with one fixed
 ## rule. A kind's places are its keys in `equipment`; there are two rings.
 const TRINKET_PLACES := {"neck": ["neck"], "ring": ["ring1", "ring2"], "relic": ["relic"]}
@@ -91,7 +97,7 @@ const TRINKET_PLACES := {"neck": ["neck"], "ring": ["ring1", "ring2"], "relic": 
 ## with two buttons. An item with "belt" in data/items.json takes a place.
 const BELT_PLACES := 3
 ## Every kind of thing that is worn, in the order the Equipment page lists them.
-const GEAR_KINDS := ["blade", "armor", "shield", "helmet", "neck", "ring", "relic"]
+const GEAR_KINDS := ["blade", "armor", "shield", "helmet", "neck", "ring", "relic", "cloak"]
 
 ## The 16 ranks, named for a tree's growth. Each rank after Seedling gives a skill point.
 const RANKS := ["Seedling", "Sprout", "Sapling", "Thornling", "Barkskin", "Wayfarer", "Ranger", "Bough-Guard",
@@ -151,7 +157,7 @@ static func fresh() -> Dictionary:
 		"skill_points": 0,
 		"skills": [],
 		"respecs": 0,
-		"equipment": {"blade": "short_sword", "armor": "", "shield": "", "helmet": "", "neck": "", "ring1": "", "ring2": "", "relic": "", "projectile": ""},
+		"equipment": {"blade": "short_sword", "armor": "", "shield": "", "helmet": "", "neck": "", "ring1": "", "ring2": "", "relic": "", "projectile": "", "cloak": "warden_cloak"},
 		## Thrown weapons carried, by item id (each at most its "carry").
 		"ammo": {},
 		## Smith tempers per blade id (0 to 2): each adds TEMPER_BONUS to its damage.
@@ -190,11 +196,11 @@ static func fresh() -> Dictionary:
 		"deaths": 0,
 		## Inner Rings cleared: trial id -> best time in seconds (Trials).
 		"trials": {},
-		## Cloak dyes bought at Ilse's Dyeworks (pass 136), and the one worn ("" is Warden Green).
+		## Cloak dyes bought at Ilse's Dyeworks (pass 136), and the one worn ("" is the cloak's own colors).
 		"dyes": [],
 		## Every blade, armor, shield and helmet you have bought or found (pass 186):
 		## the Equipment page swaps between them.
-		"gear": ["short_sword"],
+		"gear": ["short_sword", "warden_cloak"],
 		"dye": "",
 		"hair": "",
 	}
@@ -234,10 +240,20 @@ func set_flag(id: String, value := true) -> void:
 	data.flags[id] = value
 
 
-## The cloak dye worn: an item id from data/items.json (kind "dye").
+## The cloak dye worn: an item id from data/items.json (kind "dye"), or "" for
+## the worn cloak's own colors. The Warden's Cloak's own are Warden Green, so
+## there it is "warden_dye".
 func dye() -> String:
 	var id := String(data.get("dye", ""))
-	return id if id != "" else "warden_dye"
+	if id != "":
+		return id
+	return "warden_dye" if String(cloak().get("body", "")) == "" else ""
+
+
+## The cloak worn (design bible 5.6): its item, or the Warden's Cloak.
+func cloak() -> Dictionary:
+	var id := String(data.get("equipment", {}).get("cloak", ""))
+	return GameData.item(id if id != "" else STARTING_GEAR.cloak)
 
 
 ## The hair color chosen on the Equipment page (an id of PlayerVisual.HAIR).
@@ -329,8 +345,12 @@ func belt_held() -> String:
 func obtain_gear(id: String, p: Player = null) -> void:
 	if not Array(data.gear).has(id):
 		data.gear.append(id)
-	var at := places(String(GameData.item(id).get("kind", "")))
+	var kind := String(GameData.item(id).get("kind", ""))
+	var at := places(kind)
 	if at.size() == 1:
+		# A new cloak goes on in its own colors (design bible 5.6).
+		if kind == "cloak" and String(data.equipment.get(at[0], "")) != id:
+			data.dye = ""
 		data.equipment[at[0]] = id
 	elif not at.is_empty() and not is_worn(id):
 		for place: String in at:
@@ -358,10 +378,13 @@ func wear(id: String, p: Player = null) -> void:
 		elif worn == "" and free == "":
 			free = place
 	if on != "":
-		if kind != "blade":
+		if not STARTING_GEAR.has(kind):
 			data.equipment[on] = ""
 	else:
 		data.equipment[free if free != "" else at[-1]] = id
+		# A cloak comes with its own colors (design bible 5.6): a new one shows them.
+		if kind == "cloak":
+			data.dye = ""
 	if p != null:
 		refresh_stats(p)
 
@@ -652,7 +675,11 @@ func refresh_stats(p: Player) -> void:
 	p.last_stand = has_skill("last_stand")
 	p.second_wind = has_skill("second_wind")
 	p.wanderers_grace = has_skill("wanderers_grace")
-	p.feather_fall = has_skill("feather_fall")
+	# The cloak's one piece of utility (design bible 5.6). Feather Fall left the
+	# skill tree for the Thistledown Cloak; it still glides only with the Boots.
+	var worn_cloak := cloak()
+	p.feather_fall = bool(worn_cloak.get("glide", false))
+	p.spectral = bool(worn_cloak.get("spectral", false))
 	p.ground_combo_length = 4 if has_skill("fourth_strike") else 3
 	p.mp_hit_mult = (1.5 if has_skill("siphon") else 1.0) + mp_hit
 	p.gold_mult = 1.1 if has_skill("gold_sense") else 1.0
@@ -942,7 +969,18 @@ static func sanitize(src: Variant) -> Dictionary:
 	for slot: String in GEAR_SLOTS:
 		var kind := String(GameData.item(String(out.equipment.get(slot, ""))).get("kind", ""))
 		if kind != "" and kind != slot:
-			out.equipment[slot] = "short_sword" if slot == "blade" else ""
+			out.equipment[slot] = STARTING_GEAR.get(slot, "")
+	if not out.equipment.get("cloak", "") is String or String(out.equipment.get("cloak", "")) == "":
+		out.equipment.cloak = STARTING_GEAR.cloak
+	# Feather Fall left the skill tree for the Thistledown Cloak (design bible
+	# 5.6): a save that learned it gets its points back and the cloak on, in the
+	# color it wore, so it glides as before.
+	if out.skills is Array and (out.skills as Array).has("feather_fall"):
+		out.skills = (out.skills as Array).filter(func(s: Variant) -> bool: return s != "feather_fall")
+		out.skill_points = int(out.skill_points) + FEATHER_FALL_POINTS
+		if String(out.dye) == "":
+			out.dye = "warden_dye"
+		out.equipment.cloak = "thistledown_cloak"
 	# The trinket places (design bible 5.6) hold their own kinds too, and one
 	# ring is never on both hands.
 	for trinket: String in TRINKET_PLACES:
@@ -993,8 +1031,9 @@ static func sanitize(src: Variant) -> Dictionary:
 		var worn := String(out.equipment.get(slot, ""))
 		if worn != "" and not gear.has(worn):
 			gear.append(worn)
-	if not gear.has("short_sword"):
-		gear.push_front("short_sword")
+	for start: String in STARTING_GEAR.values():
+		if not gear.has(start):
+			gear.push_front(start)
 	out.gear = gear
 	# The Severance is both an ability (the reach checker's gate) and gear;
 	# a save holds both or neither (pass 221).

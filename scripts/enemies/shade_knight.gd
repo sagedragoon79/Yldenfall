@@ -43,6 +43,8 @@ const HIGH_CUT_HEIGHT := 18.0
 
 
 func _init() -> void:
+	# Undead: the Hollowmist Cloak hides you from it (design bible 5.6).
+	undead = true
 	max_hp = 56
 	gold_min = 10
 	gold_max = 16
