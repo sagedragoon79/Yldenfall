@@ -63,7 +63,9 @@ const DROP_DRIFT := 4
 const RISE_FROM_FLOOR_DOOR := 4
 ## Slopes (`/`, `\`) count as whole blocks: a ramp reads as a stair of
 ## one-tile steps, which the model climbs with hops, so it never claims more.
-const SOLID := "#CJu/\\"
+## So do the haunches (`` ` `` `'`, bible 12.78): a passage keeps its headroom
+## under the full cell.
+const SOLID := "#CJu/\\`'"
 ## Ladders (legend `"`, bible 6.11): a spot with the feet on a ladder is a
 ## standing spot (you hang there), the ladder's top is a plank, and you climb
 ## to the ladder cells above and below. A jump from a ladder is a full jump.

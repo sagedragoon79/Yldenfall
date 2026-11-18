@@ -44,6 +44,7 @@ camera: wide       (optional: the camera eases out to show 25% more each way, fo
 | `-` | One-way platform (jump up through, Down + Jump to drop) |
 | `"` | Ladder (bible 6.11): a column of these; Up/Down climb, Jump leaves. The top cell is also a one-way plank you can stand on |
 | `/` `\` | 45° slope, solid below the diagonal: `/` rises to the east, `\` to the west. Put ground under it and on its high side; the reachability checker counts it as a whole block |
+| `` ` `` `'` | Haunch, the ceiling's 45° slope (design bible 12.78): `` ` `` is solid above a diagonal in its top-left half (a west wall meets the ceiling), `'` in its top-right half. Put ground above it and on its solid side; the reachability checker counts it as a whole block. `python3 tools/levels/haunches.py ROOM_ID` lays them into a room's ceiling corners |
 | `^` | Floor spikes (hazard, pogo-able) |
 | `o` | Thorn bulb (hazard, pogo target) |
 | `C` | Cracked stone (Delver's Pick breaks it) |

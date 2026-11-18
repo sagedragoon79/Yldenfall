@@ -2550,6 +2550,17 @@ The last of the four rooms the pass 585 grade called "rectangular boxes" (12.74 
 
 Judged by eye at 1x, before and after. The first canopy's notches were square and evenly spaced and read as battlements; the knots now taper to single columns and the notches vary in width. Tests: `tests/test_canopy_bridge.gd`.
 
+### 12.78 A vault curves into its wall: the haunches (pass 591)
+
+The pass 590 grade no longer called the four reshaped rooms (12.74 to 12.77) boxes, but saw their ceilings as "stair-stepped tile blocks": a vault built of square tiles climbs in steps of one tile, and every step shows. The tilesets now carry the ceiling's slopes, the **haunches** (row 9 of every painted atlas, `tools/art/tilegen.py`), the mirror of the floor's 45-degree slopes (6.1).
+
+- **Legend.** `` ` `` is solid in its top-left half (a west wall meets the ceiling), `'` in its top-right half. Each is drawn from the zone's own ceiling tile, soffit and outline and all, sheared up along the diagonal, so it joins the ceiling and the wall beside it. They collide as triangles, so the body slides along a sloped ceiling instead of catching on a step. The reachability checker counts a haunch as a whole block, so a passage keeps its four tiles of headroom under it. A zone whose atlas has no row 9 (Hearthroot's PixelLab set) lays plain ground there.
+- **The rim.** A haunch's ambient-occlusion rim (12.3) runs along its diagonal, darkest at the edge and fading into the solid half; a square rim would shade its open half.
+- **Where.** `tools/levels/haunches.py` lays them: in each open cell of a ceiling's inner corner (ground above and on one side, open below and on the other), and at each outer corner of a hanging mass, unless an inner haunch already runs the diagonal past it. Never on a room's frame, beside a door, or beside anything but plain air, since the open half shows what is behind it (a cut corner beside water would be dry).
+- **The four rooms.** The Canopy Bridge, the Flooded Hall, the Drowned Aqueduct and the Storm Ledge each take 28 to 33. A ceiling that stepped down one tile per column is one diagonal now, and each wall meets its vault with a chamfer. The underwater piers of the aqueduct keep their steps.
+
+Judged by eye at 1x and 2x before and after: the vaults read as curves, and the diagonals join the soffit trim of the flat ceiling beside them. The first haunches left the square rim in their open half, a dark block under every diagonal. Tests: `tests/test_haunches.gd`.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

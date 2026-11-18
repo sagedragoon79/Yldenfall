@@ -1291,6 +1291,30 @@ def paint_slope(img, ox, oy, zone, rising_east, seed):
                 img.putpixel((ox + x, oy + drop - k), out)
 
 
+def paint_haunch(img, ox, oy, zone, west, seed):
+    """A haunch (design bible 12.78): the ceiling's slope, where a vault curves
+    down into its wall. The zone's ceiling tile (soffit and all), sheared up
+    column by column so its underside runs along the diagonal: solid above it,
+    clear below. ``west`` keeps the top-left half (a west wall meets the
+    ceiling); otherwise the top-right half."""
+    tmp = Image.new("RGBA", (T, T), CLEAR)
+    paint_tile(tmp, 0, 0, EDGE_BOTTOM, zone, seed)
+    for x in range(T):
+        # How many pixels this column's underside rises from the tile's foot.
+        rise = x if west else T - 1 - x
+        for y in range(T):
+            sy = y + rise
+            img.putpixel((ox + x, oy + y), tmp.getpixel((x, sy)) if sy < T else CLEAR)
+    # A dark outline one world pixel thick just under the soffit, as the floor
+    # slope has above its cap, so the diagonal reads against the open air.
+    out = c(ZONES[zone]["outline"])
+    for x in range(T):
+        rise = x if west else T - 1 - x
+        for k in range(1, D):
+            if T - rise - 1 + k < T:
+                img.putpixel((ox + x, oy + T - rise - 1 + k), out)
+
+
 # Zones built from Sean's PixelLab work (design bible 13.6) instead of painted here:
 # a side-scroller tileset for the edges, a seamless fill texture for wall interiors
 # (copied to assets/tiles/<zone>_fill.png for GroundFill) and a one-way ledge piece.
@@ -1321,7 +1345,7 @@ def build_tileset(zone):
         return
     masks = blob_masks()
     assert len(masks) == 47
-    img = Image.new("RGBA", (T * COLS, T * 9), CLEAR)
+    img = Image.new("RGBA", (T * COLS, T * 10), CLEAR)
     for i, m in enumerate(masks):
         paint_tile(img, (i % COLS) * T, (i // COLS) * T, m, zone, 11 + i)
     paint_one_way(img, 0, 6 * T, zone)
@@ -1356,6 +1380,10 @@ def build_tileset(zone):
         paint_tile(img, (3 + k) * T, 8 * T, EDGE_BOTTOM, zone, 71 + k)
     paint_tile(img, 6 * T, 8 * T, EDGE_WEST, zone, 81)
     paint_tile(img, 7 * T, 8 * T, EDGE_EAST, zone, 82)
+    # Row 9: the two haunches (design bible 12.78, pass 591), the ceiling's
+    # slopes, so a vault curves down into its wall instead of stepping.
+    paint_haunch(img, 0, 9 * T, zone, True, 91)
+    paint_haunch(img, T, 9 * T, zone, False, 92)
     TILES.mkdir(parents=True, exist_ok=True)
     img.save(TILES / f"{zone}.png")
 

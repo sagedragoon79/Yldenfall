@@ -249,7 +249,7 @@ def test_atlas_has_the_variant_row():
     # The atlas must carry row 7 (8 rows of 32 px tiles), or the factory's variant
     # coords would point past the texture. (Leaving the atlas at 7 rows fails here.)
     img = _build_atlas()
-    assert img.size[1] == tg.T * 9, f"atlas is 9 rows tall (the variant row and the edge row, 12.53), got {img.size}"
+    assert img.size[1] == tg.T * 10, f"atlas is 10 rows tall (the variant row, the edge row (12.53) and the haunch row (12.78)), got {img.size}"
 
 
 def test_full_variants_differ_from_the_base_and_each_other():

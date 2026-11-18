@@ -27,7 +27,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 LEVELS = ROOT / "levels"
-HARD = set("#/u\\")
+HARD = set("#/u\\`'")  # with the haunches, bible 12.78
 # Opened by an ability; counted as open when looking for passages (reach.gd `solid`).
 GATES = set("CRQ|YZk+w[gJf")
 # Column features extended to the new top row when they filled the old three.
