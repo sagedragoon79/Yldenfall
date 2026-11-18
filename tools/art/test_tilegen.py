@@ -1367,6 +1367,39 @@ def test_vorrhallows_stillglass_is_seated_on_the_stone():
             assert out >= 3, f"{key}: the growth at {rx},{ry} does not leave its pillar"
 
 
+def test_vorrhallows_stillglass_lights_its_own_stone():
+    # Design bible 12.82 (pass 597): the pass 595 grade still read the hall's crystals
+    # as unanchored, the pillar behind each one dark right up to the glass. The glass
+    # now lights the stone round its root, and chips of stone burst off the face.
+    D, W = tg.D, tg.BG_W // tg.D
+    img = tg.vorrhallow_mid()
+    px = img.load()
+    rec = tg.STILLGLASS_SEATS["vorrhallow_mid"]
+    lit = {tg.c("crystal-1"), tg.c("crystal-2")}
+    chip = tg.c("stone-2")
+    total = 0
+    for rx, ry, side in rec["seats"]:
+        # Inside the pillar, 3 to 10 world px back from the face, round the root.
+        pool = sum(1 for dy in range(-10, 11) for back in range(3, 11)
+                   if 0 <= ry + dy < tg.BG_H // D and px[((rx - side * back) % W) * D, (ry + dy) * D] in lit)
+        assert pool >= 30, f"the growth at {rx},{ry} lights only {pool} px of its stone"
+        total += pool
+    # The crust and the shards' roots alone come to about 10 px a growth.
+    assert total >= 50 * len(rec["seats"]), f"the growths light {total} px of stone in all"
+        # Far from any seat the stone keeps its own dark: the light is a pool, not a wash.
+    far = [(x0 + w // 2, y) for x0, w in rec["pillars"] for y in range(60, tg.BG_H // D - 10, 7)
+           if all(abs(y - ry) > 40 or abs((x0 + w // 2) - rx) > 40 for rx, ry, _ in rec["seats"])]
+    share = sum(1 for x, y in far if px[(x % W) * D, y * D] in lit) / max(1, len(far))
+    assert far and share < 0.05, f"stone far from the glass is lit too ({share:.2f})"
+    # Chips: grey stone just off the face beside at least most growths.
+    chipped = 0
+    for rx, ry, side in rec["seats"]:
+        if any(px[((rx + side * out) % W) * D, (ry + dy) * D] == chip
+               for out in range(1, 6) for dy in range(-30, 31) if 0 <= ry + dy < tg.BG_H // D):
+            chipped += 1
+    assert chipped >= len(rec["seats"]) * 2 // 3, f"only {chipped} of {len(rec['seats'])} growths break their stone"
+
+
 def test_a_stillglass_shard_has_two_facets_and_a_lit_rim():
     # 12.51: a shard is a prism, not a flat spear: a lit facet with a bright rim
     # toward the top-left light, and a facet in shade.

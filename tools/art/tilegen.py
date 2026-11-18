@@ -2268,14 +2268,38 @@ def stillglass_shard(img, rx, ry, ang, length, width, cols):
             block(img, int(round(rx + ax * t + px * k)), int(round(ry + ay * t + py * k)), c(col))
 
 
-def stillglass_growth(img, rx, ry, face, lean, rng, reach, width, cols, crust="crystal-1"):
+def stillglass_growth(img, rx, ry, face, lean, rng, reach, width, cols, crust="crystal-1", glow=None):
     """A seated cluster of stillglass at world pixel rx, ry on a stone face whose
     normal is `face` (0 is up, positive turns right; a pillar's right face is pi/2):
-    cracks into the stone, a leader along `lean` with shorter shards fanned beside
-    it, their roots spread along the face, and a crust laid on the face over them."""
+    the glass's light on the stone round its root (`glow`: far and near tones, or
+    None), cracks into the stone, chips of stone burst out of the face, a leader
+    along `lean` with shorter shards fanned beside it, their roots spread along the
+    face, and a crust laid on the face over them."""
     tx, ty = math.cos(face), math.sin(face)  # along the face
     nx, ny = math.sin(face), -math.cos(face)  # out of it
     span = width * 0.9
+    if glow:
+        # The glass lights its own stone (bible 12.82, pass 597): the pass 595 grade
+        # still read the hall's crystals as unanchored, because the pillar behind each
+        # stayed one dark value right up to the glass. A dithered pool of wine light
+        # now falls on the stone (only where there is stone) round the root, the near
+        # tone close in, thinning out to `reach`.
+        r = reach * 0.9
+        for wy in range(int(ry - r), int(ry + r) + 1):
+            for wx in range(int(rx - r), int(rx + r) + 1):
+                d = math.hypot(wx - rx, (wy - ry) * 0.8) / r
+                if d >= 1 or not (0 <= wx * D < img.width and 0 <= wy * D < img.height):
+                    continue
+                here = img.getpixel((wx * D, wy * D))
+                if here[3] == 0 or here == c("night-0"):
+                    continue  # open air, and the mortar courses, stay as they are
+                # An ordered dither, so the pool reads as light and not as noise.
+                bayer = BAYER4[wy % 4][wx % 4] / 16
+                lit = (1 - d) ** 1.2
+                if lit > bayer + 0.5:
+                    block(img, wx, wy, c(glow[1]))
+                elif lit > bayer * 0.8:
+                    block(img, wx, wy, c(glow[0]))
     # Cracks run back into the stone from the root.
     for _ in range(3):
         a = face + math.pi + rng.uniform(-0.9, 0.9)
@@ -2289,6 +2313,19 @@ def stillglass_growth(img, rx, ry, face, lean, rng, reach, width, cols, crust="c
         ang = face + max(-1.2, min(1.2, lean + f - face))
         stillglass_shard(img, rx + tx * u, ry + ty * u, ang, reach * rng.uniform(0.45, 0.7), width * rng.uniform(0.55, 0.8), cols)
     stillglass_shard(img, rx, ry, lean, reach, width, cols)
+    if glow:
+        # Chips of stone burst out of the face where the glass broke through: small
+        # lit-topped blocks just off the face, past either end of the roots.
+        for k in range(rng.randint(3, 5)):
+            u = (1 if k % 2 else -1) * rng.uniform(span * 1.1, span * 1.7)
+            out = rng.randint(1, 3)
+            cw = rng.randint(2, 3)
+            bx, by = int(round(rx + tx * u + nx * out)), int(round(ry + ty * u + ny * out))
+            if nx < 0:
+                bx -= cw - 1  # on a left face, the chip grows out to the left
+            for i in range(cw):
+                block(img, bx + i, by, c("stone-2"))
+                block(img, bx + i, by + 1, c("night-0"))
     # The crust: a ragged dark knuckle of wine glass on the face, across the roots.
     for h in range(int(-span * 2) - 4, int(span * 2) + 5):
         u = h / 2
@@ -2386,7 +2423,7 @@ def vorrhallow_mid():
             stillglass_growth(img, rx, ry, s_ * math.pi / 2, s_ * rng.uniform(0.5, 0.95), rng,
                               rng.randrange(12, 18) if n else rng.randrange(22, 36),
                               rng.randrange(7, 10) if n else rng.randrange(12, 17),
-                              ("crystal-6", "crystal-4", "crystal-2"))
+                              ("crystal-6", "crystal-4", "crystal-2"), glow=("crystal-1", "crystal-2"))
             ry += rng.randrange(50, 110)
     STILLGLASS_SEATS["vorrhallow_mid"] = {"pillars": [(x // D, w // D) for x, w, _ in columns], "seats": seats}
     # Hanging chains from the vault.
