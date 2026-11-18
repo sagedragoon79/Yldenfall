@@ -13,6 +13,11 @@ extends Control
 ## Optional hooks, cleared on each open(): `on_adjust(index, step)` runs on
 ## Left/Right (option values), `on_back` runs instead of closing on Dash (sub
 ## menus), and `capture(event)` takes the next key or pad button press (rebinding).
+##
+## The panel's corner names its controls as key caps (pass 594, bible 12.79): the
+## key or pad button the action is bound to, drawn in a small frame, then a verb
+## that says what it does here ("Buy", "Leave"). Set `confirm_verb` and
+## `back_verb` after open(); both reset on each open().
 
 signal closed
 
@@ -31,6 +36,21 @@ const ICON_INSET := 18.0
 const PORTRAIT_PAD := 2.0
 const PORTRAIT_MARGIN := 10.0
 const PORTRAIT_BACK := Color("2a2440")
+## The key caps in the panel's corner.
+const CAP_FACE := Color("2a2440")
+const CAP_EDGE := Color("8a7f9e")
+const CAP_TEXT := Color("f1ead2")
+const CAP_SHADOW := Color(0, 0, 0, 0.6)
+## The pixel font's ascent and the descent its letters use (assets/fonts/pixel.json).
+const CAP_ASCENT := 8
+const CAP_DESCENT := 2
+const CAP_PAD := 2.0
+const CAP_GAP := 3.0
+const PROMPT_GAP := 9.0
+## Default verbs: confirm a row, and back out (a sub menu) or close.
+const CONFIRM_VERB := "Choose"
+const BACK_VERB := "Back"
+const CLOSE_VERB := "Close"
 
 var title := ""
 var subtitle := ""
@@ -42,6 +62,11 @@ var panel := PANEL
 ## The person whose menu this is (an id in data/npcs.json): their portrait sits
 ## in the panel's top right corner. Cleared on each open(); set it after.
 var portrait := ""
+## What confirming a row does here ("Buy", "Learn"); "" for a page you only read.
+## Reset on each open().
+var confirm_verb := CONFIRM_VERB
+## What backing out does here ("Leave"); "" picks Back or Close. Reset on each open().
+var back_verb := ""
 
 var on_adjust := Callable()
 var on_back := Callable()
@@ -77,6 +102,8 @@ func open(menu_title: String, menu_subtitle: String, provider: Callable, on_sele
 	on_back = Callable()
 	capture = Callable()
 	portrait = ""
+	confirm_verb = CONFIRM_VERB
+	back_verb = ""
 	cursor = 0
 	_scroll = 0
 	refresh()
@@ -274,8 +301,75 @@ func _draw() -> void:
 	PixelFont.draw_wrapped(self, box.position + Vector2(6, 12), detail, box.size.x - 12, 9, Color("c9b98f"), 1)
 	var foot: String = _footer.call() if _footer.is_valid() else ""
 	_text(Vector2(x, panel.end.y - 9), foot, 9, ACCENT)
-	var hint := "Press a key or button   Esc or Start: cancel" if capture.is_valid() else ("Left/Right: change   Dash: back" if on_adjust.is_valid() else "Jump: choose   Dash: leave")
-	_text(Vector2(panel.end.x - 14 - PixelFont.width(hint, 8), panel.end.y - 9), hint, 8, DIM.lightened(0.2))
+	_draw_prompts(Vector2(panel.end.x - 14, panel.end.y - 9))
+
+
+## The controls named in the panel's corner, in order: each is {cap, verb}, where
+## `cap` is the bound key or pad button and "" means the verb stands alone.
+func prompts() -> Array:
+	if capture.is_valid():
+		return [{"cap": "", "verb": "Press a key or button"}, {"cap": cap_name("pause"), "verb": "Cancel"}]
+	var out: Array = []
+	if on_adjust.is_valid():
+		out.append({"cap": cap_name("move_left") + "/" + cap_name("move_right"), "verb": "Change"})
+	elif not rows.is_empty() and confirm_verb != "":
+		out.append({"cap": cap_name("jump"), "verb": confirm_verb})
+	var back_word := back_verb if back_verb != "" else (BACK_VERB if on_back.is_valid() else CLOSE_VERB)
+	out.append({"cap": cap_name("dash"), "verb": back_word})
+	return out
+
+
+## What a key cap shows for `action`: its pad button while a pad is plugged in,
+## else its first key, in short ("Space", "C", "A", "<" for Left).
+static func cap_name(action: String) -> String:
+	var pad := not Input.get_connected_joypads().is_empty()
+	var name: String = Controls.button_name(action) if pad else Controls.key_name(action)
+	if pad and name == "-":
+		name = Controls.key_name(action)
+	match name:
+		"Left", "Pad left":
+			return "<"
+		"Right", "Pad right":
+			return ">"
+	return name
+
+
+## How wide prompts() draws, so the row can sit flush right.
+func prompts_width() -> float:
+	var w := 0.0
+	for pr: Dictionary in prompts():
+		if w > 0.0:
+			w += PROMPT_GAP
+		if String(pr.cap) != "":
+			w += PixelFont.width(pr.cap, 8) + CAP_PAD * 2.0 + CAP_GAP
+		w += PixelFont.width(pr.verb, 8)
+	return w
+
+
+## A key cap's frame for text `w` wide (padding included) with its baseline at
+## `base`: two rows clear above a capital and below it, where a "p" descends.
+static func cap_rect_at(x: float, base: float, w: float) -> Rect2:
+	var top := base - float(CAP_ASCENT) - 2.0
+	return Rect2(x, top, roundf(w), float(CAP_ASCENT + CAP_DESCENT) + 3.0)
+
+
+## Draws the prompts ending at `right_base` (the text's baseline at its right end).
+func _draw_prompts(right_base: Vector2) -> void:
+	var x := right_base.x - prompts_width()
+	var base := right_base.y
+	for pr: Dictionary in prompts():
+		var cap := String(pr.cap)
+		if cap != "":
+			var cw := PixelFont.width(cap, 8) + CAP_PAD * 2.0
+			var cap_rect := cap_rect_at(roundf(x), base, cw)
+			# A drop shadow under the cap, so it reads as a key, not a box.
+			draw_rect(Rect2(cap_rect.position + Vector2(1, cap_rect.size.y), Vector2(cap_rect.size.x, 1)), CAP_SHADOW)
+			draw_rect(cap_rect, CAP_EDGE)
+			draw_rect(cap_rect.grow(-1), CAP_FACE)
+			_text(Vector2(roundf(x) + CAP_PAD, base), cap, 8, CAP_TEXT)
+			x += cw + CAP_GAP
+		_text(Vector2(x, base), String(pr.verb), 8, DIM.lightened(0.35))
+		x += PixelFont.width(String(pr.verb), 8) + PROMPT_GAP
 
 
 func _text(pos: Vector2, s: String, size: int, color: Color) -> void:

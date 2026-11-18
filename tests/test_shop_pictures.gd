@@ -111,3 +111,67 @@ func test_the_shop_shows_what_it_sells() -> void:
 	await frames(2)
 	menu.close()
 	menu.queue_free()
+
+
+## The panel names its controls by the key or button you press and what it does
+## there (pass 594, bible 12.79). The pass 590 grade called the shop's "Jump:
+## choose / Dash: leave" odd: it named the hero's moves, not the keys, and
+## "choose" is not what a shop does.
+func test_a_menu_names_its_keys_and_what_they_do() -> void:
+	var room := make_room(grid_rows(12, 8))
+	var p := make_player(room, Vector2i(4, 6))
+	p.gold = 350
+	var menu := ListMenu.new()
+	arena.add_child(menu)
+	await frames(2)
+	var pad := not Input.get_connected_joypads().is_empty()
+	check(ListMenu.cap_name("jump") == (Controls.button_name("jump") if pad else Controls.key_name("jump")),
+		"a cap shows the bound %s (%s)" % ["button" if pad else "key", ListMenu.cap_name("jump")])
+	check(Menus.open_shop(arena.get_tree(), "hearthroot_arms", p), "the arms shop opens")
+	var want := [{"cap": ListMenu.cap_name("jump"), "verb": "Buy"}, {"cap": ListMenu.cap_name("dash"), "verb": "Leave"}]
+	check(menu.prompts() == want, "the shop says Buy and Leave on their keys (%s)" % [menu.prompts()])
+	for pr: Dictionary in menu.prompts():
+		var words := (String(pr.cap) + " " + String(pr.verb)).to_lower()
+		check(not words.contains("jump") and not words.contains("dash") and not words.contains(":"),
+			"no prompt names the hero's moves (%s)" % words)
+		check(String(pr.cap) not in ["", "-"], "every prompt has a key to press (%s)" % pr.verb)
+	# Every cap and word fits on the panel's last line, right of the gold.
+	var right := menu.panel.end.x - 14.0
+	var w := menu.prompts_width()
+	check(w > 40.0 and right - w > menu.panel.position.x + 14.0 + PixelFont.width("Gold 99999", 9) + 8.0,
+		"the prompts sit right of the gold (%.0f px wide)" % w)
+	var base := menu.panel.end.y - 9.0
+	var cap := ListMenu.cap_rect_at(right - w, base, PixelFont.width("A", 8) + ListMenu.CAP_PAD * 2.0)
+	check(cap.position.y <= base - ListMenu.CAP_ASCENT - 1.0 and cap.end.y >= base + ListMenu.CAP_DESCENT + 1.0,
+		"a cap's frame clears a capital's top and a p's tail (%s)" % cap)
+	check(cap.end.y + 1.0 < menu.panel.end.y, "and sits inside the panel")
+	await frames(2)
+	menu.close()
+	# The other menus say what they do; the defaults come back on each open.
+	var plain := func() -> Array: return [{"label": "Rest"}, {"label": "Leave"}]
+	menu.open("Ringreader", "", plain, func(_i: int) -> void: pass)
+	check(menu.prompts()[0].verb == ListMenu.CONFIRM_VERB and menu.prompts()[1].verb == ListMenu.CLOSE_VERB,
+		"a plain menu chooses and closes (%s)" % [menu.prompts()])
+	menu.on_back = func() -> void: pass
+	check(menu.prompts()[1].verb == ListMenu.BACK_VERB, "a sub menu goes back")
+	menu.confirm_verb = ""
+	check(menu.prompts().size() == 1, "a page you only read names no confirm")
+	menu.close()
+	check(Menus.open_skills(arena.get_tree(), p) and menu.prompts()[0].verb == "Learn", "the skill tree learns")
+	menu.close()
+	check(Menus.open_pause(arena.get_tree(), p, func() -> void: pass) and menu.prompts()[-1].verb == "Resume", "the pause menu resumes")
+	menu.close()
+	check(Menus.open_options(arena.get_tree(), func() -> void: menu.close()), "Options opens")
+	var change: Dictionary = menu.prompts()[0]
+	check(change.verb == "Change" and String(change.cap).contains("/") and menu.prompts()[1].verb == ListMenu.BACK_VERB,
+		"options change a value with Left and Right (%s)" % [menu.prompts()])
+	check(not String(change.cap).to_lower().contains("left"), "drawn as arrows, short enough for a cap (%s)" % change.cap)
+	menu.close()
+	# Rebinding waits for a key and names the one that cancels.
+	check(Menus.open_controls(arena.get_tree(), func() -> void: menu.close()), "Controls opens")
+	menu.cursor = 4
+	menu.confirm()
+	check(menu.capture.is_valid() and menu.prompts()[0].cap == "" and menu.prompts()[1].verb == "Cancel"
+		and menu.prompts()[1].cap == ListMenu.cap_name("pause"), "while it listens: press a key, or Esc or Start cancels (%s)" % [menu.prompts()])
+	menu.capture = Callable()
+	menu.close()
