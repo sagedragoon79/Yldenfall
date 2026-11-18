@@ -46,13 +46,18 @@ const TOP_ALPHA := 0.14
 
 var _solids: Dictionary
 var _size: Vector2i
+## Haunch cells (bible 12.78): cell -> true for a west haunch (solid top-left),
+## false for an east one. They count as solid for their neighbours, but their own
+## rim runs along the diagonal, since a square rim would shade their open half.
+var _haunches: Dictionary = {}
 
 
 ## Reads the room's final solid cells (`solids`) and rims them over the `size`
-## tile grid.
-func setup(solids: Dictionary, size: Vector2i) -> void:
+## tile grid. `haunches` are the cells among them solid on one side of a diagonal.
+func setup(solids: Dictionary, size: Vector2i, haunches := {}) -> void:
 	_solids = solids
 	_size = size
+	_haunches = haunches
 	queue_redraw()
 
 
@@ -89,6 +94,9 @@ func _draw() -> void:
 	for y in _size.y:
 		for x in _size.x:
 			var cell := Vector2i(x, y)
+			if _haunches.has(cell):
+				_diagonal_band(Vector2(cell * TILE), _haunches[cell])
+				continue
 			var m := bands_for(_solids, _size, cell)
 			if m == 0:
 				continue
@@ -115,3 +123,21 @@ func _band(at: Vector2, dir: Vector2, reach: float, alpha: float) -> void:
 		var corner := at + dir * (step * i)
 		var r := Rect2(corner, across + along).abs()
 		draw_rect(r, Color(COLOR, a))
+
+
+## The underside rim of a haunch (bible 12.78): bands parallel to its diagonal,
+## darkest at the diagonal and fading into the solid half, as an underside's
+## rim does. `west` is the haunch solid in its top-left half.
+func _diagonal_band(o: Vector2, west: bool) -> void:
+	var step := UNDER_REACH / STEPS
+	for i in STEPS:
+		var a := UNDER_ALPHA * (1.0 - float(i) / STEPS)
+		var k := step * i
+		var pts: PackedVector2Array
+		if west:
+			# The diagonal runs x + y = TILE; inward is up and to the left.
+			pts = [o + Vector2(0, TILE - k), o + Vector2(TILE - k, 0), o + Vector2(TILE - k - step, 0), o + Vector2(0, TILE - k - step)]
+		else:
+			# The diagonal runs y = x; inward is up and to the right.
+			pts = [o + Vector2(k, 0), o + Vector2(TILE, TILE - k), o + Vector2(TILE, TILE - k - step), o + Vector2(k + step, 0)]
+		draw_colored_polygon(pts, Color(COLOR, a))

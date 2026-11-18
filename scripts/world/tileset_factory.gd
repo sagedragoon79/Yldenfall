@@ -10,7 +10,8 @@ extends RefCounted
 ## tiles for wall cells two (MID) or three or more (DEEP) tiles from open air,
 ## then the two 45-degree slopes (design bible 6.1). Row 7 holds masonry variants
 ## (full-solid surface plus more MID/DEEP) that `ground()` scatters by cell so a
-## large solid field stops reading as a 32 px grid (design bible 12.8).
+## large solid field stops reading as a 32 px grid (design bible 12.8). Row 8
+## holds the edge variants and row 9 the two haunches (the ceiling's slopes).
 
 const TILE := 16
 ## Render density of the atlases (design bible 12.1): each 16 px world tile is
@@ -46,6 +47,14 @@ const EDGE_ROWS := 9
 const SLOPE_EAST := Vector2i(6, 6)
 ## Legend `\`: solid below a diagonal rising to the west.
 const SLOPE_WEST := Vector2i(7, 6)
+## Haunches (row 9, design bible 12.78): the ceiling's slopes, where a vault
+## curves down into its wall instead of stepping. Legend `` ` ``: solid above a
+## diagonal, in the cell's top-left half (a west wall meets the ceiling). Legend
+## `'`: the mirror, solid in the top-right half. An atlas without row 9
+## (Hearthroot's PixelLab set) has none: see `has_haunches`.
+const HAUNCH_WEST := Vector2i(0, 9)
+const HAUNCH_EAST := Vector2i(1, 9)
+const HAUNCH_ROWS := 10
 
 ## Neighbour bits for blob masks.
 const N := 1
@@ -160,12 +169,26 @@ static func has_edges(zone: String) -> bool:
 	return _edges[path]
 
 
+## True if the zone's atlas carries the haunches (row 9).
+static func has_haunches(zone: String) -> bool:
+	var path := TILES_DIR + zone + ".png"
+	if zone == "" or not ResourceLoader.exists(path):
+		path = TILES_DIR + FALLBACK_ZONE + ".png"
+	var tex: Texture2D = load(path)
+	return tex.get_height() >= HAUNCH_ROWS * TILE * DENSITY
+
+
 static func is_ground(coords: Vector2i) -> bool:
 	return coords != ONE_WAY and coords != AMBER and not is_slope(coords)
 
 
+## True for a floor slope or a haunch: a cell solid on one side of a diagonal.
 static func is_slope(coords: Vector2i) -> bool:
-	return coords == SLOPE_EAST or coords == SLOPE_WEST
+	return coords == SLOPE_EAST or coords == SLOPE_WEST or is_haunch(coords)
+
+
+static func is_haunch(coords: Vector2i) -> bool:
+	return coords == HAUNCH_WEST or coords == HAUNCH_EAST
 
 
 ## Builds (and caches) the tileset for a zone. Without collision it is used for
@@ -196,6 +219,8 @@ static func build(zone := "", with_collision := true) -> TileSet:
 	var strip := PackedVector2Array([Vector2(-half, -half), Vector2(half, -half), Vector2(half, -half + lip), Vector2(-half, -half + lip)])
 	var rise_east := PackedVector2Array([Vector2(-half, half), Vector2(half, -half), Vector2(half, half)])
 	var rise_west := PackedVector2Array([Vector2(-half, -half), Vector2(half, half), Vector2(-half, half)])
+	var haunch_west := PackedVector2Array([Vector2(-half, -half), Vector2(half, -half), Vector2(-half, half)])
+	var haunch_east := PackedVector2Array([Vector2(-half, -half), Vector2(half, -half), Vector2(half, half)])
 	var all: Array[Vector2i] = [ONE_WAY, AMBER, SLOPE_EAST, SLOPE_WEST]
 	all.append_array(MID)
 	all.append_array(DEEP)
@@ -205,6 +230,8 @@ static func build(zone := "", with_collision := true) -> TileSet:
 		all.append_array(BOTTOM_VARIANTS)
 		all.append_array(WEST_VARIANTS)
 		all.append_array(EAST_VARIANTS)
+	if has_haunches(zone):
+		all.append_array([HAUNCH_WEST, HAUNCH_EAST])
 	for i in blob_masks().size():
 		all.append(Vector2i(i % COLUMNS, i / COLUMNS))
 	for coords in all:
@@ -220,6 +247,10 @@ static func build(zone := "", with_collision := true) -> TileSet:
 			data.set_collision_polygon_points(0, 0, rise_east)
 		elif coords == SLOPE_WEST:
 			data.set_collision_polygon_points(0, 0, rise_west)
+		elif coords == HAUNCH_WEST:
+			data.set_collision_polygon_points(0, 0, haunch_west)
+		elif coords == HAUNCH_EAST:
+			data.set_collision_polygon_points(0, 0, haunch_east)
 		else:
 			data.set_collision_polygon_points(0, 0, full)
 	_cache[key] = ts

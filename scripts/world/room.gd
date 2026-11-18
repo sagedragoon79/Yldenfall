@@ -220,9 +220,9 @@ func build(text: String) -> void:
 	var amber := _amber_on()
 	for y in grid.size():
 		for x in grid[y].length():
-			if grid[y][x] in ["#", "%", "u", "/", "\\"]:
+			if grid[y][x] in ["#", "%", "u", "/", "\\", "`", "'"]:
 				_solid_look[Vector2i(x, y)] = true
-			if grid[y][x] in ["/", "\\"]:
+			if grid[y][x] in ["/", "\\", "`", "'"]:
 				_slope_cells[Vector2i(x, y)] = true
 	for spec: String in lists.get("lock", []):
 		var l := spec.split(",")
@@ -269,7 +269,7 @@ func build(text: String) -> void:
 	var shade := EdgeShade.new()
 	shade.name = "EdgeShade"
 	add_child(shade)
-	shade.setup(_solid_look, size_tiles)
+	shade.setup(_solid_look, size_tiles, _haunch_cells())
 
 	# The interior of solid mass falls off into darkness (design bible 12.38). A
 	# second shade on the secret layer fades with the fake wall.
@@ -544,6 +544,19 @@ const _NEIGHBOURS := [
 ]
 
 
+## The room's haunches (bible 12.78): cell -> true for a west one (`` ` ``),
+## false for an east one (`'`). None in a zone whose atlas has no haunch row.
+func _haunch_cells() -> Dictionary:
+	var out := {}
+	if not TilesetFactory.has_haunches(zone):
+		return out
+	for c: Vector2i in _slope_cells:
+		var coords := tiles.get_cell_atlas_coords(c)
+		if TilesetFactory.is_haunch(coords):
+			out[c] = coords == TilesetFactory.HAUNCH_WEST
+	return out
+
+
 ## The cells the deep shade treats as solid: the ground look, less the slopes
 ## (half open, as `_depth` counts them).
 func _deep_solids() -> Dictionary:
@@ -597,6 +610,13 @@ func _place(ch: String, cell: Vector2i, grid: Array[String]) -> void:
 			tiles.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.SLOPE_EAST)
 		"\\":
 			tiles.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.SLOPE_WEST)
+		"`", "'":
+			# A haunch (bible 12.78): the vault's slope down into its wall. A zone
+			# whose atlas has none (Hearthroot's PixelLab set) lays plain ground.
+			if TilesetFactory.has_haunches(zone):
+				tiles.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.HAUNCH_WEST if ch == "`" else TilesetFactory.HAUNCH_EAST)
+			else:
+				tiles.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.ground(_ground_mask(cell), cell, _depth(cell), TilesetFactory.has_edges(zone)))
 		"b":
 			# A drowned boardwalk: it rises once the Haar Spring flows.
 			if GameState.flag(Fog.SPRING_FLAG):
@@ -990,8 +1010,13 @@ func is_solid_at(world_pos: Vector2) -> bool:
 		return false
 	var coords := tiles.get_cell_atlas_coords(cell)
 	if TilesetFactory.is_slope(coords):
-		# Solid below the diagonal only.
 		var local := world_pos - Vector2(cell * TILE)
+		# A haunch is solid above its diagonal (bible 12.78).
+		if coords == TilesetFactory.HAUNCH_WEST:
+			return local.y <= TILE - local.x
+		if coords == TilesetFactory.HAUNCH_EAST:
+			return local.y <= local.x
+		# A floor slope is solid below it.
 		var floor_y := TILE - local.x if coords == TilesetFactory.SLOPE_EAST else local.x
 		return local.y >= floor_y
 	return coords != TilesetFactory.ONE_WAY
