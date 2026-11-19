@@ -66,6 +66,42 @@ func test_a_shop_answers_the_real_controller() -> void:
 	check(bible.contains("`test_a_shop_answers_the_real_controller`"), "the bible names the test")
 
 
+## Pass 605 (bible 12.44): the pass 600 grade saw the shop as "a plain dark box, two
+## thirds empty, with a thin flat border". Every menu wears a framed panel with gold
+## corner brackets, and a shop of few wares shows the chosen one on a lit counter in
+## the room its rows leave; a long list has no room and shows none.
+func test_a_shop_shows_the_chosen_ware_on_its_counter() -> void:
+	var w := make_world(_town({}, ["npc: 8, 19, arms_dealer"]), "test/town", cell_feet(8, 19))
+	var p := w.player
+	var menu := ListMenu.new()
+	arena.add_child(menu)
+	await frames(2)
+	check(Menus.open_shop(arena.get_tree(), "hearthroot_arms", p) and menu.is_open, "the arms dealer's shop opens")
+	await frames(2)
+	var shelf := Shop.shelf("hearthroot_arms")
+	var stock: Array = GameData.shop("hearthroot_arms").stock
+	var first := String(stock[shelf[menu.cursor]].item)
+	check(menu.counter_item() == first, "the chosen ware stands on the counter (%s)" % menu.counter_item())
+	var counter := menu.counter_rect()
+	var below := menu.rows_top() + menu.rows.size() * ListMenu.ROW_H
+	check(counter.size.y >= ListMenu.COUNTER_MIN and counter.position.y >= below and counter.end.y <= menu.detail_box().position.y,
+		"in the room between the rows and the description (%s)" % counter)
+	check(menu.panel.encloses(counter), "inside the panel")
+	menu.move(1)
+	check(menu.counter_item() != first and menu.counter_item() == String(stock[shelf[menu.cursor]].item), "the next ware takes its place (%s)" % menu.counter_item())
+	check(ListMenu.counter_glow().fill == GradientTexture2D.FILL_RADIAL, "in a smooth pool of lamplight, never hard rings")
+	var bars := menu.frame_brackets()
+	check(bars.size() == 8 and menu.panel.grow(3).encloses(bars[0]) and bars.all(func(b: Rect2) -> bool: return not menu.panel.grow(-1).encloses(b)),
+		"the panel wears gold corner brackets on its frame")
+	menu.close()
+	await frames(2)
+	check(Menus.open_shop(arena.get_tree(), "amberlee_items", p) and menu.rows.size() >= 6, "a shop of many wares (%d)" % menu.rows.size())
+	await frames(2)
+	check(menu.counter_rect() == Rect2() and menu.counter_item() == "", "has no room for a counter, and shows none")
+	menu.close()
+	menu.free()
+
+
 ## Pass 532 (bible 12, the gold counter): the pass-529 grade saw a shop's
 ## footer say "Gold 5000" over a HUD that said 4968. The HUD's counter rolls
 ## toward the purse, and it rolled on, from nothing, after a load and under an
