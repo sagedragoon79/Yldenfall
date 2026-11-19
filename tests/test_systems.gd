@@ -1738,6 +1738,44 @@ func test_damage_numbers_show_what_each_blow_dealt() -> void:
 ## pass 306 (2 in the Tower, up to 4 deep), and a tick was the one loss of health
 ## that showed no number. A tick an Barkbalm keeps off, or one that would take
 ## the last point, shows nothing.
+## Pass 606 (bible 12.86): the pass 605 grade found the HUD's ivory masks with
+## carved eyes "copy Hollow Knight's masks almost directly". Yldenfall is its own
+## game (bible 1 and 2): health is a sprig of autumn leaves, and nothing a player
+## reads calls it a mask.
+func test_health_is_a_sprig_of_leaves() -> void:
+	var shape: Array = GameHud.MASK_SHAPE
+	var top: Array = shape.filter(func(p: Vector2) -> bool: return p.y == 0.0)
+	check(top.size() == 1 and absf(top[0].x - 12.0) <= 1.0, "a leaf comes to one point at its tip (%s)" % [top])
+	var stem: Array = shape.filter(func(p: Vector2) -> bool: return p.y == 28.0)
+	check(stem.size() == 2 and absf(stem[0].x - stem[1].x) <= 3.0, "and stands on a short stem (%s)" % [stem])
+	var widest := 0.0
+	for p: Vector2 in shape:
+		widest = maxf(widest, p.x)
+	check(widest <= 24.0, "in the old cell, so the HUD's rows keep their widths")
+	check(GameHud.LEAF_VEINS.size() == 4, "with veins off its midrib")
+	var leaf := GameHud.LEAF_FULL
+	check(leaf.r > leaf.g and leaf.g > leaf.b and leaf.s > 0.4, "an autumn amber (%s)" % leaf)
+	check(GameHud.POISONED.g > GameHud.POISONED.r, "and poison still turns it a sick green")
+	var said: Array[String] = []
+	said.append(String(GameData.item("life_fruit").desc))
+	said.append(String(GameData.item("elven_helm").desc))
+	said.append(String(ItemPickup.INFO["elven_helm"].text))
+	said.append(String(Skills.nodes().filter(func(n: Dictionary) -> bool: return n.id == "resilience")[0].desc))
+	var mask := RegEx.create_from_string("(?i)\\bmasks?\\b")
+	for s: String in said:
+		check(mask.search(s) == null, "no player-facing text calls it a mask (%s)" % s)
+	# Every quoted string in the files a player reads from: the data tables and the
+	# scripts that print a fruit's, a page's or a pickup's words.
+	var quoted := RegEx.create_from_string("\"[^\"\\n]*\"")
+	for path: String in ["res://data/items.json", "res://data/skills.json", "res://data/npcs.json", "res://data/shops.json",
+			"res://scripts/autoload/game_state.gd", "res://scripts/data/completion.gd", "res://scripts/pickups/item_pickup.gd"]:
+		for m: RegExMatch in quoted.search_all(FileAccess.get_file_as_string(path)):
+			check(mask.search(m.get_string()) == null, "%s says no mask: %s" % [path.get_file(), m.get_string()])
+	check(said[0].contains("leaf") and said[3].contains("leaf"), "a Life Fruit and Resilience grow a leaf")
+	var bible := FileAccess.get_file_as_string("res://docs/design-bible.md")
+	check(bible.contains("### 12.86"), "bible 12.86 says so")
+
+
 func test_damage_numbers_show_each_poison_tick() -> void:
 	Settings.path = TEMP_SETTINGS
 	Settings.reset()

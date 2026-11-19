@@ -203,8 +203,16 @@ func _draw_hurt_edge() -> void:
 # half-pixels (2x density, like the world art) through _hp() and _hpoly().
 
 const MASK_SHADE := Color("c9b98f")
-const MASK_EYE := Color("8a7a5a")
 const MASK_EMPTY_LIGHT := Color("4e4766")
+## Health is a sprig of leaves (pass 606). The pass 605 grade found the ivory masks
+## with carved eyes "copy Hollow Knight's masks almost directly"; Yldenfall is its own
+## game (bible 1 and 2). One unit of health (MASK_HP, the code's old name) is drawn as
+## an autumn leaf, amber with a darker midrib and veins, filling from the stem up as
+## health returns; poison turns it a sick green as it turned the masks.
+const LEAF_FULL := Color("cd8c51")
+const LEAF_SHADE := Color("aa6336")
+const LEAF_SHINE := Color("f0dfa8")
+const LEAF_VEIN := Color("783c2b")
 const POISONED_DARK := Color("3f7a2a")
 const MP_LIGHT := Color("9fdcff")
 const MP_DEEP := Color("2a6fb0")
@@ -215,10 +223,18 @@ const GOLD_DARK := Color("b8860b")
 const GLASS_SAND := Color("e8c870")
 const PLATE := Color(0.07, 0.06, 0.11, 0.5)
 const PLATE_EDGE := Color(1.0, 0.82, 0.29, 0.28)
-## A full mask, 24x28 half-pixels: a carved ivory face, brow to chin.
-const MASK_SHAPE := [Vector2(4, 0), Vector2(20, 0), Vector2(24, 4), Vector2(24, 14), Vector2(20, 22), Vector2(12, 28), Vector2(4, 22), Vector2(0, 14), Vector2(0, 4)]
-## Half a mask (a Life Fruit's worth), 14 half-pixels wide.
-const HALF_MASK_SHAPE := [Vector2(4, 0), Vector2(14, 0), Vector2(14, 27), Vector2(12, 28), Vector2(4, 22), Vector2(0, 14), Vector2(0, 4)]
+## A full leaf, 24x28 half-pixels: a pointed tip at the top, a broad blade, and a
+## short stem at the foot (pass 606; the cell is the old mask's, so the HUD's rows
+## keep their widths).
+const MASK_SHAPE := [Vector2(12, 0), Vector2(16, 3), Vector2(20, 7), Vector2(23, 12), Vector2(22, 17), Vector2(19, 21), Vector2(14, 24), Vector2(13, 28), Vector2(11, 28), Vector2(10, 24), Vector2(5, 21), Vector2(2, 17), Vector2(1, 12), Vector2(4, 7), Vector2(8, 3)]
+## Half a leaf (a Life Fruit's worth), 14 half-pixels wide: the blade's left half
+## and its midrib.
+const HALF_MASK_SHAPE := [Vector2(12, 0), Vector2(14, 3), Vector2(14, 24), Vector2(13, 28), Vector2(11, 28), Vector2(10, 24), Vector2(5, 21), Vector2(2, 17), Vector2(1, 12), Vector2(4, 7), Vector2(8, 3)]
+
+
+## A leaf's side veins, each [side, y, steps] in half-pixels: two pairs leaving the
+## midrib at y and running up and out at 45 degrees, one half-pixel a step.
+const LEAF_VEINS := [[-1, 13, 5], [1, 13, 5], [-1, 19, 5], [1, 19, 5]]
 
 
 func _hp(at: Vector2, x: float, y: float, w: float, h: float, c: Color) -> void:
@@ -252,8 +268,7 @@ func _draw_plate(r: Rect2) -> void:
 		draw_rect(b, Minimap.BRACKET_COLOR)
 
 
-## One health mask: ivory fills from the chin up as health returns; green when poisoned.
-## A mask's polygons relative to its corner, built once per shape: outline,
+## A leaf's polygons relative to its corner, built once per shape: outline,
 ## body, inner ring, inner fill and the lit face.
 func _mask_polys(half: bool) -> Array:
 	var key := "half" if half else "full"
@@ -265,7 +280,8 @@ func _mask_polys(half: bool) -> Array:
 	return _mask_cache[key]
 
 
-## One health mask: ivory fills from the chin up as health returns; green when poisoned.
+## One leaf of health: amber fills from the stem up as health returns; a sick
+## green when poisoned (pass 606: it was a mask).
 func _draw_mask(at: Vector2, half: bool, fill: float) -> void:
 	var polys := _mask_polys(half)
 	draw_set_transform(at)
@@ -274,8 +290,8 @@ func _draw_mask(at: Vector2, half: bool, fill: float) -> void:
 	draw_colored_polygon(polys[2], MASK_EMPTY_LIGHT)
 	draw_colored_polygon(polys[3], MASK_EMPTY)
 	var sick := player.poison_left > 0.0
-	var main := POISONED if sick else MASK_FULL
-	var shade := POISONED_DARK if sick else MASK_SHADE
+	var main := POISONED if sick else LEAF_FULL
+	var shade := POISONED_DARK if sick else LEAF_SHADE
 	if fill >= 1.0:
 		draw_colored_polygon(polys[1], shade)
 		draw_colored_polygon(polys[4], main)
@@ -289,14 +305,25 @@ func _draw_mask(at: Vector2, half: bool, fill: float) -> void:
 			draw_colored_polygon(part, main)
 	draw_set_transform(Vector2.ZERO)
 	if fill >= 1.0:
-		_hp(at, 4, 2, 3, 2, POISONED_SHINE if sick else MASK_SHINE)
-		_hp(at, 3, 4, 2, 4, POISONED_SHINE if sick else MASK_SHINE)
-	# The eyes and a brow line, carved in.
-	var eye := (POISONED_DARK if sick else MASK_EYE) if fill > 0.45 else OUTLINE
-	_hp(at, 5, 10, 5, 3, eye)
-	if not half:
-		_hp(at, 14, 10, 5, 3, eye)
-	_hp(at, 11, 15, 2, 4, Color(eye, 0.6))
+		_hp(at, 6, 6, 2, 2, POISONED_SHINE if sick else LEAF_SHINE)
+		_hp(at, 4, 9, 2, 4, POISONED_SHINE if sick else LEAF_SHINE)
+	# The midrib from stem to tip, and two pairs of veins off it, in the leaf's
+	# dark tone where it is filled and the empty leaf's light tone where it is not.
+	var vein := POISONED_DARK if sick else LEAF_VEIN
+	# Above the fill line the leaf is empty, and so are its veins.
+	var cut := 28.0 * (1.0 - clampf(fill, 0.0, 1.0))
+	var stem_top := 4.0
+	if cut > stem_top:
+		_hp(at, 11, stem_top, 2, minf(cut, 27.0) - stem_top, MASK_EMPTY_LIGHT)
+	if cut < 27.0:
+		_hp(at, 11, maxf(cut, stem_top), 2, 27.0 - maxf(cut, stem_top), vein)
+	for v: Array in LEAF_VEINS:
+		if half and v[0] > 0:
+			continue
+		var x0: float = 11.0 if v[0] < 0 else 13.0
+		for k in int(v[2]):
+			var y: float = v[1] - k
+			_hp(at, x0 + v[0] * (k + 1) - (1 if v[0] < 0 else 0), y, 1, 1, vein if y >= cut else MASK_EMPTY_LIGHT)
 
 
 ## The magic bar: a framed glass tube, ticked every 10 MP, with a gem cap.

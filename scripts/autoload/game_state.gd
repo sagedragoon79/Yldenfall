@@ -720,7 +720,7 @@ func grant_stat_item(kind: String, p: Player) -> String:
 			data.max_hp = int(data.max_hp) + LIFE_FRUIT_HP
 			refresh_stats(p)
 			p.restore()
-			return "Your health grows. Two fruits make a new mask."
+			return "Your health grows. Two fruits grow a new leaf."
 		"mana_dew":
 			data.max_mp = float(data.max_mp) + MANA_DEW_MP
 			refresh_stats(p)

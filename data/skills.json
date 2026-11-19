@@ -23,7 +23,7 @@
 		{"id": "quick_draught", "branch": "Wanderer", "name": "Quick Draught", "cost": 1, "needs": "gold_sense", "desc": "You drink a Sapflask 40% faster."},
 		{"id": "second_stride", "branch": "Wanderer", "name": "Second Stride", "cost": 2, "uses": "stride", "needs": "quick_draught", "desc": "Dash twice in the air before you land."},
 		{"id": "treasure_sense", "branch": "Wanderer", "name": "Treasure Sense", "cost": 2, "needs": "second_stride", "desc": "The map marks rooms you know that still hold something to find."},
-		{"id": "resilience", "branch": "Wanderer", "name": "Resilience", "cost": 2, "needs": "treasure_sense", "desc": "+1 mask of health."},
+		{"id": "resilience", "branch": "Wanderer", "name": "Resilience", "cost": 2, "needs": "treasure_sense", "desc": "+1 leaf of health."},
 		{"id": "last_stand", "branch": "Wanderer", "name": "Last Stand", "cost": 2, "needs": "resilience", "desc": "Below 20% health, you take 25% less damage."},
 		{"id": "second_wind", "branch": "Wanderer", "name": "Second Wind", "cost": 3, "needs": "last_stand", "desc": "Once between rests, a killing blow leaves you at 1 HP."},
 		{"id": "wanderers_grace", "branch": "Wanderer", "name": "Wanderer's Grace", "cost": 3, "uses": "stride", "needs": "second_wind", "desc": "A dash lets harm pass through you 0.1 s longer, and every kill gives back your air dashes."}
