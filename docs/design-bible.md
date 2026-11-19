@@ -2661,6 +2661,16 @@ The pass 605 grade found that "the HUD's health masks copy Hollow Knight's masks
 
 The code keeps its old names (`MASK_HP`, `_draw_mask`), which no player sees. `test_health_is_a_sprig_of_leaves` checks the shape (one tip, a stem, the old cell), the amber and the poison green, the leaf's veins, and that no quoted string in the data tables or the scripts that print a fruit's, a page's or a pickup's words says mask.
 
+### 12.87 A bounce-pod is a ripe gourd (pass 610)
+
+The pass 605 grade found "a flat green placeholder block" in the Canopy Bridge. It was the bounce-pod (3.2, 6.6): eleven plain rectangles in three leaf greens, in a room whose backdrop, mantis and knight are green too. The pod is now pixel-drawn in code (`BouncePod.pixels`, 13.1), like the thorn bulb (12.32):
+
+- **The bulb.** A plump round gourd 34 half-pixels wide and 20 tall (the old size, so its top, its catch and its throw are unchanged, 6.6), shaded as a ball lit from the upper left over a six-step ramp of pale gold (6e5135 to f7f1de), with four ribs that follow its curve and the dried flower's dark nub on its crown.
+- **The sepals.** Three green leaves hold its foot, one in front and one curling out to each side, each with a dark midrib and a lit edge. They are a collar, under half the area of the bulb that shows above them.
+- **Why gold.** A pod grows among leaves, and a thing to jump on must read before the hero reaches it. Ripe gold on green does; the coins it might be taken for are a tenth its size.
+
+Judged by eye at 1x, 2x and 6x in the Canopy Bridge. `tests/test_bounce_pod.gd` checks that every tone is a master palette value and is used, that the pod narrows to its crown over at least five widths with its block corners empty, that no tone covers half the bulb, that the upper left is lit and the lower right in shade, that the bulb's tones are warm and the sepals stay at its foot, and that a pod in a room keeps its top.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
