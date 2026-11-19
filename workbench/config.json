@@ -16,7 +16,6 @@
   "clipDir": "clips",
   "catalogDir": "catalog",
   "running": "(?:[Gg]odot[^\\n]*?|python3?(?:\\.exe)?[^\\n]*?)(test_runner|shot\\.tscn|things\\.tscn|lineup\\.tscn|capture_all|build_catalog|make_clips)",
-  "site": "https://yldenfall-workbench.vercel.app",
   "theme": {
     "gold": "#ffd24a",
     "goldDim": "#9a7d2c",

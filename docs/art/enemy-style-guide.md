@@ -187,8 +187,8 @@ What worked for the hero and the Shade Knight, cheapest first:
    make **only the base first** — the east profile and the south-east three-quarter stance, a few
    generations — and generate no animations (turns included) until a workbench note from Sean
    approves it. Save one review picture to `shots/<character>-base-for-approval.png` (both views at
-   1x and 4x, beside the current in-game sprite and the hero for scale), run
-   `python workbench/deploy.py` (`PYTHONUTF8=1`) so it shows on the hosted Shots tab, and put
+   1x and 4x, beside the current in-game sprite and the hero for scale), where it shows on the
+   workbench's Shots tab (the local workbench; the hosted copy was retired on 2026-11-18), and put
    "Waiting for Sean's OK on the `<character>` base" under `stuck`. A note asking for changes means
    a retake and a new review picture. While waiting, make bases for the next characters in the
    order (no more than three waiting at once) and otherwise do non-art work.
