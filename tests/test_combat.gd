@@ -898,7 +898,7 @@ func test_the_hit_spark_plays_the_vfx_sheet() -> void:
 		check(maxf(used.x, used.y) <= pair[1] and solid / (HitSpark.DENSITY * HitSpark.DENSITY) <= pair[2],
 				"the opening flash stays small (%s across, %d solid world pixels)" % [used, solid / 4])
 	await frames(9)
-	check(light.frame() >= 3 and light.frame() <= 4, "and opens into the ring and the spray (%d)" % light.frame())
+	check(light.frame() >= 3 and light.frame() <= 4, "and throws its spray (%d)" % light.frame())
 	await frames(int(light.life * 60.0))
 	check(not is_instance_valid(light) and not is_instance_valid(heavy), "then both are gone")
 	# The code look stays as the fallback.
@@ -907,6 +907,48 @@ func test_the_hit_spark_plays_the_vfx_sheet() -> void:
 	check(code._sheet.is_empty() and code.life == HitSpark.LIFE and code.frame() == -1, "the code look is the fallback")
 	HitSpark.trial = ""
 	code.queue_free()
+
+
+func test_the_hit_spark_is_no_clock_face() -> void:
+	# Pass 609: the pass 605 grade read the spark as "a clock-face lock-on marker":
+	# after its star the VFX sheet opened into a ring with ticks inside and crosshair
+	# spikes. tools/art/sparkfix.py takes them out; the star burns down and the hot
+	# sparks fly forward and fall. No later frame holds a ring, and nothing is lit
+	# up and behind the contact past the star's own reach, where the ticks and the
+	# spikes were.
+	for base: String in [HitSpark.SHEET, HitSpark.HEAVY_SHEET]:
+		var sheet := HitSpark.load_sheet(base)
+		var piv: Vector2 = sheet.pivot
+		var star := (sheet.frames[0] as Texture2D).get_image().get_used_rect()
+		var reach := maxf(maxf(absf(star.position.x - piv.x), absf(star.end.x - piv.x)),
+				maxf(absf(star.position.y - piv.y), absf(star.end.y - piv.y)))
+		var rings := 0
+		var behind := 0
+		var lit_star := {}
+		var first := (sheet.frames[0] as Texture2D).get_image()
+		for y in first.get_height():
+			for x in first.get_width():
+				if first.get_pixel(x, y).a > 0.0:
+					var rr := roundi((Vector2(x, y) - piv).length())
+					lit_star[rr] = lit_star.get(rr, 0) + 1
+		for i in range(1, sheet.frames.size()):
+			var img := (sheet.frames[i] as Texture2D).get_image()
+			var counts := {}
+			for y in img.get_height():
+				for x in img.get_width():
+					if img.get_pixel(x, y).a == 0.0:
+						continue
+					var d := Vector2(x, y) - piv
+					var r := roundi(d.length())
+					counts[r] = counts.get(r, 0) + 1
+					if d.x < -4.0 and d.y < -4.0 and d.length() > reach + 1.0:
+						behind += 1
+			for r: int in counts:
+				# A ring lights most of a circle beyond what the star itself lights there.
+				if r >= 8 and counts[r] - lit_star.get(r, 0) >= PI * r:
+					rings += 1
+		check(rings == 0, "%s: no frame draws a ring (%d)" % [base.get_file(), rings])
+		check(behind == 0, "%s: nothing lit up and behind the contact (%d px)" % [base.get_file(), behind])
 
 
 func test_the_slash_smear_plays_the_vfx_sheet() -> void:
