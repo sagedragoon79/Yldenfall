@@ -567,6 +567,32 @@ func test_pixel_font_covers_ascii_and_scales_by_whole_numbers() -> void:
 	check(lines.size() > 1 and widest <= 120.0, "wrapping keeps lines inside the box (%d lines, %.0f px)" % [lines.size(), widest])
 
 
+## The pixel font's zero is plain (pass 608): the pass 605 grade read the gold
+## counter's slashed zero as a debug glyph. Nothing is drawn inside its ring, and
+## it is narrower than "O", so the two still never read alike.
+func test_the_pixel_fonts_zero_is_plain() -> void:
+	var meta: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(PixelFont.META))
+	var img := (load(PixelFont.PNG) as Texture2D).get_image()
+	var zero: Dictionary = meta.glyphs[str("0".unicode_at(0))]
+	var oh: Dictionary = meta.glyphs[str("O".unicode_at(0))]
+	var x0 := int(zero.x)
+	var w := int(zero.w)
+	# Caps and digits sit on rows 1 to 7; the ring is the outer columns and the
+	# top and bottom rows, so rows 2 to 6 between the side columns must be clear.
+	var inside := 0
+	for y in range(2, 7):
+		for x in range(x0 + 1, x0 + w - 1):
+			if img.get_pixel(x, y).a > 0.5:
+				inside += 1
+	check(inside == 0, "nothing is drawn inside the zero's ring (%d inked pixels)" % inside)
+	var sides := 0
+	for y in range(2, 7):
+		if img.get_pixel(x0, y).a > 0.5 and img.get_pixel(x0 + w - 1, y).a > 0.5:
+			sides += 1
+	check(sides == 5, "it is still a closed ring, both sides inked (%d of 5 rows)" % sides)
+	check(w < int(oh.w), "and it is narrower than O (%d against %d)" % [w, int(oh.w)])
+
+
 ## With the pixel font, every page anyone says still fits the dialog box.
 func test_every_npc_line_fits_the_dialog_box() -> void:
 	var npcs: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/npcs.json"))
