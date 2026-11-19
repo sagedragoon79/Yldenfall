@@ -5,8 +5,9 @@ extends Node2D
 ## stops the game clock it counts down on, so the frozen frame shows the impact.
 ##
 ## Two looks (pass 529, bible 6.7): the code-drawn rays below, or a PixelLab VFX-tool
-## sheet (assets/vfx/blade_spark.png, heavy_spark.png: a white-hot disc that opens into a
-## ring while hot sparks spray forward and fall, 7 frames at 24 fps). SHEET_SHIPPED holds
+## sheet (assets/vfx/blade_spark.png, heavy_spark.png: a hot star that burns down while
+## sparks spray forward and fall, 7 frames at 24 fps; its ring, read as a clock face, was
+## taken out in pass 609 by tools/art/sparkfix.py). SHEET_SHIPPED holds
 ## the kept decision; the game option --spark-look=code|sheet forces one for a capture.
 
 ## The kept decision after the pass-529 trial (see docs/loop/pass-529.md).
