@@ -188,3 +188,29 @@ func test_a_struck_foe_keeps_a_dark_edge() -> void:
 	check(c.v < Enemy.TELL_TINT.v * 0.2, "never to be taken for a tell's warm rim")
 	await frames(14)
 	check(not h.hit_rim_drawn() and not h.drawn_white(), "and it goes with the flash")
+
+
+## Pass 607 (bible 6.7): the pass 605 grade still read the struck foe as "a
+## see-through ghost": 40 to 45 percent of white over a dark foe made a flat
+## lavender-grey near the backdrop's hue. The soft phase is now 0.3 of a warm
+## cream, so the foe keeps most of its own colors; the pop stays white.
+func test_a_struck_foe_keeps_its_own_colors_through_the_flash() -> void:
+	var h := _hornet()
+	await frames(2)
+	h.take_hit(1, Vector2(1, 0))
+	var pop := h.flash_overlay(true)
+	check(pop.is_equal_approx(Color(1, 1, 1, Enemy.SHEET_WHITE)), "the frame the blow lands is still the white pop")
+	await frames(2)
+	var soft := h.flash_overlay(true)
+	check(soft.a <= 0.3 + 0.001, "after it, the overlay covers at most 30 percent (%.2f)" % soft.a)
+	check(soft.r >= soft.g and soft.g > soft.b, "in a warm cream, not white (%s)" % soft)
+	var t := Enemy.SOFT_TINT
+	check(t.r > t.b + 0.15 and t.v > 0.9, "a pale warm tint")
+	# A dark violet foe under the soft phase stays well below the pale grey a ghost reads as.
+	var violet := Color("3a2f4a")
+	var seen := violet.lerp(Color(t, 1.0), soft.a)
+	check(seen.v < 0.5 and seen.r > seen.b, "a dark violet foe stays dark and turns warm, not lavender (%s)" % seen)
+	h.wash(true)
+	var mat := h.material as ShaderMaterial
+	check(mat != null and (mat.get_shader_parameter("tint") as Color).is_equal_approx(t), "a code-drawn foe's soft wash takes the same tint")
+	await frames(12)

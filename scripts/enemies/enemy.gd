@@ -24,7 +24,12 @@ const WASH_SHADER := preload("res://shaders/wash.gdshader")
 ## pale enough that the foe's inner lines still read. The two `SHEET_` values are
 ## the same pair for a foe drawn from a sheet (the alpha of its white overlay).
 const FLASH_WASH := 0.72
-const FLASH_SOFT_WASH := 0.4
+## Since pass 607 the soft phase is lighter and warm: the pass 605 grade still read the
+## struck foe as "a see-through ghost", because 40 to 45 percent of white over a dark
+## foe made a flat lavender-grey near the backdrop's own hue. At 0.3 of a warm cream
+## (`SOFT_TINT`) the foe keeps most of its colors and reads lit by the blow.
+const FLASH_SOFT_WASH := 0.3
+const SOFT_TINT := Color(1.0, 0.92, 0.76)
 ## The recoil (bible 6.7, pass 592): through its hitstun a foe drawn from a sheet
 ## leans away from the blow, its head thrown back along the push (`RECOIL_LEAN`, a
 ## shear: world pixels across per pixel up) and squashed wide (`RECOIL_SQUASH`),
@@ -33,7 +38,7 @@ const FLASH_SOFT_WASH := 0.4
 const RECOIL_LEAN := 0.3
 const RECOIL_SQUASH := 0.1
 const SHEET_WHITE := 0.85
-const SHEET_SOFT_WHITE := 0.45
+const SHEET_SOFT_WHITE := 0.3
 ## A tell's pulse (bible 6.7, passes 585 and 586) is a warm tint and a rim, never
 ## a white cutout. A foe drawn from a sheet wears a rim of `TELL_TINT` one pixel
 ## wide (`TELL_RIM`), which carries the warning, and only a light tint over its body
@@ -574,6 +579,7 @@ func wash(on: bool) -> void:
 		_soft_wash_material = ShaderMaterial.new()
 		_soft_wash_material.shader = WASH_SHADER
 		_soft_wash_material.set_shader_parameter("amount", FLASH_SOFT_WASH)
+		_soft_wash_material.set_shader_parameter("tint", SOFT_TINT)
 		_tell_wash_material = ShaderMaterial.new()
 		_tell_wash_material.shader = WASH_SHADER
 		_tell_wash_material.set_shader_parameter("amount", TELL_WASH)
@@ -689,4 +695,4 @@ func flash_overlay(white: bool, k := 1.0) -> Color:
 		_sheet_white_alpha = SHEET_TELL
 		return Color(TELL_TINT, SHEET_TELL * k)
 	_sheet_white_alpha = SHEET_SOFT_WHITE if soft else SHEET_WHITE
-	return Color(1, 1, 1, _sheet_white_alpha * k)
+	return Color(SOFT_TINT if soft else Color.WHITE, _sheet_white_alpha * k)
