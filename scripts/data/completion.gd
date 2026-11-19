@@ -134,7 +134,7 @@ static func journey_rows(stats: Dictionary, found: Array) -> Array:
 		share.call("Hidden rooms", "secrets", "Rooms behind false walls. The Seer's Lens shows their seams."),
 		share.call("Treasures", "treasures", "Chests and finds that lie in the rooms. Treasure Sense marks the map."),
 		share.call("Guardians beaten", "bosses", "The great foes and their lesser kin, each in an arena of its own."),
-		share.call("Life Fruits", "fruits", "In the rooms, on each grocer's shelf, and in a guardian's keeping. Two grow a mask."),
+		share.call("Life Fruits", "fruits", "In the rooms, on each grocer's shelf, and in a guardian's keeping. Two grow a leaf."),
 		share.call("Mana Dew", "dews", "In the rooms, on each grocer's shelf, and in the guardians' keeping."),
 		share.call("Skill points", "points", "From ranks, guardians and whole rings. The tree costs more than all of them."),
 	]

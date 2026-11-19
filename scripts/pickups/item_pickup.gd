@@ -37,7 +37,7 @@ const INFO := {
 	"potion_shard": {"title": "Potion Shard", "text": "", "color": Color("ff6a6a")},
 	"grain_shard": {"title": "Grain Shard", "text": "", "color": Color("b58cff")},
 	"meteor_shard": {"title": "Stillglass Shard", "text": "", "color": Color("e04aa8")},
-	"elven_helm": {"title": "Elven Helm", "text": "One more mask, and 10% less damage on top of your armor. Your shield stays in hand.", "color": Color("a8d4cc")},
+	"elven_helm": {"title": "Elven Helm", "text": "One more leaf, and 10% less damage on top of your armor. Your shield stays in hand.", "color": Color("a8d4cc")},
 	"glass_key": {"title": "Glass Key", "text": "Opens the Glass door. There is only one.", "color": Color("9a6ad8")},
 	"rune_dagger": {"title": "Rune Dagger", "text": "Throw (B) flicks it; Up throws it high. It comes back, so it never runs out. It is in your Projectile slot (Equipment).", "color": Color("7ff0e0")},
 	"pendant": {"title": "Acorn Charm", "text": "An old charm of the Tree's folk. Your blade strikes a tenth harder.", "color": Color("e8c06a")},

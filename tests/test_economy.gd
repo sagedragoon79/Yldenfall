@@ -2711,7 +2711,7 @@ func test_every_skill_page_names_the_number_it_gives() -> void:
 			"gold_sense": said[id] = "%d%% more gold" % pct.call(p.gold_mult - 1.0)
 			"clear_mind": said[id] = "+%d max MP" % roundi(p.max_mp - base_mp)
 			"deep_pockets": said[id] = "+%d Sapflask charge" % (p.flask_max - base_flask)
-			"resilience": said[id] = "+%d mask of health" % ((p.max_hp - base_hp) / 20)
+			"resilience": said[id] = "+%d leaf of health" % ((p.max_hp - base_hp) / 20)
 	GameState.data.skills = saved
 	GameState.refresh_stats(p)
 	said["bloodletting"] = "heals you %d HP" % Player.BLOODLETTING_HEAL
