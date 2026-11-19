@@ -78,8 +78,8 @@ http://localhost:8977.
   `python3 workbench/capture/capture_all.py --redo --only=rooms` (or `things`, `people`, `gear`,
   `dyes`, `arenas`, `shops`, `fights`: real hits and tells, for the grade), then `python3 workbench/capture/build_catalog.py`. Clips:
   `python3 workbench/capture/make_clips.py`. Look at what they captured before trusting it.
-- It is also hosted at https://yldenfall-workbench.vercel.app behind one password (in
-  `workbench/.wb_pass`, never committed). `python -u workbench/push.py` (with `PYTHONUTF8=1` on
-  Windows) keeps it live and pulls Sean's notes from it; `workbench/deploy.py` redeploys pictures.
+- The workbench is local only. A hosted copy on Vercel (with `push.py` and `deploy.py`) was retired
+  on 2026-11-18: its sync posted the whole live state every minute and spent most of the account's
+  transfer allowance. Don't bring it back without asking Sean.
 - After a meaningful pass, get an independent grade: 8 to 12 screenshots across the game to a
   separate agent with no hints (two to four of them fight frames, bible 12.0), scored out of 10 against Hollow Knight; add it to `workbench/grades.json`.

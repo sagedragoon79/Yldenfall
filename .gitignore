@@ -8,13 +8,11 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
-# Workbench: the site password, Vercel state, and
-# the captured pictures and clips, which capture_all.py and make_clips.py rebuild
+# Workbench: the retired hosted copy's password and Vercel state (2026-11-18; left on
+# disk on some PCs, so still ignored), and the captured pictures and clips, which
+# capture_all.py and make_clips.py rebuild
 workbench/.wb_pass
-workbench/vercel/.vercel
-workbench/vercel/.env.local
-workbench/vercel/public/
-workbench/vercel/node_modules/
+workbench/vercel/
 workbench/catalog/*/
 workbench/catalog/catalog.json
 workbench/clips/*
