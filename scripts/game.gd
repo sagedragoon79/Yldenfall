@@ -44,7 +44,7 @@ extends Node2D
 ##   --coins                    lay a 1, 5, 25 and 100 gold coin ahead of the player (pass 199)
 ##   --glove                    wear a War Glove (a rare drop) from the start
 ##   --shot-thrust=N            thrust (the Blade skill) on frame N
-##   --wyrm-rig                 the Haar Wyrm on its skeleton (WyrmRig, a prototype) in place of the code-drawn one
+##   --wyrm-drawn               the Haar Wyrm's code-drawn heads and necks, in place of its skeleton (WyrmRig), to compare
 ##   --wyrm-seed=N              the Haar Wyrm's breaths in the same order every run (to film the two side by side)
 ##   --wyrm-reel                walk the Haar Wyrm through every state for a film: a doused head, the rage,
 ##                              a head falling limp, and its death
@@ -163,7 +163,7 @@ func _ready() -> void:
 	ui.add_child(fader)
 
 	PlayerVisual.forced = _args.get("shot-pose", "")
-	HaarWyrm.use_rig = _args.has("wyrm-rig")
+	HaarWyrm.use_rig = not _args.has("wyrm-drawn")
 	HaarWyrm.seed_with = int(_args.get("wyrm-seed", "0"))
 	if _args.has("room"):
 		var room_id: String = _args["room"]

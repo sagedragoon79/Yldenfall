@@ -1,6 +1,6 @@
 extends TestSuite
-## WyrmRig: the Haar Wyrm on a skeleton (the rig prototype, Sean 2026-11-19).
-## The fight is covered in test_boss.gd; these cover the rig that can draw it.
+## WyrmRig: the Haar Wyrm on a skeleton (design bible 8.4; Sean, 2026-11-19).
+## The fight is covered in test_boss.gd; these cover the rig that draws it.
 
 const SPRING_ROOM := "haar/spring_of_haar"
 
@@ -111,9 +111,40 @@ func test_wyrm_rig_head_shows_what_it_is_doing() -> void:
 	rig.queue_free()
 
 
-func test_wyrm_rig_is_worn_only_when_asked() -> void:
-	check(not HaarWyrm.use_rig, "the rig is off unless the game is started with --wyrm-rig")
-	HaarWyrm.use_rig = true
+func test_wyrm_rig_opens_its_eyes_in_the_dark() -> void:
+	var rig := _rig()
+	for i in 3:
+		var n := rig.necks[i]
+		var at: Vector2 = HaarWyrm.HIDDEN[i]
+		rig.pose_head(i, at, {"mode": "hidden"}, 0.016)
+		check(not n.head_skin.visible and n.eyes == 0.0, "head %d shows nothing in the tunnel before the fight" % i)
+		rig.pose_head(i, at, {"mode": "hidden", "intro": float(HaarWyrm.EYES_AT[i]) - 0.05}, 0.016)
+		check(not n.shown, "nor in the reveal before its own eyes open")
+		rig._time = 1.0 - i
+		rig.pose_head(i, at, {"mode": "hidden", "intro": float(HaarWyrm.EYES_AT[i]) + WyrmRig.EYES_OPEN}, 0.016)
+		check(n.shown and is_equal_approx(n.eyes, 1.0), "head %d's eyes open at its moment in the reveal (%.2f)" % [i, n.eyes])
+		check(n.skins[-1].modulate.r < 0.3, "and its neck is still in the dark (%.2f)" % n.skins[-1].modulate.r)
+		if n.view == "side":
+			check(n.shade_skin.visible and not n.head_skin.visible, "a side head waits as its shadowed twin")
+		else:
+			check(n.clip == "wake" and n.frame == 2, "the middle head's eyes have opened (%s %d)" % [n.clip, n.frame])
+			rig.pose_head(i, at, {"mode": "hidden", "intro": float(HaarWyrm.SNORTS_AT[i]) + WyrmRig.SNORT * 0.5}, 0.016)
+			check(n.frame > 4, "and it snorts when its turn comes (frame %d)" % n.frame)
+	# Coming out, the shadow draws off: half way, a side head's twin is half gone.
+	var e := rig.necks[2]
+	rig.pose_head(2, HaarWyrm.HOMES[2], {"mode": "emerge", "time": HaarWyrm.EMERGE_TIME * 0.5, "face": 1.0}, 0.016)
+	check(e.head_skin.visible and e.shade_skin.visible and absf(e.shade_skin.modulate.a - 0.5) < 0.01, "the shadow draws off a side head as it comes out (%.2f)" % e.shade_skin.modulate.a)
+	var m := rig.necks[1]
+	rig.pose_head(1, HaarWyrm.HOMES[1], {"mode": "emerge", "time": HaarWyrm.EMERGE_TIME * 0.5}, 0.016)
+	check(m.clip == "recede" and m.frame > 4, "and off the middle head, in its own frames (%s %d)" % [m.clip, m.frame])
+	rig.pose_head(2, HaarWyrm.HOMES[2], {"mode": "idle", "face": 1.0}, 0.016)
+	check(not e.shade_skin.visible, "out in the arena a head wears no shadow")
+	rig.queue_free()
+
+
+func _wake(with_rig: bool) -> HaarWyrm:
+	var was := HaarWyrm.use_rig
+	HaarWyrm.use_rig = with_rig
 	var w := make_world({}, SPRING_ROOM)
 	w.player.max_hp = 9999
 	w.player.hp = 9999
@@ -127,19 +158,38 @@ func test_wyrm_rig_is_worn_only_when_asked() -> void:
 				z = b
 		if z != null:
 			break
-	HaarWyrm.use_rig = false
-	check(z != null and z.rig != null, "started with the rig, the Haar Wyrm builds it")
+	HaarWyrm.use_rig = was
+	return z
+
+
+func test_wyrm_rig_is_what_the_fight_wears() -> void:
+	check(HaarWyrm.use_rig, "the Haar Wyrm is drawn on its rig unless the game is started with --wyrm-drawn")
+	var z: HaarWyrm = await _wake(true)
+	check(z != null and z.rig != null, "the Haar Wyrm builds its rig")
 	if z == null or z.rig == null:
 		return
 	await frames(2)
+	check(z.rig.body_skin.modulate.a < 0.01, "the tunnel is black before the reveal: no body")
 	z.skip_intro()
 	for _f in 300:
 		await frames(1)
 		if z.state == "fight" and z.heads[2].mode == "idle":
 			break
 	await frames(30)
+	check(z.rig.body_skin.modulate.a > 0.99, "once the heads are out the body shows in the tunnel's dark")
 	for i in 3:
 		var h := z.heads[i]
 		var n := z.rig.necks[i]
 		check(n.head_skin.visible and n.head_skin.global_position.distance_to(h.global_position) < 0.01, "head %d's art rides on the head the fight moves and the player strikes" % i)
 		check(h.radius == 14.0, "the rig changes nothing about what can be hit")
+	var g := z.heads[2]
+	check(z.mouth_of(g).distance_to(z.rig.mouth(2, g.global_position, z._face(g))) < 0.01, "the geyser leaves the rigged head's jaws")
+
+
+func test_wyrm_rig_can_be_set_aside() -> void:
+	var z: HaarWyrm = await _wake(false)
+	check(z != null and z.rig == null, "with the rig off, the Haar Wyrm is its code-drawn self")
+	if z == null:
+		return
+	var g := z.heads[2]
+	check(z.mouth_of(g).distance_to(g.global_position + Vector2(z._face(g) * 22.0, 6.0)) < 0.01, "and its breath leaves where it always did")

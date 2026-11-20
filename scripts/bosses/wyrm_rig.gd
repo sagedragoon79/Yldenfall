@@ -1,8 +1,8 @@
 class_name WyrmRig
 extends Node2D
-## The Haar Wyrm on a skeleton: a prototype (Sean, 2026-11-19) to judge a rig against
-## drawing every frame. `HaarWyrm.use_rig` puts it in the fight in place of the
-## code-drawn heads and necks; the fight itself is untouched and still moves the heads.
+## The Haar Wyrm on a skeleton (design bible 8.4; Sean, 2026-11-19): how the fight is
+## drawn. It began as a prototype to judge a rig against drawing every frame, and Sean
+## kept it. `HaarWyrm` still runs the fight and moves the heads; this only shows them.
 ##
 ## The skeleton is a `Skeleton2D`: a body bone, and from each of the three stumps on its
 ## shoulders a chain of neck bones that ends in a head bone. Each bone carries one part
@@ -37,6 +37,13 @@ const STUMP_DIRS := [Vector2(-0.3, -1.0), Vector2(0.0, -1.0), Vector2(0.3, -1.0)
 const SHADOW := Color(0.2, 0.15, 0.24)
 const DRENCHED := Color(0.7, 0.88, 1.0)
 const LIMP := Color(0.6, 0.62, 0.61)
+const STEAM := Color("f4f7f6")
+const STEAM_HOT := Color("fff1dc")
+const DRIP := Color("9fd0f0")
+const EYE := Color("f4d24c")
+## The reveal (HaarWyrm.EYES_AT): how long a pair of eyes takes to open, and the snort.
+const EYES_OPEN := 0.4
+const SNORT := 1.2
 ## How much of a neck, from the stump, is still in the tunnel's dark.
 const SHADOW_REACH := 0.4
 ## How fast the belly of a neck catches up with its head.
@@ -63,6 +70,8 @@ class Neck:
 	var skins: Array[Sprite2D] = []
 	var head_bone: Bone2D
 	var head_skin: Sprite2D
+	## A side head's shadowed twin, laid over it while it is still in the tunnel's dark.
+	var shade_skin: Sprite2D
 	var head_layout := {}
 	## Each bone's section height in world pixels, and their sum.
 	var heights := PackedFloat32Array()
@@ -77,6 +86,11 @@ class Neck:
 	var frame := 0
 	var shown := false
 	var material: ShaderMaterial
+	## What the head was last told (see `pose_head`), for the steam and the drips.
+	var told := {}
+	var centre := Vector2.ZERO
+	## How far its eyes have opened in the reveal, while it is still in the tunnel.
+	var eyes := 0.0
 
 
 var skeleton: Skeleton2D
@@ -87,6 +101,7 @@ var layout := {}
 
 var _back: Node2D
 var _skin: Node2D
+var _fx: Node2D
 var _time := 0.0
 var _body_clip := "cloaked"
 var _body_time := 0.0
@@ -129,7 +144,14 @@ func _ready() -> void:
 	necks.sort_custom(func(a: Neck, b: Neck) -> bool: return a.index < b.index)
 	for n in necks:
 		_skin.move_child(n.head_skin, -1)
+		if n.shade_skin != null:
+			_skin.move_child(n.shade_skin, -1)
 	_skin.move_child(necks[1].head_skin, -1)
+	# Steam, drips and the glow in a throat, over everything.
+	_fx = Node2D.new()
+	_fx.name = "Fx"
+	_fx.draw.connect(_draw_fx)
+	add_child(_fx)
 
 
 func _bone(bone_name: String, parent: Node, length: float) -> Bone2D:
@@ -198,6 +220,13 @@ func _build_neck(i: int) -> Neck:
 	n.head_skin.material = n.material
 	_skin.add_child(n.head_skin)
 	_set_cell(n.head_skin, n.head_layout, 0)
+	if n.view == "side":
+		n.shade_skin = Sprite2D.new()
+		n.shade_skin.texture = n.head_skin.texture
+		n.shade_skin.region_enabled = true
+		n.shade_skin.scale = Vector2(ART, ART)
+		n.shade_skin.visible = false
+		_skin.add_child(n.shade_skin)
 	n.joints.resize(count + 1)
 	return n
 
@@ -258,7 +287,9 @@ func pose(boss: HaarWyrm, delta: float) -> void:
 			"mode": h.mode, "time": h.mode_time, "face": boss._face(h), "aim": h.aim, "breath": h.breath,
 			"weak": h.weak, "dead": h.dead, "white": 1.0 if h.flash > 0.0 else (0.6 if blink else 0.0),
 			"tell": boss.tell(boss._tell_of(h)), "fade": fade,
+			"intro": boss._intro_t if boss.state == "intro" else -1.0,
 		}, delta)
+	_fx.queue_redraw()
 
 
 func _pose_body(boss: HaarWyrm, delta: float, fade: float) -> void:
@@ -272,6 +303,11 @@ func _pose_body(boss: HaarWyrm, delta: float, fade: float) -> void:
 		_body_clip = want
 		_body_time = 0.0
 	_body_time += delta
+	# The tunnel is black until the heads come out of it.
+	if boss.state == "dormant":
+		fade = 0.0
+	elif boss.state == "intro":
+		fade = smoothstep(float(HaarWyrm.EMERGE_AT[0]) - 0.2, float(HaarWyrm.EMERGE_AT[2]) + HaarWyrm.EMERGE_TIME, boss._intro_t)
 	var clip: Dictionary = body["clips"][_body_clip]
 	var f := int(_body_time * float(clip["fps"])) % int(clip["count"])
 	_set_cell(body_skin, body, int(clip["start"]) + f)
@@ -292,10 +328,20 @@ func _pose_body(boss: HaarWyrm, delta: float, fade: float) -> void:
 func pose_head(i: int, centre: Vector2, s: Dictionary, delta: float) -> void:
 	var n := necks[i]
 	var mode: String = s.get("mode", "idle")
-	var shown := mode != "hidden"
+	n.told = s
+	n.centre = centre
+	# A head still in the tunnel shows nothing, until its eyes open in the reveal.
+	var intro: float = s.get("intro", -1.0)
+	var eyes := 0.0
+	if mode == "hidden" and intro >= 0.0:
+		eyes = clampf((intro - float(HaarWyrm.EYES_AT[i])) / EYES_OPEN, 0.0, 1.0)
+	n.eyes = eyes
+	var shown := mode != "hidden" or eyes > 0.0
 	for sp in n.skins:
 		sp.visible = shown
 	n.head_skin.visible = shown
+	if n.shade_skin != null:
+		n.shade_skin.visible = false
 	if not shown:
 		n.shown = false
 		return
@@ -310,6 +356,8 @@ func pose_head(i: int, centre: Vector2, s: Dictionary, delta: float) -> void:
 		n.trail = centre
 	n.rot = lerp_angle(n.rot, want, 1.0 - exp(-10.0 * delta))
 	_head_frame(n, mode, breath, time, float(s.get("tell", 1.0)))
+	if mode == "hidden":
+		_reveal_frame(n, intro)
 	n.head_skin.position = centre
 	n.head_skin.rotation = n.rot
 	n.head_skin.flip_h = n.view == "side" and face < 0.0
@@ -362,7 +410,11 @@ func pose_head(i: int, centre: Vector2, s: Dictionary, delta: float) -> void:
 	var out := 1.0
 	if mode == "emerge":
 		out = clampf(time / HaarWyrm.EMERGE_TIME, 0.0, 1.0)
+	elif mode == "hidden":
+		out = 0.0
 	var fade: float = s.get("fade", 1.0)
+	if mode == "hidden":
+		fade *= eyes
 	n.material.set_shader_parameter("white", float(s.get("white", 0.0)))
 	for k in n.skins.size():
 		var sp := n.skins[k]
@@ -370,7 +422,21 @@ func pose_head(i: int, centre: Vector2, s: Dictionary, delta: float) -> void:
 		sp.rotation = (n.joints[k + 1] - n.joints[k]).angle() + float(sp.get_meta("lean"))
 		var lit := smoothstep(0.0, SHADOW_REACH, float(k) / n.skins.size()) * out
 		sp.modulate = Color(SHADOW.lerp(Color.WHITE, lit) * state_tint, fade)
-	n.head_skin.modulate = Color(SHADOW.lerp(Color.WHITE, out) * state_tint, fade)
+	# The head's own shadow is in its art: the middle head's clips carry it, and a side
+	# head wears its shadowed twin, which draws off as it comes out.
+	n.head_skin.modulate = Color(state_tint, fade)
+	if n.shade_skin != null and out < 1.0:
+		n.shade_skin.visible = true
+		n.shade_skin.position = n.head_skin.position
+		n.shade_skin.rotation = n.head_skin.rotation
+		n.shade_skin.flip_h = n.head_skin.flip_h
+		# It blinks while it waits.
+		var blink := mode == "hidden" and fmod(_time + i, 4.0) < 0.12
+		var twin: Dictionary = n.head_layout["clips"]["shut" if blink else "shadow"]
+		_set_cell(n.shade_skin, n.head_layout, int(twin["start"]))
+		n.shade_skin.modulate = Color(1, 1, 1, (1.0 - out) * fade)
+		if mode == "hidden":
+			n.head_skin.visible = false
 
 
 ## How far the head is turned, nose down for a side head (in radians).
@@ -432,6 +498,10 @@ func _head_frame(n: Neck, mode: String, breath: String, time: float, tell: float
 				f = 5
 	else:
 		match mode:
+			"emerge":
+				# The shadow draws off it as it comes out.
+				clip = "recede"
+				f = int(clampf(time / HaarWyrm.EMERGE_TIME, 0.0, 1.0) * (int(clips[clip]["count"]) - 1))
 			"tell":
 				# The jaws open slowly on the glow in its throat.
 				clip = "glow"
@@ -448,6 +518,67 @@ func _head_frame(n: Neck, mode: String, breath: String, time: float, tell: float
 	n.clip = clip
 	n.frame = mini(f, int(clips[clip]["count"]) - 1)
 	_set_cell(n.head_skin, n.head_layout, int(clips[clip]["start"]) + n.frame)
+
+
+## The middle head in the reveal: its eyes open, it waits, and it snorts.
+func _reveal_frame(n: Neck, intro: float) -> void:
+	if n.view == "side":
+		return
+	var clips: Dictionary = n.head_layout["clips"]
+	var count := int(clips["wake"]["count"])
+	var opened := clampf((intro - float(HaarWyrm.EYES_AT[n.index])) / EYES_OPEN, 0.0, 1.0)
+	var snort := (intro - float(HaarWyrm.SNORTS_AT[n.index])) / SNORT
+	var f := int(opened * 2.0)
+	if snort >= 1.0:
+		f = count - 1
+	elif snort > 0.0:
+		f = 2 + int(snort * (count - 3))
+	elif fmod(_time + n.index, 4.0) < 0.12 and opened >= 1.0:
+		f = 0
+	n.clip = "wake"
+	n.frame = clampi(f, 0, count - 1)
+	_set_cell(n.head_skin, n.head_layout, int(clips["wake"]["start"]) + n.frame)
+
+
+## Steam at the jaws, the glow in the geyser's throat and the drips off a doused head.
+func _draw_fx() -> void:
+	for n in necks:
+		if not n.shown or n.told.is_empty():
+			continue
+		var s := n.told
+		var mode: String = s.get("mode", "idle")
+		var face: float = s.get("face", 1.0)
+		var fade: float = s.get("fade", 1.0)
+		if mode == "hidden":
+			# The reveal: its eyes burn in the dark, so they read from across the room.
+			if fmod(_time + n.index, 4.0) >= 0.12:
+				for e: Array in n.head_layout["joints"]["eyes"]:
+					var off := (_point(e) - _cell_centre(n.head_layout)) * ART
+					if n.view == "side":
+						off.x *= face
+					var at := n.centre + off.rotated(n.rot)
+					_fx.draw_rect(Rect2(at - Vector2(4, 2), Vector2(8, 4)), Color(EYE, 0.16 * n.eyes))
+					_fx.draw_rect(Rect2(at - Vector2(2, 1), Vector2(4, 2)), Color(EYE, 0.85 * n.eyes))
+			continue
+		if s.get("dead", false):
+			continue
+		var jaws := n.centre + head_joint(n, "mouth", face, n.rot)
+		if s.get("weak", false):
+			# Water runs off it.
+			for k in 3:
+				var drop := fmod(_time * 1.6 + k * 0.37 + n.index * 0.2, 1.0)
+				var at := n.centre + Vector2(face * (-8.0 + k * 9.0), 10.0 + drop * 44.0)
+				_fx.draw_rect(Rect2(at, Vector2(2, 3)), Color(DRIP, (1.0 - drop) * 0.9 * fade))
+			continue
+		if mode in ["tell", "breathe"] or mode == "idle" and fmod(_time + n.index * 1.3, 5.0) < 0.5:
+			# A snort at rest, pressure before a breath.
+			for k in 3:
+				var ph := fmod(_time * 1.3 + k * 0.4, 1.0)
+				_fx.draw_circle(jaws + Vector2((k - 1) * 2.0, -ph * 28.0), 3.0 + ph * 4.0, Color(STEAM, (1.0 - ph) * 0.55 * fade))
+		if mode == "tell" and String(s.get("breath", "")) == HydraHead.GEYSER:
+			# The throat glows hotter as the pressure builds.
+			var heat := clampf(float(s.get("time", 0.0)) / float(s.get("tell", 1.0)), 0.0, 1.0)
+			_fx.draw_circle(jaws, 4.0 + heat * 5.0, Color(STEAM_HOT, (0.35 + 0.5 * heat) * fade))
 
 
 ## Lays neck `n` along a curve from `root` to `tip`: out of the stump along `up`, into

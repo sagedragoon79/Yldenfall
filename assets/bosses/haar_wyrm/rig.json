@@ -32,6 +32,16 @@
     "start": 40,
     "count": 21,
     "fps": 10
+   },
+   "shut": {
+    "start": 61,
+    "count": 1,
+    "fps": 1
+   },
+   "shadow": {
+    "start": 62,
+    "count": 1,
+    "fps": 1
    }
   },
   "joints": {
@@ -42,6 +52,12 @@
    "mouth": [
     126,
     116
+   ],
+   "eyes": [
+    [
+     104,
+     97
+    ]
    ]
   }
  },
@@ -72,6 +88,26 @@
     "start": 23,
     "count": 17,
     "fps": 10
+   },
+   "shut": {
+    "start": 40,
+    "count": 1,
+    "fps": 1
+   },
+   "shadow": {
+    "start": 41,
+    "count": 1,
+    "fps": 1
+   },
+   "wake": {
+    "start": 42,
+    "count": 17,
+    "fps": 10
+   },
+   "recede": {
+    "start": 59,
+    "count": 17,
+    "fps": 10
    }
   },
   "joints": {
@@ -82,6 +118,16 @@
    "mouth": [
     64,
     130
+   ],
+   "eyes": [
+    [
+     53,
+     102
+    ],
+    [
+     77,
+     102
+    ]
    ]
   }
  },

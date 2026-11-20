@@ -38,12 +38,20 @@ PARTS = {
         ('pull', HEAD + 'Pull_the_head_back_with_a_sharp_controlled_tension/east', 2, 10, 'idle'),
         ('roar', HEAD + 'The_dragon_head_let_s_out_a_silent_roar_in_the_dir/east', 1, 10, 'idle'),
         ('jaw', HEAD + 'The_jaw_drops_open_with_a_quick_snapping_motion_as/east', 2, 10, 'idle'),
+        # In the tunnel's dark, before the fight: eyes shut, then open.
+        ('shut', 'head/Eyes_closed/rotations/east.png', 1, 1, 'idle'),
+        ('shadow', 'head/Shadowed/rotations/east.png', 1, 1, 'idle'),
     ]),
     'head_south': ((128, 192), [
         ('idle', 'head/Idle/rotations/south.png', 1, 1, None),
         ('open', 'head/Mouth_wide_open_as_i/rotations/south.png', 1, 1, 'idle'),
         ('glow', HEAD + 'Open_the_jaw_wide_to_reveal_a_glowing_yellow_core/south', 2, 10, 'idle'),
         ('roar', HEAD + 'The_dragon_head_let_s_out_a_silent_roar_in_the_dir/south', 1, 10, 'idle'),
+        ('shut', 'head/Eyes_closed/rotations/south.png', 1, 1, 'idle'),
+        ('shadow', 'head/Shadowed/rotations/south.png', 1, 1, 'idle'),
+        # Its eyes open and it snorts; then the shadow draws off it as it comes out.
+        ('wake', 'head/Eyes_closed/animations/Eyes_open_and_the_dragon_snorts_a_small_burst_of_s/south', 1, 10, 'shut'),
+        ('recede', 'head/Shadowed/animations/Facing_south_the_entire_time_the_shadows_slowly_re/south', 1, 10, 'shadow'),
     ]),
     'body': ((256, 256), [
         ('idle', 'body/Idle/rotations/south.png', 1, 1, None),
@@ -58,8 +66,8 @@ PARTS = {
 # Joints, in the art pixels of each part's still (x right, y down, from the still's top left).
 JOINTS = {
     # Where the neck meets the skull, and where a breath leaves the jaws.
-    'head_east': {'neck': (30, 68), 'mouth': (84, 66), 'size': (92, 92)},
-    'head_south': {'neck': (46, 62), 'mouth': (46, 80), 'size': (92, 92)},
+    'head_east': {'neck': (30, 68), 'mouth': (84, 66), 'eyes': [(62, 47)], 'size': (92, 92)},
+    'head_south': {'neck': (46, 62), 'mouth': (46, 80), 'eyes': [(35, 52), (59, 52)], 'size': (92, 92)},
     # The three stumps on its shoulders (west, middle, east) and where it meets the ground.
     'body': {'stumps': [(85, 21), (127, 11), (168, 21)], 'ground': (128, 124), 'size': (256, 128)},
 }

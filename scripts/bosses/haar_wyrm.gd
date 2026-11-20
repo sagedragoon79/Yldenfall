@@ -20,8 +20,10 @@ extends Enemy
 ## the third. So to bring down the plume or the geyser head, fill the cistern
 ## before the fog and ride the fog out in the water.
 ##
-## Code-drawn at 2x for now (`_px` takes half-pixels); the art comes once the fight
-## plays right (Sean, 2026-11-09).
+## Drawn on a skeleton from Sean's PixelLab art (`WyrmRig`, since 2026-11-19): the body
+## crouches in the tunnel's dark and the three necks grow from its shoulders. The
+## code-drawn heads and necks below are what it wore while the fight was being built
+## (`_px` takes half-pixels); `use_rig` off, or --wyrm-drawn, brings them back.
 
 signal defeated
 
@@ -94,10 +96,10 @@ const DRENCHED_LIGHT := Color("9fb8c8")
 const DRENCHED_DARK := Color("4a5f6e")
 const LIMP := Color("3d4440")
 
-## The rig prototype (Sean, 2026-11-19): the heads, necks and body from Sean's PixelLab
-## art on a skeleton (`WyrmRig`), in place of the code-drawn ones. Off unless the game
-## is started with --wyrm-rig. The fight is the same either way.
-static var use_rig := false
+## The heads, necks and body are Sean's PixelLab art on a skeleton (`WyrmRig`). Off, they
+## are the code-drawn ones the fight was built with (the game's --wyrm-drawn, to compare).
+## The fight is the same either way, but for where the geyser leaves the jaws.
+static var use_rig := true
 ## Films: the breaths in the same order every run (0 leaves them to chance).
 static var seed_with := 0
 
@@ -655,9 +657,10 @@ func _draw_lair() -> void:
 			break
 		var half := inner if y >= 0.0 else sqrt(maxf(0.0, 1.0 - pow((y - (top + 100.0)) / 91.0, 2.0))) * inner
 		l.draw_rect(Rect2(-half, y, half * 2.0, 9.0), DARK)
-	# Something vast breathing in the dark: the barest glint of scale.
+	# Something vast breathing in the dark: the barest glint of scale. (The rig has
+	# the body itself there, and the heads' own eyes.)
 	var breathe := 0.5 + 0.5 * sin(t * 0.7)
-	for i in 7:
+	for i in (7 if rig == null else 0):
 		var a := i * 0.9 + t * 0.05
 		var c := Vector2(sin(a) * 60.0, 52.0 + cos(a * 1.3) * 26.0)
 		l.draw_arc(c, 22.0 + i * 3.0, PI * 1.1, PI * 1.9, 10, Color(SCALE_DARK, 0.12 + 0.08 * breathe), 2.0)
@@ -666,7 +669,7 @@ func _draw_lair() -> void:
 		for i in 3:
 			var on: float = clampf((_intro_t - EYES_AT[i]) / 0.4, 0.0, 1.0)
 			var h := heads[i]
-			if on > 0.0 and h.mode == "hidden":
+			if rig == null and on > 0.0 and h.mode == "hidden":
 				var e: Vector2 = HIDDEN[i] + Vector2(0, -4)
 				var blink := 0.0 if fmod(t + i, 4.0) < 0.12 else 1.0
 				l.draw_rect(Rect2(e + Vector2(-8, 0), Vector2(5, 2)), Color(EYE, on * blink))
