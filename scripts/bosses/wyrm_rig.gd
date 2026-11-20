@@ -33,8 +33,10 @@ const STACK_MAX := 0.76
 const BODY_AT := Vector2(0, 105)
 ## Which way each stump points.
 const STUMP_DIRS := [Vector2(-0.3, -1.0), Vector2(0.0, -1.0), Vector2(0.3, -1.0)]
-## The dark of the tunnel: the body and the root of each neck stand in it.
-const SHADOW := Color(0.2, 0.15, 0.24)
+## The dark of the tunnel: the body and the root of each neck stand in it. Measured from
+## Sean's own cloaked body against its lit art, so a neck's root is the color of the
+## shoulder it grows from.
+const SHADOW := Color(0.32, 0.24, 0.4)
 const DRENCHED := Color(0.7, 0.88, 1.0)
 const LIMP := Color(0.6, 0.62, 0.61)
 const STEAM := Color("f4f7f6")
@@ -313,7 +315,7 @@ func _pose_body(boss: HaarWyrm, delta: float, fade: float) -> void:
 	var f := int(_body_time * float(clip["fps"])) % int(clip["count"])
 	_set_cell(body_skin, body, int(clip["start"]) + f)
 	# The stills Sean cloaked are dark already; a lit clip is put in the same dark.
-	var tint := Color.WHITE if _body_clip == "cloaked" else SHADOW.lightened(0.25)
+	var tint := Color.WHITE if _body_clip == "cloaked" else SHADOW
 	if boss.state == "dying":
 		tint = SHADOW.lerp(Color.WHITE, clampf(boss.state_time / 0.5, 0.0, 1.0))
 	body_skin.modulate = Color(tint, fade)

@@ -77,8 +77,11 @@ JOINTS = {
     # behind the cheek spines, where the stub of neck was cut away.
     'head_east': {'neck': (47, 54), 'mouth': (84, 66), 'eyes': [(62, 47)], 'size': (92, 92)},
     'head_south': {'neck': (46, 62), 'mouth': (46, 80), 'eyes': [(35, 52), (59, 52)], 'size': (92, 92)},
-    # The three stumps on its shoulders (west, middle, east) and where it meets the ground.
-    'body': {'stumps': [(85, 21), (127, 11), (168, 21)], 'ground': (128, 124), 'size': (256, 128)},
+    # Where each neck is seated in its stump (west, middle, east), and where the body meets
+    # the ground. A stump's open rim is at (85, 21), (127, 11) and (168, 21); the first neck
+    # section's foot sits 19 px down inside it, as deep as each section sits in the one below,
+    # so it covers the hole and the join reads like every other join in the neck.
+    'body': {'stumps': [(85, 40), (127, 30), (168, 40)], 'ground': (128, 124), 'size': (256, 128)},
 }
 
 
