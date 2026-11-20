@@ -61,6 +61,8 @@ func test_a_hit_flash_pops_white_once_then_keeps_the_foes_lines() -> void:
 
 
 ## Pass 585 (bible 6.7): a tell is a warm tint and a rim, never a white cutout.
+## Since pass 611 (12.88) a sheet foe with a point for its weapon wears no tint at
+## all: the pulse is the rim near the weapon and a longer glint.
 func test_a_tells_pulse_is_its_own_tint_and_never_a_blows_white() -> void:
 	var h := _hornet()
 	await frames(2)
@@ -73,14 +75,15 @@ func test_a_tells_pulse_is_its_own_tint_and_never_a_blows_white() -> void:
 		await frames(1)
 		if h.state != "windup":
 			break
-		if h.white_strength() == Enemy.SHEET_TELL and h.tell_drawn():
+		if h.white_strength() == 0.0 and h.tell_drawn():
 			pulses += 1
+			check(h.glint_drawn() >= Enemy.GLINT_MIN + Enemy.GLINT_PULSE, "a lit beat's glint is the longer one")
 		elif h.white_strength() > 0.0:
 			other += 1
 		else:
 			rest += 1
 			check(not h.tell_drawn(), "between pulses the hornet is in its own colors")
-	check(pulses >= 2, "the tell pulses the hornet in the tell's tint (%d frames)" % pulses)
+	check(pulses >= 2, "the tell pulses on the hornet, its body in its own colors (%d frames)" % pulses)
 	check(other == 0, "and never in a blow's white or its pale tint")
 	check(rest >= 2, "the pulse goes off between beats (%d frames)" % rest)
 

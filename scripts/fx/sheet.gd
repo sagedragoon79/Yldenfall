@@ -83,6 +83,19 @@ static func draw(ci: CanvasItem, name: String, anim: String, frame: int, tint :=
 	ci.draw_texture_rect_region(tex, dest_rect(name), region(name, anim, frame), tint)
 
 
+## Draws only `part` of a frame (a rectangle in the cell's own pixels, clipped to
+## the cell), where the whole frame would have put it.
+static func draw_part(ci: CanvasItem, name: String, anim: String, frame: int, part: Rect2, tint := Color.WHITE, flat := false) -> void:
+	var s := get_sheet(name)
+	var p := part.intersection(Rect2(Vector2.ZERO, s.cell as Vector2))
+	if p.size.x <= 0.0 or p.size.y <= 0.0:
+		return
+	var tex: Texture2D = s.mask if flat else s.tex
+	var k: float = 1.0 / s.density
+	var src := Rect2(region(name, anim, frame).position + p.position, p.size)
+	ci.draw_texture_rect_region(tex, Rect2(dest_rect(name).position + p.position * k, p.size * k), src, tint)
+
+
 ## Where a frame lands, in world pixels relative to the origin: a density-2
 ## cell covers half as many world pixels as it has sheet pixels.
 static func dest_rect(name: String) -> Rect2:

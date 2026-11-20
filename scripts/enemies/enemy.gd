@@ -57,6 +57,53 @@ const RIM_STEPS: Array[Vector2] = [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1),
 ## outline's near-black, as a tell wears its warm one.
 const HIT_RIM_COLOR := Color("120c16")
 const HIT_RIM := 0.95
+## A tell gathers on the weapon (bible 12.88, pass 611). The pass 610 grade read the
+## rim and tint over a whole foe as "a flat yellow full-body tint, a debug overlay".
+## A foe drawn from a sheet with a point in `TELL_POINTS` keeps its body in its own
+## colors through a wind-up. A four-point glint sits on the weapon instead and grows
+## from `GLINT_MIN` to `GLINT_MAX` (the length of an arm, world pixels) over
+## `GLINT_GATHER` seconds, `GLINT_PULSE` longer on the pulse's lit beats. On those
+## beats the rim is drawn only near the weapon: once inside each square of
+## `TELL_REACH` (half its side, world pixels) at `TELL_REACH_RIM`, so it is nearly
+## solid at the weapon and gone a foe's shoulder away. A small foe's squares shrink
+## with its cell (`TELL_REACH_CELL`: the cell's shorter side, world pixels, at which
+## they are full size), so the rim never closes around a whole body.
+const GLINT_MIN := 2.5
+const GLINT_MAX := 7.0
+const GLINT_PULSE := 1.5
+const GLINT_GATHER := 0.35
+const GLINT_CORE := Color(1.0, 0.97, 0.86)
+const TELL_REACH: Array[float] = [5.0, 8.0, 12.0]
+const TELL_REACH_CELL := 56.0
+const TELL_REACH_RIM := 0.45
+## Where the glint sits: per sheet and wind-up animation, the striking end of the
+## weapon (or the horn, the jaws, the fist) in the cell's own pixels, placed by eye
+## on the frame. A list is a point per frame, for a wind-up whose weapon travels.
+## A sheet or animation with no point keeps the whole rim and the tint.
+const TELL_POINTS := {
+	"bark_knight": {"brace": Vector2(102, 82), "bare_brace": Vector2(114, 80)},
+	"blinkhop": {"windup": Vector2(57, 26)},
+	"bog_puffcap": {"windup": Vector2(40, 49)},
+	"clockwork_hound": {"wind": Vector2(90, 60)},
+	"crystal_dwarf": {"windup": Vector2(82, 44)},
+	"drowned_dwarf": {"heave": Vector2(84, 66)},
+	"gear_bat": {"windup": Vector2(79, 44)},
+	"hornet": {"windup": Vector2(50, 48)},
+	"iron_dwarf": {"windup": Vector2(50, 50)},
+	"leaf_mantis": {"unfold": [Vector2(116, 66), Vector2(115, 56), Vector2(109, 44), Vector2(109, 44)]},
+	"marsh_hag": {"hex": Vector2(64, 34)},
+	"meteor_slug": {"swell": Vector2(58, 40)},
+	"minecart_rider": {"rev": Vector2(92, 94)},
+	"mothling": {"windup": Vector2(50, 36)},
+	"rot_dwarf": {"windup": Vector2(38, 22)},
+	"sap_spitter": {"windup": Vector2(37, 30)},
+	"seed_bomber": {"windup": Vector2(62, 60)},
+	"shade_knight": {"thrust_tell": Vector2(66, 92), "cut_tell": Vector2(38, 30)},
+	"silt_adder": {"coil": Vector2(72, 44)},
+	"spire_sentinel": {"raise": [Vector2(89, 49), Vector2(70, 48), Vector2(67, 48), Vector2(67, 48)]},
+	"storm_harpy": {"windup": Vector2(84, 36)},
+	"thunder_beetle": {"charge": Vector2(98, 44)},
+}
 
 @export var max_hp := 24
 @export var contact_damage := 20
@@ -157,6 +204,10 @@ var _sheet_white_alpha := 0.0
 var _tell_drawn := false
 ## Whether this foe's last sheet drawing wore the dark rim of a hit flash (pass 602).
 var _hit_rim_drawn := false
+## The arm of the glint this foe's last sheet drawing wore, in world pixels (0: none),
+## and where it sat, relative to the sheet's origin, before facing.
+var _glint_drawn := 0.0
+var _glint_at := Vector2.ZERO
 ## The material this foe rests in: its room's light (`FoeLight`, bible 12.43),
 ## or null outside a zone. The flash, the tell and the death replace it.
 var _rest_material: ShaderMaterial
@@ -638,18 +689,101 @@ func telegraph_pulse() -> bool:
 func draw_sheet(sheet: String, anim: String, t: float, white := false, offset := Vector2.ZERO) -> int:
 	var f := Sheet.frame_at(sheet, anim, t)
 	var over := flash_overlay(white)
+	var glint := not dead and _flash <= 0.0 and has_tell_point(sheet, anim)
 	_hit_rim_drawn = white and not _tell_drawn
-	if _tell_drawn or _hit_rim_drawn:
+	_glint_drawn = 0.0
+	if _tell_drawn and glint:
+		# The tell lights the weapon, not the foe: the rim only near the point.
+		_sheet_white_alpha = 0.0
+		var at := tell_point(sheet, anim, f)
+		for reach: float in TELL_REACH:
+			var half := Vector2(reach, reach) * tell_reach_scale(sheet) * float(Sheet.get_sheet(sheet).density)
+			var part := Rect2(at - half, half * 2.0)
+			for step: Vector2 in RIM_STEPS:
+				draw_set_transform_matrix(_sheet_transform(offset + step))
+				Sheet.draw_part(self, sheet, anim, f, part, Color(TELL_TINT, TELL_REACH_RIM), true)
+	elif _tell_drawn or _hit_rim_drawn:
 		var rim := Color(TELL_TINT, TELL_RIM) if _tell_drawn else Color(HIT_RIM_COLOR, HIT_RIM)
 		for step: Vector2 in RIM_STEPS:
 			draw_set_transform_matrix(_sheet_transform(offset + step))
 			Sheet.draw(self, sheet, anim, f, rim, true)
 	draw_set_transform_matrix(_sheet_transform(offset))
 	Sheet.draw(self, sheet, anim, f)
-	if white:
+	if white and not (_tell_drawn and glint):
 		Sheet.draw(self, sheet, anim, f, over, true)
+	if glint:
+		_draw_glint(sheet, tell_point(sheet, anim, f), _tell_drawn)
 	draw_set_transform(Vector2.ZERO)
 	return f
+
+
+## True when `anim` of `sheet` is a wind-up with a point for the glint.
+static func has_tell_point(sheet: String, anim: String) -> bool:
+	return TELL_POINTS.has(sheet) and (TELL_POINTS[sheet] as Dictionary).has(anim)
+
+
+## The glint's point on frame `frame` of a wind-up, in the cell's own pixels.
+static func tell_point(sheet: String, anim: String, frame: int) -> Vector2:
+	var p: Variant = TELL_POINTS[sheet][anim]
+	if p is Array:
+		return (p as Array)[clampi(frame, 0, (p as Array).size() - 1)]
+	return p
+
+
+## How much of `TELL_REACH` a sheet's foe gets: less for a small cell.
+static func tell_reach_scale(sheet: String) -> float:
+	var s := Sheet.get_sheet(sheet)
+	var cell: Vector2 = s.cell
+	return minf(1.0, minf(cell.x, cell.y) / float(s.density) / TELL_REACH_CELL)
+
+
+## How long the glint's arms are `time` seconds into a wind-up, lit or between beats.
+static func glint_arm(time: float, lit: bool) -> float:
+	var k := clampf(time / GLINT_GATHER, 0.0, 1.0)
+	return lerpf(GLINT_MIN, GLINT_MAX, k) + (GLINT_PULSE if lit else 0.0)
+
+
+## The arm of the glint this foe's last sheet drawing wore (0 when it wore none).
+func glint_drawn() -> float:
+	return _glint_drawn
+
+
+## Where that glint sat, in world pixels from this foe's origin, facing included.
+func glint_at() -> Vector2:
+	return Vector2(_glint_at.x * facing, _glint_at.y)
+
+
+## The glint on the weapon (bible 12.88): a hot core and four tapering arms in the
+## tell's gold, with a short spark on each diagonal. Drawn under the sheet's
+## transform, in half pixels like the sprite it sits on.
+func _draw_glint(sheet: String, point: Vector2, lit: bool) -> void:
+	var s := Sheet.get_sheet(sheet)
+	var c: Vector2 = (point - (s.origin as Vector2)) / float(s.density)
+	var arm := glint_arm(state_time, lit)
+	_glint_drawn = arm
+	_glint_at = c
+	var gold := Color(TELL_TINT, 0.95)
+	for d: Vector2 in RIM_STEPS:
+		var side := Vector2(absf(d.y), absf(d.x))
+		# A thick root, a thin tip.
+		_glint_bar(c, d, 0.0, arm * 0.55, side, 1.0, gold)
+		_glint_bar(c, d, arm * 0.55, arm, side, 0.5, gold)
+		_glint_bar(c, d, 0.0, arm * 0.4, side, 0.5, GLINT_CORE)
+	var spark := maxf(1.0, arm * 0.3)
+	for d: Vector2 in [Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]:
+		var n := 1.0
+		while n <= spark:
+			draw_rect(Rect2(c + d * n - Vector2(0.25, 0.25), Vector2(0.5, 0.5)), Color(TELL_TINT, 0.8))
+			n += 0.5
+	var core := 1.5 if lit else 1.0
+	draw_rect(Rect2(c - Vector2(core, core), Vector2(core, core) * 2.0), GLINT_CORE)
+
+
+## One bar of a glint's arm: from `from` to `to` along `dir`, `thick` across.
+func _glint_bar(c: Vector2, dir: Vector2, from: float, to: float, side: Vector2, thick: float, color: Color) -> void:
+	var a := c + dir * from - side * thick * 0.5
+	var b := c + dir * to + side * thick * 0.5
+	draw_rect(Rect2(Vector2(minf(a.x, b.x), minf(a.y, b.y)), (b - a).abs()), color)
 
 
 ## How far into its recoil this foe is, 0 to 1: 1 the frame a blow lands, easing
