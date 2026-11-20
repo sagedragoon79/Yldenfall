@@ -60,6 +60,10 @@ darkest pixel is still an outline.
 One older check changed: "a strong colour is muted" measured chroma (max minus min), which
 rises with value; it now measures saturation, which is what the rule is about.
 
+The full suite found one more: `tests/test_foe_glow.gd` asked the Crystal Dwarf's glow to
+outweigh his steel (bible 12.52). His steel is now lit, so the check asks the glow to outweigh
+his line, and his steel to stand above the hall's dark.
+
 Mutation check: with `FILL_GAIN` and `FILL_ADD` at 0, the new test fails 22 checks; with them
 back it passes (131 checks).
 

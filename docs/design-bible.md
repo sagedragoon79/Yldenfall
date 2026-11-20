@@ -2695,6 +2695,7 @@ The pass 610 grade: "foes and the hero sink into dark rooms", the Rot Dwarf agai
 - **No tone passes another.** A lighter paint never comes out darker than a darker one; the band's fall is long for that reason.
 - **This is not a rim light.** It is a tone curve on the foe's own paint in the shared material. Nothing is drawn round or over the figure. The rim light on figures stays a call for Sean in a watched session (12.5), and so does the hero, who has no room light and is unchanged.
 - **The accent is still left out and lifted** (12.69). The Shade Knight's value lift went from 0.4 to 0.5, so his plate's lights stay a clear step above his now lighter body.
+- **The Crystal Dwarf's glow (12.52)** was sized to outweigh his dark steel, so that he stood against it as a silhouette. His steel is now lit, and lighter than the glow at rest: his line stands against the glow, and the steel stands above the hall's dark on its own. The glow is unchanged.
 - After it the middle pixel of every pair stands above its zone's haze, by 0.05 to 0.25.
 
 Judged by eye at 2x on a sheet of all forty-one pairs over each zone's dark, before and after, and at 1x and 4x in the Heartwood and Flooded Hall fight frames. `tests/test_foe_light.gd` holds the band, a lit mid tone above every zone's haze, the order of the tones, the shader's numbers, and for every sheet foe a body a step above Vorrhallow's dark with its outline unmoved. Its older check that a strong color is muted now measures saturation, not chroma: a lighter pixel of one saturation has more chroma.
