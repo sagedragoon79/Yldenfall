@@ -559,7 +559,8 @@ def _ridge_planes(zone):
     body, _ = tg.RIDGE_COLOR[zone]
     flat = tg.c(body)[:3]
     light = tg.RIDGE_LIGHT.get(zone)
-    lit_rgb = tg.blend(tg.c(body, tg.RIDGE_A), tg.c(light), 230)[:3] if light else None
+    # A light is laid at 230 over the body or a wall's tone: it stays within a few steps of its colour.
+    lit_rgb = tg.c(light)[:3] if light else None
     far, near = [], []
     varied = total = lit = 0
     for x in range(w):
@@ -575,7 +576,7 @@ def _ridge_planes(zone):
             total += 1
             rgb = px[x, yy][:3]
             varied += rgb != flat
-            lit += rgb == lit_rgb
+            lit += lit_rgb is not None and max(abs(a_ - b_) for a_, b_ in zip(rgb, lit_rgb)) <= 16
     return {"far": far, "near": near, "varied": varied / max(1, total), "lit": lit}
 
 
@@ -616,21 +617,26 @@ def test_ridge_carries_the_zones_distant_lights():
         assert max(tg.c(name)[:3]) < 150, f"{z}: the light {name} is too bright for a receding ridge"
 
 
-def test_ridge_houses_have_level_roofs():
+def test_ridge_houses_stand_level_under_roofs_of_their_own():
     # A roofline's houses stand level on the ground at their centres, so a row of
-    # them never rides the roll like waving cloth. (Restoring roll + block, which
-    # tilts every roof, fails here.)
+    # them never rides the roll like waving cloth (pass 598); and each has a roof of
+    # its own (pass 617, bible 12.94): a gable, a hip, a lean-to or a tower, not one
+    # flat-topped block. (Riding the roll tilts a gable and fails the first check;
+    # restoring the blocks leaves `houses` empty and fails the second.)
+    import random
     for z in [z for z, k in tg.RIDGE_KIND.items() if k == "roof"]:
+        houses = []
+        tg._ridge_profile("roof", random.Random(sum(ord(ch) for ch in z) + 1300), houses)
+        assert len(houses) >= 20, f"{z}: only {len(houses)} houses"
+        forms = {h["form"] for h in houses}
+        assert forms == {name for name, _ in tg.HOUSE_FORMS}, f"{z}: the town has only {sorted(forms)}"
+        for h in houses:
+            if h["form"] in ("gable", "hip"):
+                assert all(abs(h["roof"][dx] - h["roof"][-dx]) < 1e-6 for dx in h["roof"]), "a gable stands level"
+                assert max(h["roof"].values()) > h["eave"] + 2 * tg.D, "and rises above its eave"
         far = _ridge_planes(z)["far"]
-        runs, run = [], 1
-        for a, b in zip(far, far[1:]):
-            if a == b:
-                run += 1
-            else:
-                runs.append(run)
-                run = 1
-        level = [r for r in runs if r >= 12 * tg.D]
-        assert len(level) >= 6, f"{z}: only {len(level)} level roofs ({sorted(runs)[-6:]})"
+        sloped = sum(1 for a, b in zip(far, far[1:]) if 1 <= abs(a - b) <= 3)
+        assert sloped > len(far) * 0.3, f"{z}: only {sloped} columns of the crest are a roof's slope"
 
 
 def test_the_spires_stand_on_a_ridge_of_their_own():
@@ -652,7 +658,8 @@ def test_the_spires_stand_on_a_ridge_of_their_own():
     assert len(narrow) >= 6 and len(narrow) == len(runs), f"the spires are tall and narrow ({sorted(runs)})"
     town = _ridge_planes("hearthroot")["lit"]
     spires = _ridge_planes("spires")["lit"]
-    assert 30 <= spires < town // 4, f"a few slit windows ({spires} px), not the town's rows ({town} px)"
+    # (Since pass 617 the town shows a few windows a house, not rows: bible 12.94.)
+    assert 30 <= spires < town * 2 // 3, f"a few slit windows ({spires} px), fewer than the town's ({town} px)"
 
 
 def test_hearthroot_town_is_lit_and_roofed():

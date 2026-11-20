@@ -3116,9 +3116,56 @@ def _jag(teeth, cx, half, peak, rng):
         teeth[(cx + dx) % BG_W] = max(teeth[(cx + dx) % BG_W], v)
 
 
-def _ridge_profile(kind, rng):
+# The town's houses (design bible 12.94, pass 617). Until then every house was a
+# flat-topped block set with one lattice of windows, and two grades read the row as
+# gridded tower blocks. A house now has a roof of its own: a gable, a hipped roof, a
+# lean-to, or a narrow tower under a point or a notched crown, and some carry a chimney.
+HOUSE_FORMS = (("gable", 0.46), ("hip", 0.2), ("lean", 0.14), ("tower", 0.2))
+
+
+def _house(rng, cx, ground):
+    """One house of the town's roofline, standing level at `ground`: its form, its
+    wall top (`eave`), and its roof height per column offset (`roof`, no chimney)."""
+    r, form = rng.random(), "tower"
+    for name, share in HOUSE_FORMS:
+        if r < share:
+            form = name
+            break
+        r -= share
+    if form == "tower":
+        half, wall = rng.randint(4, 6) * D, rng.randint(34, 50) * D
+    else:
+        half, wall = rng.randint(7, 14) * D, rng.randint(14, 34) * D
+    roof = {}
+    pointed = rng.random() < 0.5
+    pitch = half * rng.uniform(0.55, 0.95)
+    west = rng.random() < 0.5
+    for dx in range(-half - D, half + D + 1):
+        t = 1.0 - abs(dx) / (half + D)
+        if form == "gable":
+            v = wall + pitch * t
+        elif form == "hip":
+            v = wall + min(pitch * 0.6, (half + D - abs(dx)) * 1.0)
+        elif form == "lean":
+            v = wall + pitch * 0.7 * ((dx + half + D) if west else (half + D - dx)) / (2 * (half + D))
+        elif pointed:
+            v = wall + (half + D - abs(dx)) * 1.7
+        else:
+            if abs(dx) > half:
+                continue
+            v = wall - (2 * D if (dx + half) // (2 * D) % 2 else 0)
+        roof[dx] = ground + v
+    chimney = None
+    if form in ("gable", "hip") and rng.random() < 0.5:
+        at = rng.choice((-1, 1)) * rng.randint(half // 3, half * 2 // 3)
+        chimney = (at, roof[at] + rng.randint(4, 6) * D)
+    return {"cx": cx, "half": half, "form": form, "eave": ground + wall, "roof": roof, "chimney": chimney}
+
+
+def _ridge_profile(kind, rng, houses=None):
     """The crest height (canvas px above RIDGE_BASE) per column: a rolling
-    baseline with the zone's teeth raised onto it, seamless across the seam."""
+    baseline with the zone's teeth raised onto it, seamless across the seam.
+    A roofline's houses are added to `houses` when a list is given."""
     roll = _ridge_roll(rng)
     teeth = [0.0] * BG_W
     roofs = [None] * BG_W
@@ -3147,14 +3194,20 @@ def _ridge_profile(kind, rng):
                 roofs[i] = max(roofs[i] or 0.0, roll[x % BG_W] + crown)
             x += rng.randint(26, 48) * D
         else:  # roof
-            half, peak = rng.randint(9, 18) * D, rng.randint(18, 44) * D
-            _block(teeth, x, half, peak)
-            # A house's roof is level (pass 598): it stands at its centre's ground,
-            # not riding the roll, so a row of houses never reads as waving cloth.
-            for dx in range(-half, half + 1):
+            # A house stands level (pass 598) at its centre's ground, not riding the
+            # roll, so a row of houses never reads as waving cloth.
+            house = _house(rng, x, roll[x % BG_W])
+            for dx, v in house["roof"].items():
                 i = (x + dx) % BG_W
-                roofs[i] = max(roofs[i] or 0.0, roll[x % BG_W] + peak)
-            x += rng.randint(16, 32) * D
+                roofs[i] = max(roofs[i] or 0.0, v)
+            if house["chimney"]:
+                at, top = house["chimney"]
+                for dx in range(at, at + 2 * D):
+                    i = (x + dx) % BG_W
+                    roofs[i] = max(roofs[i] or 0.0, top)
+            if houses is not None:
+                houses.append(house)
+            x += rng.randint(14, 28) * D
     return [max(roll[i], roofs[i]) if roofs[i] is not None else roll[i] + teeth[i] for i in range(BG_W)]
 
 
@@ -3212,7 +3265,107 @@ def _ridge_plane(img, h, base, body, rim, body_a, faces=True):
         put(img, x, top, c(rim, RIDGE_RIM_A))
 
 
-def _ridge_detail(img, zone, far_h, near_tops, rng):
+TOWN_WALL = ((None, 0), ("seam", 56), ("rim", 30), ("seam", 28))  # a house's own wall tone
+TOWN_ROOF_A = (40, 124)        # a roof's west slope (lit, the rim) and its east slope (the seam)
+TOWN_FLOOR = 11 * D            # a storey's height
+TOWN_WINDOW_SHARE = 0.62       # the share of storeys that show a window at all
+TOWN_LIT_SHARE = 0.36          # and of windows that are lit
+TOWN_GLOW_A = 46               # a lit window's glow on the wall round it
+
+
+def _town_window(img, x, y, w, h, name, alpha, arched=False):
+    for yy in range(h):
+        for xx in range(w):
+            if arched and yy < D and (xx < D or xx >= w - D):
+                continue
+            _over(img, x + xx, y + yy, name, alpha)
+
+
+def _town_detail(img, houses, far_h, far_tops, near_tops, rim, seam, light):
+    """The town's far plane (design bible 12.94): each house has a wall tone of its
+    own, a roof lit on its west slope and dark on its east, a lit west wall and a
+    shadowed east one, and a few windows of its own: no lattice runs through the row."""
+    # A column belongs to the house whose roof is the crest there.
+    owner = [None] * BG_W
+    for k, hs in enumerate(houses):
+        for dx, v in hs["roof"].items():
+            i = (hs["cx"] + dx) % BG_W
+            if abs(v - far_h[i]) < 0.5:
+                owner[i] = k
+    for k, hs in enumerate(houses):
+        cols = [dx for dx in sorted(hs["roof"]) if owner[(hs["cx"] + dx) % BG_W] == k]
+        if len(cols) < 4 * D:
+            continue
+        eave_y = RIDGE_BASE - int(round(hs["eave"]))
+        peak_dx = max(cols, key=lambda dx: hs["roof"][dx])
+        tone, tone_a = TOWN_WALL[int(hash2(hs["cx"] // D, k, 71) * len(TOWN_WALL)) % len(TOWN_WALL)]
+        tone = {"seam": seam, "rim": rim, None: None}[tone]
+        lean_west = hs["roof"][cols[0]] < hs["roof"][cols[-1]]
+        for n, dx in enumerate(cols):
+            x = (hs["cx"] + dx) % BG_W
+            foot = near_tops[x] - 10 * D
+            # The roof, from the crest down to the eave.
+            lit_side = lean_west if hs["form"] == "lean" else dx < peak_dx
+            for y in range(far_tops[x] + 1, min(eave_y, foot)):
+                _over(img, x, y, rim if lit_side else seam, TOWN_ROOF_A[0 if lit_side else 1])
+            if abs(dx) <= hs["half"] and eave_y > far_tops[x]:
+                _over(img, x, eave_y, seam, 150)   # the eave's shadow line
+            # The wall under it.
+            for y in range(max(eave_y + 1, far_tops[x] + 1), foot):
+                if tone:
+                    _over(img, x, y, tone, tone_a)
+                if n < 2 * D:
+                    _over(img, x, y, rim, 64 - n * 8)          # the west wall, lit
+                elif n >= len(cols) - D:
+                    _over(img, x, y, seam, 150)                # the east edge, in shadow
+        # Windows: a house's own few, storey by storey, never on a shared lattice.
+        x0, x1 = hs["cx"] + cols[0] + 3 * D, hs["cx"] + cols[-1] - 3 * D
+        foot = min(near_tops[(hs["cx"] + dx) % BG_W] for dx in cols) - 14 * D
+        if hs["form"] == "tower":
+            for n in range(2):
+                wy = eave_y + (5 + n * 13) * D + int(hash2(k, n, 73) * 3) * D
+                if wy + 4 * D < foot and hash2(k, n, 79) > 0.3:
+                    lit = light and hash2(k, n, 83) > 0.55
+                    _town_window(img, hs["cx"] - D // 2, wy, D, 4 * D, light if lit else seam, 230 if lit else 170)
+            continue
+        if hs["form"] == "gable" and hash2(k, 5, 89) > 0.6 and peak_dx in cols:
+            # A small attic light under the peak.
+            ay = RIDGE_BASE - int(round(hs["roof"][peak_dx])) + max(4 * D, int((hs["roof"][peak_dx] - hs["eave"]) * 0.45))
+            if ay + 2 * D < eave_y:
+                _town_window(img, hs["cx"] + peak_dx - D, ay, 2 * D, 2 * D, seam, 190)
+        if hash2(k, 6, 97) > 0.55 and eave_y + TOWN_FLOOR < foot:
+            # A jetty: the upper storey's beam across the wall.
+            for x in range(x0 - 2 * D, x1 + 2 * D + 1):
+                _over(img, x, eave_y + TOWN_FLOOR, seam, 96)
+        floor = 0
+        wy = eave_y + 3 * D
+        while wy + 5 * D < foot and x1 - x0 >= 4 * D:
+            floor += 1
+            if hash2(k, floor, 101) < TOWN_WINDOW_SHARE:
+                span = x1 - x0 - 3 * D
+                wx = x0 + int(hash2(k, floor, 103) * (span // D + 1)) * D
+                wyy = wy + int(hash2(k, floor, 107) * 3) * D
+                kind = hash2(k, floor, 109)
+                lit = light and hash2(k, floor, 113) < TOWN_LIT_SHARE
+                name, alpha = (light, 230) if lit else (seam, 170)
+                if kind < 0.55:
+                    boxes = [(wx, wyy, 2 * D, 3 * D, False)]
+                elif kind < 0.8:
+                    boxes = [(wx, wyy, D, 3 * D, False), (wx + 2 * D, wyy, D, 3 * D, False)]
+                else:
+                    boxes = [(wx, wyy, 3 * D, 4 * D, True)]
+                if lit:
+                    # Its glow on the wall round it.
+                    gx0, gx1 = boxes[0][0] - D, boxes[-1][0] + boxes[-1][2] + D
+                    for yy in range(wyy - D, wyy + boxes[0][3] + D):
+                        for xx in range(gx0, gx1):
+                            _over(img, xx, yy, light, TOWN_GLOW_A)
+                for bx, by, bw, bh, arched in boxes:
+                    _town_window(img, bx, by, bw, bh, name, alpha, arched)
+            wy += TOWN_FLOOR
+
+
+def _ridge_detail(img, zone, far_h, near_tops, rng, houses=None):
     """The zone's distant detail in the far plane, between its crest and the mist."""
     kind = RIDGE_KIND[zone]
     body, rim = RIDGE_COLOR[zone]
@@ -3220,30 +3373,7 @@ def _ridge_detail(img, zone, far_h, near_tops, rng):
     light = RIDGE_LIGHT.get(zone)
     far_tops = [RIDGE_BASE - int(round(v)) for v in far_h]
     if kind == "roof":
-        # Houses: each block of the roofline is a building, its west wall lit, its
-        # east edge in shadow and its face set with rows of windows, a few lit.
-        edges = [x for x in range(BG_W) if abs(far_h[x] - far_h[x - 1]) > 3 * D]
-        for i, x0 in enumerate(edges):
-            x1 = edges[(i + 1) % len(edges)] + (BG_W if i + 1 == len(edges) else 0)
-            if far_h[x0] < far_h[x0 - 1]:
-                # A falling edge: the east wall of the house before it, in shadow.
-                for x in (x0 - 1, x0 - 2):
-                    for y in range(far_tops[x % BG_W] + D, near_tops[x % BG_W] - 10 * D):
-                        _over(img, x, y, seam, 150)
-                continue
-            if x1 - x0 < 10 * D:
-                continue
-            for dx in range(2 * D):
-                x = (x0 + dx) % BG_W
-                for y in range(far_tops[x] + D, near_tops[x] - 10 * D):
-                    _over(img, x, y, rim, 64 - dx * 8)
-            for wx in range(x0 + 4 * D, x1 - 4 * D, 8 * D):
-                x = wx % BG_W
-                for wy in range(far_tops[x] + 6 * D, near_tops[x] - 14 * D, 12 * D):
-                    lit = light and hash2(wx // D, wy // D, 59) > 0.72
-                    for yy in range(wy, wy + 3 * D):
-                        for xx in range(wx, wx + 2 * D):
-                            _over(img, xx, yy, light if lit else seam, 230 if lit else 170)
+        _town_detail(img, houses or [], far_h, far_tops, near_tops, rim, seam, light)
         return
     if kind == "spire":
         # Each spire: its west wall lit, its east edge in shadow, and one or two
@@ -3318,7 +3448,8 @@ def ridge(zone):
     img = Image.new("RGBA", (BG_W, BG_H), CLEAR)
     body, rim = RIDGE_COLOR[zone]
     rng = random.Random(sum(ord(ch) for ch in zone) + 1300)
-    h = _ridge_profile(RIDGE_KIND[zone], rng)
+    houses = []
+    h = _ridge_profile(RIDGE_KIND[zone], rng, houses)
     faces = RIDGE_KIND[zone] != "roof"  # a roofline lights its walls, not its slopes
     _ridge_plane(img, h, RIDGE_BASE, body, rim, RIDGE_A, faces)
     # The nearer crest, of the same material and lower, and its own seed.
@@ -3326,7 +3457,7 @@ def ridge(zone):
     near = [v * RIDGE_NEAR_SCALE for v in _ridge_profile(RIDGE_KIND[zone], near_rng)]
     near_base = RIDGE_BASE + RIDGE_NEAR_DROP
     near_tops = [near_base - int(round(v)) for v in near]
-    _ridge_detail(img, zone, h, near_tops, near_rng)
+    _ridge_detail(img, zone, h, near_tops, near_rng, houses)
     # Valley mist over the far plane's foot, thinning upward from the near crest.
     for x in range(BG_W):
         y = near_tops[x]
