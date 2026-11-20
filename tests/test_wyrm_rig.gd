@@ -203,3 +203,42 @@ func test_wyrm_rig_can_be_set_aside() -> void:
 		return
 	var g := z.heads[2]
 	check(z.mouth_of(g).distance_to(g.global_position + Vector2(z._face(g) * 22.0, 6.0)) < 0.01, "and its breath leaves where it always did")
+
+
+## The side head was drawn with a stub of neck behind its cheek spines (green scales over
+## a brown throat) that fit neither the style nor the colors of the neck sections
+## (Sean, 2026-11-19): the packer cuts it from every frame.
+func test_wyrm_rig_side_heads_carry_no_neck_of_their_own() -> void:
+	var rig := _rig()
+	var part: Dictionary = rig.layout["head_east"]
+	var img: Image = (load(WyrmRig.DIR + String(part["sheet"])) as Texture2D).get_image()
+	var cell := Vector2i(int(part["cell"][0]), int(part["cell"][1]))
+	var columns := int(part["columns"])
+	# On the 92 px still: the middle of the stub that was, and the cheek that stays.
+	var origin := (cell - Vector2i(92, 92)) / 2
+	var stub := origin + Vector2i(16, 56)
+	var cheek := origin + Vector2i(58, 54)
+	for clip: String in ["idle", "shut", "shadow"]:
+		var i := int(part["clips"][clip]["start"])
+		var at := Vector2i((i % columns) * cell.x, (i / columns) * cell.y)
+		check(img.get_pixelv(at + stub).a < 0.05, "the %s side head has no neck of its own behind its cheek" % clip)
+		check(img.get_pixelv(at + cheek).a > 0.9, "and the %s head itself is whole" % clip)
+	# Every frame: nothing left where the still's stub hung lowest (the brown throat).
+	var left := 0
+	var cells := 0
+	for clip: String in part["clips"]:
+		if clip == "open":
+			continue
+		for k in int(part["clips"][clip]["count"]):
+			var i := int(part["clips"][clip]["start"]) + k
+			var at := Vector2i((i % columns) * cell.x, (i / columns) * cell.y)
+			cells += 1
+			for y in range(76, 84):
+				for x in range(26, 44):
+					if img.get_pixelv(at + origin + Vector2i(x, y)).a > 0.05:
+						left += 1
+	check(left == 0, "no frame of the side head keeps its throat (%d pixels left over %d frames)" % [left, cells])
+	# The neck ends under the skull, so its open rim never shows.
+	var joint := WyrmRig._point(part["joints"]["neck"]) - Vector2(origin)
+	check(joint.x > 40.0 and joint.x < 60.0 and joint.y > 44.0 and joint.y < 62.0, "the neck ends under the skull, not behind it (%s)" % joint)
+	rig.queue_free()
