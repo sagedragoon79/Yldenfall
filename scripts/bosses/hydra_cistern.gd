@@ -5,6 +5,10 @@ extends Node2D
 ## the only water there is. Standing in it with a third or more shelters you from
 ## the hydra's thermal fog; full, it douses the head that breathed last. The fog
 ## boils a third of it away, and the hydra's rage boils it dry.
+##
+## It is sunk in the floor (Sean, 2026-11-20): a pit cut into the room, brim-full at
+## the floor's own level, with a low lip of coping round it. The lip is the far side
+## of the rim, behind whoever walks past, so nothing has to be climbed to get in.
 
 signal filled(level: int)
 
@@ -16,9 +20,13 @@ const WATER := Color("3f7fb8")
 const WATER_DEEP := Color("27527a")
 const WATER_TOP := Color("cfe6f4")
 const STEAM := Color("f4f7f6")
+## How far the lip's coping stands above the floor (px), and how far it runs out over
+## the floor past each side of the pit.
+const LIP := 8.0
+const LIP_OUT := 16.0
 
-## The cistern's inside in world pixels (between its walls, rim to floor).
-var inside := Rect2(368, 272, 224, 48)
+## The cistern's inside in world pixels: the pit, from the floor's level down to its bed.
+var inside := Rect2(368, 320, 224, 48)
 var intakes: Array[HydraIntake] = []
 ## Thirds of water in it, 0 to 3.
 var level := 0
@@ -92,6 +100,11 @@ func boil() -> void:
 	Sfx.play("steam_hiss", 0.0, 2.0)
 
 
+## The lip's coping, in the world: above the floor, and wider than the pit.
+func lip_rect() -> Rect2:
+	return Rect2(inside.position.x - LIP_OUT, inside.position.y - LIP, inside.size.x + LIP_OUT * 2.0, LIP)
+
+
 ## The surface's world y for `thirds` of water.
 func surface_at(thirds: float) -> float:
 	return inside.end.y - inside.size.y * thirds / THIRDS
@@ -151,9 +164,19 @@ func _draw_back() -> void:
 	for i in range(1, THIRDS + 1):
 		var sy := surface_at(i)
 		_back.draw_rect(Rect2(r.position.x, sy, r.size.x, 1.0), Color(STAIN, 0.7))
-	# The rim's dressed coping, on both walls.
-	_back.draw_rect(Rect2(r.position.x - 18.0, r.position.y - 3.0, 18.0, 3.0), STONE_LIGHT)
-	_back.draw_rect(Rect2(r.end.x, r.position.y - 3.0, 18.0, 3.0), STONE_LIGHT)
+	# The lip: a course of dressed coping along the far side of the rim, standing a
+	# little above the floor and running out over it past each end of the pit.
+	var lip := lip_rect()
+	_back.draw_rect(lip, STONE_DARK)
+	var x := lip.position.x
+	var n := 0
+	while x < lip.end.x:
+		var w := minf(32.0 if n > 0 else 16.0, lip.end.x - x)
+		_back.draw_rect(Rect2(x + 1.0, lip.position.y, w - 1.0, lip.size.y - 1.0), STONE)
+		_back.draw_rect(Rect2(x + 1.0, lip.position.y, w - 1.0, 2.0), STONE_LIGHT)
+		_back.draw_rect(Rect2(x + 1.0, lip.position.y, 1.0, lip.size.y - 1.0), STONE_LIGHT.lerp(STONE, 0.5))
+		x += w
+		n += 1
 
 
 func _draw() -> void:

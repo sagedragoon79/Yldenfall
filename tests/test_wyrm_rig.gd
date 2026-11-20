@@ -3,8 +3,9 @@ extends TestSuite
 ## The fight is covered in test_boss.gd; these cover the rig that draws it.
 
 const SPRING_ROOM := "haar/spring_of_haar"
-## Where the hero stands for most of the fight, from the boss: in the cistern below it.
-const HERO := Vector2(0, 150)
+## Where the hero stands for most of the fight, from the boss: in the cistern below it,
+## which is sunk in the floor.
+const HERO := Vector2(0, 198)
 
 
 func _rig() -> WyrmRig:
@@ -45,7 +46,7 @@ func test_wyrm_rig_neck_reaches_wherever_the_fight_puts_its_head() -> void:
 	for i in 3:
 		var spots: Array[Vector2] = [HaarWyrm.HOMES[i], HaarWyrm.SAG[i], HaarWyrm.DROOP[i]]
 		spots.append(HaarWyrm.HOMES[i] + Vector2(0, -22))
-		spots.append(Vector2(HaarWyrm.HOMES[i].x * 0.8, 70.0))
+		spots.append(Vector2(HaarWyrm.HOMES[i].x * 0.8, HaarWyrm.HANG))
 		for spot in spots:
 			# In profile each way, and watching the hero in the cistern.
 			for state: Dictionary in [{"face": 1.0}, {"face": -1.0}, {"watch": HERO - spot}]:
@@ -442,6 +443,14 @@ func test_wyrm_fog_leaves_the_water_clear() -> void:
 	fog._lay_haze()
 	var mat := fog.haze.material as ShaderMaterial
 	check((mat.get_shader_parameter("clear") as Vector4).z == 0.0 and fog.clear_rect().size == Vector2.ZERO, "a dry cistern is no shelter: the haze covers it")
+	# The cistern is sunk under the arena's floor (Sean, 2026-11-20): the fog fills its pit.
+	var pit := z.cistern.inside
+	var all := fog.reach()
+	check(pit.position.y >= fog.bounds.end.y - 0.01 and all.encloses(pit) and all.encloses(fog.bounds), "the fog reaches down into the sunken cistern (%s)" % all)
+	check(fog.haze.size == all.size and fog.haze.position.distance_to(all.position) < 0.01, "and its haze with it")
+	var hole: Vector4 = mat.get_shader_parameter("pit")
+	check(is_equal_approx(float(mat.get_shader_parameter("floor_at")), fog.bounds.size.y), "under the floor's level")
+	check(is_equal_approx(hole.x, pit.position.x - all.position.x) and is_equal_approx(hole.y, pit.position.y - all.position.y) and is_equal_approx(hole.z, pit.size.x) and is_equal_approx(hole.w, pit.size.y), "it wavers only in the pit, not in the stone round it (%s)" % hole)
 	z.cistern.fill_now()
 	fog._lay_haze()
 	var clear: Vector4 = mat.get_shader_parameter("clear")
@@ -462,3 +471,31 @@ func test_wyrm_fog_leaves_the_water_clear() -> void:
 	check(real.source_point().distance_to(z.mouth_of(h)) < 0.01 and real.source_point().distance_to(h.global_position) < 30.0, "the fight hands the fog its head's jaws to radiate from")
 	real.queue_free()
 	fog.queue_free()
+
+
+
+## Sean, 2026-11-20: the cistern is sunk in the floor, with a small lip. Everything that
+## stood on its rim came down with it.
+func test_wyrm_stands_at_the_lip_of_its_sunken_cistern() -> void:
+	var z: HaarWyrm = await _wake(true)
+	if z == null:
+		check(false, "the Haar Wyrm wakes")
+		return
+	var lip := z.cistern.lip_rect()
+	var pit := z.cistern.inside
+	var feet := z.global_position.y + WyrmRig.BODY_AT.y
+	check(feet <= lip.position.y and lip.position.y - feet < 12.0, "the body's claws are on the cistern's lip (%.0f at a lip of %.0f)" % [feet, lip.position.y])
+	check(absf(z.global_position.x - pit.get_center().x) < 0.5, "in the middle of it")
+	for i in 3:
+		var droop: float = z.global_position.y + (HaarWyrm.DROOP[i] as Vector2).y
+		check(droop < lip.position.y and lip.position.y - droop < 48.0, "a doused head %d droops just over the lip (%.0f px above it)" % [i, lip.position.y - droop])
+		var hidden: float = z.global_position.y + (HaarWyrm.HIDDEN[i] as Vector2).y
+		check(hidden < feet, "head %d waits in the tunnel above its floor" % i)
+	# The middle head is struck from the pit, a jump under it.
+	var p := z.get_tree().get_first_node_in_group("player") as Player
+	var sag: float = z.global_position.y + (HaarWyrm.SAG[1] as Vector2).y
+	var reach := p.tuning.jump_height + Player.BODY_SIZE.y + 24.0
+	check(pit.end.y - sag <= reach, "the middle head sags within a jumping blade of the pit's bed (%.0f px up, %.0f in reach)" % [pit.end.y - sag, reach])
+	for i: int in [0, 2]:
+		var side: float = z.global_position.y + (HaarWyrm.SAG[i] as Vector2).y
+		check(z.arena.end.y - side <= reach, "side head %d sags within a jumping blade of the floor (%.0f px up)" % [i, z.arena.end.y - side])

@@ -6,7 +6,7 @@ extends Enemy
 ## one breath:
 ##
 ## - the plume head vents a heavy cloud that rolls along the floor (jump it,
-##   take a platform, or duck into the cistern under its rim);
+##   take a platform, or drop into the cistern, which is sunk under the floor);
 ## - the geyser head fires a straight, locked jet of boiling water (leave the line);
 ## - the fog head, after a long wind-up, fills the whole arena with thermal fog
 ##   that only the cistern's water shelters you from.
@@ -15,7 +15,7 @@ extends Enemy
 ## comes third. Deluge is the only water: a bolt into each of the cistern's three
 ## intakes (at three heights) fills it a third. A head can't be beaten below
 ## HEAD_FLOOR until a full cistern douses it: the head that breathed last sags
-## onto the rim, weak, for WEAK_TIME. Then the hydra rages and boils the cistern
+## onto the lip, weak, for WEAK_TIME. Then the hydra rages and boils the cistern
 ## dry, and the loop begins again. A weakened head at 0 dies; the fight ends with
 ## the third. So to bring down the plume or the geyser head, fill the cistern
 ## before the fog and ride the fog out in the water.
@@ -41,14 +41,18 @@ const BREATHS := [HydraHead.PLUME, HydraHead.FOG, HydraHead.GEYSER]
 ## Where each head rests, out of the tunnel, from the tunnel's centre.
 const HOMES := [Vector2(-170, -28), Vector2(0, -62), Vector2(170, -28)]
 ## Where each waits, deep in the tunnel, before it comes out.
-const HIDDEN := [Vector2(-46, 18), Vector2(0, 2), Vector2(46, 18)]
-## How low a head sags after it breathes (in reach of a jumping blade).
-const SAG := [Vector2(-150, 50), Vector2(0, 30), Vector2(150, 50)]
-## Where a doused head droops onto the cistern's rim.
-const DROOP := [Vector2(-78, 82), Vector2(0, 76), Vector2(78, 82)]
-## The cistern's walls and inside, in tiles (the room is drawn to match).
+const HIDDEN := [Vector2(-46, 58), Vector2(0, 42), Vector2(46, 58)]
+## How low a head sags after it breathes (in reach of a jumping blade). The middle
+## head sags lowest: whoever strikes it stands in the cistern, under the floor.
+const SAG := [Vector2(-150, 50), Vector2(0, 78), Vector2(150, 50)]
+## Where a doused head droops onto the cistern's lip.
+const DROOP := [Vector2(-78, 122), Vector2(0, 116), Vector2(78, 122)]
+## How low a dead head hangs.
+const HANG := 110.0
+## The cistern is sunk in the floor (Sean, 2026-11-20): its lip stands on these two
+## columns and its inside is the pit between them, on these rows (the room is cut to match).
 const CISTERN_COLS := Vector2i(22, 37)
-const CISTERN_ROWS := Vector2i(17, 19)
+const CISTERN_ROWS := Vector2i(20, 22)
 ## The intakes: tile, and which way the mouth opens.
 const INTAKES := [[Vector2i(19, 11), -1], [Vector2i(40, 16), 1], [Vector2i(40, 5), 1]]
 
@@ -241,11 +245,10 @@ func head_for(breath_id: String) -> HydraHead:
 	return null
 
 
-## The ground at `x`: the floor, or the cistern's rim (the plume rides over it).
-func ground_at(x: float) -> float:
-	var t := float(Room.TILE)
-	if x >= CISTERN_COLS.x * t and x < (CISTERN_COLS.y + 1) * t:
-		return CISTERN_ROWS.x * t
+## The ground the plume rolls along at `x`: the floor, all the way across. The cistern
+## is sunk in it, and the plume rolls straight over its mouth (it used to climb the
+## cistern's walls and come down again, which looked wrong; Sean, 2026-11-20).
+func ground_at(_x: float) -> float:
 	return arena.end.y
 
 
@@ -446,7 +449,7 @@ func _next_breath() -> void:
 	_to("attack")
 
 
-## A full cistern douses the head that breathed last: it droops on the rim, weak.
+## A full cistern douses the head that breathed last: it droops on the lip, weak.
 func _weaken(h: HydraHead) -> void:
 	weakened = h
 	h.weak = true
@@ -518,7 +521,7 @@ func _move_heads(delta: float) -> void:
 				var shake := Vector2(sin(game_time * 40.0 + h.index) * 3.0, -10.0 + sin(game_time * 9.0) * 4.0)
 				h.global_position = h.global_position.lerp(home_of(h) + shake, k)
 			"limp":
-				var hang: Vector2 = global_position + Vector2(HOMES[h.index].x * 0.8, 70.0)
+				var hang: Vector2 = global_position + Vector2(HOMES[h.index].x * 0.8, HANG)
 				h.global_position = h.global_position.lerp(hang, 1.0 - exp(-2.0 * delta))
 
 
@@ -554,6 +557,7 @@ func _tell(h: HydraHead, k: float) -> void:
 				g.head = h
 				g.dir = h.aim
 				g.bounds = arena
+				g.pit = cistern.inside
 				g.mouth = mouth_of(h)
 				get_parent().add_child(g)
 				h.set_meta("geyser", g)
@@ -642,9 +646,10 @@ func _draw_lair() -> void:
 	var t := Time.get_ticks_msec() * 0.001
 	var l := _lair
 	# The arch: a ring of dark stone around a mouth of black.
+	# It stands on the cistern's lip, which is as wide as the arch.
 	var w := 118.0
 	var top := -100.0
-	var bottom := 112.0
+	var bottom := cistern.inside.position.y - HydraCistern.LIP - global_position.y if cistern != null else 152.0
 	for i in 26:
 		var a := PI + PI * i / 25.0
 		var c := Vector2(cos(a) * w, top + 100.0 + sin(a) * 100.0)
@@ -653,12 +658,11 @@ func _draw_lair() -> void:
 	l.draw_rect(Rect2(-w - 9.0, 0.0, 18.0, bottom), STONE)
 	l.draw_rect(Rect2(w - 9.0, 0.0, 18.0, bottom), STONE)
 	var inner := w - 9.0
-	for i in 24:
-		var y := top + 9.0 + i * 9.0
-		if y > bottom:
-			break
+	var y := top + 9.0
+	while y < bottom:
 		var half := inner if y >= 0.0 else sqrt(maxf(0.0, 1.0 - pow((y - (top + 100.0)) / 91.0, 2.0))) * inner
-		l.draw_rect(Rect2(-half, y, half * 2.0, 9.0), DARK)
+		l.draw_rect(Rect2(-half, y, half * 2.0, minf(9.0, bottom - y)), DARK)
+		y += 9.0
 	# Something vast breathing in the dark: the barest glint of scale. (The rig has
 	# the body itself there, and the heads' own eyes.)
 	var breathe := 0.5 + 0.5 * sin(t * 0.7)

@@ -561,7 +561,7 @@ func _wyrm_reel() -> void:
 		return
 	match _frames:
 		600, 1650:
-			# A full cistern: the head that breathed last droops on the rim, doused.
+			# A full cistern: the head that breathed last droops on the lip, doused.
 			z.cistern.fill_now()
 		2050:
 			z._kill_head(z.heads[0])

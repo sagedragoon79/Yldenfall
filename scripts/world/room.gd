@@ -261,7 +261,16 @@ func build(text: String) -> void:
 	var decor := Decor.new()
 	decor.name = "Decor"
 	add_child(decor)
-	decor.build(id, zone, grid, covers)
+	# Cells the room keeps bare of scattered decor (header `bare: x0, y0, x1, y1`): the
+	# Haar Spring's dressed cistern, which fills with water.
+	var no_decor := covers.duplicate()
+	if header.has("bare"):
+		var b := String(header.bare).split(",")
+		if b.size() == 4:
+			for y in range(int(b[1]), int(b[3]) + 1):
+				for x in range(int(b[0]), int(b[2]) + 1):
+					no_decor[Vector2i(x, y)] = true
+	decor.build(id, zone, grid, no_decor)
 	# The decor's candle and fungus glows pool their light onto the floor too.
 	room_light.decor = decor
 

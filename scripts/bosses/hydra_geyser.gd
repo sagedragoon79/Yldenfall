@@ -27,6 +27,9 @@ var mouth := Vector2.ZERO
 var dir := Vector2.DOWN
 ## The arena it is cut off by (world px).
 var bounds := Rect2(0, 0, 960, 320)
+## The cistern's pit, sunk under the arena's floor: a line that comes down on its mouth
+## runs on into it, so the pit is no shelter from the jet (no size: no pit).
+var pit := Rect2()
 
 var _time := 0.0
 var _hit := false
@@ -40,14 +43,23 @@ func _ready() -> void:
 	_max = _reach()
 
 
-## How far the line runs before it leaves the arena.
+## How far the line runs before it leaves the arena, or the pit under it.
 func _reach() -> float:
+	var best := _exit(bounds)
+	var at := mouth + dir * best
+	if pit.size.x > 0.0 and dir.y > 0.0 and absf(at.y - pit.position.y) < 1.0 and at.x > pit.position.x and at.x < pit.end.x:
+		best = _exit(pit)
+	return best
+
+
+## How far along the line it leaves `r`.
+func _exit(r: Rect2) -> float:
 	var best := 2000.0
 	for axis in 2:
 		var d := dir[axis]
 		if absf(d) < 0.0001:
 			continue
-		var edge := bounds.end[axis] if d > 0.0 else bounds.position[axis]
+		var edge := r.end[axis] if d > 0.0 else r.position[axis]
 		var t := (edge - mouth[axis]) / d
 		if t > 0.0:
 			best = minf(best, t)

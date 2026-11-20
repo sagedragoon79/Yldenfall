@@ -12,6 +12,9 @@ extends Node2D
 ## rising noise map pushes each pixel of the screen aside (after SFML's heat haze shader,
 ## github.com/SFML/SFML/wiki/Source:-HeatHazeShader), in whole pixels so the art stays
 ## pixel art, with the same rings running through it. The water is left clear.
+##
+## The cistern is sunk under the arena's floor (Sean, 2026-11-20), so the fog fills its
+## pit as well, down to the water: a dry pit wavers like the rest of the arena.
 
 ## What its blow is made of (design bible 5.6).
 const DAMAGE_KIND := DamageKind.FIRE
@@ -44,6 +47,10 @@ uniform vec2 world_px = vec2(0.0015625, 0.0027778);
 // The jaws the heat comes off, and the water it can't reach, in this rect's pixels.
 uniform vec2 source = vec2(464.0, 40.0);
 uniform vec4 clear = vec4(0.0);
+// How far down this rect the arena's floor is, and the cistern's pit under it: below
+// the floor there is air only in the pit.
+uniform float floor_at = 100000.0;
+uniform vec4 pit = vec4(0.0);
 uniform float haze_push = 2.6;
 uniform float ring_push = 2.2;
 uniform float ring_reach = 460.0;
@@ -63,6 +70,10 @@ void fragment() {
 	push *= strength;
 	// The water is clear: the heat can't reach into it.
 	if (clear.z > 0.0 && at.x >= clear.x && at.x <= clear.x + clear.z && at.y >= clear.y && at.y <= clear.y + clear.w) {
+		push = vec2(0.0);
+	}
+	// Under the floor the fog is only in the pit: the stone round it stays still.
+	if (at.y > floor_at && !(at.x >= pit.x && at.x <= pit.x + pit.z && at.y <= pit.y + pit.w)) {
 		push = vec2(0.0);
 	}
 	// Whole pixels: the screen behind stays pixel art.
@@ -162,18 +173,33 @@ func clear_rect() -> Rect2:
 	return Rect2(cistern.inside.position.x, top, cistern.inside.size.x, cistern.inside.end.y - top)
 
 
+## The cistern's pit, sunk under the arena's floor (no size with no cistern).
+func pit() -> Rect2:
+	return cistern.inside if cistern != null else Rect2()
+
+
+## Everywhere the fog is: the arena, and the pit under its floor.
+func reach() -> Rect2:
+	var hole := pit()
+	return bounds.merge(hole) if hole.size.x > 0.0 else bounds
+
+
 func _lay_haze() -> void:
 	if haze == null:
 		return
-	haze.position = to_local(bounds.position)
-	haze.size = bounds.size
+	var all := reach()
+	haze.position = to_local(all.position)
+	haze.size = all.size
 	var mat := haze.material as ShaderMaterial
 	mat.set_shader_parameter("strength", thickness())
 	mat.set_shader_parameter("time", _time)
-	mat.set_shader_parameter("size", bounds.size)
-	mat.set_shader_parameter("source", source_point() - bounds.position)
+	mat.set_shader_parameter("size", all.size)
+	mat.set_shader_parameter("source", source_point() - all.position)
 	var clear := clear_rect()
-	mat.set_shader_parameter("clear", Vector4(clear.position.x - bounds.position.x, clear.position.y - bounds.position.y, clear.size.x, clear.size.y))
+	mat.set_shader_parameter("clear", Vector4(clear.position.x - all.position.x, clear.position.y - all.position.y, clear.size.x, clear.size.y))
+	var hole := pit()
+	mat.set_shader_parameter("floor_at", bounds.end.y - all.position.y)
+	mat.set_shader_parameter("pit", Vector4(hole.position.x - all.position.x, hole.position.y - all.position.y, hole.size.x, hole.size.y))
 	if is_inside_tree():
 		var view := get_viewport().get_visible_rect().size
 		if view.x > 0.0 and view.y > 0.0:
@@ -209,20 +235,28 @@ func _draw() -> void:
 		return
 	var t := Time.get_ticks_msec() * 0.001
 	# A thin warm veil over everything, except the water, which stays clear.
+	# It lies over the arena, and in the cistern's pit under the floor.
 	var clear := clear_rect()
 	var band := 8.0
-	var y := bounds.position.y
-	while y < bounds.end.y:
-		var wob := sin(t * 2.0 + y * 0.05) * 0.04
-		var heat := clampf((bounds.end.y - y) / bounds.size.y, 0.0, 1.0) * 0.5
-		var col := Color(HAZE.lerp(HAZE_HOT, heat), (0.3 + wob) * k)
-		var r := Rect2(bounds.position.x, y, bounds.size.x, band)
-		if clear.size.x > 0.0 and r.intersects(clear):
-			draw_rect(Rect2(r.position.x, y, clear.position.x - r.position.x, band), col)
-			draw_rect(Rect2(clear.end.x, y, r.end.x - clear.end.x, band), col)
-		else:
-			draw_rect(r, col)
-		y += band
+	var areas: Array[Rect2] = [bounds]
+	if pit().size.x > 0.0:
+		areas.append(pit())
+	for area in areas:
+		var y := area.position.y
+		while y < area.end.y:
+			var wob := sin(t * 2.0 + y * 0.05) * 0.04
+			var heat := clampf((bounds.end.y - y) / bounds.size.y, 0.0, 1.0) * 0.5
+			var col := Color(HAZE.lerp(HAZE_HOT, heat), (0.3 + wob) * k)
+			var r := Rect2(area.position.x, y, area.size.x, minf(band, area.end.y - y))
+			if clear.size.x > 0.0 and r.intersects(clear):
+				# Beside the water, and above its surface where that cuts the band.
+				draw_rect(Rect2(r.position.x, y, maxf(clear.position.x - r.position.x, 0.0), r.size.y), col)
+				draw_rect(Rect2(clear.end.x, y, maxf(r.end.x - clear.end.x, 0.0), r.size.y), col)
+				if clear.position.y > y:
+					draw_rect(Rect2(maxf(clear.position.x, r.position.x), y, minf(clear.end.x, r.end.x) - maxf(clear.position.x, r.position.x), clear.position.y - y), col)
+			else:
+				draw_rect(r, col)
+			y += band
 	# The rings of heat off the jaws: a faint front with a warm wake behind it. They are
 	# kept faint, since the haze bends the screen along the same rings: drawn any
 	# stronger they read as circles ruled on the picture, not as heat.

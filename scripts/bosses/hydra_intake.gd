@@ -66,12 +66,15 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	# The pipe's flared mouth, opening `facing`, the pipe running back behind it
-	# to the cistern's nearer wall and down to the rim.
+	# to the cistern's nearer end and down to its lip, where a spout turns in over the pit.
 	var f := float(facing)
 	if cistern != null:
 		var c := cistern.inside
-		var wall_x := (c.position.x - 8.0 if global_position.x < c.get_center().x else c.end.x + 8.0) - global_position.x
-		var rim_y := c.position.y - global_position.y
+		var west := global_position.x < c.get_center().x
+		var wall_x := (c.position.x - 8.0 if west else c.end.x + 8.0) - global_position.x
+		var rim_y := c.position.y - HydraCistern.LIP - global_position.y
+		var into := 1.0 if west else -1.0
+		var spout_x := wall_x + into * 14.0
 		draw_rect(Rect2(minf(0.0, wall_x) - 4.0, -6, absf(wall_x) + 8.0, 12), PIPE_DARK)
 		draw_rect(Rect2(minf(0.0, wall_x) - 4.0, -5, absf(wall_x) + 8.0, 10), PIPE)
 		draw_rect(Rect2(minf(0.0, wall_x) - 4.0, -5, absf(wall_x) + 8.0, 2), PIPE_LIGHT)
@@ -83,12 +86,23 @@ func _draw() -> void:
 		while y < rim_y - 4.0:
 			draw_rect(Rect2(wall_x - 6.0, y, 12, 2), RIM)
 			y += 24.0
+		# The spout: a short elbow in over the pit.
+		draw_rect(Rect2(minf(wall_x, spout_x) - 1.0, rim_y - 11.0, absf(spout_x - wall_x) + 2.0, 12), PIPE_DARK)
+		draw_rect(Rect2(minf(wall_x, spout_x), rim_y - 10.0, absf(spout_x - wall_x), 10), PIPE)
+		draw_rect(Rect2(minf(wall_x, spout_x), rim_y - 10.0, absf(spout_x - wall_x), 2), PIPE_LIGHT)
+		draw_rect(Rect2(spout_x - 1.0, rim_y - 12.0, 3, 14), RIM)
 		if flowing:
-			# Water running down into the tank.
+			# Water falling from the spout into the pit, down to the water that is there.
 			var t := Time.get_ticks_msec() * 0.001
-			var d := fmod(t * 3.0, 1.0)
-			draw_rect(Rect2(wall_x - 1.0, rim_y - 6.0, 2, 6), Color(WATER_LIGHT, 0.8))
-			draw_rect(Rect2(wall_x - 2.0, rim_y - 4.0 + d * 3.0, 4, 2), Color(WATER, 0.9))
+			var from := Vector2(spout_x + into * 3.0, rim_y - 6.0)
+			var to := cistern.surface_y() - global_position.y
+			draw_rect(Rect2(from.x - 1.0, from.y, 3, maxf(to - from.y, 0.0)), Color(WATER, 0.8))
+			draw_rect(Rect2(from.x, from.y, 1, maxf(to - from.y, 0.0)), Color(WATER_LIGHT, 0.9))
+			var fall := from.y + fmod(t * 60.0, 6.0)
+			while fall < to - 2.0:
+				draw_rect(Rect2(from.x - 1.0, fall, 1, 2), Color(WATER_LIGHT, 0.7))
+				fall += 6.0
+			draw_rect(Rect2(from.x - 4.0, to - 1.0, 9, 2), Color(WATER_LIGHT, 0.6 + 0.3 * sin(t * 14.0)))
 	draw_rect(Rect2(-8, -7, 16, 14), PIPE_DARK)
 	draw_rect(Rect2(-8, -6, 16, 12), PIPE)
 	draw_rect(Rect2(-8, -6, 16, 3), PIPE_LIGHT)

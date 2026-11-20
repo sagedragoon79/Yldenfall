@@ -27,7 +27,7 @@ const DIR := "res://assets/bosses/haar_wyrm/"
 const ART := 0.5
 ## Bones in each neck, in head order (west, middle, east). The side necks are long
 ## enough to pass a head that looks back at its body and curl round behind it.
-const BONES := [26, 13, 26]
+const BONES := [26, 17, 26]
 ## Which trim sheet each neck is cut from: the middle neck comes toward us.
 const VIEWS := ["side", "front", "side"]
 ## A head's art by how far it is turned from facing us: south, three-quarter, profile.
@@ -47,8 +47,9 @@ const HOOK := 26.0
 const HOOK_BACK := 58.0
 ## In profile the whole curl shows, so it is wider.
 const HOOK_PROFILE := 84.0
-## Where the body stands, from the boss: the middle of its feet, on the tunnel's floor.
-const BODY_AT := Vector2(0, 105)
+## Where the body stands, from the boss: the middle of its feet, on the tunnel's floor,
+## which is level with the lip of the cistern sunk in the arena's floor before it.
+const BODY_AT := Vector2(0, 145)
 ## Which way each stump points.
 const STUMP_DIRS := [Vector2(-0.3, -1.0), Vector2(0.0, -1.0), Vector2(0.3, -1.0)]
 ## The dark of the tunnel: the body and the root of each neck stand in it. Measured from

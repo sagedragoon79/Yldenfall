@@ -3,8 +3,8 @@ extends Node2D
 ## The Haar Wyrm's choking plume (design bible 8.4): a thick, heavy cloud of
 ## scalding grey-white steam that one head vents down onto the floor, where it
 ## rolls along the ground toward you. It stays under a jump's height, so you jump
-## it, stand on a platform, or duck into the cistern below its rim; it rides over
-## the cistern's walls. It hurts once and can't be parried.
+## it, stand on a platform, or drop into the cistern, which is sunk under the floor:
+## it rolls straight across the cistern's mouth. It hurts once and can't be parried.
 
 ## What its blow is made of (design bible 5.6).
 const DAMAGE_KIND := DamageKind.FIRE
@@ -28,8 +28,8 @@ var dir := 1.0
 var ground_y := 0.0
 var left := 0.0
 var right := 0.0
-## Optional: the ground's height at a given x (the boss lends its own, so the
-## plume rides over the cistern's walls). Without it, `ground_y` everywhere.
+## Optional: the ground's height at a given x (the boss lends its own: the floor,
+## all the way across the sunken cistern). Without it, `ground_y` everywhere.
 var ground_at := Callable()
 
 var _time := 0.0
