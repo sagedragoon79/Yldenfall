@@ -65,10 +65,15 @@ func test_the_glow_breathes_swells_and_goes_out() -> void:
 	check(FoeGlow.peak_at(2.0, 0.0) == FoeGlow.PEAK_TELL and FoeGlow.PEAK_TELL > FoeGlow.PEAK, "a tell is brighter than rest")
 	check(FoeGlow.peak_at(1.5, 0.0) > hi and FoeGlow.peak_at(1.5, 0.0) < FoeGlow.PEAK_TELL, "and swells toward it")
 	check(FoeGlow.peak_at(0.0, 0.0) == 0.0, "dark, it adds nothing")
-	# The light it adds behind the foe outweighs the foe's own darks in the hall's light.
+	# The light it adds behind the foe outweighs the foe's line and deep shadows in
+	# the hall's light. Since pass 612 (bible 12.89) his steel is lit by the fill,
+	# so the glow no longer has to outweigh the steel: his line is what stands
+	# against it, and the steel stands above the hall's dark on its own.
+	var line := FoeLight.lit(Color("12161c"), "vorrhallow")
 	var steel := FoeLight.lit(Color("3a4450"), "vorrhallow")
 	var added := FoeLight.luma(CrystalDwarf.CRYSTAL_LIGHT) * lo
-	check(added >= FoeLight.luma(steel) + 0.08, "the dark behind him is lit past his steel (%.2f over %.2f)" % [added, FoeLight.luma(steel)])
+	check(added >= FoeLight.luma(line) + 0.08, "the dark behind him is lit past his line (%.2f over %.2f)" % [added, FoeLight.luma(line)])
+	check(FoeLight.luma(steel) > FoeLight.luma(Backdrop.ZONE_HAZE["vorrhallow"]) + 0.08, "and his steel stands above the hall's dark (%.2f)" % FoeLight.luma(steel))
 
 
 func test_the_crystal_dwarf_carries_his_crystals_light() -> void:

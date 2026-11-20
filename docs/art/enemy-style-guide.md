@@ -29,6 +29,10 @@ starting another foe.
   accent out and lifts it (`FoeLight.ACCENTS`, bible 12.69): a band of hue on the sheet. So
   paint the accent saturated (above 0.6) and in a hue the body does not use, and give a new
   foe a row in `ACCENTS`. A sheet with no such color gets no accent in code: redraw the sheet.
+- **The body's mid tones are lit in play.** The room's light raises what is painted between
+  an outline and a light (`FoeLight.FILL_GAIN`, bible 12.89). So paint the body's planes as mid
+  tones (luma 0.2 to 0.4) and keep the line under 0.06: a body painted near black takes no
+  fill and stays a smudge in a dark hall.
 - **Corruption** (the Evercrown's grown-through foes) is a code tint and a code growth
   (`CorruptionGrowth`). Do not draw stillglass into a foe's base art unless the foe is made
   of it (Crystal Dwarf, Glass Slug).

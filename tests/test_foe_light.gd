@@ -35,10 +35,6 @@ func _hornet(room: Room) -> Hornet:
 	return null
 
 
-func _saturation(c: Color) -> float:
-	return maxf(c.r, maxf(c.g, c.b)) - minf(c.r, minf(c.g, c.b))
-
-
 func test_foes_stand_in_their_rooms_light() -> void:
 	# Every zone with rooms has a light to stand in.
 	var dir := DirAccess.open("res://levels")
@@ -59,8 +55,10 @@ func test_foes_stand_in_their_rooms_light() -> void:
 		check(FoeLight.luma(deep) < FoeLight.luma(haze), "%s: the darks sink below the haze, never up to it" % zone)
 		for c: Color in [bee, teal]:
 			var out := FoeLight.lit(c, zone)
-			check(_saturation(out) < _saturation(c) * 0.9, "%s: a strong colour is muted" % zone)
-			check(_saturation(out) > _saturation(c) * 0.5, "%s: but it keeps its hue" % zone)
+			# Saturation, not chroma: the fill (12.89) makes a mid tone lighter,
+			# and a lighter pixel of one saturation has more chroma.
+			check(out.s < c.s * 0.9, "%s: a strong colour is muted" % zone)
+			check(out.s > c.s * 0.5, "%s: but it keeps its hue" % zone)
 		var black := FoeLight.lit(Color.BLACK, zone)
 		check(black.is_equal_approx(Color.BLACK.lerp(deep, FoeLight.SINK)), "%s: an outline takes the room's shadow colour" % zone)
 		check(FoeLight.luma(black) < 0.12, "%s: and stays an outline" % zone)
@@ -182,3 +180,88 @@ func test_each_foe_keeps_one_colour_of_its_own() -> void:
 	check(FoeLight.id_of(h) == "hornet", "a foe is named by its script")
 	check(h.material == FoeLight.material_for("heartwood", "hornet"), "a hornet in the Heartwood rests in its own light")
 	check(h.material != FoeLight.material_for("heartwood"), "not the zone's plain one")
+
+
+## Pass 612 (bible 12.89). The pass 610 grade: foes "sink into dark rooms", one
+## "a dark smudge". A foe's mid tones take a fill, so its body stands a step
+## above the room's shadows; its outline and its lights are as they were.
+func test_a_foes_body_stands_above_the_rooms_dark() -> void:
+	# The band: nothing for an outline or a light, the whole for a mid tone.
+	check(is_zero_approx(FoeLight.fill_at(0.0)) and is_zero_approx(FoeLight.fill_at(FoeLight.FILL_LO)),
+		"an outline takes no fill")
+	check(is_equal_approx(FoeLight.fill_at(0.25), 1.0), "a mid tone takes the whole fill")
+	check(is_zero_approx(FoeLight.fill_at(FoeLight.FILL_END)) and is_zero_approx(FoeLight.fill_at(1.0)),
+		"a light takes none")
+	check(FoeLight.FILL_GAIN >= 0.25 and FoeLight.FILL_GAIN <= 0.6, "the fill shows, and is not a wash")
+
+	for zone: String in Backdrop.ZONE_HAZE:
+		var deep := FoeLight.deep_for(zone)
+		var haze: Color = Backdrop.ZONE_HAZE[zone]
+		# A mid grey: what the mute and the sink leave of it, and what the fill adds.
+		var mid := Color(0.25, 0.25, 0.25)
+		var sunk := mid.lerp(deep, FoeLight.sink_at(0.25))
+		var out := FoeLight.lit(mid, zone)
+		check(FoeLight.luma(out) > FoeLight.luma(sunk) + 0.08, "%s: a mid tone is lit (%.2f from %.2f)" % [zone, FoeLight.luma(out), FoeLight.luma(sunk)])
+		check(FoeLight.luma(out) > FoeLight.luma(haze), "%s: and stands above the room's shadows" % zone)
+		check(FoeLight.luma(out) < 0.45, "%s: but is still a mid tone" % zone)
+		# The fill is the room's light: a grey leans to the zone's hue, never away.
+		var tint := FoeLight.fill_tint(zone)
+		check(maxf(tint.r, maxf(tint.g, tint.b)) == 1.0 and minf(tint.r, minf(tint.g, tint.b)) >= 0.5,
+			"%s: the fill is a pale light in the zone's hue" % zone)
+		# No tone passes another: a lighter paint never comes out darker.
+		var last := -1.0
+		var ordered := true
+		for i in 101:
+			var g := i / 100.0
+			var l := FoeLight.luma(FoeLight.lit(Color(g, g, g), zone))
+			if l < last - 0.0005:
+				ordered = false
+			last = l
+		check(ordered, "%s: the tones keep their order" % zone)
+
+	# The material carries the fill.
+	var mat := FoeLight.material_for("vorrhallow")
+	var tint_v := FoeLight.fill_tint("vorrhallow")
+	check((mat.get_shader_parameter("fill") as Vector2).is_equal_approx(Vector2(FoeLight.FILL_GAIN, FoeLight.FILL_ADD)),
+		"the shader has the fill's gain and add")
+	check((mat.get_shader_parameter("fill_tint") as Vector3).is_equal_approx(Vector3(tint_v.r, tint_v.g, tint_v.b)),
+		"and the zone's tint")
+	check((mat.get_shader_parameter("fill_band") as Vector4).is_equal_approx(
+		Vector4(FoeLight.FILL_LO, FoeLight.FILL_FULL, FoeLight.FILL_HOLD, FoeLight.FILL_END)), "and its band")
+	check((FoeLight.material_for("vorrhallow", "shade_knight").get_shader_parameter("fill") as Vector2).is_equal_approx(
+		Vector2(FoeLight.FILL_GAIN, FoeLight.FILL_ADD)), "a foe with an accent is filled too")
+
+	# Every sheet foe: the middle of its body stands above the dark of the
+	# darkest and the lightest halls, and its outline has not moved.
+	var dir := DirAccess.open("res://scripts/enemies")
+	var seen := 0
+	for file in dir.get_files():
+		if not file.ends_with(".gd"):
+			continue
+		var id := file.get_basename()
+		var path := "res://assets/sprites/%s.png" % id
+		if not ResourceLoader.exists(path) or not FileAccess.file_exists("res://assets/sprites/%s.json" % id):
+			continue
+		var meta: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://assets/sprites/%s.json" % id))
+		var cell: Array = meta["cell"]
+		var img: Image = (load(path) as Texture2D).get_image()
+		var lumas: Array[float] = []
+		var plain: Array[float] = []
+		for y in range(0, int(cell[1]), 2):
+			for x in range(0, int(cell[0]), 2):
+				var c := img.get_pixel(x, y)
+				if c.a < 0.8:
+					continue
+				lumas.append(FoeLight.luma(FoeLight.lit(c, "vorrhallow", id)))
+				plain.append(FoeLight.luma(c))
+		if lumas.size() < 40:
+			continue
+		seen += 1
+		lumas.sort()
+		plain.sort()
+		var mid_lit := lumas[lumas.size() / 2]
+		check(mid_lit > FoeLight.luma(Backdrop.ZONE_HAZE["vorrhallow"]) + 0.06,
+			"%s: half its body stands a step above Vorrhallow's dark (%.2f)" % [id, mid_lit])
+		check(mid_lit < plain[plain.size() / 2] + 0.12, "%s: and is not washed out (%.2f from %.2f)" % [id, mid_lit, plain[plain.size() / 2]])
+		check(lumas[0] < 0.12, "%s: its outline is still an outline (%.2f)" % [id, lumas[0]])
+	check(seen >= 20, "the sheet foes were all looked at (%d)" % seen)

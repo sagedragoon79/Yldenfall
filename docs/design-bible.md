@@ -2132,7 +2132,7 @@ Hitboxes, the burn, the runes, the coals, the pools and the douse are unchanged.
 
 The pass 550 grade saw foes (the hornet, the Silt Adder, the Bark Knight) "more saturated and detailed than the muted rooms, so they look pasted in". The zone grade (12.9) is a gentle multiply over everything, so it never brought a foe's own colours toward its room.
 
-- **One light per zone.** Every `Enemy` in a zone's room rests in one shared material (`FoeLight`, `shaders/foe_light.gdshader`). The gym, and a foe outside any room, has none and draws as painted. Since pass 582 a foe with an accent has the zone's material with its own band in it (12.69).
+- **One light per zone.** Every `Enemy` in a zone's room rests in one shared material (`FoeLight`, `shaders/foe_light.gdshader`). The gym, and a foe outside any room, has none and draws as painted. Since pass 582 a foe with an accent has the zone's material with its own band in it (12.69). Since pass 612 the material also lights a foe's mid tones with a fill (12.89).
 - **Muted.** A foe's colour is pulled `MUTE` (0.2) of the way toward its own grey.
 - **Darks sink.** Black sinks `SINK` (0.55) of the way toward the deep of the zone's haze (`Backdrop.ZONE_HAZE` at `DEEP` 0.6 of its value): the hue of the room's own shadows, never as light as them, so an outline stays an outline. The pull falls with the square of the darkness; a mid tone moves a little, a light hardly at all, and white not at all.
 - **What a fight reads is left alone.** The hit flash and the tell (the wash, or a sheet's flat overlay: white for a blow, the gold tint for a tell, 6.7) and the death's dissolve replace the material or pass through it unchanged. The hero, pickups, hazards and shots are not foes and are not touched.
@@ -2684,6 +2684,21 @@ The pass 610 grade, of the Rot Dwarf's wind-up in the Heartwood: "a flat yellow 
 - **A new sheet foe needs a point** for each wind-up animation (style guide, "The flash is the code's job").
 
 Judged by eye at 2x in the art lineup for all twenty-two foes, and at 1x and 3x in the three tell frames of the fight set. The first rim squares (6, 10 and 15 px) closed round the small foes (the Bog Puffcap, the Mothling, the Sap Spitter), so they were made smaller and scaled to the cell. `tests/test_tell_glint.gd` holds every point to its foe's frames, the glint's growth and size, the rim's reach, and a Rot Dwarf's wind-up in a room.
+
+### 12.89 A foe's body is lit by a fill (pass 612)
+
+The pass 610 grade: "foes and the hero sink into dark rooms", the Rot Dwarf against the Heartwood's trunk and the Crystal Dwarf in the Flooded Hall "a dark smudge". The pass 605 grade said the same of the Boughs' mantis and archer and the gear pit's bats. Measured on every sheet foe's idle frame in every zone it lives in: once the room's light (12.43) had sunk it, the middle pixel of a foe was at or under the value of the zone's haze for twelve of the forty-one pairs, and within 0.05 of it for most of the rest. The body was the room's shadow color with a few lights on it.
+
+- **A fill on the mid tones.** After the mute and the sink, a pixel painted between an outline and a light is multiplied by 1 + `FoeLight.FILL_GAIN` (0.4) and takes `FILL_ADD` (0.05) of the zone's light. The fill rises from `FILL_LO` 0.06 to `FILL_FULL` 0.2 of painted luma, holds to `FILL_HOLD` 0.3 and is gone by `FILL_END` 0.7.
+- **The outline stays sunk.** A pixel under `FILL_LO` takes none, so a foe's line is still the room's shadow color (12.43) and closes the lit body. A light takes none either, so the lights, the white of a flash and the gold of a tell are as they were.
+- **The zone's own light.** The added part is the zone's haze at full value, halfway to white (`FoeLight.fill_tint`): a pale blue in Vorrhallow, a pale green in the Boughs. A foe is lit in the hue of its room and keeps its own.
+- **No tone passes another.** A lighter paint never comes out darker than a darker one; the band's fall is long for that reason.
+- **This is not a rim light.** It is a tone curve on the foe's own paint in the shared material. Nothing is drawn round or over the figure. The rim light on figures stays a call for Sean in a watched session (12.5), and so does the hero, who has no room light and is unchanged.
+- **The accent is still left out and lifted** (12.69). The Shade Knight's value lift went from 0.4 to 0.5, so his plate's lights stay a clear step above his now lighter body.
+- **The Crystal Dwarf's glow (12.52)** was sized to outweigh his dark steel, so that he stood against it as a silhouette. His steel is now lit, and lighter than the glow at rest: his line stands against the glow, and the steel stands above the hall's dark on its own. The glow is unchanged.
+- After it the middle pixel of every pair stands above its zone's haze, by 0.05 to 0.25.
+
+Judged by eye at 2x on a sheet of all forty-one pairs over each zone's dark, before and after, and at 1x and 4x in the Heartwood and Flooded Hall fight frames. `tests/test_foe_light.gd` holds the band, a lit mid tone above every zone's haze, the order of the tones, the shader's numbers, and for every sheet foe a body a step above Vorrhallow's dark with its outline unmoved. Its older check that a strong color is muted now measures saturation, not chroma: a lighter pixel of one saturation has more chroma.
 
 ## 13. Asset Production Plan
 
