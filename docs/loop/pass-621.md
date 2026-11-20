@@ -57,7 +57,7 @@ slug and the beetle are pale already and show it least.
 
 ## Tests
 
-`tests/test_hit_chips.gd` (three tests). Mutation-checked:
+`tests/test_hit_chips.gd` (three tests). Full suite: 30,704 checks passed, 0 failed. Mutation-checked:
 
 | Mutation | Fails |
 | --- | --- |
