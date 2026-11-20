@@ -32,6 +32,17 @@ extends StaticBody2D
 ## noise only breaking their edges; the heat banks down a tone toward the top
 ## of a tall seal, and the halo reaches `HALO` 32 px, bright against the flames
 ## and falling away on a curve.
+##
+## Pass 619 (bible 12.96): the pass 615 grade called the Marsh Road's seal "a
+## lava column: a saturated orange strip with no glow falloff onto what is
+## round it". The halo tints the air, and the Haar's fog drinks most of it; the
+## stone that stands against the fire stayed as dark as the stone across the
+## room. A seal now lights the faces of the solid ground that look at it
+## (`lit_cells`): the floor's top beside its foot, the underside of the arch
+## over it and a wall beside it take a hot edge, gold on the lip and red a
+## pixel or two into the stone, stepping down along the face out to `LIT_REACH`.
+## And embers (`embers`) rise off its open sides and die a tone at a time, so
+## the fire is seen to give something off.
 
 ## Damage for touching the flames, and how often they can burn you.
 ## What its blow is made of (design bible 5.6).
@@ -246,8 +257,140 @@ static func halo_flicker(origin: Vector2, step: int) -> float:
 	return 0.82 + 0.18 * hash01(roundi(origin.x / 16.0), roundi(origin.y / 16.0), floori(step / 2.0) + 11)
 
 
+## How far along the stone a seal's light runs, in pixels from the tile.
+const LIT_REACH := 44
+## How many pixels into the stone the lit edge goes, and each one's share of the lip's light.
+const LIT_DEPTH: Array[float] = [1.0, 0.7, 0.45, 0.28, 0.15]
+## The lip's alpha against the flames (added light, so it tints and never covers).
+const LIT_PEAK := 0.9
+## The steps the light falls through along a face.
+const LIT_STEPS := 4
+## How far a face may sit past the middle of the fire and still look at it: half
+## a tile, so the stone flush over or under a column is lit by its ragged side.
+const LIT_FLUSH := 8.0
+const FACES: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]
+
+
+## The light a tile lays on the solid ground round it, local cell to colour
+## (its alpha is the light): `solid` answers for a cell counted in tiles from
+## this one, so (0, 1) is the cell under it. A solid cell's face is lit when the
+## cell beyond it is open and the face looks at the fire; the light is whole on
+## the lip, less on the pixels behind it, and steps down with distance from
+## the tile. As with the halo, a tile lights nothing past a side that has a
+## seal beside it, so a column's tiles never light one pixel twice.
+static func lit_cells(joined: int, solid: Callable) -> Dictionary:
+	var px := {}
+	var span := ceili(LIT_REACH / 16.0)
+	for j in range(-span, span + 1):
+		for i in range(-span, span + 1):
+			if (i == 0 and j == 0) or not solid.call(Vector2i(i, j)):
+				continue
+			var x0 := i * 16 - 8
+			var y0 := j * 16 - 8
+			for face: Vector2i in FACES:
+				if solid.call(Vector2i(i, j) + face):
+					continue
+				# The face's line, and whether the fire is on its open side.
+				if face.y < 0 and 0.0 > float(y0) + LIT_FLUSH:
+					continue
+				if face.y > 0 and 0.0 < float(y0 + 16) - LIT_FLUSH:
+					continue
+				if face.x < 0 and 0.0 > float(x0) + LIT_FLUSH:
+					continue
+				if face.x > 0 and 0.0 < float(x0 + 16) - LIT_FLUSH:
+					continue
+				for along in 16:
+					for k in LIT_DEPTH.size():
+						var c := Vector2i(x0 + along, y0 + k)
+						if face.y > 0:
+							c = Vector2i(x0 + along, y0 + 15 - k)
+						elif face.x < 0:
+							c = Vector2i(x0 + k, y0 + along)
+						elif face.x > 0:
+							c = Vector2i(x0 + 15 - k, y0 + along)
+						var dx := 0
+						var dy := 0
+						if c.x < -8:
+							if joined & LEFT != 0:
+								continue
+							dx = -8 - c.x
+						elif c.x > 7:
+							if joined & RIGHT != 0:
+								continue
+							dx = c.x - 7
+						if c.y < -8:
+							if joined & UP != 0:
+								continue
+							dy = -8 - c.y
+						elif c.y > 7:
+							if joined & DOWN != 0:
+								continue
+							dy = c.y - 7
+						var t := 1.0 - sqrt(float(dx * dx + dy * dy)) / float(LIT_REACH)
+						if t <= 0.0:
+							continue
+						var level := ceilf(t * LIT_STEPS) / LIT_STEPS
+						# The deepest pixels show only close to the fire.
+						if k >= 2 and level < 0.25 * float(k):
+							continue
+						var a := LIT_PEAK * level * LIT_DEPTH[k]
+						var was: Color = px.get(c, Color(0, 0, 0, 0))
+						if a > was.a:
+							var lip: Color = HEAT[4] if k == 0 else HEAT[3]
+							px[c] = Color(lip.r, lip.g, lip.b, a)
+	return px
+
+
+## Embers off each open side of a tile, and how many frames one lives.
+const EMBERS := 2
+const EMBER_LIFE := 14
+## How far an ember climbs and drifts out in its life, in pixels.
+const EMBER_RISE := 26.0
+const EMBER_DRIFT := 7.0
+## An ember's tone by its age: gold, then down the reds as it dies.
+const EMBER_TONES: Array[int] = [5, 4, 3, 3, 2, 1]
+
+
+## The embers a tile gives off at frame `step`, local cell to colour: one pixel
+## each, born at an open side, climbing and drifting out from the fire, cooling
+## down the heat ramp and gone after `EMBER_LIFE` frames. A side with a seal
+## beside it gives none.
+static func embers(origin: Vector2, step: int, joined: int) -> Dictionary:
+	var px := {}
+	var ox := roundi(origin.x / 16.0)
+	var oy := roundi(origin.y / 16.0)
+	for side: int in [LEFT, RIGHT]:
+		if joined & side != 0:
+			continue
+		var out := -1 if side == LEFT else 1
+		for i in EMBERS:
+			var which := i * 2 + (0 if side == LEFT else 1)
+			var shift := floori(hash01(ox, oy, 31 + which) * EMBER_LIFE)
+			var age := posmod(step + shift, EMBER_LIFE)
+			var born := floori((step + shift) / float(EMBER_LIFE))
+			# A third of the lives are skipped, so the embers come unevenly.
+			if hash01(ox + born, oy, 47 + which) < 0.34:
+				continue
+			var t := float(age) / float(EMBER_LIFE)
+			var start_y := -7.0 + 14.0 * hash01(ox, oy + born, 53 + which)
+			var sway := sin(float(age) * 0.9 + float(which)) * 1.2
+			var x := (7 if side == RIGHT else -8) + out * roundi(1.0 + EMBER_DRIFT * t + sway)
+			var y := roundi(start_y - EMBER_RISE * t * (0.7 + 0.3 * t))
+			px[Vector2i(x, y)] = HEAT[EMBER_TONES[mini(EMBER_TONES.size() - 1, floori(t * EMBER_TONES.size()))]]
+	return px
+
+
+## The light this tile lays on the room's stone (`lit_cells`): none outside a room.
+func lit() -> Dictionary:
+	var room := get_parent() as Room
+	if room == null:
+		return {}
+	var at := position
+	return lit_cells(joined(), func(c: Vector2i) -> bool: return room.is_solid_at(at + Vector2(c * 16)))
+
+
 ## The heat halo, drawn once (additive, behind the flames, over the stone);
-## only its alpha breathes.
+## only its alpha breathes. It carries the light on the stone too (`lit_cells`).
 class Halo extends Node2D:
 	var seal: FireSeal
 
@@ -262,12 +405,15 @@ class Halo extends Node2D:
 		var col: Color = FireSeal.HEAT[3]
 		for c: Vector2i in cells:
 			draw_rect(Rect2(c.x, c.y, 1, 1), Color(col.r, col.g, col.b, cells[c]))
+		var lit := seal.lit()
+		for c: Vector2i in lit:
+			draw_rect(Rect2(c.x, c.y, 1, 1), lit[c])
 
 
 ## Seal tiles in a touching run from this one, a tile at a time along `step`.
 func _run(step: Vector2) -> int:
 	var n := 0
-	var at := global_position
+	var at := position
 	while true:
 		at += step
 		var found := false
@@ -340,6 +486,10 @@ func _draw() -> void:
 				draw_rect(Rect2(start, y, x - start, 1), col)
 			start = x
 			col = c2
+	if not doused:
+		var sparks := embers(global_position, step, _joined)
+		for c: Vector2i in sparks:
+			draw_rect(Rect2(c.x, c.y, 1, 1), sparks[c])
 
 
 ## An integer hash, 0 to 1.
@@ -384,6 +534,19 @@ const CORE_DEEP := 0.08
 ## How much cooler the top tile of a column burns than its foot, across `BANK` tiles.
 const BANK_COOL := 0.1
 const BANK := 4.0
+## How much cooler the fire burns at an open side than `RIM` pixels in, so a
+## column has a gold spine and red flanks: a round body, not a flat sheet.
+const RIM_COOL := 0.24
+const RIM := 7.0
+
+
+## How much cooler the fire burns `d` pixels in from an open side: nothing at
+## the ragged edge itself (it keeps its shape), most a few pixels in, and
+## nothing again by `RIM`, where the spine is.
+static func rim_cool(d: float) -> float:
+	if d > 90.0:
+		return 0.0
+	return RIM_COOL * clampf(d / 2.5, 0.0, 1.0) * (1.0 - clampf(d / RIM, 0.0, 1.0))
 
 
 ## The tone for a heat from 0 to 1, or clear below the flame's edge.
@@ -495,7 +658,7 @@ static func cells(origin: Vector2, step: int, joined: int, out: float = 0.0, abo
 			var rise := lick(wx, wy + floori(step * 2.5))
 			var h_edge := 0.12 + 0.6 * side + 0.7 * (n - 0.5)
 			var h_core := CORE_HEAT + CORE_DEEP * deep + LICK_GAIN * (rise - 0.5) + GRAIN_GAIN * (n - 0.5) - bank(above + float(y + 8) / 16.0)
-			var h := lerpf(h_edge, h_core, inside)
+			var h := lerpf(h_edge, h_core, inside) - rim_cool(d)
 			if y < -8:
 				# Tongues above the column: each lick has its own height this frame.
 				var reach := 3.0 + TONGUE * 0.9 * reaches[x + 8] * side

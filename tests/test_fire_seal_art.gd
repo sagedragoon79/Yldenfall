@@ -433,3 +433,144 @@ func test_fog_pockets_waver_and_dither() -> void:
 	check(src.find("floor(clear * 4.0 + 0.5)") < 0, "the hard rounding to rings is gone")
 	check(src.find("POCKET_WAVER") >= 0 and src.find("BAYER") >= 0, "the rim wavers and the steps are dithered")
 	check(src.find("floor(p / 2.0)") >= 0, "the dither is in 2-pixel blocks of world pixels")
+
+
+## Pass 619 (bible 12.96): a seal lights the faces of the stone that look at it.
+## A floor under a lone tile, with an arch block over it.
+func _floor_and_arch(c: Vector2i) -> bool:
+	return c.y == 1 or c == Vector2i(0, -1)
+
+
+func test_fire_seal_lights_the_stone_round_it() -> void:
+	var lit := FireSeal.lit_cells(0, _floor_and_arch)
+	check(lit.size() > 150, "a seal lights the stone round it (%d px)" % lit.size())
+	var off_stone := 0
+	var past := 0
+	var steps := {}
+	for c: Vector2i in lit:
+		var col: Color = lit[c]
+		var on_floor: bool = c.y >= 8 and c.y < 8 + FireSeal.LIT_DEPTH.size()
+		var on_arch: bool = c.x >= -8 and c.x <= 7 and c.y >= -24 and c.y <= -9
+		if not (on_floor or on_arch):
+			off_stone += 1
+		if col.a > FireSeal.LIT_PEAK + 0.0001:
+			past += 1
+		if c.y == 8:
+			steps[snappedf(col.a, 0.001)] = true
+	check(off_stone == 0, "the light sits only on the lip of the stone (%d px off it)" % off_stone)
+	check(past == 0, "no lit pixel passes the peak (%d)" % past)
+	check(steps.size() == FireSeal.LIT_STEPS, "the lip steps down along the floor (%d steps)" % steps.size())
+	# The lip is gold and the stone behind it red, and the light thins with depth.
+	var lip: Color = lit[Vector2i(0, 8)]
+	var under: Color = lit[Vector2i(0, 9)]
+	check(Color(lip.r, lip.g, lip.b) == FireSeal.HEAT[4], "the lip is gold")
+	check(Color(under.r, under.g, under.b) == FireSeal.HEAT[3], "the stone behind the lip is red")
+	check(is_equal_approx(lip.a, FireSeal.LIT_PEAK), "the lip under the fire is at the peak (%.2f)" % lip.a)
+	check(under.a < lip.a, "the light thins into the stone")
+	# It falls off along the floor and ends at the reach.
+	var near: Color = lit[Vector2i(-12, 8)]
+	var far: Color = lit[Vector2i(-8 - FireSeal.LIT_REACH + 4, 8)]
+	check(near.a > far.a * 2.0, "the lip is brighter by the fire than far along (%.2f vs %.2f)" % [near.a, far.a])
+	check(not lit.has(Vector2i(-8 - FireSeal.LIT_REACH - 1, 8)), "the light ends at its reach")
+	check(not lit.has(Vector2i(-40, 8 + FireSeal.LIT_DEPTH.size() - 1)), "the deepest pixels show only near the fire")
+	# The arch's underside is lit; its top, which looks away from the fire, is not.
+	check(lit.has(Vector2i(0, -9)), "the underside of the arch is lit")
+	check(not lit.has(Vector2i(0, -24)), "the arch's top, facing away, is dark")
+	# A wall whose open face looks away from the fire stays dark; one that looks at it is lit.
+	var wall := FireSeal.lit_cells(0, func(c: Vector2i) -> bool: return c == Vector2i(2, 0))
+	check(wall.has(Vector2i(24, 0)), "a wall beside the fire is lit on the near face")
+	check(not wall.has(Vector2i(39, 0)), "and dark on the far face")
+	# A column's tiles never light one pixel twice: an inner tile lights nothing above or below itself.
+	var inner := FireSeal.lit_cells(FireSeal.UP | FireSeal.DOWN, func(c: Vector2i) -> bool: return c.y == 2 or c.x == -2)
+	var wrong := 0
+	for c: Vector2i in inner:
+		if c.y < -8 or c.y > 7:
+			wrong += 1
+	check(inner.size() > 20, "an inner tile lights the wall beside it (%d px)" % inner.size())
+	check(wrong == 0, "and nothing past its joined sides (%d)" % wrong)
+	# No stone, no light.
+	check(FireSeal.lit_cells(0, func(_c: Vector2i) -> bool: return false).is_empty(), "open air takes no lit edge")
+
+
+## In a room, the floor at a seal's foot is lit and goes dark when it is doused.
+func test_fire_seal_lights_its_room_floor() -> void:
+	var rows := grid_rows(14, 9)
+	put_tiles(rows, 7, 3, "Z", 1, 3)
+	var room := Room.from_text("
+".join(PackedStringArray(_rows_text(rows))))
+	arena.add_child(room)
+	await frames(2)
+	var foot: FireSeal = null
+	var total := 0
+	for s in room.get_children():
+		var seal := s as FireSeal
+		if seal == null:
+			continue
+		total += seal.lit().size()
+		if seal.joined() & FireSeal.DOWN == 0:
+			foot = seal
+	check(foot != null, "the column has a foot")
+	if foot != null:
+		check(foot.lit().has(Vector2i(-12, 8)), "the floor beside the foot takes the light")
+	check(total > 100, "the seal lights its room (%d px)" % total)
+	if foot != null:
+		foot.douse()
+		await frames(2)
+		check(not foot._halo.visible, "doused, the light on the stone goes out with the halo")
+	room.queue_free()
+	await frames(1)
+
+
+## Embers rise off the open sides, cool as they age and never sit on a joined side.
+func test_fire_seal_gives_off_embers() -> void:
+	var seen := 0
+	var inside := 0
+	var off_ramp := 0
+	var highest := 0
+	var most := 0
+	var tones := {}
+	for step in 80:
+		var e := FireSeal.embers(O, step, 0)
+		most = maxi(most, e.size())
+		for c: Vector2i in e:
+			seen += 1
+			if c.x >= -8 and c.x <= 7:
+				inside += 1
+			if _heat_index(e[c]) < 0:
+				off_ramp += 1
+			tones[e[c]] = true
+			highest = mini(highest, c.y)
+	check(most <= FireSeal.EMBERS * 2, "a tile gives off a few embers at once (%d)" % most)
+	check(seen > 60, "embers come most frames (%d over 80)" % seen)
+	check(inside == 0, "an ember flies outside the flames (%d inside)" % inside)
+	check(off_ramp == 0, "an ember is a heat tone (%d off the ramp)" % off_ramp)
+	check(tones.size() >= 4, "an ember cools through the ramp (%d tones)" % tones.size())
+	check(highest < -16, "embers climb (%d)" % highest)
+	# A joined side gives off none.
+	var on_joined := 0
+	for step in 80:
+		for c: Vector2i in FireSeal.embers(O, step, FireSeal.LEFT):
+			if c.x < 8:
+				on_joined += 1
+	check(on_joined == 0, "a joined side gives off none (%d)" % on_joined)
+	check(FireSeal.embers(O, 3, FireSeal.LEFT | FireSeal.RIGHT).is_empty(), "a tile inside a wall of seals gives off none")
+
+
+## The fire is cooler at an open side than in its spine, so a column is round.
+func test_fire_seal_has_a_gold_spine_and_red_flanks() -> void:
+	var col := FireSeal.UP | FireSeal.DOWN
+	var spine := 0.0
+	var flank := 0.0
+	var n := 0
+	for step in 8:
+		var px := FireSeal.cells(O + Vector2(0, 16), step * 3, col)
+		for y in range(-8, 8):
+			for x: int in [-1, 0]:
+				spine += _heat_index(px.get(Vector2i(x, y), FireSeal.HEAT[0]))
+			for x: int in [-4, 3]:
+				flank += _heat_index(px.get(Vector2i(x, y), FireSeal.HEAT[0]))
+			n += 2
+	spine /= n
+	flank /= n
+	check(spine > flank + 0.5, "the spine burns hotter than the flanks (%.2f vs %.2f)" % [spine, flank])
+	check(spine >= 3.0 and flank < 3.0, "the spine is orange to gold and the flanks are red (%.2f, %.2f)" % [spine, flank])
