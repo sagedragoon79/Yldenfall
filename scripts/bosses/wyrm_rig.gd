@@ -52,12 +52,12 @@ const CURVE_STEPS := 40
 ## Sections toward the head are drawn over those toward the body.
 const HEADWARD_ON_TOP := true
 
+## The head's flash. COLOR already holds the art's pixel times the sprite's tint here;
+## multiplying by the texture again would darken every pixel by itself.
 const WASH := "shader_type canvas_item;
 uniform float white = 0.0;
 void fragment() {
-	vec4 c = texture(TEXTURE, UV) * COLOR;
-	c.rgb = mix(c.rgb, vec3(1.0), white);
-	COLOR = c;
+	COLOR.rgb = mix(COLOR.rgb, vec3(1.0), white);
 }"
 
 
@@ -85,6 +85,8 @@ class Neck:
 	var clip := "idle"
 	var frame := 0
 	var shown := false
+	## The head's white flash (a blow, the end of a wind-up). The neck never flashes:
+	## a white neck reads as a ghost of it.
 	var material: ShaderMaterial
 	## What the head was last told (see `pose_head`), for the steam and the drips.
 	var told := {}
@@ -202,7 +204,6 @@ func _build_neck(i: int) -> Neck:
 		sp.offset = -foot
 		sp.flip_h = n.flip
 		sp.scale = Vector2(ART, ART)
-		sp.material = n.material
 		# The section's own lean, so its foot-to-rim line lies along the bone.
 		sp.set_meta("lean", -(rim - foot).angle())
 		sprites.append(sp)

@@ -103,7 +103,12 @@ func test_wyrm_rig_head_shows_what_it_is_doing() -> void:
 	_settle(rig, 2, Vector2(136, 70), {"mode": "limp", "face": 1.0, "dead": true})
 	check(n.rot > 0.9 and is_equal_approx(n.head_skin.modulate.r, WyrmRig.LIMP.r), "a dead head hangs nose down, grey (%.2f)" % n.rot)
 	_settle(rig, 2, at, {"mode": "idle", "face": 1.0, "white": 1.0})
-	check(is_equal_approx(float(n.material.get_shader_parameter("white")), 1.0), "a struck head flashes white")
+	check(is_equal_approx(float(n.material.get_shader_parameter("white")), 1.0) and n.head_skin.material == n.material, "a struck head flashes white")
+	var plain := true
+	for sp in n.skins:
+		plain = plain and sp.material == null
+	check(plain, "and its neck does not: only the head flashes")
+	check(not ("texture(TEXTURE" in WyrmRig.WASH), "the flash only whitens: it never multiplies the art by itself, which darkened it")
 	# The middle head faces us and has its own clips.
 	var m := rig.necks[1]
 	_settle(rig, 1, HaarWyrm.HOMES[1], {"mode": "tell", "face": 1.0, "breath": HydraHead.FOG, "time": 2.9, "tell": 3.0})
