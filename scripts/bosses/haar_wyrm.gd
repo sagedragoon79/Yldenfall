@@ -94,6 +94,13 @@ const DRENCHED_LIGHT := Color("9fb8c8")
 const DRENCHED_DARK := Color("4a5f6e")
 const LIMP := Color("3d4440")
 
+## The rig prototype (Sean, 2026-11-19): the heads, necks and body from Sean's PixelLab
+## art on a skeleton (`WyrmRig`), in place of the code-drawn ones. Off unless the game
+## is started with --wyrm-rig. The fight is the same either way.
+static var use_rig := false
+## Films: the breaths in the same order every run (0 leaves them to chance).
+static var seed_with := 0
+
 ## The arena's interior in pixels (the room sets it).
 var arena := Rect2(16, 64, 928, 256)
 var phase := 1
@@ -114,6 +121,7 @@ var _intro_t := 0.0
 var _beat := 0
 var _hinted := {}
 var _lair: Node2D
+var rig: WyrmRig
 
 
 func _init() -> void:
@@ -128,7 +136,10 @@ func _init() -> void:
 	uses_gravity = false
 	knockback = 0.0
 	state = "dormant"
-	rng.randomize()
+	if seed_with != 0:
+		rng.seed = seed_with
+	else:
+		rng.randomize()
 
 
 func _ready() -> void:
@@ -141,6 +152,9 @@ func _ready() -> void:
 	_lair.z_index = -1
 	_lair.draw.connect(_draw_lair)
 	add_child(_lair)
+	if use_rig:
+		rig = WyrmRig.new()
+		add_child(rig)
 	for i in 3:
 		var h := HydraHead.new()
 		h.boss = self
@@ -591,6 +605,8 @@ func _process(delta: float) -> void:
 					h.queue_free()
 			defeated.emit()
 			super.die()
+	if rig != null and state != "dead":
+		rig.pose(self, delta)
 	queue_redraw()
 	if is_instance_valid(_lair):
 		_lair.queue_redraw()
@@ -669,11 +685,13 @@ func _draw() -> void:
 	if state == "dying":
 		fade = 1.0 - clampf(state_time / DYING_TIME, 0.0, 1.0)
 	for h in heads:
-		if is_instance_valid(h) and h.mode != "hidden":
+		if rig == null and is_instance_valid(h) and h.mode != "hidden":
 			_draw_neck(h, fade)
 	for h in heads:
 		if is_instance_valid(h) and h.mode != "hidden":
-			_draw_head(h, t, fade)
+			if rig == null:
+				_draw_head(h, t, fade)
+			_draw_head_health(h, fade)
 	if state == "fight":
 		_draw_tells(t)
 
@@ -767,8 +785,11 @@ func _draw_head(h: HydraHead, t: float, fade: float) -> void:
 		_px(-16, -12, 24, 22, Color.WHITE, 0.6 * a)
 		_px(2, -6, 22, 10, Color.WHITE, 0.6 * a)
 	draw_set_transform(Vector2.ZERO)
+
+
+## A head's own health: a notch at the floor its hot scales hold it to.
+func _draw_head_health(h: HydraHead, a: float) -> void:
 	if not h.dead and state == "fight":
-		# Its own health: a notch at the floor its hot scales hold it to.
 		var at := h.global_position - global_position + Vector2(-14, -34)
 		draw_rect(Rect2(at, Vector2(28, 3)), Color(OUTLINE, 0.8 * a))
 		draw_rect(Rect2(at + Vector2(1, 1), Vector2(26.0 * h.fraction(), 1)), Color(EYE if h.weak else Color("c0503a"), a))

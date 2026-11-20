@@ -44,6 +44,10 @@ extends Node2D
 ##   --coins                    lay a 1, 5, 25 and 100 gold coin ahead of the player (pass 199)
 ##   --glove                    wear a War Glove (a rare drop) from the start
 ##   --shot-thrust=N            thrust (the Blade skill) on frame N
+##   --wyrm-rig                 the Haar Wyrm on its skeleton (WyrmRig, a prototype) in place of the code-drawn one
+##   --wyrm-seed=N              the Haar Wyrm's breaths in the same order every run (to film the two side by side)
+##   --wyrm-reel                walk the Haar Wyrm through every state for a film: a doused head, the rage,
+##                              a head falling limp, and its death
 ##   --damage-numbers           show damage numbers (the option) for this run
 ##   --poisoned                 start poisoned
 ##   --flags=A,B                set world flags first, e.g. spring:heartwood
@@ -159,6 +163,8 @@ func _ready() -> void:
 	ui.add_child(fader)
 
 	PlayerVisual.forced = _args.get("shot-pose", "")
+	HaarWyrm.use_rig = _args.has("wyrm-rig")
+	HaarWyrm.seed_with = int(_args.get("wyrm-seed", "0"))
 	if _args.has("room"):
 		var room_id: String = _args["room"]
 		if room_id.begins_with("res://"):
@@ -521,6 +527,8 @@ func _take_shot() -> void:
 		player.input.attack_pressed = _frames % int(_args["shot-attack"]) == 0
 	if _args.has("shot-pogo") and player != null:
 		_pogo_hand()
+	if _args.has("wyrm-reel"):
+		_wyrm_reel()
 	if _args.has("film") and _frames % int(_args.get("film-every", "1")) == 0:
 		var dir := String(_args["film"])
 		DirAccess.make_dir_recursive_absolute(dir)
@@ -531,6 +539,27 @@ func _take_shot() -> void:
 		var img := get_viewport().get_texture().get_image()
 		img.save_png(_args["shot"])
 		get_tree().quit()
+
+
+## Films (--wyrm-reel): the states of the Haar Wyrm that a scripted hand can't reach. The
+## frames count from the start of the run.
+func _wyrm_reel() -> void:
+	var z: HaarWyrm = null
+	for b in get_tree().get_nodes_in_group("boss"):
+		if b is HaarWyrm:
+			z = b
+	if z == null or z.state != "fight":
+		return
+	match _frames:
+		600, 1650:
+			# A full cistern: the head that breathed last droops on the rim, doused.
+			z.cistern.fill_now()
+		2050:
+			z._kill_head(z.heads[0])
+		2170:
+			z._kill_head(z.heads[2])
+		2290:
+			z._kill_head(z.heads[1])
 
 
 ## Screenshots (--shot-pogo): run right, jump off each edge and strike down just above the floor,

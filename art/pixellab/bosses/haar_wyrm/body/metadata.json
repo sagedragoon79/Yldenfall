@@ -1,0 +1,143 @@
+{
+  "group_id": "3f663dc9-8090-4363-8169-6a4be6a5893b",
+  "states": [
+    {
+      "character": {
+        "id": "82d08f86-cd78-412a-9baf-ebb1ad185130",
+        "name": "Idle",
+        "prompt": "Convert the reference image as is.",
+        "size": {
+          "width": 256,
+          "height": 128
+        },
+        "template_id": "custom",
+        "directions": 4,
+        "view": "side",
+        "created_at": "2026-11-10T19:52:10.158736+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "west": "Idle/rotations/west.png",
+          "east": "Idle/rotations/east.png",
+          "north": "Idle/rotations/north.png"
+        },
+        "animations": {
+          "The_claws_flail_erratically_as_the_heavy_tail_whip": {
+            "south": [
+              "Idle/animations/The_claws_flail_erratically_as_the_heavy_tail_whip/south/frame_000.png",
+              "Idle/animations/The_claws_flail_erratically_as_the_heavy_tail_whip/south/frame_001.png",
+              "Idle/animations/The_claws_flail_erratically_as_the_heavy_tail_whip/south/frame_002.png",
+              "Idle/animations/The_claws_flail_erratically_as_the_heavy_tail_whip/south/frame_003.png",
+              "Idle/animations/The_claws_flail_erratically_as_the_heavy_tail_whip/south/frame_004.png",
+              "Idle/animations/The_claws_flail_erratically_as_the_heavy_tail_whip/south/frame_005.png",
+              "Idle/animations/The_claws_flail_erratically_as_the_heavy_tail_whip/south/frame_006.png",
+              "Idle/animations/The_claws_flail_erratically_as_the_heavy_tail_whip/south/frame_007.png",
+              "Idle/animations/The_claws_flail_erratically_as_the_heavy_tail_whip/south/frame_008.png",
+              "Idle/animations/The_claws_flail_erratically_as_the_heavy_tail_whip/south/frame_009.png",
+              "Idle/animations/The_claws_flail_erratically_as_the_heavy_tail_whip/south/frame_010.png",
+              "Idle/animations/The_claws_flail_erratically_as_the_heavy_tail_whip/south/frame_011.png",
+              "Idle/animations/The_claws_flail_erratically_as_the_heavy_tail_whip/south/frame_012.png",
+              "Idle/animations/The_claws_flail_erratically_as_the_heavy_tail_whip/south/frame_013.png",
+              "Idle/animations/The_claws_flail_erratically_as_the_heavy_tail_whip/south/frame_014.png",
+              "Idle/animations/The_claws_flail_erratically_as_the_heavy_tail_whip/south/frame_015.png",
+              "Idle/animations/The_claws_flail_erratically_as_the_heavy_tail_whip/south/frame_016.png"
+            ]
+          },
+          "Shift_the_weight_forward_onto_the_front_limbs_whil": {
+            "south": [
+              "Idle/animations/Shift_the_weight_forward_onto_the_front_limbs_whil/south/frame_000.png",
+              "Idle/animations/Shift_the_weight_forward_onto_the_front_limbs_whil/south/frame_001.png",
+              "Idle/animations/Shift_the_weight_forward_onto_the_front_limbs_whil/south/frame_002.png",
+              "Idle/animations/Shift_the_weight_forward_onto_the_front_limbs_whil/south/frame_003.png",
+              "Idle/animations/Shift_the_weight_forward_onto_the_front_limbs_whil/south/frame_004.png",
+              "Idle/animations/Shift_the_weight_forward_onto_the_front_limbs_whil/south/frame_005.png",
+              "Idle/animations/Shift_the_weight_forward_onto_the_front_limbs_whil/south/frame_006.png",
+              "Idle/animations/Shift_the_weight_forward_onto_the_front_limbs_whil/south/frame_007.png",
+              "Idle/animations/Shift_the_weight_forward_onto_the_front_limbs_whil/south/frame_008.png",
+              "Idle/animations/Shift_the_weight_forward_onto_the_front_limbs_whil/south/frame_009.png",
+              "Idle/animations/Shift_the_weight_forward_onto_the_front_limbs_whil/south/frame_010.png",
+              "Idle/animations/Shift_the_weight_forward_onto_the_front_limbs_whil/south/frame_011.png",
+              "Idle/animations/Shift_the_weight_forward_onto_the_front_limbs_whil/south/frame_012.png"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "character": {
+        "id": "719a2cb8-5a10-43c0-9696-3519954dac4f",
+        "name": "slumped to floor aft",
+        "prompt": "Convert the reference image as is.",
+        "size": {
+          "width": 256,
+          "height": 128
+        },
+        "template_id": "custom",
+        "directions": 4,
+        "view": "side",
+        "created_at": "2026-11-10T20:49:42.066937+00:00"
+      },
+      "folder": "slumped_to_floor_aft",
+      "frames": {
+        "rotations": {
+          "south": "slumped_to_floor_aft/rotations/south.png",
+          "west": "slumped_to_floor_aft/rotations/west.png",
+          "east": "slumped_to_floor_aft/rotations/east.png",
+          "north": "slumped_to_floor_aft/rotations/north.png"
+        },
+        "animations": {}
+      }
+    },
+    {
+      "character": {
+        "id": "c9b4af82-fc18-4a77-b444-ec8b83bed341",
+        "name": "Cloaked in shadow. C",
+        "prompt": "Convert the reference image as is. Cloaked in shadow, with only the faint outline of the body barely visible, as if the character stands in a dark tunnel or cave.",
+        "size": {
+          "width": 256,
+          "height": 128
+        },
+        "template_id": "custom",
+        "directions": 4,
+        "view": "side",
+        "created_at": "2026-11-19T01:17:37.175217+00:00"
+      },
+      "folder": "Cloaked_in_shadow._C",
+      "frames": {
+        "rotations": {
+          "south": "Cloaked_in_shadow._C/rotations/south.png",
+          "west": "Cloaked_in_shadow._C/rotations/west.png",
+          "east": "Cloaked_in_shadow._C/rotations/east.png",
+          "north": "Cloaked_in_shadow._C/rotations/north.png"
+        },
+        "animations": {
+          "Shift_weight_forward_while_lifting_the_heavy_torso": {
+            "south": [
+              "Cloaked_in_shadow._C/animations/Shift_weight_forward_while_lifting_the_heavy_torso/south/frame_000.png",
+              "Cloaked_in_shadow._C/animations/Shift_weight_forward_while_lifting_the_heavy_torso/south/frame_001.png",
+              "Cloaked_in_shadow._C/animations/Shift_weight_forward_while_lifting_the_heavy_torso/south/frame_002.png",
+              "Cloaked_in_shadow._C/animations/Shift_weight_forward_while_lifting_the_heavy_torso/south/frame_003.png",
+              "Cloaked_in_shadow._C/animations/Shift_weight_forward_while_lifting_the_heavy_torso/south/frame_004.png",
+              "Cloaked_in_shadow._C/animations/Shift_weight_forward_while_lifting_the_heavy_torso/south/frame_005.png",
+              "Cloaked_in_shadow._C/animations/Shift_weight_forward_while_lifting_the_heavy_torso/south/frame_006.png",
+              "Cloaked_in_shadow._C/animations/Shift_weight_forward_while_lifting_the_heavy_torso/south/frame_007.png",
+              "Cloaked_in_shadow._C/animations/Shift_weight_forward_while_lifting_the_heavy_torso/south/frame_008.png",
+              "Cloaked_in_shadow._C/animations/Shift_weight_forward_while_lifting_the_heavy_torso/south/frame_009.png",
+              "Cloaked_in_shadow._C/animations/Shift_weight_forward_while_lifting_the_heavy_torso/south/frame_010.png",
+              "Cloaked_in_shadow._C/animations/Shift_weight_forward_while_lifting_the_heavy_torso/south/frame_011.png",
+              "Cloaked_in_shadow._C/animations/Shift_weight_forward_while_lifting_the_heavy_torso/south/frame_012.png",
+              "Cloaked_in_shadow._C/animations/Shift_weight_forward_while_lifting_the_heavy_torso/south/frame_013.png",
+              "Cloaked_in_shadow._C/animations/Shift_weight_forward_while_lifting_the_heavy_torso/south/frame_014.png",
+              "Cloaked_in_shadow._C/animations/Shift_weight_forward_while_lifting_the_heavy_torso/south/frame_015.png",
+              "Cloaked_in_shadow._C/animations/Shift_weight_forward_while_lifting_the_heavy_torso/south/frame_016.png"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-11-20T01:00:07.482563"
+}
