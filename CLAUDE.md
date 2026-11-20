@@ -28,6 +28,9 @@ same way (`ids` in that file; `GameState.migrate_ids` brings older saves over). 
 - Player sprite sheet: `python3 tools/art/spritegen.py`. Enemy and NPC sheets (NPCs from their
   `look` in `data/npcs.json`; rerun after adding a person): `python3 tools/art/castgen.py`. Room decor atlases:
   `python3 tools/art/decorgen.py`. Screenshot one player frame with `--shot-pose=slash1:1`.
+- The Haar Wyrm's rig (design bible 8.4 and 13.7): `python3 tools/art/wyrm_rig_pack.py` packs Sean's head, body and
+  neck art into `assets/bosses/haar_wyrm/` (`--sheet OUT.png` to check the clips line up). Film it with the game's
+  `--wyrm-seed=N --wyrm-reel`; `--wyrm-drawn` shows the old code-drawn one beside it.
 - UI pixel font (every glyph is drawn in the script; `PixelFont` loads it): `python3 tools/art/fontgen.py`.
   Draw UI text with `PixelFont.draw`, never `draw_string` with another font.
 - Item icons and people's portraits (`UiArt` loads them; rerun after adding an item or a person): `python3 tools/art/icongen.py`

@@ -20,8 +20,10 @@ extends Enemy
 ## the third. So to bring down the plume or the geyser head, fill the cistern
 ## before the fog and ride the fog out in the water.
 ##
-## Code-drawn at 2x for now (`_px` takes half-pixels); the art comes once the fight
-## plays right (Sean, 2026-11-09).
+## Drawn on a skeleton from Sean's PixelLab art (`WyrmRig`, since 2026-11-19): the body
+## crouches in the tunnel's dark and the three necks grow from its shoulders. The
+## code-drawn heads and necks below are what it wore while the fight was being built
+## (`_px` takes half-pixels); `use_rig` off, or --wyrm-drawn, brings them back.
 
 signal defeated
 
@@ -94,6 +96,13 @@ const DRENCHED_LIGHT := Color("9fb8c8")
 const DRENCHED_DARK := Color("4a5f6e")
 const LIMP := Color("3d4440")
 
+## The heads, necks and body are Sean's PixelLab art on a skeleton (`WyrmRig`). Off, they
+## are the code-drawn ones the fight was built with (the game's --wyrm-drawn, to compare).
+## The fight is the same either way, but for where the geyser leaves the jaws.
+static var use_rig := true
+## Films: the breaths in the same order every run (0 leaves them to chance).
+static var seed_with := 0
+
 ## The arena's interior in pixels (the room sets it).
 var arena := Rect2(16, 64, 928, 256)
 var phase := 1
@@ -114,6 +123,7 @@ var _intro_t := 0.0
 var _beat := 0
 var _hinted := {}
 var _lair: Node2D
+var rig: WyrmRig
 
 
 func _init() -> void:
@@ -128,7 +138,10 @@ func _init() -> void:
 	uses_gravity = false
 	knockback = 0.0
 	state = "dormant"
-	rng.randomize()
+	if seed_with != 0:
+		rng.seed = seed_with
+	else:
+		rng.randomize()
 
 
 func _ready() -> void:
@@ -141,6 +154,9 @@ func _ready() -> void:
 	_lair.z_index = -1
 	_lair.draw.connect(_draw_lair)
 	add_child(_lair)
+	if use_rig:
+		rig = WyrmRig.new()
+		add_child(rig)
 	for i in 3:
 		var h := HydraHead.new()
 		h.boss = self
@@ -578,6 +594,9 @@ func _breathe_hold(h: HydraHead, k: float) -> void:
 
 ## Where a head's breath leaves its jaws.
 func mouth_of(h: HydraHead) -> Vector2:
+	if rig != null:
+		# On the rig the head turns to its aim, and the breath leaves its jaws.
+		return rig.mouth(h.index, h.global_position, _face(h))
 	return h.global_position + Vector2(_face(h) * 22.0, 6.0)
 
 
@@ -591,6 +610,8 @@ func _process(delta: float) -> void:
 					h.queue_free()
 			defeated.emit()
 			super.die()
+	if rig != null and state != "dead":
+		rig.pose(self, delta)
 	queue_redraw()
 	if is_instance_valid(_lair):
 		_lair.queue_redraw()
@@ -636,9 +657,10 @@ func _draw_lair() -> void:
 			break
 		var half := inner if y >= 0.0 else sqrt(maxf(0.0, 1.0 - pow((y - (top + 100.0)) / 91.0, 2.0))) * inner
 		l.draw_rect(Rect2(-half, y, half * 2.0, 9.0), DARK)
-	# Something vast breathing in the dark: the barest glint of scale.
+	# Something vast breathing in the dark: the barest glint of scale. (The rig has
+	# the body itself there, and the heads' own eyes.)
 	var breathe := 0.5 + 0.5 * sin(t * 0.7)
-	for i in 7:
+	for i in (7 if rig == null else 0):
 		var a := i * 0.9 + t * 0.05
 		var c := Vector2(sin(a) * 60.0, 52.0 + cos(a * 1.3) * 26.0)
 		l.draw_arc(c, 22.0 + i * 3.0, PI * 1.1, PI * 1.9, 10, Color(SCALE_DARK, 0.12 + 0.08 * breathe), 2.0)
@@ -647,7 +669,7 @@ func _draw_lair() -> void:
 		for i in 3:
 			var on: float = clampf((_intro_t - EYES_AT[i]) / 0.4, 0.0, 1.0)
 			var h := heads[i]
-			if on > 0.0 and h.mode == "hidden":
+			if rig == null and on > 0.0 and h.mode == "hidden":
 				var e: Vector2 = HIDDEN[i] + Vector2(0, -4)
 				var blink := 0.0 if fmod(t + i, 4.0) < 0.12 else 1.0
 				l.draw_rect(Rect2(e + Vector2(-8, 0), Vector2(5, 2)), Color(EYE, on * blink))
@@ -669,11 +691,13 @@ func _draw() -> void:
 	if state == "dying":
 		fade = 1.0 - clampf(state_time / DYING_TIME, 0.0, 1.0)
 	for h in heads:
-		if is_instance_valid(h) and h.mode != "hidden":
+		if rig == null and is_instance_valid(h) and h.mode != "hidden":
 			_draw_neck(h, fade)
 	for h in heads:
 		if is_instance_valid(h) and h.mode != "hidden":
-			_draw_head(h, t, fade)
+			if rig == null:
+				_draw_head(h, t, fade)
+			_draw_head_health(h, fade)
 	if state == "fight":
 		_draw_tells(t)
 
@@ -767,8 +791,11 @@ func _draw_head(h: HydraHead, t: float, fade: float) -> void:
 		_px(-16, -12, 24, 22, Color.WHITE, 0.6 * a)
 		_px(2, -6, 22, 10, Color.WHITE, 0.6 * a)
 	draw_set_transform(Vector2.ZERO)
+
+
+## A head's own health: a notch at the floor its hot scales hold it to.
+func _draw_head_health(h: HydraHead, a: float) -> void:
 	if not h.dead and state == "fight":
-		# Its own health: a notch at the floor its hot scales hold it to.
 		var at := h.global_position - global_position + Vector2(-14, -34)
 		draw_rect(Rect2(at, Vector2(28, 3)), Color(OUTLINE, 0.8 * a))
 		draw_rect(Rect2(at + Vector2(1, 1), Vector2(26.0 * h.fraction(), 1)), Color(EYE if h.weak else Color("c0503a"), a))
