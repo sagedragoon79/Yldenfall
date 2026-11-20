@@ -146,6 +146,39 @@ static func ground(mask: int, cell := Vector2i.ZERO, depth := 1, edges := false)
 	return Vector2i(i % COLUMNS, i / COLUMNS)
 
 
+## The fewest cells of a darker tier that may stand together (design bible 12.95).
+const TIER_GROUP := 3
+
+
+## A room's tiers with the specks settled (design bible 12.95). `depths` gives
+## each ground cell's distance from open air (1 to 3). A darker tier is drawn
+## only where at least `TIER_GROUP` cells of it (or of a deeper one) join edge
+## to edge; a smaller group takes the tier above, so no lone dark tile sits in
+## a lit field. The deepest tier settles first, and what it gives up may join
+## the middle one.
+static func settle_tiers(depths: Dictionary) -> Dictionary:
+	var out := depths.duplicate()
+	for tier: int in [3, 2]:
+		var seen := {}
+		for start: Vector2i in out.keys():
+			if seen.has(start) or int(out[start]) < tier:
+				continue
+			var group: Array[Vector2i] = [start]
+			seen[start] = true
+			var i := 0
+			while i < group.size():
+				for d: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+					var n := group[i] + d
+					if not seen.has(n) and int(out.get(n, 0)) >= tier:
+						seen[n] = true
+						group.append(n)
+				i += 1
+			if group.size() < TIER_GROUP:
+				for c: Vector2i in group:
+					out[c] = tier - 1
+	return out
+
+
 ## A well-mixed hash of a cell, for choosing its variant. The two products alone
 ## are not enough: their low bits follow the cell's own low bits, so `% 4` drew
 ## the same tile every fourth cell along a row and a worn block marched across a

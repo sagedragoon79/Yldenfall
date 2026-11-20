@@ -57,6 +57,8 @@ var _sap_cells := {}
 var _sap_node: SapPool
 ## Cells drawn as ground (real walls and fake ones), for picking autotiles.
 var _solid_look := {}
+## Each ground cell's settled tier (`_depth`); empty until first asked for.
+var _tiers := {}
 ## Slope cells (`/`, `\`): ground to their neighbours, but half open air, so
 ## the ground under a slope stays as light as any surface tile.
 var _slope_cells := {}
@@ -487,6 +489,7 @@ func tear_floor(col_from: int, col_to: int, row_from: int, row_to: int) -> void:
 		for y in range(row_from, row_to + 1):
 			tiles.erase_cell(Vector2i(x, y))
 			_solid_look.erase(Vector2i(x, y))
+		_tiers.clear()
 		var below := Vector2i(x, row_to + 1)
 		if tiles.get_cell_source_id(below) != -1:
 			_spawn(Spikes.new(), Vector2((x + 0.5) * TILE, below.y * TILE))
@@ -575,8 +578,20 @@ func _deep_solids() -> Dictionary:
 	return out
 
 
-## How far a ground cell is from open air, in tiles (1 to 3).
+## A ground cell's tier (1 to 3): how far it is from open air, once the specks
+## have settled (design bible 12.95). Worked out for the whole room at once and
+## kept until the ground changes.
 func _depth(cell: Vector2i) -> int:
+	if _tiers.is_empty():
+		var raw := {}
+		for c: Vector2i in _solid_look:
+			raw[c] = _raw_depth(c)
+		_tiers = TilesetFactory.settle_tiers(raw)
+	return int(_tiers.get(cell, _raw_depth(cell)))
+
+
+## How far a ground cell is from open air, in tiles (1 to 3).
+func _raw_depth(cell: Vector2i) -> int:
 	for r in [1, 2]:
 		for dy in range(-r, r + 1):
 			for dx in range(-r, r + 1):

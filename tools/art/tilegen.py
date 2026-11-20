@@ -188,6 +188,27 @@ PROUD_BRICK = 0.92
 BRICK_MOSS = False
 
 
+# The seeds build_tileset gives the DEEP tier (two in row 6, two in row 7).
+DEEP_SEEDS = frozenset({103, 104, 221, 222})
+# The seed of the full-solid blob tile (the last of the 47): a field tile too.
+FULL_SEED = 57
+
+
+def drowned_block_is_worn(bx, row, seed):
+    """Whether one of Vorrhallow's blocks is worn a shade (design bible 12.95).
+    A field tile (FULL_SEED, or a seed from INTERIOR_SEED) wears only the half blocks of its
+    lower course: the upper course is one block the width of the tile, and with
+    four tiles to a tier a worn one made every fourth tile of a field a dark
+    slab. The DEEP tier wears none, since a worn block there falls to the foot
+    of the ramp and reads as a hole. The other 46 blob tiles are as they were."""
+    if hash2(bx, row, seed) <= WORN_BLOCK:
+        return False
+    if seed in DEEP_SEEDS:
+        return False
+    field = seed == FULL_SEED or seed >= INTERIOR_SEED
+    return not field or row % 2 == 1
+
+
 def is_interior(seed):
     """True for the seeds build_tileset gives the darkened interior tiers (MID
     and DEEP in row 6, and their row-7 variants). The surface tiles and their
@@ -520,7 +541,7 @@ def paint_drowned(img, ox, oy, seed, ramp):
         for x in range(T):
             sx = x + (row % 2) * (bw // 2)
             bx, ly, lx = sx // bw, y % bh, sx % bw
-            shade = 2 if hash2(bx, row, seed) > WORN_BLOCK else 3
+            shade = 2 if drowned_block_is_worn(bx, row, seed) else 3
             if ly == bh - 1 or lx == 0:
                 col = "night-1"
             elif ly == 0 or lx == 1:
