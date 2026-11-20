@@ -2724,6 +2724,19 @@ The rest of the pass 610 grade's item: "terrain tiles repeat visibly: uniform br
 
 Judged by eye at 1x and 3x in the three rooms. `tools/art/test_tilegen.py` holds the coursing, the tones, the seams and that the shipped rows are what the generator makes; `tests/test_stone_patches.gd` holds the noise, the tiles and the three rooms in the game.
 
+### 12.92 A bough's bark is plates (pass 615)
+
+The pass 610 grade: "the canopy zone's terrain is flat vertical brown stripes with stair-stepped edges" (the canopy bridge). The High Boughs' tiles were the Heartwood's strands two shades up (12.28, 12.45): columns of two values, the same in every tile, so a wall was striped from its top to its foot. Pass 555 had made those strands to replace a sine grain the grade called "striped dirt"; calm as they were, they were still stripes.
+
+- **Plates, not strands.** `tilegen.paint_bough` draws a bough's bark as plates of **one body value** (`bark-4`) between furrows one pixel wide and two shades down (`bark-2`). A furrow slants, forks and joins another; none runs straight down for more than two thirds of a tile. The Heartwood keeps its strands: the trunk's wood and a bough's bark are now two materials, where they were one in two shades.
+- **How a plate is cut.** A plate is the ground nearest one of six points (`BOUGH_PLATES`), with a step across counted `BOUGH_STRETCH` (2.5) times a step down, so a plate is taller than it is wide. The points are **uneven on purpose**. Spread evenly they made a honeycomb, and stretched further (3.5 and up) the furrows were stripes again; both were tried in the canopy bridge and dropped.
+- **No seam.** The layout is the same in every tile and wraps at its edges, so a plate runs on across every seam whichever variant lies next to it. The seed varies only marks that stay on one plate: a check (a short crack), a lit west edge, a sprig of young leaves.
+- **The trim follows.** The rind under a bough's cap and the soffit under its ceilings were notched where two strands met; they are notched where a furrow meets them.
+- **Calm still.** The fill stays under 12.28's measure (under 23 percent of neighbouring pixels differ, almost none stands alone).
+- **Not done here.** The darker tiers still step by the tile, in the Boughs as elsewhere. The Haar's limbs and the Heartwood keep `paint_wood`. The grade's other half, the smooth leaf backdrop behind crisp tiles, is the parked pixel-grain call.
+
+Judged by eye at 1x and 2x in the canopy bridge and Sylvarre. `tools/art/test_tilegen.py` holds the plates, the seams, the trim's notches and that the shipped atlas is what the generator makes; `tests/test_bough_bark.gd` holds the shipped tiles and the canopy bridge in the game.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
