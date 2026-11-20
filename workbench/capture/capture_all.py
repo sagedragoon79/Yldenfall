@@ -164,7 +164,9 @@ def jobs():
                 add('arenas', 'guardians/gnarlmaw.png', lambda o, g=g: shot(o, g, frames=330))
             else:
                 # The Haar Wyrm's reveal is dark until its heads are out (frame 520: all three, at rest).
-                add('arenas', 'guardians/%s.png' % h['boss'], lambda o, g=g, f=(520 if h['boss'] == 'haar_wyrm' else 240): shot(o, g, hero='400,240', focus='boss', frames=f))
+                # Its box is taller: its body crouches at the lip of the cistern sunk in the floor.
+                wyrm = h['boss'] == 'haar_wyrm'
+                add('arenas', 'guardians/%s.png' % h['boss'], lambda o, g=g, f=(520 if wyrm else 240), box=('400,300' if wyrm else '400,240'): shot(o, g, hero=box, focus='boss', frames=f))
     for fid, rid, foe, when in FIGHTS:
         # A tell is shot from four tiles off, so the foe is not already touching the hero.
         spot = fight_spot(R[rid]['grid'], foe, 2 if when == 'hit' else 4) if rid in R else None
