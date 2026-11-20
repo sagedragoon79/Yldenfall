@@ -1660,5 +1660,61 @@ def test_sunken_wear_is_drawn_in_whole_world_pixels():
     assert checked >= 10
 
 
+def _fill_pair():
+    from PIL import Image
+    src = Image.open(tg.PIXELLAB_SETS["hearthroot"]["fill"]).convert("RGBA")
+    return src, tg.grown_fill(src)
+
+
+def test_a_fill_grows_in_patches():
+    # Bible 12.90: the growth is alive in some copies of the texture and carved
+    # stone in others, so a wall does not wear one overlay on every block.
+    # (FILL_BARE and FILL_MOSS at 0 leave every copy alive and fail here.)
+    src, out = _fill_pair()
+    w = src.width
+    assert out.size == (w * tg.FILL_REPEAT, w * tg.FILL_REPEAT)
+    assert out.width >= 16 * tg.T, "the fill repeats no sooner than every 16 tiles"
+    spx, opx = src.load(), out.load()
+    whole = sum(tg.is_growth(spx[x, y]) for x in range(w) for y in range(w))
+    alive = []
+    for by in range(tg.FILL_REPEAT):
+        for bx in range(tg.FILL_REPEAT):
+            n = sum(tg.is_growth(opx[bx * w + x, by * w + y]) for x in range(w) for y in range(w))
+            alive.append(n / whole)
+    assert min(alive) < 0.2, f"some copy is nearly bare, got {min(alive):.2f}"
+    assert max(alive) > 0.7, f"some copy is mostly alive, got {max(alive):.2f}"
+    share = sum(alive) / len(alive)
+    assert 0.3 <= share <= 0.6, f"between a third and six tenths of the growth lives, got {share:.2f}"
+
+
+def test_a_carved_root_is_stone_and_the_stone_is_untouched():
+    src, out = _fill_pair()
+    w = src.width
+    spx, opx = src.load(), out.load()
+    stone = {spx[x, y] for x in range(w) for y in range(w) if not tg.is_growth(spx[x, y])}
+    for y in range(out.height):
+        for x in range(out.width):
+            a, b = spx[x % w, y % w], opx[x, y]
+            if not tg.is_growth(a):
+                assert a == b, f"stone at {(x, y)} changed"
+            elif b != a:
+                assert b in stone, f"a carved root at {(x, y)} is not one of the stone's colours"
+                assert tg._lum(b) <= tg._lum(a) + 8, f"a carved root at {(x, y)} is brighter than the root was"
+
+
+def test_a_fills_patches_wrap():
+    # The fill tiles sideways and down, so the patches must meet across its edge.
+    size = 128 * tg.FILL_REPEAT
+    for k in range(0, size, 7):
+        assert abs(tg._loop_noise(0, k, 5, tg.FILL_PATCH, size // tg.FILL_PATCH)
+                   - tg._loop_noise(size, k, 5, tg.FILL_PATCH, size // tg.FILL_PATCH)) < 1e-9
+        assert abs(tg._loop_noise(k, 0, 5, tg.FILL_PATCH, size // tg.FILL_PATCH)
+                   - tg._loop_noise(k, size, 5, tg.FILL_PATCH, size // tg.FILL_PATCH)) < 1e-9
+    # And the shipped file is what the generator makes.
+    from PIL import Image
+    shipped = Image.open(tg.TILES / "hearthroot_fill.png").convert("RGBA")
+    assert shipped.tobytes() == _fill_pair()[1].tobytes(), "assets/tiles/hearthroot_fill.png is stale"
+
+
 if __name__ == "__main__":
     main()

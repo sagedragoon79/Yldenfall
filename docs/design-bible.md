@@ -2700,6 +2700,17 @@ The pass 610 grade: "foes and the hero sink into dark rooms", the Rot Dwarf agai
 
 Judged by eye at 2x on a sheet of all forty-one pairs over each zone's dark, before and after, and at 1x and 4x in the Heartwood and Flooded Hall fight frames. `tests/test_foe_light.gd` holds the band, a lit mid tone above every zone's haze, the order of the tones, the shader's numbers, and for every sheet foe a body a step above Vorrhallow's dark with its outline unmoved. Its older check that a strong color is muted now measures saturation, not chroma: a lighter pixel of one saturation has more chroma.
 
+
+### 12.90 A fill grows in patches (pass 613)
+
+The pass 610 grade: "terrain tiles repeat visibly: uniform brick and cobble fills, one vine overlay on every block" (the plaza first). Hearthroot's walls are filled from one seamless 128 px texture (13.6), which is four tiles across, and its roots and moss cross every block of it. A wall thirty tiles long showed the same tangle seven times, and no block was bare.
+
+- **A larger fill.** `tilegen.grown_fill` builds `assets/tiles/hearthroot_fill.png` from `FILL_REPEAT` (4) copies of the texture a side, so the fill is 512 px and repeats every 16 tiles. `GroundFill` reads the period from the texture, so nothing in the game changed.
+- **Growth lives where a slow noise is high.** `fill_growth` is a seamless value noise in patches `FILL_PATCH` (128 px) across, with a finer wobble and a grain at its edge. Under `FILL_BARE` (0.40) a root or a leaf is **carved stone**: it keeps its shape and takes the stone's own colour nearest to `FILL_DROP` (0.8) of its value, so it reads as a relief in the block (13.6 calls the wall "stone carved into roots"). Under `FILL_MOSS` (0.50) the moss and leaves are stone and the brown roots stay. Above it the texture is as Sean made it.
+- **The stone is untouched.** Only a pixel of growth (`is_growth`: its blue is well under its red or green) changes, and only to a colour the stone already has. About 44 percent of the growth stays alive; some stretches of wall are nearly bare and some are overgrown.
+- **Not done here.** The stones themselves still repeat every four tiles under the growth, and the slope tiles are cut from the first copy. The brick fields of the Flooded Hall, the storm ledge and the aqueduct, which the grade named with the plaza, are painted tiles with variants of their own (12.8, 12.45, 12.55) and are the next pass.
+
+Judged by eye at 1x and 2x in the plaza and the market. `tools/art/test_tilegen.py` holds the patches, the untouched stone, the seam and that the shipped file is what the generator makes; `test_hearthroots_fill_grows_in_patches` holds the shipped file in the game.
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
@@ -3042,7 +3053,7 @@ the forge and lanterns cast a flickering glow, and a piece without drawn fire or
 of every wall is one seamless 128 px PixelLab texture (stone carved into roots, moss in the cracks,
 `assets/tiles/hearthroot_fill.png`) drawn by `GroundFill` behind the tiles by world position, so a wall no longer repeats
 every tile (Sean, 2026-11-03: the tileset "looks very basic" next to the objects). Interior depth still darkens, as a
-veil over the fill. One-way planks are Sean's ledge. `tilegen.PIXELLAB_SETS` names the zones built this way.
+veil over the fill. Since pass 613 the fill is 512 px and its growth lives in patches (12.90). One-way planks are Sean's ledge. `tilegen.PIXELLAB_SETS` names the zones built this way.
 
 ### 13.7 Rigs for guardians (2026-11-19)
 

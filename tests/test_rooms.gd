@@ -3060,6 +3060,35 @@ func test_hearthroot_walls_fill_from_one_large_texture() -> void:
 	gym.queue_free()
 
 
+## Bible 12.90: the fill's roots and moss live in patches, so a wall does not wear one
+## overlay on every block, and the fill repeats no sooner than every 16 tiles.
+func test_hearthroots_fill_grows_in_patches() -> void:
+	var img := (load(GroundFill.path("hearthroot")) as Texture2D).get_image()
+	var tile := TilesetFactory.TILE * TilesetFactory.DENSITY
+	check(img.get_width() >= 16 * tile and img.get_height() >= 16 * tile, "the fill repeats no sooner than every 16 tiles")
+	check(img.get_width() % tile == 0 and img.get_height() % tile == 0, "a cell never straddles the fill's seam")
+	# Growth (a root, a leaf, moss) has far less blue than red or green; stone is grey-violet.
+	var block := 4 * tile
+	var alive: Array[int] = []
+	for by in img.get_height() / block:
+		for bx in img.get_width() / block:
+			var n := 0
+			for y in block:
+				for x in block:
+					var c := img.get_pixel(bx * block + x, by * block + y)
+					var m := maxf(c.r, c.g)
+					if m > 35.0 / 255.0 and c.b < 0.72 * m:
+						n += 1
+			alive.append(n)
+	var most: int = alive.max()
+	var least: int = alive.min()
+	check(most > block * block / 8, "some stretch of wall is overgrown (%d px of growth)" % most)
+	check(least * 5 < most, "and some stretch is nearly bare stone (%d against %d)" % [least, most])
+	var note := FileAccess.get_file_as_string("res://docs/design-bible.md").get_slice("### 12.90 ", 1).get_slice("
+### ", 0)
+	check(note.contains("`test_hearthroots_fill_grows_in_patches`"), "12.90 names the test")
+
+
 
 
 

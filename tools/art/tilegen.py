@@ -1326,6 +1326,82 @@ PIXELLAB_SETS = {
     },
 }
 
+# --- A fill grows in patches (design bible 12.90, pass 613) ---------------------
+# Hearthroot's fill was one 128 px texture with roots and moss across every block,
+# so a wall showed the same growth every four tiles (independent grade, pass 610:
+# "one vine overlay on every block"). The fill is now FILL_REPEAT copies a side,
+# and the growth lives only where a slow seamless noise is high: elsewhere a root
+# is carved stone (its own shape, in the stone's tones) and the moss is gone.
+FILL_REPEAT = 4          # copies of the source a side: the fill repeats every 16 tiles
+FILL_PATCH = 128         # px: the size of a patch of growth
+FILL_BARE = 0.40         # below this the roots are stone too
+FILL_MOSS = 0.50         # below this the moss is stone; the roots stay alive
+FILL_DROP = 0.8          # a carved root sits a little under the stone's face
+
+
+def is_growth(p):
+    """A root, a leaf or moss in a fill texture: its blue is well under its red or
+    green. Stone and mortar are grey-violet, so their blue keeps up."""
+    m = max(p[0], p[1])
+    return m > 35 and p[2] < 0.72 * m
+
+
+def is_leaf(p):
+    """Moss or a leaf (green or olive), against a brown root."""
+    return is_growth(p) and p[1] >= p[0] - 14
+
+
+def _lum(p):
+    return 0.3 * p[0] + 0.59 * p[1] + 0.11 * p[2]
+
+
+def _loop_noise(x, y, seed, cell, cells):
+    """Smooth value noise that wraps after `cells` cells of `cell` px."""
+    fx, fy = x / cell, y / cell
+    ix, iy = int(fx), int(fy)
+    tx, ty = fx - ix, fy - iy
+    tx, ty = tx * tx * (3 - 2 * tx), ty * ty * (3 - 2 * ty)
+
+    def v(a, b):
+        return hash2(a % cells, b % cells, seed)
+    top = v(ix, iy) * (1 - tx) + v(ix + 1, iy) * tx
+    bottom = v(ix, iy + 1) * (1 - tx) + v(ix + 1, iy + 1) * tx
+    return top * (1 - ty) + bottom * ty
+
+
+def fill_growth(x, y, size, seed=5):
+    """How alive the fill is at a pixel, 0 to 1: patches FILL_PATCH across with a
+    finer wobble and a grain at the edge, seamless over `size` px."""
+    n = 0.75 * _loop_noise(x, y, seed, FILL_PATCH, size // FILL_PATCH)
+    n += 0.25 * _loop_noise(x, y, seed + 1, FILL_PATCH // 4, size // (FILL_PATCH // 4))
+    return n + (hash2(x, y, seed + 2) - 0.5) * 0.06
+
+
+def grown_fill(src):
+    """`src` (a seamless square texture) FILL_REPEAT times a side, alive in patches."""
+    src = src.convert("RGBA")
+    w = src.width
+    assert src.height == w and w % FILL_PATCH == 0
+    px = src.load()
+    stone = sorted({px[x, y] for x in range(w) for y in range(w)
+                    if not is_growth(px[x, y]) and px[x, y][2] >= px[x, y][1] - 2}, key=_lum)
+    carved = {}
+    size = w * FILL_REPEAT
+    out = Image.new("RGBA", (size, size))
+    for y in range(size):
+        for x in range(size):
+            p = px[x % w, y % w]
+            if is_growth(p):
+                n = fill_growth(x, y, size)
+                if n < FILL_BARE or (n < FILL_MOSS and is_leaf(p)):
+                    if p not in carved:
+                        target = _lum(p) * FILL_DROP
+                        carved[p] = min(stone, key=lambda s: abs(_lum(s) - target))
+                    p = carved[p]
+            out.putpixel((x, y), p)
+    return out
+
+
 
 EDGE_VARIANTS = 3
 EDGE_TOP = 255 & ~(N | NE | NW)       # a floor's top tile
@@ -1336,12 +1412,11 @@ EDGE_EAST = 255 & ~(E | NE | SE)      # a wall's east face
 
 def build_tileset(zone):
     if zone in PIXELLAB_SETS:
-        import shutil
         import pixellab_tileset
         cfg = PIXELLAB_SETS[zone]
         TILES.mkdir(parents=True, exist_ok=True)
         pixellab_tileset.atlas(cfg["set"], cfg["fill"], TILES / f"{zone}.png", cfg["ledge"])
-        shutil.copy(cfg["fill"], TILES / f"{zone}_fill.png")
+        grown_fill(Image.open(cfg["fill"])).save(TILES / f"{zone}_fill.png")
         return
     masks = blob_masks()
     assert len(masks) == 47
