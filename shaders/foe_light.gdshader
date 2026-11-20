@@ -3,6 +3,8 @@ shader_type canvas_item;
 // little and its darks sink toward the zone's haze, the colour the room's own
 // shadows recede into. Lights keep their value, so the foe still reads.
 // One colour of its own is left out of that and lifted: its accent (12.69).
+// Its mid tones are lit by a fill, so its body stands a step above the room's
+// shadows while its outline stays sunk (12.89).
 // FoeLight.lit is the same sum in GDScript, for the tests.
 
 uniform vec3 haze = vec3(0.17, 0.15, 0.25);
@@ -16,6 +18,11 @@ uniform vec2 lift = vec2(0.0);
 // The falloffs past the band's edge (degrees) and over the two floors.
 uniform float band_soft = 12.0;
 uniform float floor_soft = 0.12;
+// The fill: x the gain on a mid tone, y what is added of the tint. fill_band is
+// the lumas the fill rises over (x to y) and falls over (z to w).
+uniform vec2 fill = vec2(0.0);
+uniform vec3 fill_tint = vec3(1.0);
+uniform vec4 fill_band = vec4(0.06, 0.2, 0.3, 0.7);
 
 vec3 to_hsv(vec3 c) {
 	float mx = max(c.r, max(c.g, c.b));
@@ -45,6 +52,8 @@ void fragment() {
 	vec3 c = mix(painted, vec3(g), mute);
 	float w = sink * (1.0 - g) * (1.0 - g);
 	c = mix(c, haze, w);
+	float f = smoothstep(fill_band.x, fill_band.y, g) * (1.0 - smoothstep(fill_band.z, fill_band.w, g));
+	c = min(c * (1.0 + fill.x * f) + fill.y * f * fill_tint, vec3(1.0));
 	if (accent.y > 0.0) {
 		vec3 hsv = to_hsv(painted);
 		float d = abs(mod(hsv.x - accent.x + 180.0, 360.0) - 180.0);

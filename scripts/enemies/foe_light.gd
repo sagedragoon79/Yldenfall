@@ -15,6 +15,14 @@ extends RefCounted
 ## band, saturated and light enough to count, are not muted or sunk, and their
 ## saturation and value are lifted instead. Nothing is drawn that the sheet does
 ## not hold, so a foe with no such colour on its sheet has no accent.
+##
+## The body is lit by a fill (design bible 12.89). The pass 610 grade: foes
+## "sink into dark rooms", one "a dark smudge". Measured on every sheet, half of
+## a foe's pixels sat at or under the value of its room's shadows once sunk. A
+## foe's mid tones (not its outline, not its lights) are raised by a gain and a
+## touch of the zone's own light, so the body stands a step above the room's
+## dark and the outline still closes it. This is a tone curve on the foe's own
+## paint: nothing is drawn round the figure, so it is not a rim light.
 
 const SHADER := preload("res://shaders/foe_light.gdshader")
 ## How far a foe's colour is pulled toward its own grey.
@@ -28,6 +36,17 @@ const SINK := 0.55
 const DEEP := 0.6
 ## Rec. 601 luma, as the shader weighs it.
 const LUMA := Vector3(0.299, 0.587, 0.114)
+
+## The fill: the gain on a mid tone, and how much of the zone's light is added.
+const FILL_GAIN := 0.4
+const FILL_ADD := 0.05
+## The lumas (as painted) the fill rises over and falls over: nothing under
+## FILL_LO (an outline), the whole fill from FILL_FULL to FILL_HOLD, nothing
+## past FILL_END (a light keeps its value).
+const FILL_LO := 0.06
+const FILL_FULL := 0.2
+const FILL_HOLD := 0.3
+const FILL_END := 0.7
 
 ## The falloff past the edge of an accent's band (degrees of hue) and above its
 ## two floors, as the shader has them.
@@ -57,7 +76,7 @@ const ACCENTS := {
 	"storm_harpy": [35.0, 20.0, 0.6, 0.5, 0.8, 0.5],  # her talons
 	"thunder_beetle": [35.0, 20.0, 0.6, 0.55, 0.7, 0.45],  # its shell's seams
 	"spire_sentinel": [20.0, 30.0, 0.6, 0.35, 0.8, 0.5],  # his gilding
-	"shade_knight": [160.0, 30.0, 0.38, 0.5, 0.8, 0.4],  # the lights of his plate
+	"shade_knight": [160.0, 30.0, 0.38, 0.5, 0.8, 0.5],  # the lights of his plate
 	"clockwork_hound": [35.0, 20.0, 0.62, 0.5, 0.7, 0.45],  # its brass
 	"meteor_slug": [8.0, 22.0, 0.6, 0.45, 0.7, 0.45],  # the fire in its shell
 }
@@ -83,6 +102,10 @@ static func material_for(zone: String, foe := "") -> ShaderMaterial:
 		mat.set_shader_parameter("sink", SINK)
 		mat.set_shader_parameter("band_soft", BAND_SOFT)
 		mat.set_shader_parameter("floor_soft", FLOOR_SOFT)
+		var tint := fill_tint(zone)
+		mat.set_shader_parameter("fill", Vector2(FILL_GAIN, FILL_ADD))
+		mat.set_shader_parameter("fill_tint", Vector3(tint.r, tint.g, tint.b))
+		mat.set_shader_parameter("fill_band", Vector4(FILL_LO, FILL_FULL, FILL_HOLD, FILL_END))
 		if who != "":
 			var a: Array = ACCENTS[who]
 			mat.set_shader_parameter("accent", Vector4(a[0], a[1], a[2], a[3]))
@@ -131,6 +154,19 @@ static func sink_at(g: float) -> float:
 	return SINK * (1.0 - g) * (1.0 - g)
 
 
+## How much of the fill a tone painted at luma `g` takes: 0 none, 1 the whole.
+static func fill_at(g: float) -> float:
+	return smoothstep(FILL_LO, FILL_FULL, g) * (1.0 - smoothstep(FILL_HOLD, FILL_END, g))
+
+
+## The colour of a zone's fill: its haze at full value, halfway to white, so a
+## foe is lit in the hue of its room and keeps its own.
+static func fill_tint(zone: String) -> Color:
+	var haze: Color = Backdrop.ZONE_HAZE[zone]
+	var top := maxf(haze.r, maxf(haze.g, haze.b))
+	return Color(haze.r / top, haze.g / top, haze.b / top).lerp(Color.WHITE, 0.5)
+
+
 ## What the shader makes of `c` in `zone`: the same sum, for the tests.
 static func lit(c: Color, zone: String, foe := "") -> Color:
 	if not Backdrop.ZONE_HAZE.has(zone):
@@ -139,6 +175,11 @@ static func lit(c: Color, zone: String, foe := "") -> Color:
 	var grey := Color(g, g, g, c.a)
 	var muted := c.lerp(grey, MUTE)
 	var out := muted.lerp(deep_for(zone), sink_at(g))
+	var f := fill_at(g)
+	var tint := fill_tint(zone)
+	out = Color(minf(out.r * (1.0 + FILL_GAIN * f) + FILL_ADD * f * tint.r, 1.0),
+		minf(out.g * (1.0 + FILL_GAIN * f) + FILL_ADD * f * tint.g, 1.0),
+		minf(out.b * (1.0 + FILL_GAIN * f) + FILL_ADD * f * tint.b, 1.0))
 	var w := accent_at(c, foe)
 	if w > 0.0:
 		out = out.lerp(lifted(c, foe), w)
