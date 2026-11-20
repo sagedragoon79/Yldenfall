@@ -282,7 +282,12 @@ static func lit_cells(joined: int, solid: Callable) -> Dictionary:
 	var px := {}
 	var span := ceili(LIT_REACH / 16.0)
 	for j in range(-span, span + 1):
+		# A tile lights nothing past a joined side, so those cells are never asked about.
+		if (j < 0 and joined & UP != 0) or (j > 0 and joined & DOWN != 0):
+			continue
 		for i in range(-span, span + 1):
+			if (i < 0 and joined & LEFT != 0) or (i > 0 and joined & RIGHT != 0):
+				continue
 			if (i == 0 and j == 0) or not solid.call(Vector2i(i, j)):
 				continue
 			var x0 := i * 16 - 8
