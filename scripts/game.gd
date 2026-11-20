@@ -48,6 +48,8 @@ extends Node2D
 ##   --wyrm-seed=N              the Haar Wyrm's breaths in the same order every run (to film the two side by side)
 ##   --wyrm-reel                walk the Haar Wyrm through every state for a film: a doused head, the rage,
 ##                              a head falling limp, and its death
+##   --wyrm-reel=turn           instead, set the hero down across the floor from west to east and back, so
+##                              the heads turn through their views to watch him
 ##   --damage-numbers           show damage numbers (the option) for this run
 ##   --poisoned                 start poisoned
 ##   --flags=A,B                set world flags first, e.g. spring:heartwood
@@ -549,6 +551,13 @@ func _wyrm_reel() -> void:
 		if b is HaarWyrm:
 			z = b
 	if z == null or z.state != "fight":
+		return
+	if String(_args["wyrm-reel"]) == "turn":
+		# Across the floor and back: far west, under the west head, the cistern, under
+		# the east head, far east.
+		var stops := {520: 4, 640: 17, 760: 30, 880: 43, 1000: 56, 1120: 43, 1240: 30, 1360: 17, 1480: 4}
+		if stops.has(_frames):
+			player.teleport(Vector2(int(stops[_frames]) * Room.TILE + 8, 20 * Room.TILE))
 		return
 	match _frames:
 		600, 1650:

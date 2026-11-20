@@ -12,23 +12,41 @@ extends Node2D
 ## shows less of each section to shorten and more to reach (`STACK_MIN` to `STACK_MAX`).
 ##
 ## Nothing here is animated by hand. Each frame the neck is laid along a curve from its
-## stump to where the fight has put the head: up out of the stump, and into the skull from
-## behind. The curve bends more when the head comes close, and its belly trails the head
-## a little, so a snap of the head runs down the neck. The heads keep their frame-by-frame
-## clips (jaws, the glowing throat): a jaw can't be done with bones this size.
+## stump to where the fight has put the head: up out of the stump, round behind the head
+## and into the base of the skull. The curve bends more when the head comes close, and
+## its belly trails the head a little, so a snap of the head runs down the neck.
+##
+## A head has five views, west, south-west, south, south-east and east (`look`, -2 to 2;
+## the western two are the eastern two mirrored). It watches the player and turns through
+## them one view at a time, so it never flips from one side to the other. In each view it
+## keeps its frame-by-frame clips (jaws, the glowing throat): a jaw can't be done with
+## bones this size.
 
 const DIR := "res://assets/bosses/haar_wyrm/"
 ## The art is drawn at twice the world's detail.
 const ART := 0.5
-## Bones in each neck, in head order (west, middle, east).
-const BONES := [20, 13, 20]
-## Which trim sheet each neck is cut from: the middle head faces us.
+## Bones in each neck, in head order (west, middle, east). The side necks are long
+## enough to pass a head that looks back at its body and curl round behind it.
+const BONES := [26, 13, 26]
+## Which trim sheet each neck is cut from: the middle neck comes toward us.
 const VIEWS := ["side", "front", "side"]
+## A head's art by how far it is turned from facing us: south, three-quarter, profile.
+const HEAD_VIEWS := ["head_south", "head_se", "head_east"]
+## How long a head shows each view as it turns through them.
+const TURN_STEP := 0.09
+## A head only turns once what it watches is this far (in views) past the one it shows.
+const TURN_SLACK := 0.65
 ## How much of a section shows above the one it sits in: at rest, and the least and the
 ## most a neck may telescope to.
 const STACK := 0.58
-const STACK_MIN := 0.36
+const STACK_MIN := 0.3
 const STACK_MAX := 0.76
+## How far behind the skull the neck holds its line before it turns in: at ease, and
+## for a head that looks back toward its own body (the curl round behind it).
+const HOOK := 26.0
+const HOOK_BACK := 58.0
+## In profile the whole curl shows, so it is wider.
+const HOOK_PROFILE := 84.0
 ## Where the body stands, from the boss: the middle of its feet, on the tunnel's floor.
 const BODY_AT := Vector2(0, 105)
 ## Which way each stump points.
@@ -51,6 +69,13 @@ const SHADOW_REACH := 0.4
 ## How fast the belly of a neck catches up with its head.
 const TRAIL := 5.0
 const CURVE_STEPS := 40
+## The three-quarter roar clip goes pale on some frames (PixelLab drift): the frames that
+## hold their color, opening and closing.
+const ROAR_THREE_QUARTER := [1, 2, 3, 4, 5, 7, 8, 7, 5, 4, 3, 2]
+## The fog head's channel: the frames of its glow clip with the jaws wide on the pulsing
+## core in its throat, held for as long as the fog lasts.
+const CHANNEL := [3, 4, 5, 4, 3, 2]
+const CHANNEL_FPS := 7.0
 ## Sections toward the head are drawn over those toward the body.
 const HEADWARD_ON_TOP := true
 
@@ -66,14 +91,21 @@ void fragment() {
 ## One neck and its head.
 class Neck:
 	var index := 0
+	## The neck's trim sheet: "side" or "front".
 	var view := "side"
 	var flip := false
 	var bones: Array[Bone2D] = []
 	var skins: Array[Sprite2D] = []
 	var head_bone: Bone2D
 	var head_skin: Sprite2D
-	## A side head's shadowed twin, laid over it while it is still in the tunnel's dark.
+	## The head's shadowed twin, laid over it while it is still in the tunnel's dark.
 	var shade_skin: Sprite2D
+	## The view the head shows: -2 west, -1 south-west, 0 south, 1 south-east, 2 east.
+	var look := 0
+	## The view it is turning toward, and how long it has shown this one.
+	var look_want := 0
+	var look_time := 0.0
+	## The art of the view it shows (a part of rig.json).
 	var head_layout := {}
 	## Each bone's section height in world pixels, and their sum.
 	var heights := PackedFloat32Array()
@@ -83,6 +115,8 @@ class Neck:
 	## How much of each section shows (see STACK).
 	var stack := STACK
 	var trail := Vector2.ZERO
+	## How the neck leaves the skull, eased so a turn of the head swings it round.
+	var into := Vector2.DOWN
 	var rot := 0.0
 	var clip := "idle"
 	var frame := 0
@@ -95,6 +129,10 @@ class Neck:
 	var centre := Vector2.ZERO
 	## How far its eyes have opened in the reveal, while it is still in the tunnel.
 	var eyes := 0.0
+
+	## 1 for a head turned east (or facing us), -1 for one turned west: its art's mirror.
+	func side() -> float:
+		return -1.0 if look < 0 else 1.0
 
 
 var skeleton: Skeleton2D
@@ -110,6 +148,7 @@ var _time := 0.0
 var _body_clip := "cloaked"
 var _body_time := 0.0
 var _shader: Shader
+var _head_art := {}
 
 
 func _init() -> void:
@@ -120,6 +159,8 @@ func _init() -> void:
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	for v: String in HEAD_VIEWS:
+		_head_art[v] = load(DIR + String(layout[v]["sheet"]))
 	# The body stands in the tunnel, behind everything the fight draws.
 	_back = Node2D.new()
 	_back.name = "Back"
@@ -148,9 +189,9 @@ func _ready() -> void:
 	necks.sort_custom(func(a: Neck, b: Neck) -> bool: return a.index < b.index)
 	for n in necks:
 		_skin.move_child(n.head_skin, -1)
-		if n.shade_skin != null:
-			_skin.move_child(n.shade_skin, -1)
+		_skin.move_child(n.shade_skin, -1)
 	_skin.move_child(necks[1].head_skin, -1)
+	_skin.move_child(necks[1].shade_skin, -1)
 	# Steam, drips and the glow in a throat, over everything.
 	_fx = Node2D.new()
 	_fx.name = "Fx"
@@ -215,23 +256,31 @@ func _build_neck(i: int) -> Neck:
 	for sp in sprites:
 		_skin.add_child(sp)
 	n.head_bone = _bone("head%d" % i, parent, 12.0)
-	n.head_layout = layout["head_east" if n.view == "side" else "head_south"]
+	# At rest the side heads are in profile, looking out; the middle one faces us.
+	n.look = [-2, 0, 2][i]
+	n.look_want = n.look
 	n.head_skin = Sprite2D.new()
-	n.head_skin.texture = load(DIR + String(n.head_layout["sheet"]))
 	n.head_skin.region_enabled = true
 	n.head_skin.scale = Vector2(ART, ART)
 	n.head_skin.material = n.material
 	_skin.add_child(n.head_skin)
+	n.shade_skin = Sprite2D.new()
+	n.shade_skin.region_enabled = true
+	n.shade_skin.scale = Vector2(ART, ART)
+	n.shade_skin.visible = false
+	_skin.add_child(n.shade_skin)
+	_wear_view(n)
 	_set_cell(n.head_skin, n.head_layout, 0)
-	if n.view == "side":
-		n.shade_skin = Sprite2D.new()
-		n.shade_skin.texture = n.head_skin.texture
-		n.shade_skin.region_enabled = true
-		n.shade_skin.scale = Vector2(ART, ART)
-		n.shade_skin.visible = false
-		_skin.add_child(n.shade_skin)
 	n.joints.resize(count + 1)
 	return n
+
+
+## Puts on the art of the view the head shows.
+func _wear_view(n: Neck) -> void:
+	var key: String = HEAD_VIEWS[absi(n.look)]
+	n.head_layout = layout[key]
+	n.head_skin.texture = _head_art[key]
+	n.shade_skin.texture = _head_art[key]
 
 
 static func _point(a: Array) -> Vector2:
@@ -255,23 +304,33 @@ func stump(i: int) -> Vector2:
 	return body_bone.position + (_point(stumps[i]) - _cell_centre(body)) * ART
 
 
-## From a head's middle to a joint of its art (`neck` or `mouth`), turned and mirrored
-## as the head is.
-func head_joint(n: Neck, joint: String, face: float, rot: float) -> Vector2:
-	var off := (_point(n.head_layout["joints"][joint]) - _cell_centre(n.head_layout)) * ART
-	if n.view == "side":
-		off.x *= face
-	return off.rotated(rot)
+## From a head's middle to a point of its art, mirrored and turned as the head is.
+func _from_centre(n: Neck, point: Array) -> Vector2:
+	var off := (_point(point) - _cell_centre(n.head_layout)) * ART
+	off.x *= n.side()
+	return off.rotated(n.rot)
+
+
+## From a head's middle to a joint of the view it shows (`neck` or `mouth`).
+func head_joint(n: Neck, joint: String) -> Vector2:
+	return _from_centre(n, n.head_layout["joints"][joint])
 
 
 ## Where head `i`'s breath leaves its jaws, for a head whose middle is at `centre`.
-func mouth(i: int, centre: Vector2, face: float) -> Vector2:
-	return centre + head_joint(necks[i], "mouth", face, necks[i].rot)
+func mouth(i: int, centre: Vector2) -> Vector2:
+	return centre + head_joint(necks[i], "mouth")
 
 
 ## The shortest and the longest a neck can be.
 func reach(i: int) -> Vector2:
 	return Vector2(necks[i].total * STACK_MIN, necks[i].total * STACK_MAX)
+
+
+## The view that faces along `dir` (y down): 0 for straight down at us, 2 for due east.
+static func view_toward(dir: Vector2) -> float:
+	if dir == Vector2.ZERO:
+		return 0.0
+	return clampf(atan2(dir.x, maxf(dir.y, 0.0)) / (PI / 4.0), -2.0, 2.0)
 
 
 ## Poses the whole rig from the fight. Call once a frame.
@@ -281,17 +340,22 @@ func pose(boss: HaarWyrm, delta: float) -> void:
 	if boss.state == "dying":
 		fade = 1.0 - clampf(boss.state_time / HaarWyrm.DYING_TIME, 0.0, 1.0)
 	_pose_body(boss, delta, fade)
+	var p := boss.player()
 	for n in necks:
 		var h := boss.heads[n.index]
 		if not is_instance_valid(h):
 			continue
 		var blink := h.mode == "tell" and int(h.mode_time * 12.0) % 2 == 0 and h.mode_time > boss.tell(boss._tell_of(h)) - 0.35
-		pose_head(n.index, to_local(h.global_position), {
+		var s := {
 			"mode": h.mode, "time": h.mode_time, "face": boss._face(h), "aim": h.aim, "breath": h.breath,
 			"weak": h.weak, "dead": h.dead, "white": 1.0 if h.flash > 0.0 else (0.6 if blink else 0.0),
 			"tell": boss.tell(boss._tell_of(h)), "fade": fade,
 			"intro": boss._intro_t if boss.state == "intro" else -1.0,
-		}, delta)
+		}
+		if p != null:
+			# It watches the hero.
+			s["watch"] = p.body_rect().get_center() - h.global_position
+		pose_head(n.index, to_local(h.global_position), s, delta)
 	_fx.queue_redraw()
 
 
@@ -327,7 +391,8 @@ func _pose_body(boss: HaarWyrm, delta: float, fade: float) -> void:
 
 
 ## Poses one neck and its head. `centre` is the middle of the head in the rig's space;
-## `s` is what the head is doing (see `pose`).
+## `s` is what the head is doing (see `pose`): `watch` is the way to what it looks at
+## (without it, it looks along `face`, in profile).
 func pose_head(i: int, centre: Vector2, s: Dictionary, delta: float) -> void:
 	var n := necks[i]
 	var mode: String = s.get("mode", "idle")
@@ -343,56 +408,76 @@ func pose_head(i: int, centre: Vector2, s: Dictionary, delta: float) -> void:
 	for sp in n.skins:
 		sp.visible = shown
 	n.head_skin.visible = shown
-	if n.shade_skin != null:
-		n.shade_skin.visible = false
+	n.shade_skin.visible = false
 	if not shown:
 		n.shown = false
 		return
-	var face: float = s.get("face", 1.0)
 	var time: float = s.get("time", 0.0)
 	var breath: String = s.get("breath", HydraHead.PLUME)
 
-	# The head: its turn, and its frame.
-	var want := _head_turn(n, mode, breath, face, s.get("aim", Vector2.DOWN), time)
+	# The head: the view it turns to, one at a time.
+	var want := _want_look(n, mode, breath, s)
 	if not n.shown:
-		n.rot = want
+		n.look = want
+		n.look_time = 0.0
+	n.look_time += delta
+	if n.look != want and n.look_time >= TURN_STEP:
+		n.look += signi(want - n.look)
+		n.look_time = 0.0
+	_wear_view(n)
+
+	# Its tilt, and its frame.
+	var tilt := _head_tilt(n, mode, breath, s.get("aim", Vector2.DOWN), time)
+	if not n.shown:
+		n.rot = tilt
 		n.trail = centre
-	n.rot = lerp_angle(n.rot, want, 1.0 - exp(-10.0 * delta))
+	n.rot = lerp_angle(n.rot, tilt, 1.0 - exp(-10.0 * delta))
 	_head_frame(n, mode, breath, time, float(s.get("tell", 1.0)))
-	if mode == "hidden":
+	if mode == "hidden" and n.look == 0:
 		_reveal_frame(n, intro)
 	n.head_skin.position = centre
 	n.head_skin.rotation = n.rot
-	n.head_skin.flip_h = n.view == "side" and face < 0.0
+	n.head_skin.flip_h = n.look < 0
 
-	# The neck: from the stump to the back of the skull.
-	n.trail = n.trail.lerp(centre, 1.0 - exp(-TRAIL * delta))
-	n.shown = true
+	# The neck: from the stump, round behind the head, to the base of the skull.
 	var root := stump(i)
-	var tip := centre + head_joint(n, "neck", face, n.rot)
+	var tip := centre + head_joint(n, "neck")
 	var up: Vector2 = (STUMP_DIRS[i] as Vector2).normalized()
+	# How far the head is turned to a side: -1 west, 0 facing us, 1 east.
+	var turned := clampf(float(n.look), -1.0, 1.0)
 	var into: Vector2
-	var grip := 0.5
+	var hook := HOOK
 	if n.view == "side":
-		# From behind and below. A head that looks back toward its own body turns its neck
-		# round behind it, coming in from above, as far as the neck has slack to spare.
-		var slack := clampf((n.total * STACK - root.distance_to(tip)) / (n.total * STACK * 0.4), 0.0, 1.0)
-		var back := smoothstep(-0.2, 0.6, Vector2(face, 0).dot((root - tip).normalized())) * slack
-		into = Vector2(-face * 0.8, lerpf(0.6, -0.5, back)).normalized().rotated(n.rot)
-		grip = lerpf(0.5, 1.5, back)
+		# From below the head and a little behind it. A head that looks back toward its
+		# own body has its neck pass under it and curl up to the base of the skull. (It
+		# comes from below, not straight from behind: a neck that ran behind the head
+		# showed only the tip of its curl, like a cut pipe.)
+		var back := smoothstep(-0.2, 0.6, Vector2(turned, 0).dot((root - tip).normalized()))
+		into = Vector2(-0.55 * turned, 0.85).normalized().rotated(n.rot * absf(turned) * 0.5)
+		hook = lerpf(HOOK, HOOK_PROFILE if absi(n.look) == 2 else HOOK_BACK, back)
+		# A curl needs room: close to its stump the neck has none to spare for one.
+		hook = minf(hook, maxf(HOOK, root.distance_to(tip) * 0.45))
+		if s.get("dead", false):
+			# A dead head only hangs: nothing holds a curl in its neck.
+			hook = HOOK
 	else:
-		# The middle head faces us: its neck comes from below, or over the top once the
-		# head hangs lower than its stump. It bows to one side then, so it never folds
-		# flat on itself.
+		# The middle head's neck comes from below, or over the top once the head hangs
+		# lower than its stump. It bows to one side then, so it never folds flat on
+		# itself, and it swings out behind the head when the head turns aside.
 		var over := smoothstep(-70.0, -10.0, tip.y - root.y)
 		up = Vector2(-0.7 * over, -1.0).normalized()
-		into = Vector2(-0.9 * over, lerpf(1.0, -1.0, over)).normalized()
-		grip = lerpf(0.5, 1.0, over)
+		into = Vector2(-0.9 * over - 0.85 * turned, lerpf(1.0, -1.0, over)).normalized()
+		hook = lerpf(0.5, 1.0, over) * maxf(root.distance_to(tip) * 0.42, 10.0)
+	if not n.shown:
+		n.into = into
+	n.into = n.into.slerp(into, 1.0 - exp(-8.0 * delta)) if n.into.dot(into) > -0.99 else into
+	n.trail = n.trail.lerp(centre, 1.0 - exp(-TRAIL * delta))
+	n.shown = true
 	var lag := (n.trail - centre) * 0.6
 	var sway := Vector2(sin(_time * 0.9 + i * 2.1), cos(_time * 0.7 + i)) * 3.0
 	if s.get("dead", false):
 		sway = Vector2.ZERO
-	solve(n, root, tip, up, into, lag + sway, grip)
+	solve(n, root, tip, up, n.into, lag + sway, hook)
 
 	# The bones, then the skin on them.
 	var xf := global_transform
@@ -425,10 +510,10 @@ func pose_head(i: int, centre: Vector2, s: Dictionary, delta: float) -> void:
 		sp.rotation = (n.joints[k + 1] - n.joints[k]).angle() + float(sp.get_meta("lean"))
 		var lit := smoothstep(0.0, SHADOW_REACH, float(k) / n.skins.size()) * out
 		sp.modulate = Color(SHADOW.lerp(Color.WHITE, lit) * state_tint, fade)
-	# The head's own shadow is in its art: the middle head's clips carry it, and a side
-	# head wears its shadowed twin, which draws off as it comes out.
+	# The head's own shadow is in its art. Facing us, its clips carry it (`wake`,
+	# `recede`); turned aside it wears its shadowed twin, which draws off as it comes out.
 	n.head_skin.modulate = Color(state_tint, fade)
-	if n.shade_skin != null and out < 1.0:
+	if n.look != 0 and out < 1.0:
 		n.shade_skin.visible = true
 		n.shade_skin.position = n.head_skin.position
 		n.shade_skin.rotation = n.head_skin.rotation
@@ -442,9 +527,47 @@ func pose_head(i: int, centre: Vector2, s: Dictionary, delta: float) -> void:
 			n.head_skin.visible = false
 
 
-## How far the head is turned, nose down for a side head (in radians).
-func _head_turn(n: Neck, mode: String, breath: String, face: float, aim: Vector2, time: float) -> float:
-	if n.view != "side":
+## The view a head wants to show for what it is doing.
+func _want_look(n: Neck, mode: String, breath: String, s: Dictionary) -> int:
+	var face: float = s.get("face", 1.0)
+	var watch: Vector2 = s.get("watch", Vector2(face, 0.0))
+	match mode:
+		"limp":
+			# It hangs as it died.
+			return n.look
+		"hidden":
+			# In the dark the middle head faces us; the others look out at an angle.
+			if n.index == 1:
+				n.look_want = 0
+			else:
+				n.look_want = 1 if (watch.x if watch.x != 0.0 else face) > 0.0 else -1
+			return n.look_want
+		"tell", "breathe":
+			if breath == HydraHead.FOG:
+				# The glow in its throat is drawn facing us.
+				n.look_want = 0
+				return 0
+			if breath == HydraHead.PLUME:
+				# The plume pours along the floor: strict profile, the way it will roll.
+				n.look_want = 2 if face > 0.0 else -2
+				return n.look_want
+			# The geyser head looks down its aim.
+			watch = s.get("aim", watch)
+		"rage":
+			if n.index == 1:
+				n.look_want = 0
+				return 0
+	# Otherwise it watches: it turns once its mark is well past the view it holds.
+	var toward := view_toward(watch)
+	if absf(toward - n.look_want) > TURN_SLACK:
+		n.look_want = roundi(toward)
+	return n.look_want
+
+
+## How far the head is tilted, nose down (in radians, already mirrored).
+func _head_tilt(n: Neck, mode: String, breath: String, aim: Vector2, time: float) -> float:
+	var turned := absi(n.look)
+	if turned == 0:
 		match mode:
 			"limp":
 				return 0.45
@@ -453,10 +576,16 @@ func _head_turn(n: Neck, mode: String, breath: String, face: float, aim: Vector2
 			"rage":
 				return sin(_time * 30.0) * 0.08
 		return sin(_time * 0.8) * 0.04
-	var to_aim := clampf(wrapf(aim.angle() - (0.0 if face > 0.0 else PI), -PI, PI), -1.1, 1.1)
+	var side := n.side()
+	# The way the art looks with no tilt: due east in profile, down and east at an angle.
+	var rest := 0.0 if turned == 2 else 0.88
+	var limit := 1.1 if turned == 2 else 0.6
+	var to_aim := clampf(wrapf(aim.angle() - (rest if side > 0.0 else PI - rest), -PI, PI), -limit, limit)
+	# A three-quarter head nods half as far: it is already looking down.
+	var nods := 1.0 if turned == 2 else 0.5
 	var nod := 0.0
 	match mode:
-		"idle", "rise":
+		"idle", "rise", "emerge", "hidden":
 			nod = sin(_time * 1.2 + n.index) * 0.05
 		"tell":
 			if breath == HydraHead.GEYSER:
@@ -474,32 +603,16 @@ func _head_turn(n: Neck, mode: String, breath: String, face: float, aim: Vector2
 			nod = -0.25 + sin(_time * 30.0 + n.index) * 0.1
 		"limp":
 			nod = 1.15
-	return nod * face
+	return nod * nods * side
 
 
-## The head's frame, from its clips.
+## The head's frame, from the clips of the view it shows.
 func _head_frame(n: Neck, mode: String, breath: String, time: float, tell: float) -> void:
 	var clip := "idle"
 	var f := 0
 	var clips: Dictionary = n.head_layout["clips"]
-	if n.view == "side":
-		match mode:
-			"tell":
-				# It draws back: the first part of the clip, over the whole wind-up.
-				clip = "pull"
-				f = int(clampf(time / tell, 0.0, 1.0) * 8.0)
-			"breathe":
-				clip = "open"
-			"sag":
-				clip = "roar"
-				f = int(time * 7.0) % int(clips[clip]["count"])
-			"rage":
-				clip = "jaw"
-				f = int(time * 16.0) % int(clips[clip]["count"])
-			"limp":
-				clip = "roar"
-				f = 5
-	else:
+	var turned := absi(n.look)
+	if turned == 0:
 		match mode:
 			"emerge":
 				# The shadow draws off it as it comes out.
@@ -510,23 +623,50 @@ func _head_frame(n: Neck, mode: String, breath: String, time: float, tell: float
 				clip = "glow"
 				f = int(clampf(time / tell, 0.0, 1.0) * 5.0)
 			"breathe":
+				# The channel: its jaws stay wide on the pulsing core for as long as it lasts.
 				clip = "glow"
-				f = 4 + int(time * 8.0) % 2
+				f = CHANNEL[int(time * CHANNEL_FPS) % CHANNEL.size()]
 			"sag":
 				clip = "roar"
 				f = int(time * 7.0) % int(clips[clip]["count"])
 			"rage":
 				clip = "glow"
 				f = int(time * 14.0) % int(clips[clip]["count"])
+	else:
+		match mode:
+			"tell":
+				# It draws back: the start of the clip, over the whole wind-up. (The
+				# three-quarter clip breathes fire after that, which is not this beast.)
+				clip = "pull"
+				f = int(clampf(time / tell, 0.0, 1.0) * (8.0 if turned == 2 else 5.0))
+			"breathe":
+				clip = "open"
+			"sag":
+				clip = "roar"
+				f = _roar_frame(turned, int(time * 7.0), int(clips[clip]["count"]))
+			"rage":
+				clip = "jaw" if clips.has("jaw") else "roar"
+				f = int(time * 16.0) % int(clips[clip]["count"])
+				if clip == "roar":
+					f = _roar_frame(turned, int(time * 16.0), int(clips[clip]["count"]))
+			"limp":
+				clip = "roar"
+				f = 5
 	n.clip = clip
 	n.frame = mini(f, int(clips[clip]["count"]) - 1)
 	_set_cell(n.head_skin, n.head_layout, int(clips[clip]["start"]) + n.frame)
 
 
-## The middle head in the reveal: its eyes open, it waits, and it snorts.
+## The roar's frame at `step`: every frame in profile, the ones that keep their color
+## in three-quarter view.
+static func _roar_frame(turned: int, step: int, count: int) -> int:
+	if turned == 1:
+		return ROAR_THREE_QUARTER[step % ROAR_THREE_QUARTER.size()]
+	return step % count
+
+
+## A head that faces us in the reveal: its eyes open, it waits, and it snorts.
 func _reveal_frame(n: Neck, intro: float) -> void:
-	if n.view == "side":
-		return
 	var clips: Dictionary = n.head_layout["clips"]
 	var count := int(clips["wake"]["count"])
 	var opened := clampf((intro - float(HaarWyrm.EYES_AT[n.index])) / EYES_OPEN, 0.0, 1.0)
@@ -550,27 +690,23 @@ func _draw_fx() -> void:
 			continue
 		var s := n.told
 		var mode: String = s.get("mode", "idle")
-		var face: float = s.get("face", 1.0)
 		var fade: float = s.get("fade", 1.0)
 		if mode == "hidden":
 			# The reveal: its eyes burn in the dark, so they read from across the room.
 			if fmod(_time + n.index, 4.0) >= 0.12:
 				for e: Array in n.head_layout["joints"]["eyes"]:
-					var off := (_point(e) - _cell_centre(n.head_layout)) * ART
-					if n.view == "side":
-						off.x *= face
-					var at := n.centre + off.rotated(n.rot)
+					var at := n.centre + _from_centre(n, e)
 					_fx.draw_rect(Rect2(at - Vector2(4, 2), Vector2(8, 4)), Color(EYE, 0.16 * n.eyes))
 					_fx.draw_rect(Rect2(at - Vector2(2, 1), Vector2(4, 2)), Color(EYE, 0.85 * n.eyes))
 			continue
 		if s.get("dead", false):
 			continue
-		var jaws := n.centre + head_joint(n, "mouth", face, n.rot)
+		var jaws := n.centre + head_joint(n, "mouth")
 		if s.get("weak", false):
 			# Water runs off it.
 			for k in 3:
 				var drop := fmod(_time * 1.6 + k * 0.37 + n.index * 0.2, 1.0)
-				var at := n.centre + Vector2(face * (-8.0 + k * 9.0), 10.0 + drop * 44.0)
+				var at := n.centre + Vector2(n.side() * (-8.0 + k * 9.0), 10.0 + drop * 44.0)
 				_fx.draw_rect(Rect2(at, Vector2(2, 3)), Color(DRIP, (1.0 - drop) * 0.9 * fade))
 			continue
 		if mode in ["tell", "breathe"] or mode == "idle" and fmod(_time + n.index * 1.3, 5.0) < 0.5:
@@ -585,15 +721,16 @@ func _draw_fx() -> void:
 
 
 ## Lays neck `n` along a curve from `root` to `tip`: out of the stump along `up`, into
-## the skull along `into`, pushed sideways by `push`. The curve bends more to take up a
-## neck that is too long and straightens for one that is too short; between the two the
-## sections telescope (`n.stack`). `grip` is how far the skull's end of the curve holds
-## its line, against the stump's.
-func solve(n: Neck, root: Vector2, tip: Vector2, up: Vector2, into: Vector2, push: Vector2, grip := 0.5) -> void:
+## the skull along `into`, pushed sideways by `push`. `hook` is how far behind the skull
+## the curve holds that line before it turns in (a long hook is a curl round the head).
+## The curve bends more to take up a neck that is too long and straightens for one that
+## is too short; between the two the sections telescope (`n.stack`).
+func solve(n: Neck, root: Vector2, tip: Vector2, up: Vector2, into: Vector2, push: Vector2, hook := HOOK) -> void:
 	var span := root.distance_to(tip)
 	var low := n.total * STACK_MIN
 	var high := n.total * STACK_MAX
 	var handle := maxf(span * 0.42, 10.0)
+	var grip := hook / handle
 	var pts := _curve(root, tip, up, into * grip, push, handle)
 	var length := _length(pts)
 	if length < low:

@@ -596,7 +596,7 @@ func _breathe_hold(h: HydraHead, k: float) -> void:
 func mouth_of(h: HydraHead) -> Vector2:
 	if rig != null:
 		# On the rig the head turns to its aim, and the breath leaves its jaws.
-		return rig.mouth(h.index, h.global_position, _face(h))
+		return rig.mouth(h.index, h.global_position)
 	return h.global_position + Vector2(_face(h) * 22.0, 6.0)
 
 

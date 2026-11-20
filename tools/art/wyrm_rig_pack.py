@@ -49,6 +49,17 @@ PARTS = {
         ('shut', 'head/Eyes_closed/rotations/east.png', 1, 1, 'idle'),
         ('shadow', 'head/Shadowed/rotations/east.png', 1, 1, 'idle'),
     ]),
+    # The three-quarter head (south-east; south-west is its mirror): the view between the
+    # profile and the face, so a head can turn through them. Its `pull` clip grows a beam
+    # of fire after the first frames, so the rig only plays its start.
+    'head_se': ((128, 192), [
+        ('idle', 'head/Idle/rotations/south-east.png', 1, 1, None),
+        ('open', 'head/Mouth_wide_open_as_i/rotations/south-east.png', 1, 1, 'idle'),
+        ('pull', HEAD + 'Pull_the_head_back_with_a_sharp_controlled_tension/south-east', 2, 10, 'idle'),
+        ('roar', HEAD + 'The_dragon_head_let_s_out_a_silent_roar_in_the_dir/south-east', 1, 10, 'idle'),
+        ('shut', 'head/Eyes_closed/rotations/south-east.png', 1, 1, 'idle'),
+        ('shadow', 'head/Shadowed/rotations/south-east.png', 1, 1, 'idle'),
+    ]),
     'head_south': ((128, 192), [
         ('idle', 'head/Idle/rotations/south.png', 1, 1, None),
         ('open', 'head/Mouth_wide_open_as_i/rotations/south.png', 1, 1, 'idle'),
@@ -76,6 +87,8 @@ JOINTS = {
     # The neck ends under the skull itself, so its open rim never shows; it comes out from
     # behind the cheek spines, where the stub of neck was cut away.
     'head_east': {'neck': (47, 54), 'mouth': (84, 66), 'eyes': [(62, 47)], 'size': (92, 92)},
+    # Three-quarter and face on, the neck runs back behind the skull: it ends under it.
+    'head_se': {'neck': (44, 46), 'mouth': (64, 80), 'eyes': [(49, 55)], 'size': (92, 92)},
     'head_south': {'neck': (46, 62), 'mouth': (46, 80), 'eyes': [(35, 52), (59, 52)], 'size': (92, 92)},
     # Where each neck is seated in its stump (west, middle, east), and where the body meets
     # the ground. A stump's open rim is at (85, 21), (127, 11) and (168, 21); the first neck
