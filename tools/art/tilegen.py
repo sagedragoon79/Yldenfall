@@ -290,6 +290,11 @@ def trim_band(img, ox, oy, seed, x0, x1, zone, y0, tones):
     lit, band, shadow = tones
     kind = TRIM_KIND[zone]
     seams = set(wood_strand_starts()) if kind == "rind" else ()
+    if zone == "boughs":
+        # The High Boughs' bark is plates (12.92): the lip is notched where a
+        # furrow meets it, on the row of bark the trim lies against.
+        row = y0 + 3 * D if y0 < T // 2 else y0 - 1
+        seams = {x for x in range(T) if bough_plate(x, row) != bough_plate((x - 1) % T, row)}
     for x in range(x0, x1):
         wx = x // D
         for row, col in enumerate((lit, band, shadow)):
@@ -816,14 +821,71 @@ def paint_limb(img, ox, oy, seed, ramp):
                         img.putpixel((ox + cx + dx, oy + cy + dy), c("leaf-1" if dy > 0 else "leaf-2"))
 
 
-def paint_bough(img, ox, oy, seed, ramp):
-    """A sunlit bough high in the canopy: The Heartwood's strands two shades
-    lighter, and the odd sprig of young leaves.
+# The High Boughs' bark (design bible 12.92, pass 615). The boughs shared the
+# Heartwood's strands two shades up: columns of two values from the top of a
+# wall to its foot, which the independent grade read as "flat vertical brown
+# stripes" (pass 610). A bough's bark is now plates of one body value, cut by
+# dark furrows that fork and join, and no furrow runs straight for longer than a
+# plate. A plate is the ground nearest one of BOUGH_PLATES' points (a step across
+# counts BOUGH_STRETCH times a step down, so a plate is tall). The points are
+# uneven on purpose: evenly spread they made a honeycomb. The layout is the same
+# in every tile and wraps at its edges, so a plate runs on across every seam;
+# the seed varies only the marks laid on the plates (a check, a lit edge, a
+# sprig), which cannot show at a seam.
+BOUGH_PLATES = ((11, 18), (2, 18), (5, 0), (23, 15), (31, 9), (19, 19))
+BOUGH_STRETCH = 2.5   # a step across a plate counts as this many steps down it
+BOUGH_CHECK = 0.75    # a plate carries a check above this
+BOUGH_LIT = 0.55      # a plate's west edge is lit above this
 
-    It shares paint_wood's calm strands (design bible 12.28 and 12.45). The older
-    face drew a sine grain down every column and a dark line every 6 world
-    pixels, and read as "striped dirt" (independent grade, pass 550)."""
-    paint_wood(img, ox, oy, seed, ramp, lo=3)
+
+def bough_plate(x, y):
+    """The plate of BOUGH_PLATES a tile's pixel lies on (the layout wraps)."""
+    best, at = None, 0
+    for i, (px, py) in enumerate(BOUGH_PLATES):
+        dx = min((x - px) % T, (px - x) % T) * BOUGH_STRETCH
+        dy = min((y - py) % T, (py - y) % T)
+        d = dx * dx + dy * dy
+        if best is None or d < best:
+            best, at = d, i
+    return at
+
+
+def bough_furrow(x, y):
+    """True where a furrow runs: the pixel east, south or south-east is another
+    plate's. The diagonal keeps a slanted furrow one joined line: without it a
+    furrow that steps a pixel a row is a string of pixels touching at corners."""
+    here = bough_plate(x, y)
+    return any(bough_plate((x + dx) % T, (y + dy) % T) != here for dx, dy in ((1, 0), (0, 1), (1, 1)))
+
+
+def paint_bough(img, ox, oy, seed, ramp, lo=3):
+    """A sunlit bough high in the canopy: plates of bark two shades lighter
+    than the Heartwood's wood, and the odd sprig of young leaves.
+
+    Calm fill (design bible 12.28 and 12.45): a plate is one flat value, the
+    furrows are one pixel wide and every mark on a plate is a line. The first
+    face drew a sine grain down every column ("striped dirt", pass 550); the
+    second shared paint_wood's strands ("vertical brown stripes", pass 610)."""
+    for y in range(T):
+        for x in range(T):
+            col = lo - 1 if bough_furrow(x, y) else lo + 1
+            img.putpixel((ox + x, oy + y), c(f"{ramp}-{col}"))
+    for i, (px, py) in enumerate(BOUGH_PLATES):
+        # A check: a short crack down the middle of a plate.
+        if hash2(seed, i, 24) > BOUGH_CHECK:
+            cx = px + int(hash2(seed, i, 25) * 5) - 2
+            y0 = py - 5 + int(hash2(seed, i, 26) * 4)
+            for y in range(y0, y0 + 4 + int(hash2(seed, i, 27) * 5)):
+                if bough_plate(cx % T, y % T) == i and not bough_furrow(cx % T, y % T):
+                    img.putpixel((ox + cx % T, oy + y % T), c(f"{ramp}-{lo - 1}"))
+        # A lit edge: the plate's west side catches the sun for a few pixels.
+        if hash2(seed, i, 28) > BOUGH_LIT:
+            y0 = py - 4 + int(hash2(seed, i, 29) * 4)
+            for y in range(y0, y0 + 4 + int(hash2(seed, i, 30) * 4)):
+                for x in range(px - T // 2, px):
+                    if bough_plate(x % T, y % T) == i and not bough_furrow(x % T, y % T):
+                        img.putpixel((ox + x % T, oy + y % T), c(f"{ramp}-{lo + 2}"))
+                        break
     for k in range(2):
         if hash2(seed, k, 21) > 0.6:
             # A sprig: a short stem and two bright leaves.

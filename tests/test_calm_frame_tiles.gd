@@ -1,9 +1,9 @@
 extends TestSuite
 ## Calm frame tiles (design bible 12.45, pass 555). The solid fields that frame a
 ## room must not shout over the play field: the Tower's plates and Vorrhallow's
-## blocks share one body value with the odd worn block, the High Boughs' wood is
-## long strands rather than striped noise, and the factory's variant scatter has
-## no beat along a row.
+## blocks share one body value with the odd worn block, the High Boughs' bark is
+## calm plates rather than striped noise (12.92; `test_bough_bark.gd` holds the
+## plates), and the factory's variant scatter has no beat along a row.
 
 const PX := 32  # one tile in the atlas (TILE * DENSITY)
 const HALF := 16  # a Tower plate, and half a Vorrhallow block
@@ -107,10 +107,11 @@ func _teal(img: Image, tile: Vector2i) -> int:
 	return n
 
 
-func test_the_boughs_wood_is_long_strands() -> void:
+func test_the_boughs_bark_is_calm() -> void:
 	# The old bough face changed colour between a third of its neighbouring
-	# pixels (a sine grain down every column). Long strands change far less, and
-	# hardly at all going down a column.
+	# pixels (a sine grain down every column). The plates of 12.92 (pass 615)
+	# change far less, across and down alike: the strands of pass 555 hardly
+	# changed going down a column, which made them stripes.
 	var img := _atlas("boughs")
 	var tiles: Array = _tiers()[0]
 	var across := 0
@@ -127,8 +128,8 @@ func test_the_boughs_wood_is_long_strands() -> void:
 					down += 1
 	check(pairs > 0 and float(across + down) / float(2 * pairs) < 0.23,
 		"under 23%% of neighbouring pixels differ in the bough fill, got %.3f" % (float(across + down) / float(2 * pairs)))
-	check(float(down) / float(pairs) < 0.06,
-		"a strand runs down the tile: under 6%% of pixels differ from the one below, got %.3f" % (float(down) / float(pairs)))
+	check(float(down) / float(pairs) > 0.06 and float(down) / float(pairs) < 0.2,
+		"a furrow slants, so 6%% to 20%% of pixels differ from the one below, got %.3f" % (float(down) / float(pairs)))
 
 
 func test_the_variant_scatter_has_no_beat_along_a_row() -> void:

@@ -223,6 +223,85 @@ def test_paint_wood_has_surface_value_variation():
     assert max(seen.values()) / total < 0.80, "no single wood shade swamps the face"
 
 
+def _bough(seed):
+    img = tg.Image.new("RGBA", (tg.T, tg.T), tg.CLEAR)
+    tg.paint_bough(img, 0, 0, seed, "bark")
+    return img
+
+
+def _longest_run(cells, step):
+    """The longest straight run in a wrapping tile's set of cells, along `step`."""
+    T, best = tg.T, 0
+    for x, y in cells:
+        if ((x - step[0]) % T, (y - step[1]) % T) in cells:
+            continue
+        n = 1
+        while n < T and ((x + step[0] * n) % T, (y + step[1] * n) % T) in cells:
+            n += 1
+        best = max(best, n)
+    return best or (T if cells else 0)
+
+
+def test_bough_bark_is_plates_not_stripes():
+    # The pass 610 grade read the High Boughs' terrain as "flat vertical brown
+    # stripes": paint_wood's strands, a column of one value from the top of a wall
+    # to its foot. A bough is now plates of one body value between furrows that
+    # fork (bible 12.92). (Painting the boughs with paint_wood again fails the
+    # body share: the strands were two values, about half a tile each.)
+    T = tg.T
+    furrow = {(x, y) for x in range(T) for y in range(T) if tg.bough_furrow(x, y)}
+    share = len(furrow) / (T * T)
+    assert 0.10 < share < 0.22, f"furrows are lines, not a field: {share:.3f} of the tile"
+    assert _longest_run(furrow, (0, 1)) <= 2 * T // 3, "no furrow runs straight down for more than two thirds of a tile"
+    assert _longest_run(furrow, (1, 0)) <= T // 4, "no furrow runs straight across for more than a quarter"
+    sizes = [sum(tg.bough_plate(x, y) == i for x in range(T) for y in range(T)) for i in range(len(tg.BOUGH_PLATES))]
+    assert min(sizes) >= 60, f"no plate is a sliver: {sizes}"
+    assert max(sizes) >= 1.5 * min(sizes), f"the plates are uneven (even ones made a honeycomb): {sizes}"
+    body = tg.c("bark-4")
+    for seed in (11, 58, 201, 202, 203):
+        img = _bough(seed)
+        n = sum(img.getpixel((x, y)) == body for x in range(T) for y in range(T))
+        assert n / (T * T) > 0.7, f"seed {seed}: one body value fills the plates, got {n / (T * T):.2f}"
+        dark = {(x, y) for x in range(T) for y in range(T) if img.getpixel((x, y)) == tg.c("bark-2")}
+        assert len(furrow - dark) <= 12, f"seed {seed}: every furrow is drawn (a sprig may cover a few pixels)"
+        assert _longest_run(dark, (0, 1)) <= 2 * T // 3, f"seed {seed}: a check does not turn a furrow into a stripe"
+
+
+def test_bough_plates_run_on_across_every_seam():
+    # The layout is the same in every tile and wraps, so no seam cuts a plate:
+    # across a seam the two pixels are one plate's unless a furrow runs there,
+    # exactly as inside the tile. The seed changes no pixel in the two rows and
+    # columns at a tile's edge except a mark that stays on its own plate.
+    T = tg.T
+    for k in range(T):
+        assert tg.bough_plate(T, k) == tg.bough_plate(0, k) and tg.bough_plate(k, T) == tg.bough_plate(k, 0), "the layout wraps"
+    a, b = _bough(201), _bough(203)
+    for k in range(T):
+        for x, y in ((0, k), (T - 1, k), (k, 0), (k, T - 1)):
+            if tg.bough_furrow(x, y):
+                assert a.getpixel((x, y)) == b.getpixel((x, y)), f"a furrow at the seam is the same in every tile ({x},{y})"
+    assert a.tobytes() != b.tobytes(), "the seed still varies the marks"
+
+
+def test_bough_trim_is_notched_at_a_furrow():
+    # The rind under a bough's cap was notched where two of paint_wood's strands
+    # met. It is notched where a furrow of the bark below meets it.
+    T, D = tg.T, tg.D
+    img = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+    tg.paint_tile(img, 0, 0, tg.EDGE_TOP, "boughs", 61)
+    y = tg.COURSE_TOP * D + D   # the band, between the lit line and the shadow line
+    row = tg.COURSE_TOP * D + 3 * D
+    notched = {x for x in range(T) if img.getpixel((x, y)) == tg.c(tg.TRIM_TONES["boughs"][0][2])}
+    meets = {x for x in range(T) if tg.bough_plate(x, row) != tg.bough_plate((x - 1) % T, row)}
+    assert notched and meets <= notched, f"a notch at every furrow: {sorted(meets)} in {sorted(notched)}"
+    assert len(notched) <= 3 * len(meets), "and nowhere else"
+
+
+def test_shipped_boughs_atlas_is_fresh():
+    shipped = tg.Image.open(tg.TILES / "boughs.png").convert("RGBA")
+    assert shipped.tobytes() == _build_atlas("boughs").tobytes(), "assets/tiles/boughs.png is stale"
+
+
 def _build_atlas(zone="gym"):
     """Builds `zone`'s atlas into a temp dir and returns the PIL image."""
     import tempfile
