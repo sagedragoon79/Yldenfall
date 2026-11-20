@@ -169,7 +169,12 @@ func test_wyrm_rig_is_what_the_fight_wears() -> void:
 	if z == null or z.rig == null:
 		return
 	await frames(2)
-	check(z.rig.body_skin.modulate.a < 0.01, "the tunnel is black before the reveal: no body")
+	check(z.rig.body_skin.modulate.a < 0.01, "the tunnel is black as the reveal begins: no body")
+	var was := z.state
+	z.state = "dormant"
+	z.rig.pose(z, 0.016)
+	check(z.rig.body_skin.modulate.a < 0.01, "and black while it sleeps")
+	z.state = was
 	z.skip_intro()
 	for _f in 300:
 		await frames(1)

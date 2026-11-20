@@ -246,3 +246,11 @@ Before a foe merges, check it in the lineup and in its room:
 PixelLab is 5,000 generations a month (Tier 2). The Shade Knight cost 27: 9 for the base and 1 or
 2 a clip, his first takes included. Plan about 30 for a standard foe and 60 to 100 for a guardian's parts. Check
 `python3 tools/art/pixellab.py balance` before a batch and leave a margin for retakes.
+
+## 9. Rigs
+
+A guardian built of rigid parts (necks, tails, chains, stone or bronze limbs) goes on a skeleton
+instead of frames: design bible 13.7 has the rule, and the Haar Wyrm (8.4, `WyrmRig`) is the
+worked example. Its parts still follow this guide (scale, outline, palette), and parts that
+change shape (jaws, cloth) stay frame-by-frame on their bones. A turned part's pixels leave the
+grid, so review a rig in motion at 1x and 2x, not from stills.
