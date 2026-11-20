@@ -379,3 +379,86 @@ func test_wyrm_rig_necks_are_seated_in_their_stumps() -> void:
 		var root := rig.necks[i].skins[0].modulate
 		check(absf(root.r - WyrmRig.SHADOW.r) < 0.01 and absf(root.b - WyrmRig.SHADOW.b) < 0.01, "and its root wears the cloaked body's own shadow")
 	rig.queue_free()
+
+
+
+## Sean, 2026-11-19: the fog is a channel. "That's where we insert the VFX of the heat
+## radiation ripples and screen heat distortion effect."
+func test_wyrm_fog_is_a_channel_of_heat_off_the_jaws() -> void:
+	var fog := HydraFog.new()
+	fog.bounds = Rect2(16, 64, 928, 256)
+	# (In a holder: a lambda copies a local, and the jaws move below.)
+	var held := [Vector2(480, 112)]
+	var jaws: Vector2 = held[0]
+	fog.source = func() -> Vector2: return held[0]
+	arena.add_child(fog)
+	check(fog.haze != null and fog.haze.material is ShaderMaterial, "the fog lays a heat haze over the arena")
+	var mat := fog.haze.material as ShaderMaterial
+	check("hint_screen_texture" in HydraFog.HAZE_SHADER and "floor(push" in HydraFog.HAZE_SHADER, "the haze bends the screen behind it, in whole pixels")
+	check(fog.rings().is_empty() and not fog.haze.visible, "before the breath there is no heat in the air")
+	# Half way into the fill.
+	fog._time = HydraFog.FILL * 0.5
+	fog._lay_haze()
+	check(fog.haze.visible and is_equal_approx(float(mat.get_shader_parameter("strength")), 0.5), "the haze thickens as the fog fills (%.2f)" % float(mat.get_shader_parameter("strength")))
+	check((mat.get_shader_parameter("source") as Vector2).distance_to(jaws - fog.bounds.position) < 0.01, "and it radiates from the jaws of the head that breathes it")
+	check(fog.haze.position.distance_to(fog.bounds.position) < 0.01 and fog.haze.size == fog.bounds.size, "over the whole arena")
+	check(fog.rings().size() == 1, "the first ring of heat has left the jaws (%d)" % fog.rings().size())
+	# Thick: a train of rings, each farther and fainter than the one behind it.
+	fog._time = HydraFog.FILL + 1.7
+	fog._lay_haze()
+	var rings := fog.rings()
+	check(rings.size() == HydraFog.RINGS and is_equal_approx(float(mat.get_shader_parameter("strength")), 1.0), "at its thickest, %d rings are in the air (%d)" % [HydraFog.RINGS, rings.size()])
+	var ordered := true
+	for i in range(1, rings.size()):
+		ordered = ordered and rings[i][0] > rings[i - 1][0] and rings[i][1] < rings[i - 1][1]
+	check(ordered and rings[-1][0] < HydraFog.RING_REACH, "each farther from the jaws and fainter than the one behind it (%s)" % [rings])
+	# The jaws move: the heat comes off them where they are now.
+	jaws = Vector2(500, 96)
+	held[0] = jaws
+	fog._lay_haze()
+	check((mat.get_shader_parameter("source") as Vector2).distance_to(jaws - fog.bounds.position) < 0.01, "the heat follows the jaws as the head moves")
+	# The breath over, no new ring leaves, and the haze thins with the fog.
+	fog._time = HydraFog.FILL + HydraFog.BURN + HydraFog.FADE * 0.5
+	fog._lay_haze()
+	var late := fog.rings()
+	check(late.size() < HydraFog.RINGS and (late.is_empty() or late[0][0] > HydraFog.RING_REACH * 0.25), "once the breath ends no new ring leaves the jaws (%s)" % [late])
+	check(is_equal_approx(float(mat.get_shader_parameter("strength")), 0.5), "and the haze thins as the fog fades")
+	# With no head to breathe it (a test, a tool), it still has a place to come from.
+	fog.source = Callable()
+	check(fog.bounds.has_point(fog.source_point()), "a fog with no head still has a source inside the arena")
+	fog.queue_free()
+
+
+func test_wyrm_fog_leaves_the_water_clear() -> void:
+	var z: HaarWyrm = await _wake(true)
+	if z == null:
+		check(false, "the Haar Wyrm wakes")
+		return
+	var fog := HydraFog.new()
+	fog.bounds = z.arena
+	fog.cistern = z.cistern
+	z.get_parent().add_child(fog)
+	fog._time = HydraFog.FILL
+	fog._lay_haze()
+	var mat := fog.haze.material as ShaderMaterial
+	check((mat.get_shader_parameter("clear") as Vector4).z == 0.0 and fog.clear_rect().size == Vector2.ZERO, "a dry cistern is no shelter: the haze covers it")
+	z.cistern.fill_now()
+	fog._lay_haze()
+	var clear: Vector4 = mat.get_shader_parameter("clear")
+	var water := fog.clear_rect()
+	check(water.size.x > 100.0 and water.size.y > 10.0, "a full cistern's water is clear of the heat (%s)" % water)
+	check(is_equal_approx(clear.x, water.position.x - fog.bounds.position.x) and is_equal_approx(clear.z, water.size.x) and is_equal_approx(clear.w, water.size.y), "and the haze leaves exactly that water alone")
+	# On the rig the heat comes off the fog head's own jaws.
+	z.skip_intro()
+	for _f in 300:
+		await frames(1)
+		if z.state == "fight":
+			break
+	var h := z.head_for(HydraHead.FOG)
+	var real := HydraFog.new()
+	real.bounds = z.arena
+	real.source = z.mouth_of.bind(h)
+	z.get_parent().add_child(real)
+	check(real.source_point().distance_to(z.mouth_of(h)) < 0.01 and real.source_point().distance_to(h.global_position) < 30.0, "the fight hands the fog its head's jaws to radiate from")
+	real.queue_free()
+	fog.queue_free()

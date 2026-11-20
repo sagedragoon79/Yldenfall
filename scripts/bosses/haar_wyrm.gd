@@ -568,6 +568,8 @@ func _tell(h: HydraHead, k: float) -> void:
 				var f := HydraFog.new()
 				f.bounds = arena
 				f.cistern = cistern
+				# The heat comes off its jaws, wherever they go while it holds the breath.
+				f.source = mouth_of.bind(h)
 				get_parent().add_child(f)
 				h.set_meta("fog", f)
 				Sfx.play("steam_hiss", 0.05, -8.0)
