@@ -5,6 +5,7 @@ map: 35, -7
 boss: haar_wyrm
 fog: 0.6
 bare: 22, 19, 37, 22
+grate: 23, 20, 36, 20
 prop: 30, 22, spring_haar
 npc: 44, 19, haar_keeper, boss:haar_wyrm !spring:haar
 npc: 44, 19, haar_keeper_glad, spring:haar

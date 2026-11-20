@@ -158,7 +158,9 @@ def jobs():
             add('dyes', 'dyes/%s.png' % iid, lambda o, i=iid: shot(o, ['--room=hearthroot/plaza', '--dye=' + i], hero='64,64', scale=2))
     for rid, h in R.items():
         if h['boss'] in ('gnarlmaw', 'haar_wyrm', 'everbloom_veins'):
-            g = ['--room=' + rid, '--shot-at=%d,%d' % floor_mid(h['grid'])]
+            # The Wyrm's hero stands on the grate over its cistern (the room's `grate:` header),
+            # which the grid shows as an open pit: floor_mid would set him on the pit's bed.
+            g = ['--room=' + rid, '--shot-at=%d,%d' % ((30, 19) if h['boss'] == 'haar_wyrm' else floor_mid(h['grid']))]
             if h['boss'] == 'gnarlmaw':
                 # Gnarlmaw spends most of the fight in the walls; at frame 330 its whole body lunges across the floor.
                 add('arenas', 'guardians/gnarlmaw.png', lambda o, g=g: shot(o, g, frames=330))

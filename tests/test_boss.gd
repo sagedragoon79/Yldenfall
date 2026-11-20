@@ -1252,6 +1252,11 @@ func test_an_intake_takes_deluge_only_into_its_mouth() -> void:
 	check(z.cistern.level == 1 and intake.flowing, "a bolt into the mouth sends a third down (%d)" % z.cistern.level)
 	await _bolt_at(w, intake, intake.facing)
 	check(z.cistern.level == 1, "the same intake gives no more until its water is gone")
+	# Its water mark says so: lit for a mouth that wants water, not for one that runs.
+	var other: HydraIntake = _intakes(w)[1]
+	check(other.wants() and not intake.wants(), "an empty intake wants water; a running one doesn't")
+	z.cistern.boil()
+	check(not other.wants(), "and none wants it while the cistern boils")
 
 
 func test_a_full_cistern_douses_the_last_breather_then_the_rage_boils_it_dry() -> void:
@@ -1394,6 +1399,88 @@ func test_the_geyser_fires_a_locked_straight_line() -> void:
 	check(jet.touches(Rect2(jet.mouth + jet.dir * 20.0 - Vector2(2, 2), Vector2(4, 4))), "one width all along its line")
 	var off := Rect2(jet.mouth + jet.dir.orthogonal() * 60.0, Vector2(4, 4))
 	check(not jet.touches(off), "and a step out of the line is safe")
+
+
+## The cistern comes with the fight, but the grate over its pit is laid as the room
+## loads, so nobody set down there first (a film, a workbench picture) falls in.
+func test_the_grate_is_there_before_the_wyrm_is() -> void:
+	var w := make_world({}, SPRING_ROOM)
+	await frames(2)
+	var cells := HaarWyrm.grate_cells()
+	var at := Vector2(cells[cells.size() / 2] * Room.TILE) + Vector2(8, 0)
+	var floored := true
+	for cell in cells:
+		floored = floored and w.room.is_one_way_at(Vector2(cell * Room.TILE) + Vector2(8, 2))
+	check(floored and String(w.room.header.get("grate", "")) != "", "the room floors the whole of the pit's mouth as it loads (its `grate:` header)")
+	w.player.teleport(at)
+	await frames(30)
+	check(w.player.is_on_floor() and absf(w.player.global_position.y - at.y) < 1.0, "and it holds whoever is set down on it (feet at %.1f, the floor at %.0f)" % [w.player.global_position.y, at.y])
+
+
+## Sean, 2026-11-20: "add the drop through surface. It will also make the player have to
+## think more on how to avoid the middle head attack." An iron grate lies across the
+## cistern's mouth at the floor's level: it holds the hero, Down + Jump drops him
+## through into the water, and one jump brings him back up through it.
+func test_a_grate_lies_over_the_cistern_and_down_and_jump_drops_through_it() -> void:
+	var setup := await _hydra_world()
+	var w: World = setup[0]
+	var z: HaarWyrm = setup[2]
+	var pit := z.cistern.inside
+	var floor_y := z.arena.end.y
+	var p := w.player
+	var cells := z.cistern.grate_cells()
+	check(cells == HaarWyrm.grate_cells(), "the cistern draws its grate over the cells the room floors (%s)" % [cells])
+	check(cells.size() == HaarWyrm.CISTERN_COLS.y - HaarWyrm.CISTERN_COLS.x - 1 and cells[0] == Vector2i(HaarWyrm.CISTERN_COLS.x + 1, HaarWyrm.CISTERN_ROWS.x), "the grate spans the pit's mouth, wall to wall (%d cells from %s)" % [cells.size(), cells[0]])
+	# Dropped from above anywhere along it, he lands on it at the floor's level.
+	var held := true
+	for x: float in [pit.position.x + 6.0, pit.get_center().x, pit.end.x - 6.0]:
+		p.teleport(Vector2(x, floor_y - 24.0))
+		await frames(3)
+		await _until(func() -> bool: return p.is_on_floor(), 60)
+		held = held and p.is_on_floor() and absf(p.global_position.y - floor_y) < 1.0
+	check(held, "the grate holds him at the floor's level (feet at %.1f)" % p.global_position.y)
+	check(w.room.is_one_way_at(p.global_position + Vector2(0, 2)) and w.room.surface_at(p.global_position + Vector2(0, 2)) == "iron", "it is a one-way floor, and rings as iron (%s)" % w.room.surface_at(p.global_position + Vector2(0, 2)))
+	# He runs across it from one side of the arena to the other without falling in.
+	p.teleport(Vector2(pit.position.x - 24.0, floor_y))
+	p.input.move_x = 1
+	var lowest := 0.0
+	for i in 150:
+		await frames(1)
+		lowest = maxf(lowest, p.global_position.y)
+		if p.global_position.x > pit.end.x + 16.0:
+			break
+	p.input.move_x = 0
+	check(p.global_position.x > pit.end.x + 16.0 and lowest < floor_y + 1.0, "he runs straight across the cistern (to x %.0f, never below %.1f)" % [p.global_position.x, lowest])
+	# The water under it is no shelter while he stands on top.
+	_intakes(w)[0].douse()
+	p.teleport(Vector2(pit.get_center().x + 40.0, floor_y))
+	await frames(4)
+	check(not z.cistern.shelters(p), "standing on the grate he is not in the water")
+	# Down + Jump drops him through to the bed, and into the water.
+	p.input.down = true
+	p.input.jump_pressed = true
+	await frames(1)
+	p.input.jump_pressed = false
+	await frames(1)
+	p.input.down = false
+	await _until(func() -> bool: return p.is_on_floor(), 60)
+	check(absf(p.global_position.y - pit.end.y) < 1.0, "Down + Jump drops him through it to the pit's bed (feet at %.1f)" % p.global_position.y)
+	check(z.cistern.shelters(p), "and there the water shelters him")
+	# One jump brings him back up through it.
+	p.input.jump_pressed = true
+	p.input.jump_held = true
+	await frames(1)
+	p.input.jump_pressed = false
+	var top := p.global_position.y
+	for i in 90:
+		await frames(1)
+		top = minf(top, p.global_position.y)
+		if p.is_on_floor() and i > 10:
+			break
+	p.input.jump_held = false
+	check(top < floor_y and p.is_on_floor() and absf(p.global_position.y - floor_y) < 1.0, "one jump from the bed comes up through the grate and lands on it (top %.0f, feet at %.1f)" % [top, p.global_position.y])
+	# On the grate the plume catches him: it rolls the floor's own level.
+	check(is_equal_approx(z.ground_at(p.global_position.x), floor_y) and p.body_rect().end.y <= floor_y + 1.0, "on the grate he stands on the plume's own ground, in its way (%s)" % p.body_rect())
 
 
 ## The cistern is sunk under the floor (Sean, 2026-11-20). It shelters from the plume,

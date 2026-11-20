@@ -48,6 +48,9 @@ extends Node2D
 ##   --wyrm-seed=N              the Haar Wyrm's breaths in the same order every run (to film the two side by side)
 ##   --wyrm-reel                walk the Haar Wyrm through every state for a film: a doused head, the rage,
 ##                              a head falling limp, and its death
+##                              (the hero stands on the cistern's grate, and drops through it for each breath)
+##   --wyrm-reel=fog            instead, a third of water and a whole round: he rides the fog out under the
+##                              grate, then jumps out and strikes up at the middle head as it sags
 ##   --wyrm-reel=turn           instead, set the hero down across the floor from west to east and back, so
 ##                              the heads turn through their views to watch him
 ##   --damage-numbers           show damage numbers (the option) for this run
@@ -550,7 +553,9 @@ func _wyrm_reel() -> void:
 	for b in get_tree().get_nodes_in_group("boss"):
 		if b is HaarWyrm:
 			z = b
-	if z == null or z.state != "fight":
+	if z == null:
+		return
+	if z.state != "fight":
 		return
 	if String(_args["wyrm-reel"]) == "turn":
 		# Across the floor and back: far west, under the west head, the cistern, under
@@ -559,16 +564,67 @@ func _wyrm_reel() -> void:
 		if stops.has(_frames):
 			player.teleport(Vector2(int(stops[_frames]) * Room.TILE + 8, 20 * Room.TILE))
 		return
+	_wyrm_reel_hand(z)
+	if String(_args["wyrm-reel"]) == "fog":
+		# One third of water and nothing else: the round plays out to the fog, he rides
+		# it out under the grate, and the middle head sags over it.
+		if _frames == 480:
+			z.cistern.intakes[0].douse()
+		return
 	match _frames:
+		480, 520, 560:
+			# Deluge into each intake's mouth in turn: a third of a cistern apiece.
+			var intake: HydraIntake = z.cistern.intakes[(_frames - 480) / 40]
+			var bolt := TorrentBolt.new()
+			bolt.velocity = Vector2(-intake.facing * 300.0, 0)
+			world.room.add_child(bolt)
+			bolt.global_position = intake.global_position + Vector2(intake.facing * 110.0, 0)
 		600, 1650:
 			# A full cistern: the head that breathed last droops on the lip, doused.
-			z.cistern.fill_now()
+			if not z.cistern.full():
+				z.cistern.fill_now()
 		2050:
 			z._kill_head(z.heads[0])
 		2170:
 			z._kill_head(z.heads[2])
 		2290:
 			z._kill_head(z.heads[1])
+
+
+## The hero's part in the reel: he stands on the cistern's grate, drops through it
+## (Down + Jump) when a head winds up, jumps back out when the breath is over, and
+## strikes up at the middle head as it sags.
+func _wyrm_reel_hand(z: HaarWyrm) -> void:
+	var p := player
+	var i := p.input
+	i.scripted = true
+	i.move_x = 0
+	i.down = false
+	i.up = false
+	i.jump_pressed = false
+	i.attack_pressed = false
+	var pit := z.cistern.inside
+	var below := p.global_position.y > pit.position.y + 8.0
+	var mid: HydraHead = z.heads[1]
+	var open := not mid.dead and mid.mode == "sag"
+	var winding := false
+	for h in z.heads:
+		winding = winding or (not h.dead and h.mode in ["tell", "breathe"])
+	# A breath is not over while its cloud, jet or heat is still in the room.
+	for c in world.room.get_children():
+		winding = winding or c is SteamBreath or c is HydraGeyser or c is HydraFog
+	if p.is_on_floor():
+		i.jump_held = false
+		if winding and not below:
+			i.down = true
+			i.jump_pressed = true
+		elif not winding and (below or open):
+			i.jump_pressed = true
+			i.jump_held = true
+	elif open and not below:
+		# In the air over the grate: strike up at it near the top of the jump.
+		i.up = true
+		i.attack_pressed = absf(p.velocity.y) < 60.0
 
 
 ## Screenshots (--shot-pogo): run right, jump off each edge and strike down just above the floor,

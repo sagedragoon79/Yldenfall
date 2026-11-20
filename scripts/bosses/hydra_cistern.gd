@@ -9,6 +9,10 @@ extends Node2D
 ## It is sunk in the floor (Sean, 2026-11-20): a pit cut into the room, brim-full at
 ## the floor's own level, with a low lip of coping round it. The lip is the far side
 ## of the rim, behind whoever walks past, so nothing has to be climbed to get in.
+##
+## An iron grate lies across its mouth at the floor's level (Sean, 2026-11-20): it holds
+## whoever walks over it, Down + Jump drops through into the pit, and a jump from the
+## bed comes back up through it. Getting under the water is something you choose to do.
 
 signal filled(level: int)
 
@@ -24,6 +28,12 @@ const STEAM := Color("f4f7f6")
 ## the floor past each side of the pit.
 const LIP := 8.0
 const LIP_OUT := 16.0
+## How thick the grate across the mouth is drawn (px), and how far apart its bearers are.
+const GRATE := 5.0
+const GRATE_BEARER := 56.0
+const IRON := Color("565b63")
+const IRON_LIGHT := Color("9aa1ab")
+const IRON_DARK := Color("1c1f24")
 
 ## The cistern's inside in world pixels: the pit, from the floor's level down to its bed.
 var inside := Rect2(368, 320, 224, 48)
@@ -105,6 +115,17 @@ func lip_rect() -> Rect2:
 	return Rect2(inside.position.x - LIP_OUT, inside.position.y - LIP, inside.size.x + LIP_OUT * 2.0, LIP)
 
 
+## The room's cells the grate lies over: the pit's top row, from wall to wall
+## (`Room.lay_grate` makes them a one-way floor).
+func grate_cells() -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	var t := float(Room.TILE)
+	var row := int(roundf(inside.position.y / t))
+	for col in range(int(roundf(inside.position.x / t)), int(roundf(inside.end.x / t))):
+		out.append(Vector2i(col, row))
+	return out
+
+
 ## The surface's world y for `thirds` of water.
 func surface_at(thirds: float) -> float:
 	return inside.end.y - inside.size.y * thirds / THIRDS
@@ -179,6 +200,30 @@ func _draw_back() -> void:
 		n += 1
 
 
+## The grate, seen edge on: a rail along the top, the bars under it with the pit showing
+## between them, and a bearer every few bars with its end let into the stone.
+func _draw_grate() -> void:
+	var y := inside.position.y
+	var x := inside.position.x
+	while x < inside.end.x:
+		draw_rect(Rect2(x, y + 1.0, 2.0, GRATE - 1.0), IRON)
+		draw_rect(Rect2(x, y + GRATE - 1.0, 2.0, 1.0), IRON_DARK)
+		x += 4.0
+	draw_rect(Rect2(inside.position.x, y, inside.size.x, 2.0), IRON_DARK)
+	draw_rect(Rect2(inside.position.x, y, inside.size.x, 1.0), IRON_LIGHT)
+	x = inside.position.x
+	while x <= inside.end.x + 0.5:
+		var bx := clampf(x - 2.0, inside.position.x, inside.end.x - 4.0)
+		draw_rect(Rect2(bx, y, 4.0, GRATE + 3.0), IRON_DARK)
+		draw_rect(Rect2(bx + 1.0, y + 1.0, 2.0, GRATE + 1.0), IRON)
+		draw_rect(Rect2(bx + 1.0, y, 2.0, 1.0), IRON_LIGHT)
+		x += GRATE_BEARER
+	# Where it sits in the coping at each end.
+	for end_x: float in [inside.position.x - 3.0, inside.end.x]:
+		draw_rect(Rect2(end_x, y, 3.0, 3.0), IRON_DARK)
+		draw_rect(Rect2(end_x, y, 3.0, 1.0), IRON)
+
+
 func _draw() -> void:
 	var t := Time.get_ticks_msec() * 0.001
 	if shown > 0.01:
@@ -192,6 +237,9 @@ func _draw() -> void:
 			var y := top + roundf(sin(t * 3.0 + x * 0.09))
 			draw_rect(Rect2(x, y, w, 1), Color(WATER_TOP, 0.85))
 			x += 12.0
+	# Over the water: brim-full, the surface laps at its bars, and it must still read as
+	# something to stand on.
+	_draw_grate()
 	if boiling:
 		# A rolling boil: bubbles and steam pouring off the surface.
 		var k := clampf(_boil / BOIL_TIME, 0.0, 1.0)

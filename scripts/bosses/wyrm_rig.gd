@@ -51,6 +51,12 @@ const HOOK_PROFILE := 84.0
 ## round behind it, to above it (radians), and how fast it eases there and back (1/s).
 const HANG_TURN := 2.5
 const HANG_EASE := 3.0
+## The middle neck comes over the top of its head once the skull's base is this near its
+## stump's height (px above it): where the turn begins, and where it is whole. The whole
+## turn has to be made by the height the head sags to (40 px above the stump): half made,
+## the neck came in from the side and its open end showed beside the horn.
+const OVER_FROM := -84.0
+const OVER_BY := -46.0
 ## Where the body stands, from the boss: the middle of its feet, on the tunnel's floor,
 ## which is level with the lip of the cistern sunk in the arena's floor before it.
 const BODY_AT := Vector2(0, 145)
@@ -479,7 +485,7 @@ func pose_head(i: int, centre: Vector2, s: Dictionary, delta: float) -> void:
 		# The middle head's neck comes from below, or over the top once the head hangs
 		# lower than its stump. It bows to one side then, so it never folds flat on
 		# itself, and it swings out behind the head when the head turns aside.
-		var over := smoothstep(-70.0, -10.0, tip.y - root.y)
+		var over := smoothstep(OVER_FROM, OVER_BY, tip.y - root.y)
 		up = Vector2(-0.7 * over, -1.0).normalized()
 		into = Vector2(-0.9 * over - 0.85 * turned, lerpf(1.0, -1.0, over)).normalized()
 		hook = lerpf(0.5, 1.0, over) * maxf(root.distance_to(tip) * 0.42, 10.0)

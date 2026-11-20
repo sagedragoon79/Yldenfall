@@ -42,9 +42,10 @@ const BREATHS := [HydraHead.PLUME, HydraHead.FOG, HydraHead.GEYSER]
 const HOMES := [Vector2(-170, -28), Vector2(0, -62), Vector2(170, -28)]
 ## Where each waits, deep in the tunnel, before it comes out.
 const HIDDEN := [Vector2(-46, 58), Vector2(0, 42), Vector2(46, 58)]
-## How low a head sags after it breathes (in reach of a jumping blade). The middle
-## head sags lowest: whoever strikes it stands in the cistern, under the floor.
-const SAG := [Vector2(-150, 50), Vector2(0, 78), Vector2(150, 50)]
+## How low a head sags after it breathes (in reach of a jumping blade). All three sag
+## to one height: the middle head is struck from the grate over the cistern, which is
+## the floor's own level.
+const SAG := [Vector2(-150, 50), Vector2(0, 50), Vector2(150, 50)]
 ## Where a doused head droops onto the cistern's lip.
 const DROOP := [Vector2(-78, 122), Vector2(0, 116), Vector2(78, 122)]
 ## How low a dead head hangs.
@@ -173,6 +174,16 @@ func _ready() -> void:
 		h.position = global_position + HIDDEN[i]
 		get_parent().add_child.call_deferred(h)
 	cistern = build_cistern(get_parent(), false)
+
+
+## The room's cells under the cistern's grate: the pit's top row, between its walls.
+## The room lays them as a one-way floor itself (its `grate:` header), so the floor is
+## there from the room's first frame; the cistern, which comes with the fight, draws it.
+static func grate_cells() -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	for col in range(CISTERN_COLS.x + 1, CISTERN_COLS.y):
+		out.append(Vector2i(col, CISTERN_ROWS.x))
+	return out
 
 
 ## The great cistern and its three intakes, in `room` (full once he is beaten).

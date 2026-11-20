@@ -491,14 +491,16 @@ func test_wyrm_stands_at_the_lip_of_its_sunken_cistern() -> void:
 		check(droop < lip.position.y and lip.position.y - droop < 48.0, "a doused head %d droops just over the lip (%.0f px above it)" % [i, lip.position.y - droop])
 		var hidden: float = z.global_position.y + (HaarWyrm.HIDDEN[i] as Vector2).y
 		check(hidden < feet, "head %d waits in the tunnel above its floor" % i)
-	# The middle head is struck from the pit, a jump under it.
+	# Every head is struck from the floor's level: the side heads from the floor, the
+	# middle one from the grate over the cistern. With room to spare (Sean's playtest
+	# of the pit: 6 px of margin was thin).
 	var p := z.get_tree().get_first_node_in_group("player") as Player
-	var sag: float = z.global_position.y + (HaarWyrm.SAG[1] as Vector2).y
 	var reach := p.tuning.jump_height + Player.BODY_SIZE.y + 24.0
-	check(pit.end.y - sag <= reach, "the middle head sags within a jumping blade of the pit's bed (%.0f px up, %.0f in reach)" % [pit.end.y - sag, reach])
-	for i: int in [0, 2]:
-		var side: float = z.global_position.y + (HaarWyrm.SAG[i] as Vector2).y
-		check(z.arena.end.y - side <= reach, "side head %d sags within a jumping blade of the floor (%.0f px up)" % [i, z.arena.end.y - side])
+	for i in 3:
+		var sag: float = z.global_position.y + (HaarWyrm.SAG[i] as Vector2).y
+		check(z.arena.end.y - sag <= reach - 16.0, "head %d sags well within a jumping blade of the floor (%.0f px up, %.0f in reach)" % [i, z.arena.end.y - sag, reach])
+	var mid_x: float = z.global_position.x + (HaarWyrm.SAG[1] as Vector2).x
+	check(mid_x > pit.position.x and mid_x < pit.end.x, "and the middle head sags over the grate")
 
 
 
