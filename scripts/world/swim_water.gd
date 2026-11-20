@@ -14,6 +14,12 @@ extends Node2D
 ## `CAUSTIC_DEPTH`, and bubbles. The older water was one flat translucent fill in
 ## front of everything, which the independent grade (pass 545) read as "a flat
 ## fill"; the light front tint also lets a swimmer and the eels read clearly.
+##
+## Pass 620 (design bible 12.97): the surface is a swell, not a ruled line. A
+## thin crest rides it with a sheen under it, glints run along it under open
+## air, and it is dim under a roof. Where it meets stone it laps (`WaterEdge`),
+## and stone that stands in the water is darkened at its faces. The body has
+## `LEVELS` 8 steps (it was 5), so its bands are half as far apart in tone.
 
 const WATER := Color("1f6a78")
 const SURFACE := Color("8ae8e0")
@@ -24,7 +30,7 @@ const ABYSS := Color(0.03, 0.12, 0.2, 0.82)
 ## Depth (px below the surface) where the body reaches `ABYSS`.
 const DEPTH_FULL := 144.0
 ## Quantised steps of the body's depth.
-const LEVELS := 5
+const LEVELS := 8
 ## Dither block size, world px.
 const GRAIN := 2
 ## Height of the body's strip texture; deeper rows draw flat `ABYSS`.
@@ -34,6 +40,17 @@ const FRONT_ALPHA := 0.2
 ## Caustic light: its opacity at the surface, and the depth where it is gone.
 const CAUSTIC_ALPHA := 0.3
 const CAUSTIC_DEPTH := 56.0
+## The surface. Width (px) of one piece of the crest.
+const CREST_STEP := 2
+## The sheen under the crest: `[rows, alpha]`, from the crest down.
+const SHEEN: Array = [[1, 0.32], [2, 0.17], [3, 0.08]]
+## The crest's alpha under a roof, and how much of the sheen is left there.
+const CREST_SHADE := 0.36
+const SHEEN_SHADE := 0.45
+## A surface cell is under a roof if stone hangs within this many tiles over it.
+const ROOF_REACH := 3
+## The tone stone takes where it stands in the water.
+const SUNK_TONE := Color(0.05, 0.2, 0.27)
 ## Speed (px/s) a body must hit the surface at to throw spray.
 const SPLASH_SPEED := 140.0
 
@@ -41,6 +58,14 @@ const SPLASH_SPEED := 140.0
 var cells := {}
 ## Cells with rock right above them: no waterline is drawn there.
 var roofed := {}
+## The room's square stone (tiles) -> true: what the water laps and darkens.
+var stone := {}
+## Surface cells with a roof within `ROOF_REACH` over them.
+var shaded := {}
+## Each bank of the surface (see `WaterEdge.banks`).
+var banks: Array = []
+## The stone's darkened bands (see `WaterEdge.sunk`).
+var sunk: Array = []
 
 const _BAYER := [
 	[0, 8, 2, 10],
@@ -71,6 +96,73 @@ func _ready() -> void:
 	_body.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	_body.draw.connect(_draw_body)
 	add_child(_body)
+	_build_edges()
+	# The stone's part is drawn once: it does not move.
+	var edge := Node2D.new()
+	edge.name = "Stone"
+	edge.draw.connect(_draw_stone.bind(edge))
+	add_child(edge)
+
+
+## The crest's lift (px, negative is up) at `x` (px) and time `t`: two swells
+## crossing, so the line is never ruled and never jumps more than a pixel
+## between neighbouring pieces.
+static func crest_lift(x: float, t: float) -> int:
+	return roundi(sin(t * 2.2 + x * 0.09) * 0.8 + sin(t * 1.3 - x * 0.23) * 0.5)
+
+
+## True where a glint of light runs along the crest.
+static func glint(x: float, t: float) -> bool:
+	return sin(x * 0.31 - t * 1.6) + sin(x * 0.11 + t * 0.9) > 1.5
+
+
+## The crest's alpha at `x`: it thins and thickens along its length, a glint is
+## whole, and under a roof it is dim and carries no glint.
+static func crest_alpha(x: float, t: float, in_shade: bool) -> float:
+	if in_shade:
+		return CREST_SHADE
+	if glint(x, t):
+		return 1.0
+	return 0.56 + 0.2 * sin(x * 0.17 + t * 0.8)
+
+
+func _solid(c: Vector2i) -> bool:
+	return stone.has(c) and not cells.has(c)
+
+
+## The surface cells (tiles), from `_surface`.
+func surface_cells() -> Array:
+	var out: Array = []
+	for s in _surface:
+		out.append(Vector2i(s.position / float(Room.TILE)))
+	return out
+
+
+func _build_edges() -> void:
+	shaded.clear()
+	var top: Array = surface_cells()
+	for c: Vector2i in top:
+		for k in range(1, ROOF_REACH + 1):
+			if _solid(c + Vector2i(0, -k)):
+				shaded[c] = true
+				break
+	banks = WaterEdge.banks(top, _solid)
+	sunk = WaterEdge.sunk(cells, _solid, Room.TILE)
+
+
+func _draw_stone(edge: Node2D) -> void:
+	var tone := SUNK_TONE
+	for band: Array in sunk:
+		edge.draw_rect(band[0], Color(tone, WaterEdge.SUNK_STEPS[int(band[1])]))
+	for bank: Array in banks:
+		if bank[2]:
+			WaterEdge.draw_damp(edge, bank_face(bank), int(bank[1]))
+
+
+## A bank's face on the surface (px).
+func bank_face(bank: Array) -> Vector2:
+	var c: Vector2i = bank[0]
+	return Vector2((c.x + (1 if int(bank[1]) > 0 else 0)) * Room.TILE, c.y * Room.TILE)
 
 
 ## The colour of the body's dither step `level`, from `SHALLOW` (0) to `ABYSS`
@@ -203,12 +295,23 @@ func _draw() -> void:
 			if x + w + 3.0 < r.size.x:
 				draw_rect(Rect2(r.position.x + x + w, r.position.y + y + 1.0, 3.0, 1.0), Color(SURFACE, a * 0.6))
 	for s in _surface:
-		# A bright rippling waterline along the top of every open cell.
-		for k in 4:
-			var x := s.position.x + k * 4.0
-			var lift := roundf(sin(_t * 3.0 + x * 0.15) * 1.0)
-			draw_rect(Rect2(x, s.position.y + lift, 4.0, 2.0), Color(SURFACE, 0.75))
-		draw_rect(Rect2(s.position + Vector2(0, 3), Vector2(s.size.x, 2.0)), Color(SURFACE, 0.18))
+		# The crest rides the swell, with a sheen under it; glints under open air.
+		var dim: bool = shaded.has(Vector2i(s.position / float(Room.TILE)))
+		var k := 0
+		while k < Room.TILE:
+			var x := s.position.x + k
+			var y := s.position.y + crest_lift(x, _t)
+			var lit := not dim and glint(x, _t)
+			draw_rect(Rect2(x, y, CREST_STEP, 1.0), Color(BUBBLE if lit else SURFACE, crest_alpha(x, _t, dim)))
+			var row := 1.0
+			for band: Array in SHEEN:
+				draw_rect(Rect2(x, y + row, CREST_STEP, float(band[0])), Color(SURFACE, float(band[1]) * (SHEEN_SHADE if dim else 1.0)))
+				row += float(band[0])
+			k += CREST_STEP
+	# Where the surface meets stone, it laps.
+	for i in banks.size():
+		var bank: Array = banks[i]
+		WaterEdge.draw_lap(self, bank_face(bank), int(bank[1]), _t, i * 5 + int(bank[0].x))
 	# Bubbles rising from fixed spots in the deep water.
 	var count := mini(cells.size() / 12, 40)
 	var keys := cells.keys()
