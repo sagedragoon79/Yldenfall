@@ -47,6 +47,10 @@ const HOOK := 26.0
 const HOOK_BACK := 58.0
 ## In profile the whole curl shows, so it is wider.
 const HOOK_PROFILE := 84.0
+## A doused head hangs: how far round its neck's way in swings, from below the skull,
+## round behind it, to above it (radians), and how fast it eases there and back (1/s).
+const HANG_TURN := 2.5
+const HANG_EASE := 3.0
 ## Where the body stands, from the boss: the middle of its feet, on the tunnel's floor,
 ## which is level with the lip of the cistern sunk in the arena's floor before it.
 const BODY_AT := Vector2(0, 145)
@@ -118,6 +122,8 @@ class Neck:
 	var trail := Vector2.ZERO
 	## How the neck leaves the skull, eased so a turn of the head swings it round.
 	var into := Vector2.DOWN
+	## How far a doused head has sunk into hanging from its neck (0 to 1).
+	var hang := 0.0
 	var rot := 0.0
 	var clip := "idle"
 	var frame := 0
@@ -461,6 +467,14 @@ func pose_head(i: int, centre: Vector2, s: Dictionary, delta: float) -> void:
 		if s.get("dead", false):
 			# A dead head only hangs: nothing holds a curl in its neck.
 			hook = HOOK
+		# A doused head hangs from its neck too: the neck arches over and comes down into
+		# the back of the skull from above, with no curl. (Curled under a drooped head, the
+		# neck showed below it, open end and all, beside the jaw; Sean, 2026-11-20.)
+		n.hang = move_toward(n.hang, 1.0 if mode == "weak" else 0.0, delta * HANG_EASE)
+		if n.hang > 0.0:
+			var round_behind := signf(turned) if turned != 0.0 else (signf(tip.x - root.x) if tip.x != root.x else 1.0)
+			into = into.rotated(round_behind * HANG_TURN * n.hang)
+			hook = lerpf(hook, HOOK, n.hang)
 	else:
 		# The middle head's neck comes from below, or over the top once the head hangs
 		# lower than its stump. It bows to one side then, so it never folds flat on

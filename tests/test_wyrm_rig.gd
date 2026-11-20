@@ -499,3 +499,30 @@ func test_wyrm_stands_at_the_lip_of_its_sunken_cistern() -> void:
 	for i: int in [0, 2]:
 		var side: float = z.global_position.y + (HaarWyrm.SAG[i] as Vector2).y
 		check(z.arena.end.y - side <= reach, "side head %d sags within a jumping blade of the floor (%.0f px up)" % [i, z.arena.end.y - side])
+
+
+
+## Sean, 2026-11-20: "the neck opening showing on head knock down/vulnerability". A doused
+## head's neck curled under it, and the curl showed below the head, open end and all.
+func test_wyrm_rig_doused_head_hangs_from_its_neck() -> void:
+	var rig := _rig()
+	for i: int in [0, 2]:
+		var at: Vector2 = HaarWyrm.DROOP[i]
+		for state: Dictionary in [{"face": 1.0}, {"face": -1.0}, {"watch": HERO - at}]:
+			state["mode"] = "weak"
+			state["weak"] = true
+			_settle(rig, i, at, state)
+			var n := rig.necks[i]
+			var how := "head %d looking %d" % [i, n.look]
+			check(is_equal_approx(n.hang, 1.0), "doused, %s hangs from its neck" % how)
+			var tip: Vector2 = n.joints[-1]
+			var lowest := -INF
+			for j: Vector2 in n.joints:
+				lowest = maxf(lowest, j.y)
+			check(lowest <= maxf(tip.y, rig.stump(i).y) + 2.0, "no part of the neck hangs below the skull it holds (%s: %.0f px under it)" % [how, lowest - tip.y])
+			check(n.joints[-4].y < tip.y - 6.0, "the neck comes down into the skull from above (%s: %.0f px)" % [how, tip.y - n.joints[-4].y])
+			check(n.stack >= WyrmRig.STACK_MIN - 0.02 and n.stack <= WyrmRig.STACK_MAX + 0.02, "and telescopes within its limits (%s: %.2f)" % [how, n.stack])
+	# Up again, it holds its curl as before.
+	_settle(rig, 2, HaarWyrm.HOMES[2], {"mode": "idle", "watch": HERO - (HaarWyrm.HOMES[2] as Vector2)})
+	check(rig.necks[2].hang == 0.0, "risen again, the head is held up on its neck")
+	rig.queue_free()
