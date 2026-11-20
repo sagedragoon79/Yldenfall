@@ -1171,11 +1171,11 @@ func test_every_zone_has_a_tileset() -> void:
 func test_tiles_are_drawn_at_double_density() -> void:
 	var size := TilesetFactory.TILE * TilesetFactory.DENSITY
 	var small: Array[String] = []
-	# 8 rows, 9 with the edge variants (12.53), or 10 with the haunches (12.78): rows 0-6 (blobs, one-way, amber, MID/DEEP, slopes) plus row 7, the
+	# 8 rows, 9 with the edge variants (12.53), 10 with the haunches (12.78), or 13 with the patches (12.91): rows 0-6 (blobs, one-way, amber, MID/DEEP, slopes) plus row 7, the
 	# masonry variant row that keeps solid fields from banding (design bible 12.8).
 	for zone: String in DirAccess.get_directories_at("res://levels"):
 		var tex: Texture2D = load(TilesetFactory.TILES_DIR + zone + ".png")
-		if tex.get_width() != TilesetFactory.COLUMNS * size or not tex.get_height() in [8 * size, TilesetFactory.EDGE_ROWS * size, TilesetFactory.HAUNCH_ROWS * size]:
+		if tex.get_width() != TilesetFactory.COLUMNS * size or not tex.get_height() in [8 * size, TilesetFactory.EDGE_ROWS * size, TilesetFactory.HAUNCH_ROWS * size, TilesetFactory.PATCH_ROWS * size]:
 			small.append(zone)
 	check(small.is_empty(), "every atlas holds %d px tiles (wrong: %s)" % [size, small])
 	var room := make_room(["##########", "#........#", "#........#", "#........#", "#........#", "##########", "##########"])

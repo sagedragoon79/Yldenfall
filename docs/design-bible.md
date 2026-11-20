@@ -2711,6 +2711,19 @@ The pass 610 grade: "terrain tiles repeat visibly: uniform brick and cobble fill
 - **Not done here.** The stones themselves still repeat every four tiles under the growth, and the slope tiles are cut from the first copy. The brick fields of the Flooded Hall, the storm ledge and the aqueduct, which the grade named with the plaza, are painted tiles with variants of their own (12.8, 12.45, 12.55) and are the next pass.
 
 Judged by eye at 1x and 2x in the plaza and the market. `tools/art/test_tilegen.py` holds the patches, the untouched stone, the seam and that the shipped file is what the generator makes; `test_hearthroots_fill_grows_in_patches` holds the shipped file in the game.
+
+### 12.91 A wall is relaid in patches (pass 614)
+
+The rest of the pass 610 grade's item: "terrain tiles repeat visibly: uniform brick and cobble fills" in the Flooded Hall, the storm ledge and the aqueduct. Those three zones are painted tiles, and their scattered variants already move the joints, the wear and the tiers (12.8, 12.45, 12.55, 12.70). What no variant changed is the **coursing**: every tile of a zone has the same course heights, so a wall thirty tiles long was one texture from end to end.
+
+- **A second coursing per zone** (`tilegen.PATCHES`, `paint_patch`). Vorrhallow's squat blocks give way to small brick, four courses to a tile, in a running bond. The Spires' three courses of ashlar give way to two courses of great blocks, with no gold. The Sunken Spring's two courses give way to three thin ones. Each is drawn in the zone's own tones and line weight, with **one body value**: a patch is other masonry, never another shade (12.45).
+- **Laid in stretches.** `TilesetFactory.in_patch` is a slow value noise over the cells (`PATCH_SPAN`, 7 by 3 cells to a step; `PATCH_LEVEL` 0.6), so a patch is several tiles wide and a few tall, as a wall relaid in another century is, and about a quarter of a field. Only a cell inside the wall (solid on all eight sides) is drawn as one: every edge, corner, cap and trim stays the zone's own tile.
+- **A patch closes its blocks where it stops.** Inside a patch no head joint is within 2 world px of a tile's edge, so the blocks run through the seams. The tile at a patch's west or east end carries a head joint down that edge, so its courses never meet the zone's usual courses at a seam with no joint between (`Room._ground_tile` asks the neighbours). Every tile of every coursing ends on a bed joint, so a patch sits on any tile below it.
+- **The atlas.** Rows 10 to 12 of the three zones' atlases: the surface tier, MID and DEEP (darkened as the zone's own tiers are). Each row holds two variants of four tiles: no end, west, east, both. An atlas of ten rows has no patches (`has_patches`), so every other zone is unchanged.
+- **Not done here.** Hearthroot, the gym, the Inner Rings and the Tower keep one coursing. The darker tiers still step by the tile.
+
+Judged by eye at 1x and 3x in the three rooms. `tools/art/test_tilegen.py` holds the coursing, the tones, the seams and that the shipped rows are what the generator makes; `tests/test_stone_patches.gd` holds the noise, the tiles and the three rooms in the game.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

@@ -1403,6 +1403,93 @@ def grown_fill(src):
 
 
 
+# Patches of other stone (design bible 12.91, pass 614). A zone's field was laid
+# in one coursing from wall to wall: the scattered variants move the joints, but
+# every tile has the same course heights, so a wall thirty tiles long was one
+# texture (independent grade, pass 610: "uniform brick fills", the Flooded Hall,
+# the storm ledge and the aqueduct). Each of those zones now has a second
+# coursing, laid in stretches a few tiles tall and several wide where a slow
+# noise is high (TilesetFactory.in_patch), as a wall rebuilt in another century:
+# - Vorrhallow's squat blocks (16 by 8 world px) give way to small brick, four
+#   courses to a tile;
+# - the Spires' three courses of ashlar give way to two courses of great blocks,
+#   with no gold;
+# - the Sunken Spring's two courses give way to three thin ones.
+# ``courses``: heights in world px, top to bottom, summing to a tile. ``joint``,
+# ``body``: the joint's color and the body's step on the zone's ramp. ``thick``:
+# a joint's and a highlight's thickness in render px, as the zone's own painter
+# draws them. ``pit``: the share of the body's pixels left unpitted (None: calm).
+# ``bricks``: two head joints a course, half a tile apart, in a running bond.
+PATCHES = {
+    "vorrhallow": {"courses": (4, 4, 4, 4), "joint": "night-1", "body": 3, "thick": 1, "pit": 0.88, "bricks": True},
+    "spires": {"courses": (8, 8), "joint": "stone-1", "body": 4, "thick": 1, "pit": 0.9, "bricks": False, "pair": 2.0},
+    "sunken": {"courses": (5, 6, 5), "joint": "umber-1", "body": 4, "thick": D, "pit": None, "bricks": False, "pair": 0.6},
+}
+PATCH_VARIANTS = 2
+PATCH_ROW = 10
+PATCH_SEED = 301
+
+
+def patch_joints(spec, seed, course):
+    """The head joints of one course of a patch tile, in render px. None sits
+    within 2 world px of the tile's edge, so inside a patch a block runs through
+    the seam into the next tile, and a joint drawn at the edge (where the patch
+    ends) never makes a sliver."""
+    if spec["bricks"]:
+        # 2 to 6 world px in, three steps on from the course above: a running bond.
+        j = 2 + (course * 3 + int(hash2(seed, 0, 131) * 5)) % 5
+        return [j * D, (j + 8) * D]
+    j = 4 + int(hash2(seed, course, 132) * 9)               # 4..12 world px
+    joints = [j * D]
+    pair = [v for v in range(4, 13) if abs(v - j) >= 6]
+    if pair and hash2(seed, course, 133) > spec["pair"]:
+        joints.append(pair[int(hash2(seed, course, 134) * len(pair))] * D)
+    return sorted(joints)
+
+
+def paint_patch(img, ox, oy, zone, seed, west_end=False, east_end=False):
+    """One tile of a zone's patch: its second coursing, in the zone's own tones
+    (one body value, lit from the upper left). ``west_end`` and ``east_end``
+    close the blocks with a head joint at that edge, for the tile where the
+    patch stops against the zone's usual stone."""
+    spec = PATCHES[zone]
+    ramp = ZONES[zone]["ramp"]
+    t, body = spec["thick"], spec["body"]
+    joint, lit, shade = spec["joint"], f"{ramp}-{body + 1}", f"{ramp}-{body - 1}"
+    y0 = 0
+    for course, rows in enumerate(spec["courses"]):
+        ch = rows * D
+        joints = patch_joints(spec, seed, course) + ([0] if west_end else [])
+        for ly in range(ch):
+            for x in range(T):
+                lx = min((x - j) % T for j in joints)          # 0 at a joint
+                rx = min((j - x - 1) % T for j in joints)      # 0 just before one
+                if ly >= ch - t or lx < t or (east_end and x >= T - t):
+                    col = joint
+                elif ly < t or lx < 2 * t:
+                    col = lit
+                elif ly >= ch - 2 * t or (t > 1 and rx < t):
+                    col = shade
+                else:
+                    col = f"{ramp}-{body}"
+                    if spec["pit"] and hash2(x // 2, (y0 + ly) // 2, seed + 5) > spec["pit"]:
+                        col = shade
+                img.putpixel((ox + x, oy + y0 + ly), c(col))
+        y0 += ch
+
+
+def paint_patches(img, zone):
+    """Rows 10 to 12 of a zone's atlas: the surface tier, MID and DEEP. In each,
+    two variants of four tiles: no end joint, west, east, and both."""
+    for tier in range(3):
+        for v in range(PATCH_VARIANTS):
+            for ends in range(4):
+                ox, oy = (v * 4 + ends) * T, (PATCH_ROW + tier) * T
+                paint_patch(img, ox, oy, zone, PATCH_SEED + 10 * tier + v, bool(ends & 1), bool(ends & 2))
+                if tier:
+                    darken(img, ox, oy, tier)
+
+
 EDGE_VARIANTS = 3
 EDGE_TOP = 255 & ~(N | NE | NW)       # a floor's top tile
 EDGE_BOTTOM = 255 & ~(S | SE | SW)    # a ceiling's bottom tile
@@ -1420,7 +1507,7 @@ def build_tileset(zone):
         return
     masks = blob_masks()
     assert len(masks) == 47
-    img = Image.new("RGBA", (T * COLS, T * 10), CLEAR)
+    img = Image.new("RGBA", (T * COLS, T * (13 if zone in PATCHES else 10)), CLEAR)
     for i, m in enumerate(masks):
         paint_tile(img, (i % COLS) * T, (i // COLS) * T, m, zone, 11 + i)
     paint_one_way(img, 0, 6 * T, zone)
@@ -1459,6 +1546,8 @@ def build_tileset(zone):
     # slopes, so a vault curves down into its wall instead of stepping.
     paint_haunch(img, 0, 9 * T, zone, True, 91)
     paint_haunch(img, T, 9 * T, zone, False, 92)
+    if zone in PATCHES:
+        paint_patches(img, zone)
     TILES.mkdir(parents=True, exist_ok=True)
     save_png(img, TILES / f"{zone}.png")
 

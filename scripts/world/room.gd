@@ -497,7 +497,7 @@ func tear_floor(col_from: int, col_to: int, row_from: int, row_to: int) -> void:
 		for y in range(row_from - 3, row_to + 4):
 			var cell := Vector2i(x, y)
 			if _solid_look.has(cell) and tiles.get_cell_source_id(cell) != -1:
-				tiles.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.ground(_ground_mask(cell), cell, _depth(cell), TilesetFactory.has_edges(zone)))
+				tiles.set_cell(cell, TilesetFactory.SOURCE_ID, _ground_tile(cell))
 
 
 ## The spot a spike sets the player back to (bible 6.13, pass 292) is never over
@@ -587,6 +587,28 @@ func _depth(cell: Vector2i) -> int:
 	return 3
 
 
+## The atlas tile of a ground cell: its edges by its neighbours, its tier by its
+## depth, and inside a wall a patch of other stone where the zone has one
+## (design bible 12.91).
+func _ground_tile(cell: Vector2i) -> Vector2i:
+	if _in_patch(cell):
+		return TilesetFactory.patch(cell, _depth(cell), not _in_patch(cell + Vector2i.LEFT), not _in_patch(cell + Vector2i.RIGHT))
+	return TilesetFactory.ground(_ground_mask(cell), cell, _depth(cell), TilesetFactory.has_edges(zone))
+
+
+## True if a cell is drawn as a patch tile: the zone's atlas has patches, the
+## slow noise is high there, and the cell is inside a wall (solid on all eight
+## sides). Outside the room the noise alone decides, so a patch runs off-screen.
+func _in_patch(cell: Vector2i) -> bool:
+	if not TilesetFactory.has_patches(zone) or not TilesetFactory.in_patch(cell):
+		return false
+	if cell.x < 0 or cell.y < 0 or cell.x >= size_tiles.x or cell.y >= size_tiles.y:
+		return true
+	if not _solid_look.has(cell) or _slope_cells.has(cell):
+		return false
+	return TilesetFactory.reduce_mask(_ground_mask(cell)) == TilesetFactory.FULL
+
+
 ## Which of a cell's 8 neighbours look like ground. Outside the room counts as ground.
 func _ground_mask(cell: Vector2i) -> int:
 	var m := 0
@@ -604,7 +626,7 @@ func _place(ch: String, cell: Vector2i, grid: Array[String]) -> void:
 	var center := cell_origin + Vector2(TILE, TILE) * 0.5
 	match ch:
 		"#", "u":
-			tiles.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.ground(_ground_mask(cell), cell, _depth(cell), TilesetFactory.has_edges(zone)))
+			tiles.set_cell(cell, TilesetFactory.SOURCE_ID, _ground_tile(cell))
 		"-":
 			tiles.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.ONE_WAY)
 			_one_way[cell] = true
@@ -625,7 +647,7 @@ func _place(ch: String, cell: Vector2i, grid: Array[String]) -> void:
 			if TilesetFactory.has_haunches(zone):
 				tiles.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.HAUNCH_WEST if ch == "`" else TilesetFactory.HAUNCH_EAST)
 			else:
-				tiles.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.ground(_ground_mask(cell), cell, _depth(cell), TilesetFactory.has_edges(zone)))
+				tiles.set_cell(cell, TilesetFactory.SOURCE_ID, _ground_tile(cell))
 		"b":
 			# A drowned boardwalk: it rises once the Haar Spring flows.
 			if GameState.flag(Fog.SPRING_FLAG):
@@ -898,7 +920,7 @@ func _place_secret(cell: Vector2i) -> void:
 		secrets.name = "Secrets"
 		secrets.z_index = 3
 		add_child(secrets)
-	secrets.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.ground(_ground_mask(cell), cell, _depth(cell), TilesetFactory.has_edges(zone)))
+	secrets.set_cell(cell, TilesetFactory.SOURCE_ID, _ground_tile(cell))
 	_secret_cells[cell] = true
 
 
