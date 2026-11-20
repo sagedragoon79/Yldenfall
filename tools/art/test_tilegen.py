@@ -1716,5 +1716,59 @@ def test_a_fills_patches_wrap():
     assert shipped.tobytes() == _fill_pair()[1].tobytes(), "assets/tiles/hearthroot_fill.png is stale"
 
 
+def test_a_patch_is_another_coursing_in_the_zones_own_tones():
+    # Bible 12.91: each patch zone's second coursing sums to a tile, differs from
+    # the zone's usual one, runs its blocks through the tile seams, and uses only
+    # the colours the zone's own stone has.
+    T, D = tg.T, tg.D
+    usual = {"vorrhallow": (8, 8), "spires": tg.SHRINE_COURSES, "sunken": (tg.SPRING_COURSE,) * 2}
+    for zone, spec in tg.PATCHES.items():
+        assert sum(spec["courses"]) * D == T, f"{zone}: the courses do not fill a tile"
+        assert tuple(spec["courses"]) != tuple(usual[zone]), f"{zone}: the patch is the usual coursing"
+        ramp = tg.ZONES[zone]["ramp"]
+        allowed = {tg.c(spec["joint"])} | {tg.c(f"{ramp}-{i}") for i in range(spec["body"] - 1, spec["body"] + 2)}
+        for v in range(tg.PATCH_VARIANTS):
+            seed = tg.PATCH_SEED + v
+            for course in range(len(spec["courses"])):
+                for j in tg.patch_joints(spec, seed, course):
+                    assert 2 * D <= j <= T - 2 * D, f"{zone}: a joint {j} sits at the tile's edge"
+            img = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+            tg.paint_patch(img, 0, 0, zone, seed)
+            seen = {img.getpixel((x, y)) for y in range(T) for x in range(T)}
+            assert seen <= allowed, f"{zone}: a patch tile has colours that are not its stone's"
+            # No joint at either edge: a block passes into the next patch tile.
+            joint = tg.c(spec["joint"])
+            for x in (0, T - 1):
+                column = [img.getpixel((x, y)) for y in range(T)]
+                assert column.count(joint) < T, f"{zone}: column {x} is a joint with no end asked for"
+            ended = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+            tg.paint_patch(ended, 0, 0, zone, seed, True, True)
+            for x in (0, T - 1):
+                assert all(ended.getpixel((x, y)) == joint for y in range(T)), f"{zone}: an end has no joint at column {x}"
+    # A bond: no head joint of the small brick stands over the one below it.
+    spec = tg.PATCHES["vorrhallow"]
+    for v in range(tg.PATCH_VARIANTS):
+        rows = [tg.patch_joints(spec, tg.PATCH_SEED + v, k) for k in range(4)]
+        for a, b in zip(rows, rows[1:]):
+            assert not set(a) & set(b), f"the small brick stacks its joints: {rows}"
+
+
+def test_the_shipped_atlases_carry_their_patches():
+    from PIL import Image
+    T = tg.T
+    for zone in tg.ZONES:
+        if zone in tg.PIXELLAB_SETS:
+            continue
+        shipped = Image.open(tg.TILES / f"{zone}.png").convert("RGBA")
+        if zone not in tg.PATCHES:
+            assert shipped.height == 10 * T, f"{zone}: an atlas without patches is ten rows"
+            continue
+        assert shipped.height == 13 * T, f"{zone}: the atlas has no patch rows"
+        fresh = Image.new("RGBA", (T * tg.COLS, 13 * T), tg.CLEAR)
+        tg.paint_patches(fresh, zone)
+        box = (0, tg.PATCH_ROW * T, T * tg.COLS, 13 * T)
+        assert shipped.crop(box).tobytes() == fresh.crop(box).tobytes(), f"assets/tiles/{zone}.png is stale"
+
+
 if __name__ == "__main__":
     main()

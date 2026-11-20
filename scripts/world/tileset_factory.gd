@@ -12,6 +12,7 @@ extends RefCounted
 ## (full-solid surface plus more MID/DEEP) that `ground()` scatters by cell so a
 ## large solid field stops reading as a 32 px grid (design bible 12.8). Row 8
 ## holds the edge variants and row 9 the two haunches (the ceiling's slopes).
+## Rows 10 to 12, where a zone has them, hold its patches of other stone.
 
 const TILE := 16
 ## Render density of the atlases (design bible 12.1): each 16 px world tile is
@@ -55,6 +56,18 @@ const SLOPE_WEST := Vector2i(7, 6)
 const HAUNCH_WEST := Vector2i(0, 9)
 const HAUNCH_EAST := Vector2i(1, 9)
 const HAUNCH_ROWS := 10
+## Patches of other stone (rows 10 to 12, design bible 12.91): inside a wall, a
+## stretch laid in courses of another height. Row 10 is the surface tier, 11 MID
+## and 12 DEEP. Each row holds two variants of four tiles: no end joint, a joint
+## at the west edge, one at the east edge, and both, for the cells where the
+## patch ends. An atlas without these rows has no patches: see `has_patches`.
+const PATCH_ROW := 10
+const PATCH_ROWS := 13
+const PATCH_VARIANTS := 2
+## A patch is a few tiles tall and several wide: the noise's lattice, in cells.
+const PATCH_SPAN := Vector2i(7, 3)
+## The noise's level above which a cell is in a patch (about a quarter of them).
+const PATCH_LEVEL := 0.6
 
 ## Neighbour bits for blob masks.
 const N := 1
@@ -169,6 +182,51 @@ static func has_edges(zone: String) -> bool:
 	return _edges[path]
 
 
+## The patch tile of a cell `depth` tiles from open air. `west_end` and
+## `east_end`: the patch stops at that side, so the tile closes its blocks with
+## a head joint there.
+static func patch(cell: Vector2i, depth := 1, west_end := false, east_end := false) -> Vector2i:
+	var variant := (scatter(cell) >> 4) % PATCH_VARIANTS
+	return Vector2i(variant * 4 + int(west_end) + 2 * int(east_end), PATCH_ROW + clampi(depth, 1, 3) - 1)
+
+
+static func is_patch(coords: Vector2i) -> bool:
+	return coords.y >= PATCH_ROW and coords.y < PATCH_ROWS
+
+
+## A slow value noise over the cells, 0 to 1: `PATCH_SPAN` cells to a lattice
+## step, so its highs are wide and low, as a stretch of relaid wall is.
+static func patch_noise(cell: Vector2i) -> float:
+	var fx := float(cell.x) / PATCH_SPAN.x
+	var fy := float(cell.y) / PATCH_SPAN.y
+	var ix := floori(fx)
+	var iy := floori(fy)
+	var tx := smoothstep(0.0, 1.0, fx - ix)
+	var ty := smoothstep(0.0, 1.0, fy - iy)
+	var top := lerpf(_lattice(ix, iy), _lattice(ix + 1, iy), tx)
+	var bottom := lerpf(_lattice(ix, iy + 1), _lattice(ix + 1, iy + 1), tx)
+	return lerpf(top, bottom, ty)
+
+
+static func _lattice(x: int, y: int) -> float:
+	return float(scatter(Vector2i(x + 7919, y - 104729)) & 0xFFFF) / 65535.0
+
+
+## True where the noise puts a patch. Whether the cell is drawn as one is the
+## room's call (it must be inside a wall, in a zone with patches).
+static func in_patch(cell: Vector2i) -> bool:
+	return patch_noise(cell) > PATCH_LEVEL
+
+
+## True if the zone's atlas carries the patches (rows 10 to 12).
+static func has_patches(zone: String) -> bool:
+	var path := TILES_DIR + zone + ".png"
+	if zone == "" or not ResourceLoader.exists(path):
+		path = TILES_DIR + FALLBACK_ZONE + ".png"
+	var tex: Texture2D = load(path)
+	return tex.get_height() >= PATCH_ROWS * TILE * DENSITY
+
+
 ## True if the zone's atlas carries the haunches (row 9).
 static func has_haunches(zone: String) -> bool:
 	var path := TILES_DIR + zone + ".png"
@@ -232,6 +290,10 @@ static func build(zone := "", with_collision := true) -> TileSet:
 		all.append_array(EAST_VARIANTS)
 	if has_haunches(zone):
 		all.append_array([HAUNCH_WEST, HAUNCH_EAST])
+	if has_patches(zone):
+		for row in range(PATCH_ROW, PATCH_ROWS):
+			for col in COLUMNS:
+				all.append(Vector2i(col, row))
 	for i in blob_masks().size():
 		all.append(Vector2i(i % COLUMNS, i / COLUMNS))
 	for coords in all:
