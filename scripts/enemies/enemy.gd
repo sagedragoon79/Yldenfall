@@ -57,6 +57,12 @@ const RIM_STEPS: Array[Vector2] = [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1),
 ## outline's near-black, as a tell wears its warm one.
 const HIT_RIM_COLOR := Color("120c16")
 const HIT_RIM := 0.95
+## A blow knocks chips off the foe (bible 6.7, pass 621), in tones read off its sheet:
+## colors darker than `CHIP_DARK` are outline and deep shade and are passed over, and
+## the lighter tone is looked for among the `CHIP_TOP` commonest.
+const CHIP_DARK := 0.3
+const CHIP_TOP := 6
+static var _chip_colors := {}
 ## A tell gathers on the weapon (bible 12.88, pass 611). The pass 610 grade read the
 ## rim and tint over a whole foe as "a flat yellow full-body tint, a debug overlay".
 ## A foe drawn from a sheet with a point in `TELL_POINTS` keeps its body in its own
@@ -208,6 +214,10 @@ var _hit_rim_drawn := false
 ## and where it sat, relative to the sheet's origin, before facing.
 var _glint_drawn := 0.0
 var _glint_at := Vector2.ZERO
+## The sheet this foe last drew itself from through `draw_sheet` ("" for none).
+var _sheet_drawn := ""
+## The chips the last blow knocked off this foe (tests; freed when they have fallen).
+var chips: HitChips
 ## The material this foe rests in: its room's light (`FoeLight`, bible 12.43),
 ## or null outside a zone. The flash, the tell and the death replace it.
 var _rest_material: ShaderMaterial
@@ -348,6 +358,7 @@ func take_hit(damage: int, dir: Vector2) -> void:
 	d.setup("hit")
 	get_parent().add_child(d)
 	d.global_position = center()
+	chips = HitChips.spawn(get_parent(), center(), dir, chip_colors())
 	if hp <= 0:
 		die()
 		return
@@ -358,6 +369,55 @@ func take_hit(damage: int, dir: Vector2) -> void:
 	_hitstun = HITSTUN * maxf(dir.length(), 1.0)
 	_hitstun_full = _hitstun
 	_blow_side = signf(dir.x) if dir.x != 0.0 else float(-facing)
+
+
+## The colors a blow chips off this foe (bible 6.7, pass 621): its body's main tone
+## and a lighter one, read off its sheet (the one it last drew from, or the one named
+## for its script). A foe with no sheet is chipped in pale bone (`HitChips.BONE`).
+func chip_colors() -> Array[Color]:
+	var sheet := _sheet_drawn
+	if sheet == "":
+		var id := FoeLight.id_of(self)
+		if id != "" and Sheet.exists(id):
+			sheet = id
+	return sheet_chip_colors(sheet) if sheet != "" else HitChips.BONE
+
+
+## The two tones chipped off a foe drawn from `sheet`, read once from its first cell:
+## of the cell's opaque colors lighter than its outline and deep shade (`CHIP_DARK`),
+## the commonest, and the lightest of the `CHIP_TOP` commonest.
+static func sheet_chip_colors(sheet: String) -> Array[Color]:
+	if not _chip_colors.has(sheet):
+		var s := Sheet.get_sheet(sheet)
+		var cell: Vector2 = s.cell
+		var img := (s.tex as Texture2D).get_image()
+		if img.is_compressed():
+			img.decompress()
+		var counts := {}
+		for y in int(cell.y):
+			for x in int(cell.x):
+				var c := img.get_pixel(x, y)
+				if c.a > 0.9 and c.get_luminance() >= CHIP_DARK:
+					var key := Color(c.r, c.g, c.b).to_html(false)
+					counts[key] = int(counts.get(key, 0)) + 1
+		var keys := counts.keys()
+		keys.sort_custom(func(a: String, b: String) -> bool:
+			return counts[a] > counts[b] or (counts[a] == counts[b] and a < b))
+		if keys.is_empty():
+			# A foe all in shade has nothing lighter to chip: pale bone.
+			_chip_colors[sheet] = HitChips.BONE
+			return _chip_colors[sheet]
+		var out: Array[Color] = []
+		if not keys.is_empty():
+			var main := Color(keys[0] as String)
+			var light := main
+			for i in range(1, mini(CHIP_TOP, keys.size())):
+				var c := Color(keys[i] as String)
+				if c.get_luminance() > light.get_luminance():
+					light = c
+			out = [main, light]
+		_chip_colors[sheet] = out if not out.is_empty() else HitChips.BONE
+	return _chip_colors[sheet]
 
 
 func _on_blocked(dir: Vector2) -> void:
@@ -687,6 +747,7 @@ func telegraph_pulse() -> bool:
 ## time `t`, facing this enemy's way, washed white while flashing or telegraphing.
 ## Returns the frame drawn.
 func draw_sheet(sheet: String, anim: String, t: float, white := false, offset := Vector2.ZERO) -> int:
+	_sheet_drawn = sheet
 	var f := Sheet.frame_at(sheet, anim, t)
 	var over := flash_overlay(white)
 	var glint := not dead and _flash <= 0.0 and has_tell_point(sheet, anim)
