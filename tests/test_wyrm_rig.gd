@@ -96,6 +96,8 @@ func test_wyrm_rig_head_shows_what_it_is_doing() -> void:
 	check(n.clip == "open" and absf(n.rot - PI / 4.0) < 0.05, "the geyser head opens its jaws along its aim (%s, %.2f)" % [n.clip, n.rot])
 	_settle(rig, 2, at, {"mode": "breathe", "face": -1.0, "breath": HydraHead.GEYSER, "aim": Vector2(-1, 1).normalized()})
 	check(n.head_skin.flip_h and absf(n.rot + PI / 4.0) < 0.05, "and the same when it faces west (%.2f)" % n.rot)
+	var jaws := rig.mouth(2, at, -1.0) - at
+	check(jaws.x < -4.0 and jaws.y > 10.0, "its breath leaves its jaws, down and to the west of its middle (%s)" % jaws)
 	_settle(rig, 2, HaarWyrm.DROOP[2], {"mode": "weak", "face": -1.0, "weak": true})
 	check(n.head_skin.modulate.b > n.head_skin.modulate.r + 0.1, "a doused head is drenched blue")
 	_settle(rig, 2, Vector2(136, 70), {"mode": "limp", "face": 1.0, "dead": true})

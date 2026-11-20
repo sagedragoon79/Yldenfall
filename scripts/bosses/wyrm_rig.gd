@@ -232,6 +232,11 @@ func head_joint(n: Neck, joint: String, face: float, rot: float) -> Vector2:
 	return off.rotated(rot)
 
 
+## Where head `i`'s breath leaves its jaws, for a head whose middle is at `centre`.
+func mouth(i: int, centre: Vector2, face: float) -> Vector2:
+	return centre + head_joint(necks[i], "mouth", face, necks[i].rot)
+
+
 ## The shortest and the longest a neck can be.
 func reach(i: int) -> Vector2:
 	return Vector2(necks[i].total * STACK_MIN, necks[i].total * STACK_MAX)
