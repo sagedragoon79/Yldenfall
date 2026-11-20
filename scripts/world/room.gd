@@ -873,6 +873,7 @@ func _place_falls() -> void:
 		for c: Vector2i in _water:
 			if _solid_look.has(c + Vector2i.UP):
 				water.roofed[c] = true
+		water.stone = _square_stone()
 		add_child(water)
 	if header.has("tide"):
 		_place_tide(int(header.tide))
@@ -883,11 +884,21 @@ func _place_falls() -> void:
 		add_child(seal)
 
 
+## The cells of square stone (no slopes): what water laps and darkens (12.97).
+func _square_stone() -> Dictionary:
+	var out := {}
+	for c: Vector2i in _solid_look:
+		if not _slope_cells.has(c):
+			out[c] = true
+	return out
+
+
 ## Standing water (design bible 4.4): from row `row` down to the first tile
 ## in every column open at that row.
 func _place_tide(row: int) -> void:
 	tide = Tide.new()
 	tide.row = row
+	tide.stone = _square_stone()
 	for x in size_tiles.x:
 		var y := row
 		while y < size_tiles.y and tiles.get_cell_source_id(Vector2i(x, y)) == -1:

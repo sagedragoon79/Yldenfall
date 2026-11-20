@@ -45,12 +45,21 @@ const SUNK_RIM := 0.9
 ## teeth stand against. Alpha at the tips' row, fading to nothing at the floor.
 const SUNK_GLOW := 0.2
 
+## The lap at a bank (12.97): still water laps slower and fainter than deep water.
+const LAP_PACE := 0.6
+const LAP_ALPHA := 0.8
+
 const _BAYER := [[0, 2], [3, 1]]
 
 ## The water's cells (tiles) -> true.
 var cells := {}
 ## The surface row (tiles).
 var row := 0
+## The room's square stone (tiles) -> true: what the water laps and darkens (12.97).
+var stone := {}
+## Each bank of the surface, and the stone's darkened bands (see `WaterEdge`).
+var banks: Array = []
+var sunk: Array = []
 ## Each body wading this frame: [x (local px), half width (px)].
 var wakes: Array = []
 ## Each spreading ripple: [x, half width of what made it, age (s)].
@@ -82,6 +91,12 @@ func _ready() -> void:
 		_floor[c.x] = maxi(int(_floor.get(c.x, c.y)), c.y)
 	_cols.sort()
 	_strip = body_strip()
+	var top: Array = []
+	for x in _cols:
+		top.append(Vector2i(x, row))
+	var solid := func(c: Vector2i) -> bool: return stone.has(c) and not cells.has(c)
+	banks = WaterEdge.banks(top, solid)
+	sunk = WaterEdge.sunk(cells, solid, Room.TILE)
 
 
 ## True once Thane Vorrund is at rest and the water has gone.
@@ -92,6 +107,12 @@ func drained() -> bool:
 ## True if the point (room pixels) is in standing water.
 func has_point(pos: Vector2) -> bool:
 	return not drained() and cells.has(Vector2i(floori(pos.x / Room.TILE), floori(pos.y / Room.TILE)))
+
+
+## A bank's face on the surface (local px).
+func bank_face(bank: Array) -> Vector2:
+	var c: Vector2i = bank[0]
+	return Vector2((c.x + (1 if int(bank[1]) > 0 else 0)) * Room.TILE, c.y * Room.TILE)
 
 
 ## The surface's height (local px).
@@ -251,6 +272,13 @@ func _draw() -> void:
 			draw_texture_rect(_strip, cell, true)
 		else:
 			draw_rect(cell, pit_color())
+	# Stone that stands in the water is darkened at its faces, and damp over the waterline.
+	var tone := Color(FLOOR.r, FLOOR.g, FLOOR.b)
+	for band: Array in sunk:
+		draw_rect(band[0], Color(tone, WaterEdge.SUNK_STEPS[int(band[1])]))
+	for bank: Array in banks:
+		if bank[2]:
+			WaterEdge.draw_damp(self, bank_face(bank), int(bank[1]))
 	# What hurts shows through: pale water over each sunk cluster, and its steel rim again.
 	for at: Vector2 in _sunk:
 		for k in 5:
@@ -262,6 +290,10 @@ func _draw() -> void:
 		draw_rect(Rect2(x * Room.TILE, y, Room.TILE, 1), Color(SURFACE, a))
 		if (x + int(_t * 2.0)) % 5 == 0:
 			draw_rect(Rect2(x * Room.TILE + 4 + int(_t * 6.0) % 8, y + 2, 3, 1), Color(SURFACE, 0.4))
+	# Where the still water meets stone it laps, slower and fainter than the deep water.
+	for i in banks.size():
+		var bank: Array = banks[i]
+		WaterEdge.draw_lap(self, bank_face(bank), int(bank[1]), _t * LAP_PACE, i * 5 + int(bank[0].x), LAP_ALPHA)
 	# Ripples: a crest and the trough under it, running out both ways.
 	for ring: Array in rings:
 		var age := float(ring[2])
