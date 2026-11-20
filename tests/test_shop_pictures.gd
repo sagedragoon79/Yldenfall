@@ -175,3 +175,110 @@ func test_a_menu_names_its_keys_and_what_they_do() -> void:
 		and menu.prompts()[1].cap == ListMenu.cap_name("pause"), "while it listens: press a key, or Esc or Start cancels (%s)" % [menu.prompts()])
 	menu.capture = Callable()
 	menu.close()
+
+
+## Pass 616 (bible 12.93): the pass 610 and 615 grades saw "a large dead area" on
+## the shop's panel and "no comparison with equipped gear". The chosen ware stands
+## to one side of the counter, and the rest holds what you have against what it
+## gives: gear against what you wear in its place, a temper against your blade,
+## a thing you carry several of against how many you carry.
+func test_a_ware_is_weighed_against_what_you_wear() -> void:
+	var room := make_room(grid_rows(12, 8))
+	var p := make_player(room, Vector2i(4, 6))
+	p.gold = 9000
+	# The numbers, from the data: a starting kit against the arms shop's shelf.
+	var sword := Menus.compare("long_sword", p)
+	var short := GameData.item("short_sword")
+	var long := GameData.item("long_sword")
+	check(String(sword.caption) == "Yours: %s" % short.name, "a blade is set against the one in your hand (%s)" % sword.caption)
+	check(sword.rows[0] == {"label": "Cut", "was": "%d" % int(short.slash), "now": "%d" % int(long.slash), "dir": 1},
+		"its cut, yours then its own, and better (%s)" % [sword.rows[0]])
+	check(sword.rows.all(func(r: Dictionary) -> bool: return int(r.dir) == 1) and sword.rows.size() == 3, "cut, heavy and reach all gain (%s)" % [sword.rows])
+	var jerkin := Menus.compare("leather_armor", p)
+	check(String(jerkin.caption) == "Nothing worn there." and jerkin.rows == [{"label": "Armor", "was": "", "now": "15%", "dir": 1}],
+		"armor on a bare back has nothing to stand against (%s)" % [jerkin])
+	# A worse thing says so, and a cost counts against a gain.
+	GameState.obtain_gear("large_shield", p)
+	var buckler := Menus.compare("small_shield", p)
+	check(buckler.rows.size() == 2 and buckler.rows.all(func(r: Dictionary) -> bool: return int(r.dir) == -1),
+		"a Buckler against a Kite Shield guards and wards less (%s)" % [buckler.rows])
+	var broad := Menus.compare("dwarvish_broad_sword", p)
+	var by_label := {}
+	for r: Dictionary in broad.rows:
+		by_label[r.label] = r
+	check(int(by_label["Cut"].dir) == 1 and int(by_label["Swing time"].dir) == -1 and String(by_label["Swing time"].now) == "+30%",
+		"the Broad Sword cuts harder and swings slower, and the slower swing is marked worse (%s)" % [by_label["Swing time"]])
+	check(int(by_label["Two hands"].dir) == 0 and String(by_label["Two hands"].now) == "Yes", "its second hand is told, as neither")
+	check(broad.rows.find(by_label["Swing time"]) < broad.rows.find(by_label["Sweep"]), "its costs stand before its sweep, which a short counter drops")
+	# What you wear is shown as it is, with nothing to gain.
+	var worn := Menus.compare("large_shield", p)
+	check(String(worn.caption) == "You wear this." and worn.rows.all(func(r: Dictionary) -> bool: return String(r.was) == "" and int(r.dir) == 0),
+		"what you wear shows its own numbers and no arrow (%s)" % [worn])
+	# A temper is weighed on your own blade; a tempered blade is weighed tempered.
+	var temper := Menus.compare("temper_1", p)
+	var hot := roundi(int(short.slash) * (1.0 + GameState.TEMPER_BONUS))
+	check(String(temper.caption) == "Your %s" % short.name and temper.rows[0] == {"label": "Cut", "was": "%d" % int(short.slash), "now": "%d" % hot, "dir": 1},
+		"a temper shows your blade's cut before and after (%s)" % [temper.rows[0]])
+	GameState.data.tempers = {"short_sword": 1}
+	check(String(Menus.compare("long_sword", p).rows[0].was) == "%d" % hot, "and a tempered blade is weighed with its temper in")
+	check(String(Menus.compare("temper_1", p, "owned").rows[0].was) == "", "a temper you have shows the blade as it is")
+	GameState.data.tempers = {}
+	# Things you carry: how many now, and how many after.
+	p.ointments = 1
+	check(Menus.compare("ointment", p).rows == [{"label": "Carried", "was": "1", "now": "2", "dir": 1}], "a Barkbalm: one carried, two after")
+	p.ointments = Shop.OINTMENT_MAX
+	check(Menus.compare("ointment", p, "full").rows == [{"label": "Carried", "was": "", "now": "%d" % Shop.OINTMENT_MAX, "dir": 0}], "a full belt gains nothing")
+	p.ointments = 0
+	check(Menus.compare("copper_key", p).rows[0].now == "%d" % (GameState.key_count("copper") + 1), "a key adds one")
+	check(Menus.compare("chart_hearthroot", p).is_empty() and Menus.compare("fire_scroll", p).is_empty(), "a chart or a scroll has nothing to weigh")
+	# Every ware of every shop: gear and belt things are weighed, in words that fit the counter.
+	var table_w := ListMenu.PANEL.size.x - 16.0
+	table_w = table_w - roundf(table_w * ListMenu.COMPARE_FROM) - ListMenu.COMPARE_MARGIN
+	for shop_id: String in GameData.table("shops"):
+		for entry: Dictionary in GameData.shop(shop_id).stock:
+			var kind := String(GameData.item(entry.item).kind)
+			var against := Menus.compare(String(entry.item), p)
+			if GameState.GEAR_KINDS.has(kind) or ["temper", "key", "ointment", "tonic", "elixir", "projectile"].has(kind):
+				check(not against.is_empty() and not Array(against.rows).is_empty(), "%s is weighed" % entry.item)
+			for other: String in GameData.items_of_kind(kind) if GameState.GEAR_KINDS.has(kind) else []:
+				check(PixelFont.width("Yours: %s" % GameData.item(other).name, 9) <= table_w, "the caption for %s fits the table" % other)
+			for r: Dictionary in against.get("rows", []):
+				var need := PixelFont.width(String(r.label), 9) + 8.0 + PixelFont.width(String(r.was), 9) + 17.0 + PixelFont.width(String(r.now), 9) + ListMenu.COMPARE_MARK
+				check(need <= table_w, "%s's %s fits its line (%.0f of %.0f)" % [entry.item, r.label, need, table_w])
+	# On the counter: the ware to one side, the table beside it, inside the counter.
+	var menu := ListMenu.new()
+	arena.add_child(menu)
+	await frames(2)
+	check(Menus.open_shop(arena.get_tree(), "hearthroot_arms", p), "the arms shop opens")
+	await frames(2)
+	var counter := menu.counter_rect()
+	check(menu.compare_shown() == menu.rows[menu.cursor].compare and not menu.compare_shown().is_empty(), "the chosen ware's comparison is on the counter")
+	var side := UiArt.ICON_SIZE * ListMenu.COUNTER_SCALE
+	var table := menu.compare_rect(counter)
+	check(menu.counter_center(counter).x + side * 0.5 < table.position.x and counter.encloses(table), "the ware stands left of its table (%s, %s)" % [menu.counter_center(counter), table])
+	var lay := menu.compare_layout(table)
+	check(lay.lines.size() == 1 + menu.compare_shown().rows.size() and lay.lines[0].has("caption"), "a caption, then a line for each number (%d)" % lay.lines.size())
+	for line: Dictionary in lay.lines:
+		check(line.y - 9.0 >= counter.position.y and line.y + 2.0 <= counter.end.y, "each line is on the counter (%.0f)" % line.y)
+	check(lay.was_x < lay.arrow_x and lay.arrow_x + 7.0 < lay.now_x - PixelFont.width("11", 9) + 1.0 and lay.now_x < lay.mark_x - 3.0 and lay.mark_x + 3.0 <= table.end.x,
+		"yours, an arrow, the ware's, and a mark, left to right (%s)" % [[lay.was_x, lay.arrow_x, lay.now_x, lay.mark_x]])
+	check(ListMenu.BETTER != ListMenu.WORSE and ListMenu.BETTER.g > ListMenu.BETTER.r and ListMenu.WORSE.r > ListMenu.WORSE.g, "better is green and worse is red, and each has a mark of its own shape")
+	# The longest comparison in the game still leaves every line on the counter.
+	GameState.set_flag("spring:sky")
+	menu.refresh()
+	menu.cursor = menu.rows.size() - 1
+	var long_lay := menu.compare_layout(menu.compare_rect(menu.counter_rect()))
+	var labels: Array = long_lay.lines.map(func(l: Dictionary) -> String: return String(l.get("label", "")))
+	check(String(menu.rows[menu.cursor].icon) == "dwarvish_broad_sword" and labels.has("Swing time") and labels.has("Two hands"),
+		"the Broad Sword's costs are among the lines that fit (%s)" % [labels])
+	for line: Dictionary in long_lay.lines:
+		check(line.y - 9.0 >= menu.counter_rect().position.y and line.y + 2.0 <= menu.counter_rect().end.y, "and none runs off the counter (%.0f)" % line.y)
+	menu.close()
+	# A ware with nothing to weigh keeps the middle of the counter.
+	check(Menus.open_shop(arena.get_tree(), "hearthroot_charts", p), "the chart shop opens")
+	await frames(2)
+	check(menu.compare_shown().is_empty() and menu.counter_center(menu.counter_rect()) == menu.counter_rect().get_center(), "a chart stands in the middle, alone")
+	menu.close()
+	menu.queue_free()
+	var bible := FileAccess.get_file_as_string("res://docs/design-bible.md")
+	check(bible.contains("### 12.93") and bible.contains("`test_a_ware_is_weighed_against_what_you_wear`"), "the bible names the test")

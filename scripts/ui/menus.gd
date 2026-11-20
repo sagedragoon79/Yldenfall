@@ -56,8 +56,144 @@ static func shop_rows(shop_id: String, p: Player) -> Array:
 				detail += "  Costs a Stillglass Shard too: you carry %d." % int(GameState.data.get("meteor_shards", 0))
 		elif item.kind == "blade":
 			detail += "  " + blade_numbers(String(entry.item))
-		out.append({"label": item.name, "right": right, "detail": detail, "enabled": st == "", "icon": String(entry.item)})
+		var row := {"label": item.name, "right": right, "detail": detail, "enabled": st == "", "icon": String(entry.item)}
+		var against := compare(String(entry.item), p, st)
+		if not against.is_empty():
+			row["compare"] = against
+		out.append(row)
 	return out
+
+
+## What a piece of gear is measured by on a shop's counter (pass 616, bible 12.93):
+## [field in data/items.json, label, how it is written]. A field neither thing
+## has is left out. A counter short of room drops lines from the end, so a blade's
+## costs (a slower swing, a second hand) stand before its sweep.
+const COMPARE_STATS := [
+	["slash", "Cut", "blade"], ["heavy", "Heavy", "blade"], ["reach", "Reach", "plus"],
+	["swing", "Swing time", "swing"], ["two_handed", "Two hands", "bool"], ["arc", "Sweep", "plus"],
+	["defense", "Armor", "pct"], ["guard", "Guard", "pct"], ["ward", "Ward", "pct"], ["reflect", "Turns shots", "bool"],
+	["hp", "Health", "plus"], ["spell_cost", "Spell cost", "less"], ["spell_power", "Spell power", "more"],
+	["flask", "Sapflask", "more"], ["melee", "Blows", "more"], ["mp_hit", "Mana per blow", "more"], ["dash", "Stride", "more"],
+	["glide", "Glides", "bool"], ["spectral", "Unseen by ghosts", "bool"],
+]
+
+
+## One of COMPARE_STATS for item `id` as a number, so two things can be weighed
+## ("" is nothing worn): a blade's cuts with its own tempers in, a swing as the
+## percent it adds, a share as a percent, yes as 1.
+static func compare_value(id: String, field: String, how: String) -> float:
+	var item := GameData.item(id)
+	match how:
+		"blade":
+			return float(roundi(int(item.get(field, 0)) * (1.0 + GameState.TEMPER_BONUS * GameState.temper_level(id))))
+		"swing":
+			return float(roundi((float(item.get(field, 1.0)) - 1.0) * 100.0))
+		"bool":
+			return 1.0 if bool(item.get(field, false)) else 0.0
+		"pct", "less", "more":
+			return float(roundi(float(item.get(field, 0.0)) * 100.0))
+	return float(item.get(field, 0))
+
+
+## A compare_value as the counter writes it.
+static func compare_text(v: float, how: String) -> String:
+	match how:
+		"blade":
+			return "%d" % int(v)
+		"plus":
+			return "+%d" % int(v)
+		"swing", "more":
+			return "+%d%%" % int(v)
+		"less":
+			return "-%d%%" % int(v)
+		"bool":
+			return "Yes" if v > 0.0 else "No"
+	return "%d%%" % int(v)
+
+
+## What you wear where `id` would go: "" for an empty place. Of two rings, the
+## empty hand if there is one, else the first.
+static func worn_against(id: String) -> String:
+	var kind := String(GameData.item(id).get("kind", ""))
+	var worn := ""
+	for place: String in GameState.places(kind):
+		var on := String(GameState.data.equipment.get(place, ""))
+		if on == "" or GameData.item(on).is_empty():
+			return ""
+		if worn == "":
+			worn = on
+	return worn
+
+
+## A ware weighed against what you have (pass 616, bible 12.93), for a shop's
+## counter: {caption, rows}, each row {label, was, now, dir}. `was` is yours ("" when
+## there is nothing to set it against), `now` is with the ware, and `dir` is 1 when
+## the ware is better, -1 when worse, 0 when it is the same or neither. Gear is
+## weighed against what you wear in its place; a temper against your blade as it
+## is; a thing you carry several of against how many you carry. {} for a ware
+## with nothing to weigh (a chart, a scroll, a dye). `st` is Shop.status.
+static func compare(id: String, p: Player, st := "") -> Dictionary:
+	var item := GameData.item(id)
+	var kind := String(item.get("kind", ""))
+	var rows := []
+	if GameState.GEAR_KINDS.has(kind):
+		var worn := worn_against(id)
+		var wearing := GameState.is_worn(id)
+		for stat: Array in COMPARE_STATS:
+			var how := String(stat[2])
+			var now := compare_value(id, stat[0], how)
+			var was := compare_value(worn, stat[0], how)
+			if now == 0.0 and (was == 0.0 or wearing):
+				continue
+			# A slower swing is a cost and a second hand is neither; the rest are gains.
+			var dir := signi(int(now - was)) * (-1 if how == "swing" else 1)
+			if stat[0] == "two_handed" or wearing:
+				dir = 0
+			rows.append({"label": stat[1], "was": "" if wearing or worn == "" else compare_text(was, how), "now": compare_text(now, how), "dir": dir})
+		if rows.is_empty():
+			return {}
+		var caption := "You wear this." if wearing else ("Nothing worn there." if worn == "" else "Yours: %s" % GameData.item(worn).name)
+		return {"caption": caption, "rows": rows}
+	if kind == "temper":
+		var blade := String(GameState.data.equipment.blade)
+		var level := GameState.temper_level(blade)
+		var to := int(item.level)
+		for stat: Array in [["slash", "Cut"], ["heavy", "Heavy"]]:
+			var base := int(GameData.item(blade).get(stat[0], 0))
+			var was := roundi(base * (1.0 + GameState.TEMPER_BONUS * level))
+			var now := roundi(base * (1.0 + GameState.TEMPER_BONUS * to))
+			if to <= level:
+				rows.append({"label": stat[1], "was": "", "now": "%d" % was, "dir": 0})
+			else:
+				rows.append({"label": stat[1], "was": "%d" % was, "now": "%d" % now, "dir": signi(now - was)})
+		return {"caption": "Your %s" % GameData.item(blade).get("name", "blade"), "rows": rows}
+	var have := -1
+	var top := 0
+	var gain := 1
+	match kind:
+		"key":
+			have = GameState.key_count(id.trim_suffix("_key"))
+		"ointment":
+			have = p.ointments
+			top = Shop.OINTMENT_MAX
+		"tonic":
+			have = p.tonics
+			top = Shop.TONIC_MAX
+		"elixir":
+			have = p.elixirs
+			top = Shop.ELIXIR_MAX
+		"projectile":
+			have = GameState.ammo(id)
+			top = int(item.get("carry", 0))
+			gain = int(item.get("bundle", 1))
+	if have < 0:
+		return {}
+	var after := have + gain if top == 0 else mini(have + gain, top)
+	if st == "full" or st == "owned" or st == "enough" or after == have:
+		rows.append({"label": "Carried", "was": "", "now": "%d" % have, "dir": 0})
+	else:
+		rows.append({"label": "Carried", "was": "%d" % have, "now": "%d" % after, "dir": 1})
+	return {"caption": "You can carry %d." % top if top > 0 else "One key opens one door.", "rows": rows}
 
 
 ## Who keeps a shop: the first person in data/npcs.json whose "shop" it is ("" if
