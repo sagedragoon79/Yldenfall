@@ -5,7 +5,8 @@ extends Control
 ## paused while it is open.
 ##
 ## Rows come from a provider callable (so they refresh after each choice):
-## each row is {label, right (text on the right), detail, enabled, header, icon}.
+## each row is {label, right (text on the right), detail, enabled, header, icon,
+## compare (a shop's ware against what you have: Menus.compare)}.
 ## Header rows are section titles and can't be selected. A row's `icon` is an
 ## item id: its picture leads the row (UiArt, bible 12.44), and when any row has
 ## one every label is set in by ICON_INSET so the names stay in a column.
@@ -49,6 +50,17 @@ const BRACKET_COLOR := Color("d8b060")
 ## px of room.
 const COUNTER_SCALE := 3.0
 const COUNTER_MIN := 56.0
+## The comparison (pass 616, bible 12.93): when the chosen row carries a `compare`,
+## its item stands COMPARE_ICON_AT of the way along the counter and a table of
+## what you have against what it gives fills the counter from COMPARE_FROM on.
+const COMPARE_ICON_AT := 0.2
+const COMPARE_FROM := 0.4
+const COMPARE_MARGIN := 10.0
+const COMPARE_LINE := 11.0
+## The room right of the `now` column for the mark that points up or down.
+const COMPARE_MARK := 12.0
+const BETTER := Color("9bd66a")
+const WORSE := Color("e0605a")
 ## The lamplight pooled on the counter: a smooth radial glow, never hard rings.
 const COUNTER_LIGHT := Color(1.0, 0.82, 0.45, 0.22)
 static var _glow: GradientTexture2D
@@ -292,10 +304,88 @@ func counter_item() -> String:
 	return String(rows[cursor].icon) if counter_rect() != Rect2() else ""
 
 
+## What the chosen row is weighed against (pass 616): its `compare`, {caption, rows},
+## or {} when the row has none or there is no counter to show it on.
+func compare_shown() -> Dictionary:
+	if rows.is_empty() or counter_rect() == Rect2():
+		return {}
+	var against: Dictionary = rows[cursor].get("compare", {})
+	return against if not Array(against.get("rows", [])).is_empty() else {}
+
+
+## Where the chosen item stands on the counter `r`: its middle, or COMPARE_ICON_AT
+## of the way along when a comparison takes the rest (pass 616).
+func counter_center(r: Rect2) -> Vector2:
+	var c := r.get_center()
+	if not compare_shown().is_empty():
+		c.x = roundf(r.position.x + r.size.x * COMPARE_ICON_AT)
+	return c
+
+
+## The comparison's table on the counter `r`: the part right of the item.
+func compare_rect(r: Rect2) -> Rect2:
+	var left := roundf(r.position.x + r.size.x * COMPARE_FROM)
+	return Rect2(left, r.position.y, r.end.x - COMPARE_MARGIN - left, r.size.y)
+
+
+## The comparison as it is laid out in `t`, for drawing and for tests: each line
+## is {y (baseline), caption} or {y, label, was, now, dir}, with the columns'
+## right edges in `was_x` and `now_x`, the arrow's left in `arrow_x` and the
+## mark's middle in `mark_x`. Lines that do not fit are left out.
+func compare_layout(t: Rect2) -> Dictionary:
+	var against := compare_shown()
+	var lines := []
+	if String(against.get("caption", "")) != "":
+		lines.append({"caption": String(against.caption)})
+	lines.append_array(Array(against.get("rows", [])))
+	lines = lines.slice(0, maxi(1, int(t.size.y / COMPARE_LINE)))
+	var top := roundf(t.get_center().y - lines.size() * COMPARE_LINE * 0.5)
+	var now_w := 0.0
+	var out := []
+	for i in lines.size():
+		var line: Dictionary = lines[i].duplicate()
+		line["y"] = top + i * COMPARE_LINE + 9.0
+		now_w = maxf(now_w, PixelFont.width(String(line.get("now", "")), 9))
+		out.append(line)
+	var now_x := t.end.x - COMPARE_MARK
+	var arrow_x := now_x - now_w - 12.0
+	return {"lines": out, "now_x": now_x, "arrow_x": arrow_x, "was_x": arrow_x - 5.0, "mark_x": t.end.x - 4.0}
+
+
+## Draws the comparison: what you have, an arrow, what the ware gives, and a mark
+## that points up (better) or down (worse), so color is never the only sign.
+func _draw_compare(t: Rect2) -> void:
+	var lay := compare_layout(t)
+	var soft := DIM.lightened(0.45)
+	for line: Dictionary in lay.lines:
+		var y: float = line.y
+		if line.has("caption"):
+			_text(Vector2(t.position.x, y), String(line.caption), 9, soft)
+			continue
+		var dir := int(line.get("dir", 0))
+		var tone := BETTER if dir > 0 else (WORSE if dir < 0 else TEXT)
+		_text(Vector2(t.position.x, y), String(line.label), 9, Color("c9b98f"))
+		var now := String(line.now)
+		_text(Vector2(lay.now_x - PixelFont.width(now, 9), y), now, 9, tone)
+		var was := String(line.get("was", ""))
+		if was != "":
+			_text(Vector2(lay.was_x - PixelFont.width(was, 9), y), was, 9, soft)
+			var ax: float = lay.arrow_x
+			draw_rect(Rect2(ax, y - 4.0, 5.0, 1.0), soft)
+			draw_colored_polygon(PackedVector2Array([Vector2(ax + 4.0, y - 6.5), Vector2(ax + 7.0, y - 3.5), Vector2(ax + 4.0, y - 0.5)]), soft)
+		var mx: float = lay.mark_x
+		if dir > 0:
+			draw_colored_polygon(PackedVector2Array([Vector2(mx - 3.0, y - 1.0), Vector2(mx, y - 6.0), Vector2(mx + 3.0, y - 1.0)]), BETTER)
+		elif dir < 0:
+			draw_colored_polygon(PackedVector2Array([Vector2(mx - 3.0, y - 6.0), Vector2(mx, y - 1.0), Vector2(mx + 3.0, y - 6.0)]), WORSE)
+
+
 ## Draws the chosen item on its shelf in `r`, in a pool of lamplight.
 func _draw_counter(r: Rect2) -> void:
 	var side := UiArt.ICON_SIZE * COUNTER_SCALE
-	var c := r.get_center()
+	var c := counter_center(r)
+	if not compare_shown().is_empty():
+		_draw_compare(compare_rect(r))
 	# The icon's art stops a few texels short of its cell's foot, so the shelf
 	# rises into the cell and the item stands on it.
 	var shelf_y := roundf(c.y + side * 0.5 - 3.0)

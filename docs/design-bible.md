@@ -2737,6 +2737,19 @@ The pass 610 grade: "the canopy zone's terrain is flat vertical brown stripes wi
 
 Judged by eye at 1x and 2x in the canopy bridge and Sylvarre. `tools/art/test_tilegen.py` holds the plates, the seams, the trim's notches and that the shipped atlas is what the generator makes; `tests/test_bough_bark.gd` holds the shipped tiles and the canopy bridge in the game.
 
+### 12.93 A ware is weighed against what you wear (pass 616)
+
+The pass 610 grade: "the shop panel is plain: dead area round one small icon, a crude portrait, no comparison with equipped gear". The pass 615 grade said "a large dead area" again. The counter (12.44, pass 605) stood one icon in the middle of a room 324 px wide, and to learn whether the Wayfarer's Sword was better than the blade in your hand you read its description and remembered your own.
+
+- **The ware steps aside.** When the chosen ware can be weighed, it stands a fifth of the way along the counter (`ListMenu.COMPARE_ICON_AT`) and a table fills the counter from two fifths on (`COMPARE_FROM`). A ware with nothing to weigh (a chart, a scroll, a dye, a Life Fruit) keeps the middle, as before.
+- **Yours, an arrow, the ware's, a mark.** Each line names one number, gives yours in a dim tone, an arrow, then the ware's: "Cut 8 → 11". A triangle after it points up in green when the ware is better and down in red when it is worse, so color is never the only sign; a number that is the same, or neither better nor worse (a second hand), has no mark. A caption heads the table: "Yours: Short Sword", "Nothing worn there." or "You wear this." (then only the ware's own numbers, with no arrow).
+- **What is weighed** (`Menus.compare`, `COMPARE_STATS`). Gear, against what you wear in its place: a blade's cut and heavy with its own tempers in, reach, swing time, hands and sweep; armor; a shield's guard, ward and whether it turns shots; a helmet's health, armor, ward, spell cost and spell power; a trinket's or a cloak's one rule. A ring is set against an empty hand if you have one. A temper, against your blade as it is ("Your Short Sword: Cut 8 → 9"). A key, a Barkbalm, a tonic, an Amber Draught and a bundle of spikes, against how many you carry ("Carried 1 → 2", under "You can carry 3.").
+- **A cost is a cost.** A slower swing is marked worse beside the cuts that are marked better. A short counter (four rows above it) fits a caption and five lines (`COMPARE_LINE`, 11 px), and drops from the end, so a blade's costs stand before its sweep.
+- **Only where there is a counter.** A long shelf (six wares or more) has no counter and no table; its detail line carries a blade's numbers as before (5.2). The Equipment page has no counter yet.
+- **Not done here.** The grade's "crude portrait" is the keepers' generated portraits (`tools/art/icongen.py`), an art-loop item. The detail box under the counter still repeats a blade's numbers in words.
+
+Judged by eye at 1x and 2x in the arms shop (every row, with a Kite Shield worn and with the final tier on the shelf), the forge, the Kettleforge larder and the chart shop. `test_a_ware_is_weighed_against_what_you_wear` (`tests/test_shop_pictures.gd`) holds the numbers against `data/items.json`, the marks, that every ware of every shop that can be weighed is, that every caption and line fits the table, and the layout on the counter.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
