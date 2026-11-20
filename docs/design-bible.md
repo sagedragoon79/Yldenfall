@@ -2761,6 +2761,16 @@ The pass 610 grade: "the plaza skyline's gridded windows". The pass 615 grade: "
 
 Judged by eye at 1x and 2x in the plaza and the market, beside the picture from before. `tests/test_town_skyline.gd` reads the shipped picture: the crest is pitched, no lattice runs through the lit windows, and the far plane is more than one value. Mutation-checked against the old picture (all three fail). `tools/art/test_tilegen.py` holds the houses' forms and that a gable stands level.
 
+### 12.95 A tier has no specks (pass 618)
+
+Seen in pass 614, and named with the pass 615 grade's "wall and ceiling masses": "the darker interior tiers step by the tile, so single dark tiles sit inside a lit field (the Flooded Hall's ceiling, the storm ledge's upper left)". The audit found two causes, and the louder one was not the tiers.
+
+- **A worn block was half a tile** (`tilegen.drowned_block_is_worn`). Vorrhallow's upper course is one block the width of the tile. 12.45 wears about one block in seven, but a tier has four tiles, so one worn upper block made every fourth tile of a field a dark slab: the MID tiles' values ran from 53 to 68 and the DEEP from 30 to 41, where a whole tier step is about 20. A field tile (the full-solid blob tile, the row-7 variants, MID and DEEP) now wears only the half blocks of its lower course, and the DEEP tier wears none, since a worn block there falls to the foot of the ramp and reads as a hole. A tier's tiles now stand within about a tenth of each other. The other 46 blob tiles are untouched. This is the rule for a masonry painter whose block is as wide as its tile: the field's variation must be smaller than the tile.
+- **A tier needs three cells together** (`TilesetFactory.settle_tiers`, `TIER_GROUP`). A cell's tier is its distance from open air (12.8), so a nub on a wall or a notch in a ceiling left one or two cells of a darker tier on their own. `Room` now works the tiers out for the whole room at once: a group of fewer than three cells of a tier, joined edge to edge, takes the tier above. The deepest tier settles first, and what it gives up may join the middle one. Patch tiles (12.91) take the settled tier too. A torn floor (`tear_floor`) settles again. The three named rooms had four such specks between them, so this half is small.
+- **Not done here.** A tier's edge still follows the tile grid, one shade a step; softening it needs drawn transition tiles and is left for a watched look. The gym's brick has the same spread in its MID tier (21 percent) and keeps it. The Spires' tiers were already even (within 4 percent); the storm ledge's upper left is the deep shade's dither and the two specks settled here.
+
+Only `assets/tiles/vorrhallow.png` is regenerated, and only four of its tiles change. Judged by eye at 1x and 2x in the Flooded Hall beside the picture from before: the black slabs in the ceiling's depth are gone and the tiers read as bands. `tests/test_tier_specks.gd` holds it: a lone cell and a pair settle and a bar of three stays, the three named rooms draw no group of a darker tier under three cells and no cell darker than its depth, and Vorrhallow's tiles stand close to each other a tier with no worn upper course. Mutation-checked (the old atlas fails the last; `settle_tiers` left out fails the rooms).
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
