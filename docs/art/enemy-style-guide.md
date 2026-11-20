@@ -126,6 +126,11 @@ Bible 7: every tell is a pose, a flash and a sound, at least 0.35 s.
   gold tint with a one-pixel rim (`telegraph_pulse()`, `Enemy.TELL_TINT`; bible 6.7 and
   12.72), which leaves the pose readable, so the pose must carry the warning. Never draw a
   white, gold or flashing frame into the art. White is kept for a blow that lands.
+- **Give the code the weapon's point.** Since pass 611 (bible 12.88) the tell is a glint that
+  gathers on the weapon, with the rim only near it, and the body in its own colors. For each
+  wind-up animation of a new sheet, add the striking end's position to `Enemy.TELL_POINTS`
+  (cell pixels; a list with a point per frame when the weapon travels). Check it in the
+  lineup. A sheet with no point falls back to the whole rim and tint.
 - **A charge glow** (the Shade Knight's blade point, an eye lighting up) is code, drawn at a
   point the art gives in the frame's metadata or at a fixed offset, so it tracks the pose.
 
