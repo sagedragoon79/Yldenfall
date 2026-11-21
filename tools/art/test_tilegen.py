@@ -642,8 +642,9 @@ def test_ridge_houses_stand_level_under_roofs_of_their_own():
 def test_the_spires_stand_on_a_ridge_of_their_own():
     # The pass 600 grade found the town's window-dotted skyline repeated in the
     # Spires, which shared Hearthroot's roofline. The Spires' ridge is a row of
-    # ruined spires: tall narrow towers, a slit window or two, no rows of windows.
-    # (Giving the Spires the roofline again fails it.)
+    # ruined spires: tall towers, a slit window or two, no rows of windows.
+    # (Giving the Spires the roofline again fails it.) Since pass 622 (bible 12.98)
+    # a spire may be a keep on a broad base, and a bridge may join two.
     assert tg.RIDGE_KIND["spires"] != tg.RIDGE_KIND["hearthroot"], "the Spires have a ridge kind of their own"
     far = _ridge_planes("spires")["far"]
     tall = [y < tg.RIDGE_BASE - 28 * tg.D for y in far]
@@ -655,11 +656,59 @@ def test_the_spires_stand_on_a_ridge_of_their_own():
             runs.append(run)
             run = 0
     narrow = [r for r in runs if r <= 14 * tg.D]
-    assert len(narrow) >= 6 and len(narrow) == len(runs), f"the spires are tall and narrow ({sorted(runs)})"
+    assert len(narrow) >= 6 and max(runs) <= 26 * tg.D, f"the spires are tall and narrow ({sorted(runs)})"
     town = _ridge_planes("hearthroot")["lit"]
     spires = _ridge_planes("spires")["lit"]
     # (Since pass 617 the town shows a few windows a house, not rows: bible 12.94.)
     assert 30 <= spires < town * 2 // 3, f"a few slit windows ({spires} px), fewer than the town's ({town} px)"
+
+
+def test_a_spire_has_a_form_of_its_own():
+    # The pass 615 grade read the storm ledge's skyline as a flat one-value
+    # silhouette: every spire was one pole in one tone, through a hill of one tone.
+    # Bible 12.98 (pass 622): four forms, bridges whole and fallen, a keep's shaft
+    # on a broader base, and a far plane no one colour holds. (Putting the poles
+    # back leaves `things` empty and fails the first check.)
+    import random
+    from collections import Counter
+    things, ground = [], []
+    tg._ridge_profile("spire", random.Random(sum(ord(ch) for ch in "spires") + 1300), things, ground)
+    spires = [t for t in things if t["form"] != "span"]
+    spans = [t for t in things if t["form"] == "span"]
+    assert len(spires) >= 14, f"only {len(spires)} spires"
+    assert {t["form"] for t in spires} == {name for name, _ in tg.SPIRE_FORMS}, "every form stands in the row"
+    assert any(t["whole"] for t in spans) and any(not t["whole"] for t in spans), "bridges stand whole and fallen"
+    assert len(ground) == tg.BG_W, "the bare hill is handed back"
+    for t in spires:
+        assert abs(t["roof"][-t["half"]] - t["roof"][t["half"]]) < 16 * tg.D, "a spire stands level"
+        if t["base"]:
+            assert t["base"][0] > t["half"] and t["base"][1] < t["wall"], "a keep's shaft stands on a broader, lower base"
+    for t in spans:
+        assert all(v <= t["deck"] - 3 * tg.D + 1e-6 for v in t["under"].values()), "a bridge's deck is three px thick at least"
+        assert all(t["solid"][x] < t["deck"] for x in t["under"]), "and clears what stands under it"
+    # The picture: no one colour holds three tenths of the far plane, and sky shows
+    # under the bridges.
+    img = tg.ridge("spires")
+    raw = img.tobytes()
+    count = Counter(raw[i:i + 4] for i in range(0, len(raw), 4) if raw[i + 3])
+    near = max(count.values())
+    rest = sum(count.values()) - near
+    most = max(v for v in count.values() if v != near)
+    assert most * 10 < rest * 3, f"one colour holds {most / rest:.2f} of the far plane"
+    px = img.load()
+    under = 0
+    for x in range(tg.BG_W):
+        y = 0
+        while y < tg.BG_H and px[x, y][3] == 0:
+            y += 1
+        gap = 0
+        while y < tg.BG_H and px[x, y][3] != 255:
+            gap += px[x, y][3] == 0
+            y += 1
+        under += gap >= 4
+    assert under >= 60, f"only {under} columns of sky under a bridge"
+    # The layer still repeats sideways: the hill's terraces and bands meet at the seam.
+    assert all(abs(px[0, y][3] - px[tg.BG_W - 1, y][3]) <= 40 for y in range(tg.RIDGE_BASE, tg.BG_H)), "the seam is closed"
 
 
 def test_hearthroot_town_is_lit_and_roofed():

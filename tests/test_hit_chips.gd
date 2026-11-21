@@ -52,8 +52,10 @@ func test_a_blow_knocks_chips_off_the_foe() -> void:
 	await frames(4)
 	var clear := true
 	for i in c.chips.size():
-		clear = clear and ((c.chips[i][0] as Vector2).x - from[i].x) >= 8.0
-	check(clear, "four frames on, every chip has leapt 8 px or more from where it broke off")
+		clear = clear and ((c.chips[i][0] as Vector2).x - from[i].x) >= 5.0
+	# The slowest chip at the steepest throw (260 px/s, 1.12 rad off the level) covers
+	# 6.5 px in four braked steps; 8 px, the first bound, failed on such a throw in CI.
+	check(clear, "four frames on, every chip has leapt 5 px or more from where it broke off")
 	await frames(int(ceil(HitChips.LIFE_MAX * 60.0)) + 2)
 	check(not is_instance_valid(c), "and they are gone within %s s" % HitChips.LIFE_MAX)
 

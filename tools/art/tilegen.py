@@ -3183,11 +3183,94 @@ def _house(rng, cx, ground):
     return {"cx": cx, "half": half, "form": form, "eave": ground + wall, "roof": roof, "chimney": chimney}
 
 
-def _ridge_profile(kind, rng, houses=None):
+# The Spires' ruined towers (design bible 12.98, pass 622). Until then every spire
+# was one pole 6 to 12 px wide under a point or a notched crown, in one tone, and the
+# pass 615 grade read the storm ledge's skyline as a flat one-value silhouette (in the
+# room, a row of fence posts). A spire now has a form of its own: a needle under a
+# cone, a notched crown, a tower sheared off at a slant, or a keep (a broad base with
+# a shaft standing on it); and some pairs are joined by a bridge, whole or fallen.
+SPIRE_FORMS = (("needle", 0.3), ("crown", 0.16), ("broken", 0.27), ("keep", 0.27))
+SPIRE_SPAN_SHARE = 0.5         # the share of near pairs of spires that a bridge joins (every other one still whole)
+SPIRE_SPAN_GAP = (10 * D, 40 * D)  # how far apart two spires' walls may be for a bridge
+
+
+def _spire(rng, cx, ground):
+    """One ruined spire, standing level at `ground`: its form, its shaft's half
+    width and wall height, its base (a keep's: half width and height) and its crest
+    height per column offset (`roof`)."""
+    r, form = rng.random(), "keep"
+    for name, share in SPIRE_FORMS:
+        if r < share:
+            form = name
+            break
+        r -= share
+    half, wall = rng.randint(3, 5) * D, rng.randint(34, 68) * D
+    if form == "broken":
+        half, wall = rng.randint(4, 7) * D, rng.randint(30, 58) * D
+    top, base = form, None
+    if form == "keep":
+        base = (half + rng.randint(4, 6) * D, int(wall * rng.uniform(0.4, 0.58)))
+        top = rng.choice(("needle", "broken"))
+    lean, drop = rng.choice((-1, 1)), rng.randint(8, 15) * D
+    roof = {}
+    for dx in range(-half, half + 1):
+        if top == "needle":
+            v = wall + (half - abs(dx)) * 1.6
+        elif top == "crown":
+            v = wall - (2 * D if (dx + half) // (2 * D) % 2 else 0)
+        else:
+            # Sheared off at a slant, in ragged steps two pixels wide.
+            t = (dx + half) / (2 * half)
+            step = (dx + half) // (2 * D)
+            v = wall - drop * (t if lean > 0 else 1 - t) + (hash2(cx // D, step, 131) - 0.5) * 6 * D
+            v = D * round(v / D)
+        roof[dx] = ground + v
+    if base:
+        for dx in range(-base[0], base[0] + 1):
+            if abs(dx) > half:
+                # The base's shoulder: a short slope up to the shaft.
+                roof[dx] = ground + base[1] + min(3 * D, base[0] - abs(dx))
+    return {"cx": cx, "half": half, "form": form, "top": top, "ground": ground, "wall": wall,
+            "base": base, "roof": roof}
+
+
+def _spire_span(rng, a, b, roll, roofs, whole):
+    """A bridge from spire `a` to spire `b`, or None where none can stand: its deck's
+    height, and per column its underside and the ground or masonry below it. A
+    fallen bridge leaves a stub on each tower and open sky between."""
+    x0, x1 = a["cx"] + a["half"] + 1, b["cx"] - b["half"] - 1
+    # A spire carries one bridge at most: two make a cross of it.
+    if a.get("bridged") or not SPIRE_SPAN_GAP[0] <= x1 - x0 <= SPIRE_SPAN_GAP[1] or rng.random() >= SPIRE_SPAN_SHARE:
+        return None
+    lowest = min(min(a["roof"][dx] for dx in range(-a["half"], a["half"] + 1)),
+                 min(b["roof"][dx] for dx in range(-b["half"], b["half"] + 1)))
+    solid = {x: roll[x % BG_W] if roofs[x % BG_W] is None else max(roll[x % BG_W], roofs[x % BG_W])
+             for x in range(x0, x1 + 1)}
+    floor = max(solid.values())
+    deck = floor + (lowest - floor) * rng.uniform(0.45, 0.7)
+    if lowest - deck < 6 * D or deck - floor < 9 * D:
+        return None
+    hole = (rng.uniform(0.3, 0.45), rng.uniform(0.55, 0.75))
+    rise = min((x1 - x0) * 0.4, deck - floor - 5 * D)
+    under = {}
+    for x in range(x0, x1 + 1):
+        t = (x - x0) / (x1 - x0)
+        if not whole and hole[0] < t < hole[1]:
+            continue
+        # A pointed arch: thin at the crown, deep where it springs from a tower.
+        under[x] = deck - 3 * D - rise * abs(2 * t - 1) ** 1.6
+    return {"form": "span", "deck": deck, "under": under, "solid": solid, "whole": whole}
+
+
+def _ridge_profile(kind, rng, houses=None, ground=None):
     """The crest height (canvas px above RIDGE_BASE) per column: a rolling
     baseline with the zone's teeth raised onto it, seamless across the seam.
-    A roofline's houses are added to `houses` when a list is given."""
+    A roofline's houses (or a row of spires and their bridges) are added to `houses`
+    when a list is given, and the bare baseline to `ground`."""
     roll = _ridge_roll(rng)
+    if ground is not None:
+        ground.extend(roll)
+    last = None
     teeth = [0.0] * BG_W
     roofs = [None] * BG_W
     x = rng.randint(0, 20) * D
@@ -3205,15 +3288,23 @@ def _ridge_profile(kind, rng, houses=None):
             _jag(teeth, x, rng.randint(10, 22) * D, rng.randint(14, 40) * D, rng)
             x += rng.randint(14, 30) * D
         elif kind == "spire":
-            # A ruined spire: a tall narrow tower standing level on the ground at
-            # its centre, under a steep point or a broken, notched crown.
-            half, peak = rng.randint(3, 6) * D, rng.randint(30, 60) * D
-            pointed = rng.random() < 0.55
-            for dx in range(-half, half + 1):
+            # A ruined spire, standing level on the ground at its centre (12.98).
+            spire = _spire(rng, x, roll[x % BG_W])
+            for dx, v in spire["roof"].items():
                 i = (x + dx) % BG_W
-                crown = peak + (half - abs(dx)) * 1.6 if pointed else peak - (2 * D if (dx + half) // (2 * D) % 2 else 0)
-                roofs[i] = max(roofs[i] or 0.0, roll[x % BG_W] + crown)
-            x += rng.randint(26, 48) * D
+                roofs[i] = max(roofs[i] or 0.0, v)
+            # (After the spire is raised, so a bridge clears no part of its base.)
+            whole = houses is not None and sum(1 for h in houses if h["form"] == "span") % 2 == 0
+            span = _spire_span(rng, last, spire, roll, roofs, whole) if houses is not None and last else None
+            if span:
+                spire["bridged"] = True
+                for sx in span["under"]:
+                    roofs[sx % BG_W] = max(roofs[sx % BG_W] or 0.0, span["deck"])
+                houses.append(span)
+            if houses is not None:
+                houses.append(spire)
+            last = spire
+            x += rng.randint(24, 46) * D
         else:  # roof
             # A house stands level (pass 598) at its centre's ground, not riding the
             # roll, so a row of houses never reads as waving cloth.
@@ -3386,7 +3477,142 @@ def _town_detail(img, houses, far_h, far_tops, near_tops, rim, seam, light):
             wy += TOWN_FLOOR
 
 
-def _ridge_detail(img, zone, far_h, near_tops, rng, houses=None):
+SPIRE_WALL = ((None, 0), ("seam", 64), ("rim", 36), ("seam", 32), ("rim", 18))  # a spire's own wall tone
+SPIRE_ROOF_A = (56, 132)       # a cone's west side (lit, the rim) and its east side (the seam)
+SPIRE_LIT_A, SPIRE_SHADE_A = 96, 170  # a round wall: its lit west edge and its shadowed east edge
+SPIRE_TERRACE = (8 * D, 19 * D, 32 * D, 47 * D)  # the hill's terraces, below its crest
+SPIRE_NEAR_LIT_A = 120         # a near spire's lit west wall
+SPIRE_TERRACE_A = 26           # how much darker each terrace's ground is than the one above
+
+
+def _spire_detail(img, things, roll, far_h, far_tops, near_tops, rim, seam, light):
+    """The Spires' far plane (design bible 12.98): the hill steps down in terraces of
+    old walling, each spire stands on it with a wall tone of its own, round (lit on
+    the west, dark on the east), banded by string courses, with a slit or two, and a
+    bridge keeps a lit deck over a dark underside."""
+    hill = [RIDGE_BASE - int(round(v)) for v in roll]
+    # The hill: terraces that follow its crest, each band a little darker.
+    for x in range(BG_W):
+        foot = near_tops[x] - 10 * D
+        lines = [hill[x] + off + int(round(math.sin(2 * math.pi * 3 * x / BG_W + k * 1.7) * 2 * D))
+                 for k, off in enumerate(SPIRE_TERRACE)]
+        for y in range(hill[x] + 1, foot):
+            band = sum(1 for ly in lines if y >= ly)
+            if band:
+                _over(img, x, y, seam, SPIRE_TERRACE_A * band)
+        for k, ly in enumerate(lines):
+            # Stretches of walling still stand along a terrace: a lit lip over a dark line.
+            if ly + D < foot and hash2(x // (22 * D), k, 137) > 0.38:
+                for th in range(D):
+                    _over(img, x, ly - D + th, rim, 52)
+                    _over(img, x, ly + th, seam, 130)
+    spires = [t for t in things if t["form"] != "span"]
+    # A column belongs to the spire whose roof is the crest there.
+    owner = [None] * BG_W
+    for k, sp in enumerate(spires):
+        for dx, v in sp["roof"].items():
+            i = (sp["cx"] + dx) % BG_W
+            if abs(v - far_h[i]) < 0.5:
+                owner[i] = k
+    for k, sp in enumerate(spires):
+        cols = [dx for dx in sorted(sp["roof"]) if owner[(sp["cx"] + dx) % BG_W] == k]
+        if len(cols) < 3 * D:
+            continue
+        half = sp["half"]
+        tone, tone_a = SPIRE_WALL[int(hash2(sp["cx"] // D, k, 139) * len(SPIRE_WALL)) % len(SPIRE_WALL)]
+        tone = {"seam": seam, "rim": rim, None: None}[tone]
+        eave_y = RIDGE_BASE - int(round(sp["ground"] + sp["wall"]))
+        base_y = RIDGE_BASE - int(round(sp["ground"] + sp["base"][1])) if sp["base"] else None
+        for dx in cols:
+            x = (sp["cx"] + dx) % BG_W
+            foot = min(near_tops[x] - 10 * D, hill[x] + 1)
+            for y in range(far_tops[x] + 1, foot):
+                if tone:
+                    _over(img, x, y, tone, tone_a)
+                if sp["top"] == "needle" and abs(dx) <= half and y < eave_y:
+                    # The cone, lit on its west side.
+                    _over(img, x, y, rim if dx < 0 else seam, SPIRE_ROOF_A[0 if dx < 0 else 1])
+                    continue
+                # A round wall: the base's below its shoulder, the shaft's above.
+                reach = sp["base"][0] if base_y is not None and (y > base_y or abs(dx) > half) else half
+                u = (dx + reach) / (2 * reach)
+                if u < 0.34:
+                    _over(img, x, y, rim, int(SPIRE_LIT_A * (1 - u / 0.34)) + 10)
+                elif u > 0.58:
+                    _over(img, x, y, seam, int(50 + (SPIRE_SHADE_A - 50) * (u - 0.58) / 0.42))
+            if abs(dx) <= half:
+                if sp["top"] == "needle" and eave_y < foot:
+                    _over(img, x, eave_y, seam, 160)        # the cone's eave
+                if sp["top"] == "broken":
+                    for th in range(1, D + 1):
+                        _over(img, x, far_tops[x] + th, rim, 120)  # raw stone at the break
+                if base_y is not None and far_tops[x] < base_y < foot:
+                    _over(img, x, base_y, rim, 90)          # the shoulder's ledge under the shaft
+                    _over(img, x, base_y + 1, seam, 150)
+        shaft = [dx for dx in cols if abs(dx) <= half]
+        if len(shaft) < 3 * D:
+            continue
+        low = min(near_tops[(sp["cx"] + dx) % BG_W] - 10 * D for dx in shaft)
+        low = min(low, min(hill[(sp["cx"] + dx) % BG_W] for dx in shaft), base_y if base_y is not None else BG_H)
+        # String courses band the shaft, at the spire's own spacing.
+        y = eave_y + int(8 + hash2(k, 1, 149) * 8) * D
+        n = 0
+        while y + 2 * D < low:
+            for dx in shaft:
+                x = (sp["cx"] + dx) % BG_W
+                if y > far_tops[x] + D:
+                    _over(img, x, y - 1, rim, 44)
+                    for th in range(D):
+                        _over(img, x, y + th, seam, 120)
+            n += 1
+            y += int(11 + hash2(k, n, 151) * 9) * D
+        # A crack runs down from a break.
+        if sp["top"] == "broken":
+            cx = sp["cx"] + min(shaft, key=lambda dx: sp["roof"][dx])
+            cy = max(far_tops[(sp["cx"] + dx) % BG_W] for dx in shaft) + D
+            for step in range(int(5 + hash2(k, 2, 157) * 6)):
+                if cy + D >= low:
+                    break
+                for th in range(D):
+                    _over(img, cx, cy + th, seam, 190)
+                cy += D
+                if hash2(k, step, 163) > 0.6:
+                    cx += D // 2 if hash2(k, step, 167) > 0.5 else -D // 2
+        # One or two slit windows high in the shaft, some lit; never the town's rows.
+        sx = sp["cx"] - D // 2
+        top = max(far_tops[(sp["cx"] + dx) % BG_W] for dx in shaft)
+        for n, wy in enumerate((max(top, eave_y) + 5 * D, max(top, eave_y) + 19 * D)):
+            if wy + 5 * D >= low - 2 * D or (n and hash2(sp["cx"] // D, 7, 61) < 0.5):
+                continue
+            lit = light and hash2(sp["cx"] // D, n, 67) > 0.45
+            if lit:
+                for yy in range(wy - D, wy + 6 * D):
+                    for xx in range(sx - D, sx + 2 * D):
+                        _over(img, xx, yy, light, 40)
+            for yy in range(wy, wy + 5 * D):
+                for xx in range(sx, sx + D):
+                    _over(img, xx, yy, light if lit else seam, 230 if lit else 170)
+    # Bridges: open sky under each, a lit deck and a dark underside.
+    for span in (t for t in things if t["form"] == "span"):
+        deck_y = RIDGE_BASE - int(round(span["deck"]))
+        for x, v in span["under"].items():
+            if abs(far_h[x % BG_W] - span["deck"]) > 0.5:
+                continue
+            under_y = RIDGE_BASE - int(round(v))
+            solid_y = RIDGE_BASE - int(round(span["solid"][x]))
+            for y in range(deck_y + 1, min(under_y, solid_y)):
+                _over(img, x, y, seam, 70)
+            for th in range(1, D + 1):
+                _over(img, x, deck_y + th, rim, 70)
+            if solid_y - under_y > 2 * D:
+                for y in range(under_y, solid_y):
+                    put(img, x, y, CLEAR)
+                for th in range(1, D + 1):
+                    _over(img, x, under_y - th, seam, 170)
+                put(img, x, solid_y, c(rim, RIDGE_RIM_A))
+
+
+def _ridge_detail(img, zone, far_h, near_tops, rng, houses=None, ground=None):
     """The zone's distant detail in the far plane, between its crest and the mist."""
     kind = RIDGE_KIND[zone]
     body, rim = RIDGE_COLOR[zone]
@@ -3397,30 +3623,7 @@ def _ridge_detail(img, zone, far_h, near_tops, rng, houses=None):
         _town_detail(img, houses or [], far_h, far_tops, near_tops, rim, seam, light)
         return
     if kind == "spire":
-        # Each spire: its west wall lit, its east edge in shadow, and one or two
-        # slit windows high in it, some lit; no rows of windows, which are the town's.
-        edges = [x for x in range(BG_W) if abs(far_h[x] - far_h[x - 1]) > 3 * D]
-        for i, x0 in enumerate(edges):
-            x1 = edges[(i + 1) % len(edges)] + (BG_W if i + 1 == len(edges) else 0)
-            if far_h[x0] < far_h[x0 - 1]:
-                for x in (x0 - 1, x0 - 2):
-                    for y in range(far_tops[x % BG_W] + D, near_tops[x % BG_W] - 10 * D):
-                        _over(img, x, y, seam, 150)
-                continue
-            if x1 - x0 < 5 * D or far_h[(x0 + x1) // 2 % BG_W] < 24 * D:
-                continue
-            for x in range(x0, x0 + D):
-                for y in range(far_tops[x % BG_W] + D, near_tops[x % BG_W] - 10 * D):
-                    _over(img, x, y, rim, 72)
-            cx = (x0 + x1) // 2 - D // 2
-            top = max(far_tops[(x0 + k) % BG_W] for k in range(x1 - x0))
-            for k, wy in enumerate((top + 8 * D, top + 22 * D)):
-                if wy + 5 * D >= near_tops[cx % BG_W] - 12 * D or (k and hash2(cx // D, 7, 61) < 0.5):
-                    continue
-                lit = light and hash2(cx // D, k, 67) > 0.4
-                for yy in range(wy, wy + 5 * D):
-                    for xx in range(cx, cx + D):
-                        _over(img, xx, yy, light if lit else seam, 230 if lit else 170)
+        _spire_detail(img, houses or [], ground, far_h, far_tops, near_tops, rim, seam, light)
         return
     if kind == "crag":
         # Strata: short broken ledges slanting through the rock, each a dark
@@ -3469,19 +3672,24 @@ def ridge(zone):
     img = Image.new("RGBA", (BG_W, BG_H), CLEAR)
     body, rim = RIDGE_COLOR[zone]
     rng = random.Random(sum(ord(ch) for ch in zone) + 1300)
-    houses = []
-    h = _ridge_profile(RIDGE_KIND[zone], rng, houses)
+    houses, ground = [], []
+    h = _ridge_profile(RIDGE_KIND[zone], rng, houses, ground)
     faces = RIDGE_KIND[zone] != "roof"  # a roofline lights its walls, not its slopes
     _ridge_plane(img, h, RIDGE_BASE, body, rim, RIDGE_A, faces)
     # The nearer crest, of the same material and lower, and its own seed.
     near_rng = random.Random(sum(ord(ch) for ch in zone) + 2600)
-    near = [v * RIDGE_NEAR_SCALE for v in _ridge_profile(RIDGE_KIND[zone], near_rng)]
+    near_ground = []
+    near = [v * RIDGE_NEAR_SCALE for v in _ridge_profile(RIDGE_KIND[zone], near_rng, None, near_ground)]
     near_base = RIDGE_BASE + RIDGE_NEAR_DROP
     near_tops = [near_base - int(round(v)) for v in near]
-    _ridge_detail(img, zone, h, near_tops, near_rng, houses)
+    # The mist lies on the near plane's crest; under a row of spires, on the ground
+    # they stand on (12.98), or every near spire would wear a pale cap of it.
+    spires = RIDGE_KIND[zone] == "spire"
+    mist_tops = [near_base - int(round(v * RIDGE_NEAR_SCALE)) for v in near_ground] if spires else near_tops
+    _ridge_detail(img, zone, h, mist_tops, near_rng, houses, ground)
     # Valley mist over the far plane's foot, thinning upward from the near crest.
     for x in range(BG_W):
-        y = near_tops[x]
+        y = mist_tops[x]
         for band, alpha in zip(RIDGE_MIST, RIDGE_MIST_A):
             for yy in range(max(0, y - band), y):
                 under = img.getpixel((x, yy))
@@ -3489,6 +3697,13 @@ def ridge(zone):
                     img.putpixel((x, yy), blend(under, c(rim), alpha))
             y -= band
     _ridge_plane(img, near, near_base, _ridge_shade(body), body, 255, faces)
+    if spires:
+        # A near spire's west wall catches the light down to the ground it stands on.
+        for x in range(BG_W):
+            if near[x] - near[x - 1] > 3 * D:
+                for k in range(D):
+                    for y in range(near_tops[(x + k) % BG_W] + 1, mist_tops[(x + k) % BG_W]):
+                        _over(img, x + k, y, body, SPIRE_NEAR_LIT_A)
     return img
 
 
