@@ -43,6 +43,7 @@ var _grates := {}
 var _secret_cells := {}
 var _deep_shade: DeepShade
 var _soffit_shade: SoffitShade
+var _top_lip: TopLip
 ## Time-locked water cells (legend `f`), gathered into Waterfalls after the grid.
 var _falls := {}
 ## Wrong-gravity cells (legend `v`), gathered into GravityDrifts after the grid.
@@ -205,6 +206,13 @@ func build(text: String) -> void:
 	tiles.name = "Tiles"
 	add_child(tiles)
 
+	# The cap grows past its tile: hummocks and drapes (design bible 12.103). Added
+	# here, so it lies under the room's light and every actor; set up once the
+	# ground is known.
+	_top_lip = TopLip.new()
+	_top_lip.name = "TopLip"
+	add_child(_top_lip)
+
 	# Emissive light pools from the room's fixed sources, drawn just over the raw
 	# tiles and under every actor (design bible 12.10). Added here, before the
 	# sources and the decor, so it sits beneath them; it gathers them once the
@@ -290,6 +298,8 @@ func build(text: String) -> void:
 	decor.build(id, zone, grid, no_decor)
 	# The decor's candle and fungus glows pool their light onto the floor too.
 	room_light.decor = decor
+
+	_grow_lip()
 
 	# Ambient-occlusion rim shading where solid edges meet open air.
 	var shade := EdgeShade.new()
@@ -532,6 +542,8 @@ func tear_floor(col_from: int, col_to: int, row_from: int, row_to: int) -> void:
 		_deep_shade.setup(_deep_solids(), size_tiles, {}, _secret_cells)
 	if _soffit_shade != null:
 		_shade_soffits()
+	if _top_lip != null:
+		_grow_lip()
 	# The ground around the pit gets new edges.
 	for x in range(col_from - 3, col_to + 4):
 		for y in range(row_from - 3, row_to + 4):
@@ -615,6 +627,13 @@ func _plain_slopes() -> Dictionary:
 		if not haunches.has(c):
 			out[c] = true
 	return out
+
+
+## The lip takes no secret's cover and no ground under water.
+func _grow_lip() -> void:
+	var skip := _secret_cells.duplicate()
+	skip.merge(_water)
+	_top_lip.setup(zone, _solid_look, size_tiles, _slope_cells, skip)
 
 
 func _shade_soffits() -> void:
