@@ -42,6 +42,7 @@ var _planks := {}
 var _grates := {}
 var _secret_cells := {}
 var _deep_shade: DeepShade
+var _soffit_shade: SoffitShade
 ## Time-locked water cells (legend `f`), gathered into Waterfalls after the grid.
 var _falls := {}
 ## Wrong-gravity cells (legend `v`), gathered into GravityDrifts after the grid.
@@ -296,6 +297,17 @@ func build(text: String) -> void:
 	add_child(shade)
 	shade.setup(_solid_look, size_tiles, _haunch_cells())
 
+	# Mass that hangs over open air is in shadow (design bible 12.102).
+	_soffit_shade = SoffitShade.new()
+	_soffit_shade.name = "SoffitShade"
+	add_child(_soffit_shade)
+	_shade_soffits()
+	if secrets != null and not _secret_cells.is_empty():
+		var under := SoffitShade.new()
+		under.name = "SoffitShade"
+		secrets.add_child(under)
+		under.setup(_solid_look, size_tiles, _haunch_cells(), _plain_slopes(), _secret_cells)
+
 	# The interior of solid mass falls off into darkness (design bible 12.38). A
 	# second shade on the secret layer fades with the fake wall.
 	_deep_shade = DeepShade.new()
@@ -518,6 +530,8 @@ func tear_floor(col_from: int, col_to: int, row_from: int, row_to: int) -> void:
 			_spawn(Spikes.new(), Vector2((x + 0.5) * TILE, below.y * TILE))
 	if _deep_shade != null:
 		_deep_shade.setup(_deep_solids(), size_tiles, {}, _secret_cells)
+	if _soffit_shade != null:
+		_shade_soffits()
 	# The ground around the pit gets new edges.
 	for x in range(col_from - 3, col_to + 4):
 		for y in range(row_from - 3, row_to + 4):
@@ -590,6 +604,21 @@ func _haunch_cells() -> Dictionary:
 		if TilesetFactory.is_haunch(coords):
 			out[c] = coords == TilesetFactory.HAUNCH_WEST
 	return out
+
+
+## The half-open cells that are not haunches: walking slopes, which the soffit
+## shade leaves alone.
+func _plain_slopes() -> Dictionary:
+	var out := {}
+	var haunches := _haunch_cells()
+	for c: Vector2i in _slope_cells:
+		if not haunches.has(c):
+			out[c] = true
+	return out
+
+
+func _shade_soffits() -> void:
+	_soffit_shade.setup(_solid_look, size_tiles, _haunch_cells(), _plain_slopes(), {}, _secret_cells)
 
 
 ## The cells the deep shade treats as solid: the ground look, less the slopes
