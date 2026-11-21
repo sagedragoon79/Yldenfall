@@ -64,7 +64,7 @@ opening. Not zoomed: nothing was redrawn, only laid out.
 
 ## Tests
 
-`tests/test_ceiling_forms.gd` (five tests, 149 checks). Mutation-checked by putting back the
+`tests/test_ceiling_forms.gd` (five tests). Mutation-checked by putting back the
 three rooms as they were:
 
 | Test | Result with the old rooms |
@@ -77,7 +77,7 @@ three rooms as they were:
 The rooms' older tests still pass (12.74, 12.76, 12.77, 12.78: six heights, the crown, two
 spurs, the knots, the voussoir, no square inner corner, 25 haunches or more).
 
-Full suite: SUITE_LINE
+Full suite: 32,859 checks passed, 0 failed (pass 627: 32,664).
 
 ## Not done
 
