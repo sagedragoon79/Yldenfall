@@ -24,7 +24,7 @@ const LOOKS := {
 	"gym": {"kind": "trunk", "out": "120f19", "dark": "432d23", "mid": "6e5135", "lit": "9c7f44", "band": "cb8d16", "band_lit": "f0c02e", "iron": "4a465d", "iron_lit": "645e82", "glow": "edce6e"},
 	"trials": {"kind": "trunk", "out": "120f19", "dark": "432d23", "mid": "6e5135", "lit": "9c7f44", "band": "cb8d16", "band_lit": "f0c02e", "iron": "4a465d", "iron_lit": "645e82", "glow": "edce6e"},
 	"heartwood": {"kind": "coffer", "out": "1c0d0f", "dark": "48201e", "mid": "783c2b", "lit": "aa6336", "band": "cb8d16", "band_lit": "f0c02e", "iron": "542512", "iron_lit": "8d4e16", "glow": "f0c02e"},
-	"boughs": {"kind": "hamper", "out": "121613", "dark": "6e5135", "mid": "9c7f44", "lit": "ccbe8e", "band": "2b782c", "band_lit": "49aa36", "iron": "1e4825", "iron_lit": "2b782c", "glow": "edce6e"},
+	"boughs": {"kind": "hamper", "out": "121613", "dark": "6e5135", "mid": "9c7f44", "lit": "ccbe8e", "band": "2b782c", "band_lit": "49aa36", "iron": "1e4825", "iron_lit": "2b782c", "glow": "f7f1de"},
 	"haar": {"kind": "sea_chest", "out": "181111", "dark": "58544c", "mid": "797767", "lit": "989885", "band": "4f5c47", "band_lit": "728061", "iron": "aa9173", "iron_lit": "d6cec2", "glow": "d6cec2"},
 	"hearthroot": {"kind": "strongbox", "out": "131217", "dark": "2f2c3a", "mid": "4a465d", "lit": "645e82", "band": "8d4e16", "band_lit": "cb8d16", "iron": "2f2c3a", "iron_lit": "867ba2", "glow": "f0c02e"},
 	"sunken": {"kind": "strongbox", "out": "161413", "dark": "363330", "mid": "58544c", "lit": "797767", "band": "2b5278", "band_lit": "3677aa", "iron": "363330", "iron_lit": "989885", "glow": "84cbd6"},
@@ -50,6 +50,8 @@ var zone := ""
 var _open := false
 var _parts_open := -1
 var _parts: Array = []
+var _rim: Array = []
+var _spots: Array = []
 
 
 func _ready() -> void:
@@ -307,20 +309,45 @@ static func parts(look: Dictionary, open: bool) -> Array:
 const KEYHOLE := Rect2(-1, -23, 2, 3)
 
 
+## How far the halo behind a closed chest reaches, in pixels.
+const HALO_RADIUS := 22.0
+## How many spots along the lid glint in turn.
+const GLINTS := 3
+
+
+## The top half-pixel of every column of the closed chest: where its accent
+## rims it (12.106).
+static func rim(look: Dictionary) -> Array:
+	return Standout.top_cells(parts(look, false))
+
+
+## A chest stands out until it is opened: the halo, the rim and the glint all
+## go with the gold.
+func stands_out() -> bool:
+	return not _open
+
+
 func _draw() -> void:
 	var look := look_for(zone)
 	var glow := Color(String(look["glow"]))
-	if not _open:
-		draw_circle(Vector2(0, -8), 13.0 + sin(t * 3.0), Color(glow, 0.10))
+	if stands_out():
+		Standout.draw_halo(self, Vector2(0, -9), HALO_RADIUS, glow, t)
 	var key := 1 if _open else 0
 	if key != _parts_open:
 		_parts_open = key
 		_parts = parts(look, _open)
+		_rim = rim(look)
+		_spots = Standout.glint_spots(_rim, GLINTS)
 	for q: Array in _parts:
 		_px(q[0], q[1], q[2], q[3], Color(String(q[4])))
-	if not _open:
+	if stands_out():
+		for c: Vector2i in _rim:
+			_px(c.x, c.y, 1, 1, glow)
 		var k := 0.6 + 0.4 * sin(t * 4.0)
 		_px(int(KEYHOLE.position.x), int(KEYHOLE.position.y), int(KEYHOLE.size.x), int(KEYHOLE.size.y), Color(glow, k))
+		var g := Standout.glint_at(t, _spots.size())
+		if int(g[0]) >= 0:
+			Standout.draw_glint(self, Vector2(_spots[int(g[0])]) * 0.5, int(g[1]))
 	draw_prompt()
 
 

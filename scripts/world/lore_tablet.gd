@@ -198,6 +198,20 @@ static func profile(shape: String) -> Dictionary:
 	return cols
 
 
+## How far the halo behind a stele reaches, in pixels, from the panel's middle.
+const HALO_RADIUS := 20.0
+
+
+## The outline pixel over every column of a shape: where the stele's inlay
+## color rims it (pass 630, bible 12.106).
+static func rim(shape: String) -> Array:
+	var cols := profile(shape)
+	var rects: Array = []
+	for x: int in cols:
+		rects.append([x, int(cols[x][0]) - 1, 1, 1])
+	return Standout.top_cells(rects)
+
+
 func _px(x: float, y: float, w: float, h: float, hex: String) -> void:
 	draw_rect(Rect2(x, y, w, h), Color(hex))
 
@@ -214,6 +228,8 @@ func _draw() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = _runes_key.hash()
 	var panel := FACE.grow(1.0)
+	# The halo behind the stone, in the color of its inlay (12.106).
+	Standout.draw_halo(self, FACE.get_center(), HALO_RADIUS, Color(String(look["glyph"])), t)
 	# The plinth: a low, wider block on the ground line, lit along its top.
 	_px(PLINTH.position.x - 1, PLINTH.position.y - 1, PLINTH.size.x + 2, PLINTH.size.y + 1, look["out"])
 	_px(PLINTH.position.x, PLINTH.position.y, PLINTH.size.x, PLINTH.size.y, look["dark"])
@@ -222,6 +238,9 @@ func _draw() -> void:
 	for x: int in xs:
 		var c: Array = cols[x]
 		_px(x - 1, c[0] - 1, 3, c[1] - c[0] + 1, look["out"])
+	# The rim: the outline over each column's top takes the inlay's color.
+	for c: Vector2i in rim(shape):
+		_px(c.x, c.y, 1, 1, look["glyph"])
 	# The stone: mid, lit down the left edge and along each column's top,
 	# shadowed down the right edge.
 	for x: int in xs:
