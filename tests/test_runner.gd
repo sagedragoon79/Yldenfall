@@ -49,6 +49,7 @@ const SUITES := [
 	preload("res://tests/test_storm_ledge.gd"),
 	preload("res://tests/test_canopy_bridge.gd"),
 	preload("res://tests/test_haunches.gd"),
+	preload("res://tests/test_ceiling_forms.gd"),
 	preload("res://tests/test_stone_patches.gd"),
 	preload("res://tests/test_bough_bark.gd"),
 	preload("res://tests/test_spring_wall.gd"),

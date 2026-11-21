@@ -183,3 +183,6 @@ stack them diagonally for a taller ramp, with ground under each. Walkers turn at
   gate tile (veil, bramble, cracked stone, amber), or for the Featherstep Boots a rise of 5 rows or
   more over every footing within reach, with no wall to climb (a single jump tops out at 4.5),
   and prove it with a real jump in `tests/` (pass 219).
+- A ceiling is a few large shapes (design bible 12.104): its underside changes direction once in
+  seven columns at most, one form is plainly the largest, and no two forms of one size stand side
+  by side. Lay the haunches with `python3 tools/levels/haunches.py` after reshaping one.
