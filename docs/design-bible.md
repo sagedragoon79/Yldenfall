@@ -2583,7 +2583,7 @@ The pass 590 grade called the shop's "Jump: choose / Dash: leave" odd. It named 
 
 Judged by eye in the 21 shop pictures at 1x and 4x. The first caps were a pixel too short and clipped the top of their letters. Tests: `test_a_menu_names_its_keys_and_what_they_do` (`tests/test_shop_pictures.gd`). The title screen's save picker keeps its own line of words for now.
 
-### 12.80 Every zone houses its own chest (pass 595)
+### 12.80 Every zone houses its own chest (pass 595; a closed one is haloed, rimmed and glints since pass 630, 12.106)
 
 The pass 585 grade saw "the same chest on the same thin table ... in nearly every room": one brown domed trunk stood in all 68 chest cells, in colors from outside the master palette. `Chest` (`scripts/pickups/chest.gd`) now draws a chest in its room's zone look, the way each zone carves its own stele (12.31). Eight kinds:
 
@@ -2898,6 +2898,21 @@ The plan (12.30) is unchanged: which runs get posts, hangers or braces, and wher
 - **Not done here.** The board itself is still the zone's one plank tile, 3 px deep and ruled straight (12.20): a log's belly, a girder's depth or broken board ends would need the tile or a layer over it. Hangers and wall braces are as they were. The Evercrown's posts are still squared, in tissue.
 
 Judged by eye at 1x and 2x in `heartwood/root_shrine` (the sawhorse), `tower/gear_pit` (the deck overhanging its columns over the spikes), `haar/lampwick_causeway` (pile heads above three boardwalks), `boughs/canopy_bridge` (forked limbs at both ends of the bridge) and `vorrhallow/drowned_market` (an arch between two stone piers). The Spires', the Sunken Spring's and the Trials' posts were not looked at in a room: the two rooms shot there (`spires/broken_shrine`, `sunken/drowned_aqueduct`) hang or brace every run. `tests/test_plank_supports.gd` checks that every zone takes a known post and every post is used, that the six graded zones each build their own, each post's signature (the lean and the lashing; the fork; the head above the deck; the H-section, gusset and rivets; coursed stone with no timber), that no post reaches past its board's end or into the floor, that no two draw the same post, the set-in columns and the frame that follows raked legs.
+
+
+### 12.106 What you can still use catches the light (pass 630)
+
+The pass 625 grade: "chests, signs and pickups do not separate from the scenery" (the flooded hall, the aqueduct, the fog rooms). A zone's chest and its stele are built from the zone's own stone and timber (12.31, 12.80), so their body tones are the wall's: the Sunken Spring's strongbox and runestone are the grey of the piers behind them. The answer is not a new color per prop. `Standout` (`scripts/world/standout.gd`) gives a thing three marks in the accent it already has (a chest's lock light, a stele's inlay):
+
+- **A halo** behind it: three flat discs in the accent, 9, 10 and 14 percent, one on the next, breathing by a pixel. Stepped, never dithered, and faint at its edge so it reads as light and not as a patch of fog. 22 px round a chest, 20 px round a stele's panel.
+- **A rim**: the top of the silhouette, where the dark outline was, is drawn in the accent. Every column of a closed chest and of a stele has it (`Chest.rim`, `LoreTablet.rim`). The accent must read apart from each tone of the body, by a quarter more light or by far more saturation (`Standout.separates`): Vorrhallow's magenta is no lighter than its stone, and is the one strong color in the hall. The High Boughs hamper's lock went from pale yellow to the palette's warm white for this, since yellow on pale wicker did not.
+- **A glint**: a one-pixel plus sign in the palette's warm white that opens from 3 px to 5 px across and shuts again in half a second, at one of three spots on a chest's lid in turn (middle, left, right), one at a time, open about half the time.
+
+A closed chest carries all three. An opened chest carries none, so what is left to do in a room reads from across it. A stele carries the halo and the rim; it has no glint, since a stele is read and not taken, and the glint is the mark of treasure.
+
+- **Not done here.** Item pickups already carry a light and sparkle of their own and were left. Nothing here lifts a chest out of the Haar's fog, which is drawn over the play layer and stays a held item; the rim shows through it faintly. Coins and drops are as they were. A stele does not go dull once read, since reading is not recorded.
+
+Judged by eye at 1x and 2x in `sunken/drowned_aqueduct` (the strongbox and the runestone on the east ledge, the grade's frame), `vorrhallow/flooded_hall` (the chest on the mound), `boughs/leaf_landing` (the hamper and two steles against leaves) and `heartwood/root_shrine`. `tests/test_standout.gd` checks the halo's steps, that every zone's chest is rimmed along its whole top in a tone that reads apart from its body, that an opened chest goes dull, that one glint is open at a time and visits every spot, that the spots sit on the rim, and that every stele shape is rimmed on its outline in an inlay that reads apart from its stone.
 
 ## 13. Asset Production Plan
 
