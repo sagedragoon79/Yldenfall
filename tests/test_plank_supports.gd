@@ -287,11 +287,13 @@ func test_plank_each_zone_family_frames_its_own_way() -> void:
 		if not by_style.has(style):
 			by_style[style] = zone
 	check(by_style.size() == PlankSupports.FRAMES.size(), "every style is used (%s)" % [by_style.keys()])
-	var graded := ["hearthroot", "heartwood", "tower", "haar"].map(func(z: String) -> String: return PlankSupports.LOOKS[z].frame)
+	# The Boughs and the Spires too since pass 625 (bible 12.101): the pass 620 grade saw
+	# the canopy bridge and the root shrine on one lashed scaffold.
+	var graded := ["hearthroot", "heartwood", "tower", "haar", "boughs", "spires"].map(func(z: String) -> String: return PlankSupports.LOOKS[z].frame)
 	var distinct := {}
 	for s: String in graded:
 		distinct[s] = true
-	check(distinct.size() == 4, "the town, the woods, the Tower and the marsh each build their own (%s)" % [graded])
+	check(distinct.size() == 6, "the town, the woods, the Tower, the marsh, the Boughs and the Spires each build their own (%s)" % [graded])
 	var left := 100.0
 	var right := 260.0
 	var top := 50.0
@@ -324,6 +326,28 @@ func test_plank_each_zone_family_frames_its_own_way() -> void:
 				check(stone.size() > 100 and key.size() == 1 and absf(key[0][0].get_center().x - (left + right) * 0.5) < 1.0,
 					"a stone arch with its keystone at the crown")
 				check(beams.is_empty() and struts.is_empty(), "and no timber")
+			"forked":
+				var wraps := parts.filter(func(p: Array) -> bool: return p[0].size == Vector2(3.0, 0.5))
+				check(beams.is_empty() and struts.size() > 100, "forked limbs: no rail, only limbs (%d)" % struts.size())
+				check(bolts.size() >= 8 and wraps.size() >= 12, "still in leaf, and bound with vine at each fork (%d leaves, %d wraps)" % [bolts.size(), wraps.size()])
+				# The limbs reach the board wider than the trunks stand on the floor.
+				var high := struts.filter(func(p: Array) -> bool: return p[0].position.y < top + 6.0)
+				var low := struts.filter(func(p: Array) -> bool: return p[0].end.y > bottom - 4.0)
+				var hx: Array = high.map(func(p: Array) -> float: return p[0].position.x)
+				var lx: Array = low.map(func(p: Array) -> float: return p[0].position.x)
+				check(hx.max() - hx.min() > lx.max() - lx.min() + 20.0, "the limbs spread wider under the board than the trunks stand on the floor")
+			"pier":
+				var f: Array = look.foot
+				var stone := parts.filter(func(p: Array) -> bool: return p[1] == f[1])
+				var timber := parts.filter(func(p: Array) -> bool: return p[1] in w)
+				check(struts.is_empty() and beams.is_empty() and timber.is_empty() and bolts.is_empty(), "stone piers: no timber and no bolts between the posts")
+				var x0 := left + PlankSupports.POST_W * 0.5
+				var x1 := right - PlankSupports.POST_W * 0.5
+				var corbels := stone.filter(func(p: Array) -> bool: return p[0].size.y == 3.0 and (is_equal_approx(p[0].position.x, x0) or is_equal_approx(p[0].end.x, x1)))
+				var reach: Array = corbels.map(func(p: Array) -> float: return p[0].size.x)
+				check(corbels.size() == 6 and reach.max() == 12.0 and reach.min() == 4.0, "corbels step out under both ends of the board (%s)" % [reach])
+				var shafts := stone.filter(func(p: Array) -> bool: return p[0].size.x == 6.0)
+				check(shafts.size() >= 18, "and a coursed pier stands between bays (%d courses)" % shafts.size())
 			"web":
 				var strand := parts.filter(func(p: Array) -> bool: return p[1] == w[1])
 				var mids := strand.filter(func(p: Array) -> bool: return absf(p[0].get_center().x - (left + right) * 0.5) < 4.0)

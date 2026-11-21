@@ -328,6 +328,7 @@ func _enter(room_id: String) -> void:
 	room = next
 	add_child(room)
 	backdrop.set_zone(room.zone)
+	backdrop.set_room(room.id)
 	# The whole-scene colour grade follows the zone (design bible 12.9); on the very
 	# first room the tint is not built yet (the camera block below seeds it instead).
 	if time_tint != null:

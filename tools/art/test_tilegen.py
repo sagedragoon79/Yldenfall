@@ -2027,5 +2027,67 @@ def test_the_shipped_vorrhallow_backdrops_are_fresh():
         assert shipped.tobytes() == painter().convert("RGBA").tobytes(), f"assets/bg/{name}.png is stale"
 
 
+def _island_runs(cells, share):
+    """The separate runs of columns in which an island hangs past `share` of its
+    deepest point, left to right, as (first column, last column)."""
+    y0 = min(y for _, y in cells)
+    deepest = max(y for _, y in cells) - y0 + 1
+    bottoms = {}
+    for x, y in cells:
+        bottoms[x] = max(bottoms.get(x, 0), y - y0 + 1)
+    runs = []
+    for x in sorted(bottoms):
+        if bottoms[x] >= deepest * share:
+            if runs and runs[-1][1] == x - 1:
+                runs[-1][1] = x
+            else:
+                runs.append([x, x])
+    return runs
+
+
+def test_a_sky_island_comes_in_four_builds():
+    # 12.101: the pass 620 grade named "floating islands" among the copied props.
+    # Every island was a wedge. A shelf is shallow, a fang hangs on one tooth deeper
+    # than a wedge of its width, a twin hangs two points apart.
+    assert set(tg.ISLAND_HABITS) == {"wedge", "shelf", "fang", "twin"}
+    for seed in range(12):
+        shape = {}
+        for habit in tg.ISLAND_HABITS:
+            depth = int(160 * 0.75 * tg.ISLAND_DEPTH[habit])
+            cells = tg.island_cells(400, 300, 160, depth, seed, habit)
+            xs = [x for x, _ in cells]
+            ys = [y for _, y in cells]
+            shape[habit] = (max(xs) - min(xs) + 1, max(ys) - min(ys) + 1, cells)
+        w, h, cells = shape["shelf"]
+        assert h <= w * 0.4, f"seed {seed}: a shelf is a slab ({w} by {h})"
+        assert len(_island_runs(cells, 0.55)) >= 2 or _island_runs(cells, 0.55)[0][1] - _island_runs(cells, 0.55)[0][0] > w * 0.4,             f"seed {seed}: a shelf has no one leader"
+        w, h, cells = shape["fang"]
+        runs = _island_runs(cells, 0.6)
+        assert h > shape["wedge"][1] and len(runs) == 1 and runs[0][1] - runs[0][0] < w * 0.35,             f"seed {seed}: a fang hangs on one long tooth ({w} by {h}, {runs})"
+        w, h, cells = shape["twin"]
+        runs = _island_runs(cells, 0.62)
+        assert len(runs) == 2 and runs[1][0] - runs[0][1] > w * 0.15, f"seed {seed}: a twin hangs two points apart ({runs})"
+        w, h, cells = shape["wedge"]
+        assert len(_island_runs(cells, 0.8)) == 1, f"seed {seed}: a wedge has one leader"
+        assert h > shape["shelf"][1] * 1.5, f"seed {seed}: and hangs deeper than a shelf"
+
+
+def test_the_spires_sky_holds_every_build_of_island():
+    import random
+    for seed in range(20):
+        deal = tg.deal_habits(random.Random(seed), 6, tg.ISLAND_HABITS)
+        assert set(deal[:4]) == set(tg.ISLAND_HABITS) and all(a != b for a, b in zip(deal, deal[1:])), deal
+    tg.spires_mid()
+    habits = [isl[3] for isl in tg.SPIRES_ISLANDS]
+    assert len(habits) == 6 and set(habits) == set(tg.ISLAND_HABITS), f"the Spires' sky holds only {set(habits)}"
+    assert all(a != b for a, b in zip(habits, habits[1:] + habits[:1])), f"two islands side by side share a build, the wrap included ({habits})"
+
+
+def test_the_shipped_spires_islands_are_fresh():
+    from PIL import Image
+    shipped = Image.open(tg.BG / "spires_mid.png").convert("RGBA")
+    assert shipped.tobytes() == tg.spires_mid().convert("RGBA").tobytes(), "assets/bg/spires_mid.png is stale"
+
+
 if __name__ == "__main__":
     main()

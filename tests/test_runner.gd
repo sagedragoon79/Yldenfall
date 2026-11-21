@@ -70,6 +70,7 @@ const SUITES := [
 	preload("res://tests/test_tier_specks.gd"),
 	preload("res://tests/test_tier_blends.gd"),
 	preload("res://tests/test_decor_copies.gd"),
+	preload("res://tests/test_backdrop_room_shift.gd"),
 ]
 
 var _passed := 0
