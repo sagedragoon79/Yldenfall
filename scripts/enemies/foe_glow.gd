@@ -7,9 +7,15 @@ extends Node2D
 ##
 ## The crystal is a light, as the stillglass on the floor is: it throws a glow
 ## onto the dark behind him, and his body stands against it as a silhouette. The
-## glow is drawn behind the foe, additive, in steps through a 4 x 4 ordered
-## dither in 2-pixel blocks (the grain of the fire seal's halo, 12.40), never a
-## smooth gradient. Nothing is drawn over the figure: this is not a rim light.
+## glow is drawn behind the foe, additive. Nothing is drawn over the figure:
+## this is not a rim light.
+##
+## It is a soft light (12.108). Until pass 632 it fell off in four tones through
+## an ordered dither, and the grade read that as "a square of magenta dither
+## round the foe": a checkerboard a quarter of the peak deep. It now falls off
+## in LEVELS fine tones, still mixed through the dither in GRAIN blocks, so no
+## two neighbouring blocks differ by more than MAX_STEP of the brightest glow
+## and the pattern is under what the eye picks out.
 ##
 ## It breathes slowly at rest, swells while the foe winds up (the tell reads
 ## sooner), and goes out when the foe dies.
@@ -19,10 +25,12 @@ const PEAK := 0.44
 const PEAK_TELL := 0.6
 ## Dither block size (world px) and the tone steps from the centre to nothing.
 const GRAIN := 2
-const LEVELS := 4
+const LEVELS := 14
+## The most two neighbouring blocks may differ by, as alpha at PEAK_TELL.
+const MAX_STEP := 0.1
 ## The falloff's curve: above 1 the glow is bright at the crystal and thins out
 ## fast, so it lights a pocket behind the foe and not the hall.
-const CURVE := 1.15
+const CURVE := 1.5
 ## How deep the resting glow breathes (a share of PEAK) and how fast (rad/s).
 const BREATH := 0.12
 const BREATH_RATE := 1.7
@@ -55,7 +63,7 @@ func _ready() -> void:
 
 ## The glow's step (0 nothing, LEVELS the centre) at `x`, `y` px from its
 ## centre: the falloff, read once per GRAIN block and dithered between steps.
-## The inmost fifth of its reach is the top step whole, so the centre is solid.
+## The very centre is the top step whole.
 static func level_at(x: int, y: int, half: Vector2) -> int:
 	var bx := floori(float(x) / GRAIN)
 	var by := floori(float(y) / GRAIN)
