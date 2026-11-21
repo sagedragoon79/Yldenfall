@@ -11,7 +11,8 @@ extends RefCounted
 ## then the two 45-degree slopes (design bible 6.1). Row 7 holds masonry variants
 ## (full-solid surface plus more MID/DEEP) that `ground()` scatters by cell so a
 ## large solid field stops reading as a 32 px grid (design bible 12.8). Row 8
-## holds the edge variants and row 9 the two haunches (the ceiling's slopes).
+## holds the edge variants and row 9 the two haunches (the ceiling's slopes),
+## then the blends between the tiers (design bible 12.99).
 ## Rows 10 to 12, where a zone has them, hold its patches of other stone.
 
 const TILE := 16
@@ -56,6 +57,14 @@ const SLOPE_WEST := Vector2i(7, 6)
 const HAUNCH_WEST := Vector2i(0, 9)
 const HAUNCH_EAST := Vector2i(1, 9)
 const HAUNCH_ROWS := 10
+## Blends between the tiers (row 9, cols 2 to 7; design bible 12.99): field
+## tiles in which each block stands in one of two neighbouring tiers. A cell of
+## a darker tier that touches the tier above draws one, so a tier ends block by
+## block and not along the tile grid. `BLEND_MID` lies between the surface and
+## MID, `BLEND_DEEP` between MID and DEEP. An atlas whose row 9 stops at the
+## haunches (or has no row 9) has none: see `has_blends`.
+const BLEND_MID: Array[Vector2i] = [Vector2i(2, 9), Vector2i(3, 9), Vector2i(4, 9)]
+const BLEND_DEEP: Array[Vector2i] = [Vector2i(5, 9), Vector2i(6, 9), Vector2i(7, 9)]
 ## Patches of other stone (rows 10 to 12, design bible 12.91): inside a wall, a
 ## stretch laid in courses of another height. Row 10 is the surface tier, 11 MID
 ## and 12 DEEP. Each row holds two variants of four tiles: no end joint, a joint
@@ -88,6 +97,7 @@ static var _masks: Array[int] = []
 static var _index := {}
 static var _cache := {}
 static var _edges := {}
+static var _blends := {}
 
 
 ## The 47 distinct reduced masks, ascending (tilegen.py builds the same list).
@@ -120,7 +130,9 @@ static func reduce_mask(m: int) -> int:
 ## Atlas coordinates of the ground tile for a neighbour mask. `depth` is how
 ## many tiles the cell is from open air (1 = touching it); deeper cells darken.
 ## With `edges` (a zone whose atlas has row 8), a straight edge scatters too.
-static func ground(mask: int, cell := Vector2i.ZERO, depth := 1, edges := false) -> Vector2i:
+## With `blend` (the cell touches the tier above, in a zone with blends), a
+## darker cell draws the blend of its tier and that one.
+static func ground(mask: int, cell := Vector2i.ZERO, depth := 1, edges := false, blend := false) -> Vector2i:
 	blob_masks()
 	var m := reduce_mask(mask)
 	if edges and m != FULL:
@@ -136,9 +148,9 @@ static func ground(mask: int, cell := Vector2i.ZERO, depth := 1, edges := false)
 		# darker MID/DEEP look; both now carry variants too.
 		var h := scatter(cell)
 		if depth >= 3:
-			return DEEP[h % DEEP.size()]
+			return BLEND_DEEP[h % BLEND_DEEP.size()] if blend else DEEP[h % DEEP.size()]
 		if depth >= 2:
-			return MID[h % MID.size()]
+			return BLEND_MID[h % BLEND_MID.size()] if blend else MID[h % MID.size()]
 		var k := h % (FULL_VARIANTS.size() + 1)
 		if k > 0:
 			return FULL_VARIANTS[k - 1]
@@ -269,6 +281,43 @@ static func has_haunches(zone: String) -> bool:
 	return tex.get_height() >= HAUNCH_ROWS * TILE * DENSITY
 
 
+## True if the zone's atlas carries the blends between the tiers (row 9, from
+## col 2): the first of them is painted.
+static func has_blends(zone: String) -> bool:
+	var path := TILES_DIR + zone + ".png"
+	if zone == "" or not ResourceLoader.exists(path):
+		path = TILES_DIR + FALLBACK_ZONE + ".png"
+	if not _blends.has(path):
+		var tex: Texture2D = load(path)
+		var found := false
+		if tex.get_height() >= HAUNCH_ROWS * TILE * DENSITY:
+			var at := (BLEND_MID[0] * 2 + Vector2i.ONE) * TILE * DENSITY / 2
+			found = tex.get_image().get_pixelv(at).a > 0.5
+		_blends[path] = found
+	return _blends[path]
+
+
+static func is_blend(coords: Vector2i) -> bool:
+	return coords in BLEND_MID or coords in BLEND_DEEP
+
+
+## The tier a field tile is drawn in: 1 (surface), 2 (MID) or 3 (DEEP), with a
+## blend half a tier above the darker of its two (1.5 and 2.5). 0 for any tile
+## that is not a darkened field tile, a blend or a patch.
+static func tier_of(coords: Vector2i) -> float:
+	if coords in MID:
+		return 2.0
+	if coords in DEEP:
+		return 3.0
+	if coords in BLEND_MID:
+		return 1.5
+	if coords in BLEND_DEEP:
+		return 2.5
+	if is_patch(coords):
+		return float(coords.y - PATCH_ROW + 1)
+	return 0.0
+
+
 static func is_ground(coords: Vector2i) -> bool:
 	return coords != ONE_WAY and coords != AMBER and not is_slope(coords)
 
@@ -323,6 +372,9 @@ static func build(zone := "", with_collision := true) -> TileSet:
 		all.append_array(EAST_VARIANTS)
 	if has_haunches(zone):
 		all.append_array([HAUNCH_WEST, HAUNCH_EAST])
+	if has_blends(zone):
+		all.append_array(BLEND_MID)
+		all.append_array(BLEND_DEEP)
 	if has_patches(zone):
 		for row in range(PATCH_ROW, PATCH_ROWS):
 			for col in COLUMNS:

@@ -1905,5 +1905,65 @@ def test_the_shipped_atlases_carry_their_patches():
         assert shipped.crop(box).tobytes() == fresh.crop(box).tobytes(), f"assets/tiles/{zone}.png is stale"
 
 
+def test_a_blend_holds_two_tiers_block_by_block():
+    # Bible 12.99: a blend is a field tile whose blocks stand in one of two
+    # neighbouring tiers, half the tile each, in the whole tile and in each half.
+    T = tg.T
+    names = {v[:3]: k for k, v in tg.PAL.items()}
+    for zone in tg.ZONES:
+        if zone in tg.PIXELLAB_SETS:
+            continue
+        taken = []
+        for v in range(tg.BLEND_VARIANTS):
+            seed = tg.BLEND_SEED + v
+            plain = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+            tg.paint_tile(plain, 0, 0, 255, zone, seed)
+            blocks = tg.tile_blocks(plain, 0, 0, seed)
+            assert len(blocks) == T * T, f"{zone}: every pixel belongs to a block"
+            assert len(set(blocks.values())) >= 2, f"{zone}: a field tile is one block"
+            img = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+            dark = tg.paint_blend(img, 0, 0, zone, seed, 0, taken)
+            taken.append(dark)
+            # A block is dark or it is not: none is cut by the choice.
+            for lab in set(blocks.values()):
+                cells = {q for q, b in blocks.items() if b == lab}
+                assert cells <= dark or not cells & dark, f"{zone}: a block stands in both tiers"
+            # A dark pixel is one step down its ramp; the rest are untouched.
+            for (x, y) in blocks:
+                was, now = plain.getpixel((x, y)), img.getpixel((x, y))
+                if (x, y) not in dark:
+                    assert was == now, f"{zone}: a light block changed"
+                    continue
+                name = names.get(was[:3])
+                if name is None:
+                    continue
+                ramp, i = name.rsplit("-", 1)
+                want = tg.c("night-0") if int(i) == 0 else tg.c(f"{ramp}-{int(i) - 1}")
+                assert now == want, f"{zone}: a dark block is not one step down"
+            h = T // 2
+            parts = {"tile": lambda q: True, "west": lambda q: q[0] < h, "east": lambda q: q[0] >= h,
+                     "upper": lambda q: q[1] < h, "lower": lambda q: q[1] >= h}
+            for name, inside in parts.items():
+                area = sum(1 for q in blocks if inside(q))
+                share = sum(1 for q in dark if inside(q)) / area
+                assert 0.1 <= share <= 0.9, f"{zone}: the {name} of blend {v} is {share:.2f} dark"
+        for a in range(len(taken)):
+            for b in range(a):
+                assert len(taken[a] ^ taken[b]) >= tg.BLEND_APART * T * T, f"{zone}: blends {a} and {b} are one tile"
+
+
+def test_the_shipped_atlases_carry_their_blends():
+    from PIL import Image
+    T = tg.T
+    for zone in tg.ZONES:
+        if zone in tg.PIXELLAB_SETS:
+            continue
+        shipped = Image.open(tg.TILES / f"{zone}.png").convert("RGBA")
+        fresh = Image.new("RGBA", (T * tg.COLS, 10 * T), tg.CLEAR)
+        tg.paint_blends(fresh, zone)
+        box = (tg.BLEND_COL * T, tg.BLEND_ROW * T, T * tg.COLS, (tg.BLEND_ROW + 1) * T)
+        assert shipped.crop(box).tobytes() == fresh.crop(box).tobytes(), f"assets/tiles/{zone}.png is stale"
+
+
 if __name__ == "__main__":
     main()

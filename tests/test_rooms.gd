@@ -1061,9 +1061,10 @@ func test_autotiles_match_their_neighbours() -> void:
 	var top_mask := TilesetFactory.FULL & ~(TilesetFactory.N | TilesetFactory.NE | TilesetFactory.NW)
 	check(floor_top == TilesetFactory.ground(top_mask) or floor_top in TilesetFactory.TOP_VARIANTS, "the floor's top row has a top edge (%s)" % floor_top)
 	var mid := room.tiles.get_cell_atlas_coords(Vector2i(10, 21))
-	check(mid in TilesetFactory.MID, "two tiles into the floor is darker (%s)" % mid)
+	# Each tier here is one row, so each row blends into the one above (bible 12.99).
+	check(mid in TilesetFactory.BLEND_MID, "two tiles into the floor is darker (%s)" % mid)
 	var deep := room.tiles.get_cell_atlas_coords(Vector2i(10, 22))
-	check(deep in TilesetFactory.DEEP, "three tiles in is darker still (%s)" % deep)
+	check(deep in TilesetFactory.BLEND_DEEP, "three tiles in is darker still (%s)" % deep)
 	check(room.is_solid_at(Vector2(10 * 16 + 8, 22 * 16 + 8)), "darker interior tiles are still solid")
 	room.queue_free()
 

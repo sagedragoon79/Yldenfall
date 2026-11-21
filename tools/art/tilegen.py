@@ -16,6 +16,8 @@ Tileset atlas (16 world px tiles at 2x render density, so 32 px each; 8 columns)
             darker interior tile (MID one shade, DEEP two). The factory picks one
             per cell by position, so adjacent same-mask cells draw a different
             pattern and the repeat unit no longer bands.
+  row 9:    the two haunches, then the blends between the tiers (bible 12.99):
+            3 field tiles whose blocks are surface or MID, 3 MID or DEEP.
 Backgrounds: <zone>_far.png, <zone>_ridge.png and <zone>_mid.png, 640x480, tile
 horizontally (far, a distant ridgeline, then the near parallax).
 
@@ -203,7 +205,7 @@ def drowned_block_is_worn(bx, row, seed):
     of the ramp and reads as a hole. The other 46 blob tiles are as they were."""
     if hash2(bx, row, seed) <= WORN_BLOCK:
         return False
-    if seed in DEEP_SEEDS:
+    if seed in DEEP_SEEDS or seed in BLEND_DEEP_SEEDS:
         return False
     field = seed == FULL_SEED or seed >= INTERIOR_SEED
     return not field or row % 2 == 1
@@ -535,7 +537,9 @@ def paint_drowned(img, ox, oy, seed, ramp):
     stillglass forcing their way through the joints of some blocks. The blocks
     share one body value; the odd one is worn a shade darker (WORN_BLOCK)."""
     bw, bh = 16 * D, 8 * D
-    tide = seed >= INTERIOR_SEED and hash2(seed, 7, 31) < TIDE_TILES
+    # A blend (12.99) carries none: its blocks stand in two tiers, and a stain
+    # line across both reads as a dashed rule.
+    tide = INTERIOR_SEED <= seed < BLEND_SEED and hash2(seed, 7, 31) < TIDE_TILES
     for y in range(T):
         row = y // bh
         for x in range(T):
@@ -1573,6 +1577,152 @@ def paint_patches(img, zone):
                     darken(img, ox, oy, tier)
 
 
+# Blends between the tiers (design bible 12.99, pass 623). A wall's tiers were
+# three flat values that met along the tile grid, a whole shade a step, so the
+# shade inside a wall was a stair of rectangles (independent grade, pass 620:
+# "large rectangular dark blotches and stair-stepped tone patches that read as
+# tile errors"). Row 9, cols 2 to 7, holds field tiles in which each block (a
+# brick, a plate of bark, a board: a stretch of body bounded by joints) stands
+# in one of two neighbouring tiers. The factory draws them where two tiers
+# meet, so a tier ends block by block, as stone weathers, and not on the grid.
+BLEND_ROW = 9
+BLEND_COL = 2
+BLEND_VARIANTS = 3
+BLEND_SEED = 231          # 231 to 233: surface and MID; 234 to 236: MID and DEEP
+# A pixel is a joint if it is this much darker than the tile's commonest color.
+BLEND_JOINT = 0.72
+# A block bigger than this share of the tile (wood with open grain, a plate with
+# no seam) is cut into blobs on a lattice of BLEND_CELL render px.
+BLEND_BIG = 0.3
+BLEND_CELL = 8
+# The seeded draws of dark blocks paint_blend chooses from.
+BLEND_TRIES = 400
+# How far from half a draw's dark share may stand, in the tile and in each half.
+BLEND_SLACK = 0.15
+# The least share of a tile's pixels by which two blends of a tier differ in tier.
+BLEND_APART = 0.2
+# The seeds whose blocks may reach the DEEP tier: no worn blocks (12.95).
+BLEND_DEEP_SEEDS = frozenset({234, 235, 236})
+
+
+def _lum3(p):
+    return 0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2]
+
+
+def _blend_blob(x, y, seed):
+    """True in the soft-edged blobs a big block is cut into: a value noise on a
+    lattice of BLEND_CELL render px, read a world pixel at a time."""
+    fx, fy = (x // D * D + D / 2) / BLEND_CELL, (y // D * D + D / 2) / BLEND_CELL
+    x0, y0 = math.floor(fx), math.floor(fy)
+    tx, ty = fx - x0, fy - y0
+    tx, ty = tx * tx * (3 - 2 * tx), ty * ty * (3 - 2 * ty)
+    a = hash2(x0, y0, seed) + (hash2(x0 + 1, y0, seed) - hash2(x0, y0, seed)) * tx
+    b = hash2(x0, y0 + 1, seed) + (hash2(x0 + 1, y0 + 1, seed) - hash2(x0, y0 + 1, seed)) * tx
+    return a + (b - a) * ty > 0.5
+
+
+def tile_blocks(img, ox, oy, seed):
+    """Labels a painted tile's blocks: {(x, y): label} for every pixel. A block
+    is a stretch of body joined edge to edge, bounded by the joints (pixels much
+    darker than the tile's commonest color); a joint pixel takes the label of
+    the block nearest it. A block bigger than BLEND_BIG of the tile is cut into
+    soft-edged blobs, so open grain and a plate with no seam break up too."""
+    px = {(x, y): img.getpixel((ox + x, oy + y)) for y in range(T) for x in range(T)}
+    counts = {}
+    for v in px.values():
+        counts[v] = counts.get(v, 0) + 1
+    body = _lum3(max(counts, key=counts.get))
+    joint = {k for k, v in px.items() if _lum3(v) < BLEND_JOINT * body}
+    label, n = {}, 0
+    for start in px:
+        if start in joint or start in label:
+            continue
+        stack, members = [start], []
+        label[start] = n
+        while stack:
+            x, y = stack.pop()
+            members.append((x, y))
+            for q in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                if q in px and q not in joint and q not in label:
+                    label[q] = n
+                    stack.append(q)
+        if len(members) > BLEND_BIG * T * T:
+            for (x, y) in members:
+                label[(x, y)] = (n, _blend_blob(x, y, seed + n))
+        n += 1
+    if not label:
+        return {k: 0 for k in px}
+    todo = set(joint)
+    while todo:                     # grow the blocks over the joints
+        grown = {}
+        for (x, y) in todo:
+            for q in ((x - 1, y), (x, y - 1), (x + 1, y), (x, y + 1)):
+                if q in label:
+                    grown[(x, y)] = label[q]
+                    break
+        if not grown:
+            for k in todo:
+                label[k] = 0
+            break
+        label.update(grown)
+        todo -= set(grown)
+    return label
+
+
+def paint_blend(img, ox, oy, zone, seed, steps, taken=()):
+    """A field tile whose blocks stand `steps` or `steps + 1` shades down, half
+    the tile's area each, chosen block by block. Returns the dark pixels;
+    ``taken``: those of the tier's other blends, which this one stands apart from."""
+    paint_tile(img, ox, oy, 255, zone, seed)
+    blocks = tile_blocks(img, ox, oy, seed)
+    # Each block's area in the whole tile and in its west, east, upper and lower
+    # halves. Of up to BLEND_TRIES seeded draws, the first whose dark blocks come
+    # within BLEND_SLACK of half of all five wins (or the nearest, if none
+    # does): a blend stands midway between its tiers, and no half of it is one
+    # tier, so a tier never ends on a line a tile long.
+    h = T // 2
+    area = {}
+    for (x, y), lab in blocks.items():
+        a = area.setdefault(lab, [0, 0, 0, 0, 0])
+        a[0] += 1
+        a[1 if x < h else 2] += 1
+        a[3 if y < h else 4] += 1
+    labels = sorted(area, key=repr)
+    total = [T * T, T * h, T * h, T * h, T * h]
+    best, dark, dark_cells = None, frozenset(), frozenset()
+    for k in range(BLEND_TRIES):
+        pick = frozenset(lab for i, lab in enumerate(labels) if hash2(i, k, seed + 17) > 0.5)
+        cells = frozenset(q for q, lab in blocks.items() if lab in pick)
+        if any(len(cells ^ t) < BLEND_APART * T * T for t in taken):
+            continue                # a stone of few blocks: not the same draw twice
+        score = max(abs(sum(area[lab][p] for lab in pick) / total[p] - 0.5) for p in range(5))
+        if best is None or score < best:
+            best, dark, dark_cells = score, pick, cells
+        if score <= BLEND_SLACK:    # near enough: the first such draw, so the
+            break                   # three blends of a kind are three tiles
+    names = {v[:3]: k for k, v in PAL.items()}
+    for (x, y), lab in blocks.items():
+        down = steps + (1 if lab in dark else 0)
+        px = img.getpixel((ox + x, oy + y))
+        name = names.get(px[:3])
+        if name is None or px[3] == 0 or down == 0:
+            continue
+        ramp, i = name.rsplit("-", 1)
+        j = int(i) - down
+        img.putpixel((ox + x, oy + y), c("night-0") if j < 0 else c(f"{ramp}-{j}"))
+    return dark_cells
+
+
+def paint_blends(img, zone):
+    """Row 9, cols 2 to 7: three blends of the surface and MID tiers, then three
+    of MID and DEEP."""
+    for tier in range(2):
+        taken = []
+        for v in range(BLEND_VARIANTS):
+            k = tier * BLEND_VARIANTS + v
+            taken.append(paint_blend(img, (BLEND_COL + k) * T, BLEND_ROW * T, zone, BLEND_SEED + k, tier, taken))
+
+
 EDGE_VARIANTS = 3
 EDGE_TOP = 255 & ~(N | NE | NW)       # a floor's top tile
 EDGE_BOTTOM = 255 & ~(S | SE | SW)    # a ceiling's bottom tile
@@ -1629,6 +1779,8 @@ def build_tileset(zone):
     # slopes, so a vault curves down into its wall instead of stepping.
     paint_haunch(img, 0, 9 * T, zone, True, 91)
     paint_haunch(img, T, 9 * T, zone, False, 92)
+    # Row 9, cols 2 to 7: the blends between the tiers (design bible 12.99).
+    paint_blends(img, zone)
     if zone in PATCHES:
         paint_patches(img, zone)
     TILES.mkdir(parents=True, exist_ok=True)
