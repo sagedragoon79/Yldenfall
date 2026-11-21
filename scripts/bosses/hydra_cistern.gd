@@ -5,6 +5,14 @@ extends Node2D
 ## the only water there is. Standing in it with a third or more shelters you from
 ## the hydra's thermal fog; full, it douses the head that breathed last. The fog
 ## boils a third of it away, and the hydra's rage boils it dry.
+##
+## It is sunk in the floor (Sean, 2026-11-20): a pit cut into the room, brim-full at
+## the floor's own level, with a low lip of coping round it. The lip is the far side
+## of the rim, behind whoever walks past, so nothing has to be climbed to get in.
+##
+## An iron grate lies across its mouth at the floor's level (Sean, 2026-11-20): it holds
+## whoever walks over it, Down + Jump drops through into the pit, and a jump from the
+## bed comes back up through it. Getting under the water is something you choose to do.
 
 signal filled(level: int)
 
@@ -16,9 +24,19 @@ const WATER := Color("3f7fb8")
 const WATER_DEEP := Color("27527a")
 const WATER_TOP := Color("cfe6f4")
 const STEAM := Color("f4f7f6")
+## How far the lip's coping stands above the floor (px), and how far it runs out over
+## the floor past each side of the pit.
+const LIP := 8.0
+const LIP_OUT := 16.0
+## How thick the grate across the mouth is drawn (px), and how far apart its bearers are.
+const GRATE := 5.0
+const GRATE_BEARER := 56.0
+const IRON := Color("565b63")
+const IRON_LIGHT := Color("9aa1ab")
+const IRON_DARK := Color("1c1f24")
 
-## The cistern's inside in world pixels (between its walls, rim to floor).
-var inside := Rect2(368, 272, 224, 48)
+## The cistern's inside in world pixels: the pit, from the floor's level down to its bed.
+var inside := Rect2(368, 320, 224, 48)
 var intakes: Array[HydraIntake] = []
 ## Thirds of water in it, 0 to 3.
 var level := 0
@@ -92,6 +110,22 @@ func boil() -> void:
 	Sfx.play("steam_hiss", 0.0, 2.0)
 
 
+## The lip's coping, in the world: above the floor, and wider than the pit.
+func lip_rect() -> Rect2:
+	return Rect2(inside.position.x - LIP_OUT, inside.position.y - LIP, inside.size.x + LIP_OUT * 2.0, LIP)
+
+
+## The room's cells the grate lies over: the pit's top row, from wall to wall
+## (`Room.lay_grate` makes them a one-way floor).
+func grate_cells() -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	var t := float(Room.TILE)
+	var row := int(roundf(inside.position.y / t))
+	for col in range(int(roundf(inside.position.x / t)), int(roundf(inside.end.x / t))):
+		out.append(Vector2i(col, row))
+	return out
+
+
 ## The surface's world y for `thirds` of water.
 func surface_at(thirds: float) -> float:
 	return inside.end.y - inside.size.y * thirds / THIRDS
@@ -151,9 +185,43 @@ func _draw_back() -> void:
 	for i in range(1, THIRDS + 1):
 		var sy := surface_at(i)
 		_back.draw_rect(Rect2(r.position.x, sy, r.size.x, 1.0), Color(STAIN, 0.7))
-	# The rim's dressed coping, on both walls.
-	_back.draw_rect(Rect2(r.position.x - 18.0, r.position.y - 3.0, 18.0, 3.0), STONE_LIGHT)
-	_back.draw_rect(Rect2(r.end.x, r.position.y - 3.0, 18.0, 3.0), STONE_LIGHT)
+	# The lip: a course of dressed coping along the far side of the rim, standing a
+	# little above the floor and running out over it past each end of the pit.
+	var lip := lip_rect()
+	_back.draw_rect(lip, STONE_DARK)
+	var x := lip.position.x
+	var n := 0
+	while x < lip.end.x:
+		var w := minf(32.0 if n > 0 else 16.0, lip.end.x - x)
+		_back.draw_rect(Rect2(x + 1.0, lip.position.y, w - 1.0, lip.size.y - 1.0), STONE)
+		_back.draw_rect(Rect2(x + 1.0, lip.position.y, w - 1.0, 2.0), STONE_LIGHT)
+		_back.draw_rect(Rect2(x + 1.0, lip.position.y, 1.0, lip.size.y - 1.0), STONE_LIGHT.lerp(STONE, 0.5))
+		x += w
+		n += 1
+
+
+## The grate, seen edge on: a rail along the top, the bars under it with the pit showing
+## between them, and a bearer every few bars with its end let into the stone.
+func _draw_grate() -> void:
+	var y := inside.position.y
+	var x := inside.position.x
+	while x < inside.end.x:
+		draw_rect(Rect2(x, y + 1.0, 2.0, GRATE - 1.0), IRON)
+		draw_rect(Rect2(x, y + GRATE - 1.0, 2.0, 1.0), IRON_DARK)
+		x += 4.0
+	draw_rect(Rect2(inside.position.x, y, inside.size.x, 2.0), IRON_DARK)
+	draw_rect(Rect2(inside.position.x, y, inside.size.x, 1.0), IRON_LIGHT)
+	x = inside.position.x
+	while x <= inside.end.x + 0.5:
+		var bx := clampf(x - 2.0, inside.position.x, inside.end.x - 4.0)
+		draw_rect(Rect2(bx, y, 4.0, GRATE + 3.0), IRON_DARK)
+		draw_rect(Rect2(bx + 1.0, y + 1.0, 2.0, GRATE + 1.0), IRON)
+		draw_rect(Rect2(bx + 1.0, y, 2.0, 1.0), IRON_LIGHT)
+		x += GRATE_BEARER
+	# Where it sits in the coping at each end.
+	for end_x: float in [inside.position.x - 3.0, inside.end.x]:
+		draw_rect(Rect2(end_x, y, 3.0, 3.0), IRON_DARK)
+		draw_rect(Rect2(end_x, y, 3.0, 1.0), IRON)
 
 
 func _draw() -> void:
@@ -169,6 +237,9 @@ func _draw() -> void:
 			var y := top + roundf(sin(t * 3.0 + x * 0.09))
 			draw_rect(Rect2(x, y, w, 1), Color(WATER_TOP, 0.85))
 			x += 12.0
+	# Over the water: brim-full, the surface laps at its bars, and it must still read as
+	# something to stand on.
+	_draw_grate()
 	if boiling:
 		# A rolling boil: bubbles and steam pouring off the surface.
 		var k := clampf(_boil / BOIL_TIME, 0.0, 1.0)

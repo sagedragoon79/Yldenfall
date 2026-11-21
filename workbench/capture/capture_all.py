@@ -158,12 +158,17 @@ def jobs():
             add('dyes', 'dyes/%s.png' % iid, lambda o, i=iid: shot(o, ['--room=hearthroot/plaza', '--dye=' + i], hero='64,64', scale=2))
     for rid, h in R.items():
         if h['boss'] in ('gnarlmaw', 'haar_wyrm', 'everbloom_veins'):
-            g = ['--room=' + rid, '--shot-at=%d,%d' % floor_mid(h['grid'])]
+            # The Wyrm's hero stands on the grate over its cistern (the room's `grate:` header),
+            # which the grid shows as an open pit: floor_mid would set him on the pit's bed.
+            g = ['--room=' + rid, '--shot-at=%d,%d' % ((30, 19) if h['boss'] == 'haar_wyrm' else floor_mid(h['grid']))]
             if h['boss'] == 'gnarlmaw':
                 # Gnarlmaw spends most of the fight in the walls; at frame 330 its whole body lunges across the floor.
                 add('arenas', 'guardians/gnarlmaw.png', lambda o, g=g: shot(o, g, frames=330))
             else:
-                add('arenas', 'guardians/%s.png' % h['boss'], lambda o, g=g: shot(o, g, hero='400,240', focus='boss', frames=240))
+                # The Haar Wyrm's reveal is dark until its heads are out (frame 520: all three, at rest).
+                # Its box is taller: its body crouches at the lip of the cistern sunk in the floor.
+                wyrm = h['boss'] == 'haar_wyrm'
+                add('arenas', 'guardians/%s.png' % h['boss'], lambda o, g=g, f=(520 if wyrm else 240), box=('400,300' if wyrm else '400,240'): shot(o, g, hero=box, focus='boss', frames=f))
     for fid, rid, foe, when in FIGHTS:
         # A tell is shot from four tiles off, so the foe is not already touching the hero.
         spot = fight_spot(R[rid]['grid'], foe, 2 if when == 'hit' else 4) if rid in R else None

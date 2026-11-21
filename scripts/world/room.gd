@@ -28,6 +28,8 @@ var tiles: TileMapLayer
 var secrets: TileMapLayer
 ## Hidden planks (legend `i`), seen only through the Seer's Lens.
 var phantoms: TileMapLayer
+## One-way floors a set piece lays and draws itself (`lay_grate`): the tiles are never seen.
+var grates: TileMapLayer
 var sheen: OnyxSheen
 ## Door number -> {rect: Rect2 (pixels), edge: "left"/"right"/"top"/"bottom"/"inner",
 ## target: room id, target_door: int}.
@@ -36,6 +38,8 @@ var doors := {}
 var _one_way := {}
 ## Cells of the room's `-` planks (not ladder tops, boardwalks or hidden planks), for `PlankSupports`.
 var _planks := {}
+## Cells of a set piece's grate (`lay_grate`).
+var _grates := {}
 var _secret_cells := {}
 var _deep_shade: DeepShade
 ## Time-locked water cells (legend `f`), gathered into Waterfalls after the grid.
@@ -263,7 +267,26 @@ func build(text: String) -> void:
 	var decor := Decor.new()
 	decor.name = "Decor"
 	add_child(decor)
-	decor.build(id, zone, grid, covers)
+	# A one-way floor some set piece draws itself (header `grate: x0, y0, x1, y1`): the
+	# Haar Spring's cistern grate.
+	if header.has("grate"):
+		var g := String(header.grate).split(",")
+		if g.size() == 4:
+			var floored: Array[Vector2i] = []
+			for y in range(int(g[1]), int(g[3]) + 1):
+				for x in range(int(g[0]), int(g[2]) + 1):
+					floored.append(Vector2i(x, y))
+			lay_grate(floored)
+	# Cells the room keeps bare of scattered decor (header `bare: x0, y0, x1, y1`): the
+	# Haar Spring's dressed cistern, which fills with water.
+	var no_decor := covers.duplicate()
+	if header.has("bare"):
+		var b := String(header.bare).split(",")
+		if b.size() == 4:
+			for y in range(int(b[1]), int(b[3]) + 1):
+				for x in range(int(b[0]), int(b[2]) + 1):
+					no_decor[Vector2i(x, y)] = true
+	decor.build(id, zone, grid, no_decor)
 	# The decor's candle and fungus glows pool their light onto the floor too.
 	room_light.decor = decor
 
@@ -1101,6 +1124,23 @@ func ladder_top(world_pos: Vector2) -> float:
 	return float(cell.y * TILE)
 
 
+## Lays a one-way floor over the open `cells` for a set piece that draws it itself (the
+## Haar Spring's cistern grate; header `grate:`): jump up through it, Down + Jump to
+## drop, and it rings as iron underfoot. The room's grid keeps those cells open.
+func lay_grate(cells: Array[Vector2i]) -> void:
+	if grates == null:
+		grates = TilesetFactory.layer(zone)
+		grates.name = "Grates"
+		grates.modulate.a = 0.0
+		add_child(grates)
+	for cell in cells:
+		grates.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.ONE_WAY)
+		_one_way[cell] = true
+		_grates[cell] = true
+	# It holds from this frame on, not the next: someone may be standing there.
+	grates.update_internals()
+
+
 func is_one_way_at(world_pos: Vector2) -> bool:
 	return _one_way.has(cell_at(world_pos))
 
@@ -1111,6 +1151,8 @@ func is_one_way_at(world_pos: Vector2) -> bool:
 func surface_at(world_pos: Vector2) -> String:
 	if is_sap_at(world_pos + Vector2(0, -TILE * 0.5)):
 		return "sap"
+	if _grates.has(cell_at(world_pos)):
+		return "iron"
 	if is_one_way_at(world_pos):
 		return "plank"
 	if tide != null and tide.has_point(world_pos + Vector2(0, -TILE * 0.5)):

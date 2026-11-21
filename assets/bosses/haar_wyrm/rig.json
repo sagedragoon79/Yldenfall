@@ -46,8 +46,8 @@
   },
   "joints": {
    "neck": [
-    72,
-    118
+    89,
+    104
    ],
    "mouth": [
     126,
@@ -57,6 +57,62 @@
     [
      104,
      97
+    ]
+   ]
+  }
+ },
+ "head_se": {
+  "sheet": "head_se.png",
+  "cell": [
+   128,
+   192
+  ],
+  "columns": 8,
+  "clips": {
+   "idle": {
+    "start": 0,
+    "count": 1,
+    "fps": 1
+   },
+   "open": {
+    "start": 1,
+    "count": 1,
+    "fps": 1
+   },
+   "pull": {
+    "start": 2,
+    "count": 21,
+    "fps": 10
+   },
+   "roar": {
+    "start": 23,
+    "count": 17,
+    "fps": 10
+   },
+   "shut": {
+    "start": 40,
+    "count": 1,
+    "fps": 1
+   },
+   "shadow": {
+    "start": 41,
+    "count": 1,
+    "fps": 1
+   }
+  },
+  "joints": {
+   "neck": [
+    62,
+    96
+   ],
+   "mouth": [
+    82,
+    130
+   ],
+   "eyes": [
+    [
+     67,
+     105
     ]
    ]
   }
@@ -174,15 +230,15 @@
    "stumps": [
     [
      85,
-     85
+     104
     ],
     [
      127,
-     75
+     94
     ],
     [
      168,
-     85
+     104
     ]
    ],
    "ground": [
