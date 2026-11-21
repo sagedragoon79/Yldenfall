@@ -61,6 +61,11 @@ const ZONE_HAZE := {
 	"spires": Color8(64, 37, 42),
 }
 const SIZE := Vector2(640, 480)
+## A room slides a layer in steps this wide, world px (see room_shift).
+const SHIFT_STEP := 16.0
+## Stirred into room_shift. Chosen so the two Spires rooms the grade compared
+## (the storm ledge and the Fallen Bridge) start their islands far apart.
+const SHIFT_SALT := "#3"
 ## Starts the layers a little above the room's top so vertical scrolling never shows a gap.
 const OFFSET := Vector2(0, -60)
 
@@ -108,6 +113,10 @@ const MAX_HOLES := 16
 const PERSON_BOX := Rect2(-12, -46, 24, 46)
 
 var zone := ""
+## The room the layers are slid for (see set_room).
+var room_id := ""
+## The far, ridge and mid layers of the current zone, by suffix.
+var _layers := {}
 ## The foreground layer of the current zone, or null (see _process).
 var _fore: Parallax2D
 
@@ -121,6 +130,7 @@ func set_zone(next: String) -> void:
 	if next == zone:
 		return
 	zone = next
+	_layers.clear()
 	for c in get_children():
 		c.queue_free()
 	for suffix: String in LAYERS:
@@ -140,10 +150,38 @@ func set_zone(next: String) -> void:
 		sprite.position = OFFSET
 		sprite.material = atmos_material(suffix, haze_for(zone))
 		layer.add_child(sprite)
+		layer.scroll_offset = Vector2(Backdrop.room_shift(room_id, suffix), 0.0)
+		_layers[suffix] = layer
 		add_child(layer)
 	_fore = fore_layer(zone)
 	if _fore != null:
 		add_child(_fore)
+
+
+## Slides each layer sideways for the room (design bible 12.101, pass 625). A zone
+## has one painting per layer, and every room showed it from the same spot: the
+## pass 620 grade saw the Spires' storm ledge and Fallen Bridge with the same
+## sky islands in the same places and named them copies. Each room now starts
+## each layer at its own place along the repeating art, so two rooms of a zone
+## show different stretches of it, with the layers set against each other
+## differently. The foreground is left alone: it slides fast and is thinned
+## round the actors (12.26).
+func set_room(next: String) -> void:
+	room_id = next
+	for suffix: String in _layers:
+		(_layers[suffix] as Parallax2D).scroll_offset = Vector2(Backdrop.room_shift(room_id, suffix), 0.0)
+
+
+## How far a room slides a layer along its repeating art, world px (0 to SIZE.x),
+## in steps of SHIFT_STEP. The same for a room every time; 0 for a room with no id.
+static func room_shift(a_room: String, suffix: String) -> float:
+	if a_room == "":
+		return 0.0
+	var steps := int(SIZE.x / SHIFT_STEP)
+	# An MD5 of the two names, so a layer's shift says nothing about the next layer's.
+	var digest := (a_room + "/" + suffix + SHIFT_SALT).md5_buffer()
+	var h := digest[0] | (digest[1] << 8) | (digest[2] << 16)
+	return float(h % steps) * SHIFT_STEP
 
 
 ## The foreground silhouette layer for a zone (design bible 12.11), or null when

@@ -2469,22 +2469,76 @@ ISLAND_LINE = "night-0"
 ISLAND_GRASS = ("leaf-3", "leaf-2", "leaf-1")  # tip, blade, root
 
 
-def island_cells(cx, cy, w, depth, seed):
-    """The silhouette of a sky island on the world-pixel grid: {(x, y): k}, k the
-    cell's depth below the lip (0 to 1). Built a column at a time: a rounded belly
-    of earth under the lip, and beneath it a main point of rock leaning off
-    centre with two to four lesser points beside it, so the underside is a ragged
-    cluster of hanging spurs and no two islands are the same triangle."""
-    rng = random.Random(seed)
-    x0, y0 = int(cx) // D, int(cy) // D
-    half, rows = max(5, w // (2 * D)), max(8, depth // D)
+# The builds a sky island comes in (design bible 12.101, pass 625). The pass 620
+# grade named "floating islands" among the copied props: every island was a wedge,
+# a main point under its middle with lesser points beside it, so a sky of them was
+# one outline at six sizes. `wedge` is that build; a `shelf` is a wide shallow slab
+# with a ragged underside and no point; a `fang` is a narrow island on one long
+# tooth of rock, deeper than it is wide; a `twin` hangs two points apart with a
+# saddle between. Each habit sets how deep the island hangs for its width
+# (`ISLAND_DEPTH`, as a share of the wedge's).
+ISLAND_HABITS = ("wedge", "shelf", "fang", "twin")
+ISLAND_DEPTH = {"wedge": 1.0, "shelf": 0.5, "fang": 1.3, "twin": 0.85}
+
+
+def deal_habits(rng, n, habits):
+    """`n` of `habits`, every one turning up before any comes again, and no two in a
+    row the same."""
+    out = []
+    while len(out) < n:
+        deal = list(habits)
+        rng.shuffle(deal)
+        if out and deal[0] == out[-1]:
+            deal.append(deal.pop(0))
+        out += deal
+    return out[:n]
+
+
+def island_spurs(rng, habit):
+    """The hanging points of an island of this habit, each (where along the lip,
+    -1 to 1; half width; depth, 0 to 1), and how deep its belly of earth is."""
+    if habit == "shelf":
+        # A slab: a deep even belly and stubby uneven points along it, none a leader.
+        at = -0.7
+        spurs = []
+        while at < 0.75:
+            spurs.append((at, rng.uniform(0.1, 0.2), rng.uniform(0.62, 1.0)))
+            at += rng.uniform(0.28, 0.5)
+        return spurs, 0.55
+    if habit == "fang":
+        # One long tooth a little off centre, and a short spur or two by its root.
+        lean = rng.choice([-1, 1]) * rng.uniform(0.05, 0.2)
+        spurs = [(lean, rng.uniform(0.34, 0.42), 1.0)]
+        for _ in range(rng.randint(1, 2)):
+            spurs.append((lean + rng.choice([-1, 1]) * rng.uniform(0.35, 0.6), rng.uniform(0.12, 0.18), rng.uniform(0.34, 0.46)))
+        return spurs, 0.26
+    if habit == "twin":
+        # Two points parted by a saddle, one the longer.
+        a, b = rng.uniform(-0.55, -0.38), rng.uniform(0.34, 0.52)
+        long_first = rng.random() < 0.5
+        spurs = [(a, rng.uniform(0.3, 0.38), 1.0 if long_first else 0.75),
+                 (b, rng.uniform(0.3, 0.38), 0.75 if long_first else 1.0)]
+        return spurs, 0.42
     spurs = [(rng.uniform(-0.25, 0.25), rng.uniform(0.18, 0.3), 1.0)]
     for _ in range(rng.randint(2, 4)):
         spurs.append((rng.uniform(-0.75, 0.75), rng.uniform(0.08, 0.18), rng.uniform(0.35, 0.7)))
+    return spurs, 0.32
+
+
+def island_cells(cx, cy, w, depth, seed, habit="wedge"):
+    """The silhouette of a sky island on the world-pixel grid: {(x, y): k}, k the
+    cell's depth below the lip (0 to 1). Built a column at a time: a rounded belly
+    of earth under the lip, and beneath it the habit's points of rock
+    (`island_spurs`), so the underside is a ragged cluster of hanging spurs and no
+    two islands are the same triangle."""
+    rng = random.Random(seed)
+    x0, y0 = int(cx) // D, int(cy) // D
+    half, rows = max(5, w // (2 * D)), max(8, depth // D)
+    spurs, deep = island_spurs(rng, habit)
     cells = {}
     for x in range(x0 - half, x0 + half + 1):
         u = (x - x0) / half
-        belly = 0.32 * max(0.0, 1 - abs(u) ** 2) ** 0.7
+        belly = deep * max(0.0, 1 - abs(u) ** 2) ** 0.7
         drop = belly
         for at, wd, ht in spurs:
             a = 1 - abs(u - at) / wd
@@ -2516,7 +2570,7 @@ def _stones(cells, seed, size=8):
     return out
 
 
-def island(img, cx, cy, w, rng, rock=ISLAND_ROCK, line=ISLAND_LINE, grass=ISLAND_GRASS):
+def island(img, cx, cy, w, rng, rock=ISLAND_ROCK, line=ISLAND_LINE, grass=ISLAND_GRASS, habit="wedge"):
     """A floating sky island (design bible 12.33), painted on the world-pixel grid
     as a lit pixel prop, not one flat fill: its rock is a cluster of chunky stones
     shaded on a four-tone ramp lit from the upper left (each stone lit on its
@@ -2524,10 +2578,10 @@ def island(img, cx, cy, w, rng, rock=ISLAND_ROCK, line=ISLAND_LINE, grass=ISLAND
     in shadow), closed by a dark selective outline on its shadow side and
     underside only. A three-tone grass lip caps it, blades poke above, tufts and
     moss hang over its edges and roots dangle from its belly."""
-    depth = int(w * rng.uniform(0.6, 0.9))
+    depth = int(w * rng.uniform(0.6, 0.9) * ISLAND_DEPTH[habit])
     seed = int(cx) * 7919 + int(cy)
     loc = random.Random(seed + 1)
-    cells = island_cells(cx, cy, w, depth, seed)
+    cells = island_cells(cx, cy, w, depth, seed, habit)
     stones = _stones(cells, seed)
     y0 = int(cy) // D
     xs = [x for x, _ in cells]
@@ -2643,15 +2697,27 @@ def spires_far():
     return img
 
 
+# Where spires_mid put its islands, each (cx, cy, w, habit), for the guard in test_tilegen.py.
+SPIRES_ISLANDS = []
+
+
 def spires_mid():
     img = Image.new("RGBA", (BG_W, BG_H), CLEAR)
     rng = random.Random(52)
-    # Sky islands adrift at middle distance, a ruined spire on one or two.
+    # Sky islands adrift at middle distance, a ruined spire on one or two. Each is
+    # dealt a habit (12.101): a rng of their own, so the islands stay where they were.
+    habits = deal_habits(random.Random(1052), 6, ISLAND_HABITS)
+    SPIRES_ISLANDS.clear()
     for i in range(6):
         cx = (i + rng.uniform(0.1, 0.9)) * BG_W / 6
         cy = rng.randrange(140, 400) * D
         w = rng.randrange(50, 110) * D
-        island(img, cx, cy, w, rng)
+        if habits[i] == "fang":
+            w = int(w * 0.7)  # a fang is a narrow island
+        elif habits[i] == "shelf":
+            w = int(w * 1.2)
+        SPIRES_ISLANDS.append((cx, cy, w, habits[i]))
+        island(img, cx, cy, w, rng, habit=habits[i])
         if rng.random() > 0.5:
             sx, sh = cx + rng.uniform(-0.2, 0.2) * w, rng.randrange(40, 90) * D
             ruined_spire(img, sx, cy, sh)
@@ -2709,14 +2775,7 @@ STILLGLASS_HABITS = ("spray", "blade", "druse", "twin")
 def stillglass_habits(rng, n):
     """`n` habits in which every habit turns up before any comes again, and no two
     in a row are the same."""
-    out = []
-    while len(out) < n:
-        deal = list(STILLGLASS_HABITS)
-        rng.shuffle(deal)
-        if out and deal[0] == out[-1]:
-            deal.append(deal.pop(0))
-        out += deal
-    return out[:n]
+    return deal_habits(rng, n, STILLGLASS_HABITS)
 
 
 def stillglass_growth(img, rx, ry, face, lean, rng, reach, width, cols, crust="crystal-1", glow=None, habit="spray"):

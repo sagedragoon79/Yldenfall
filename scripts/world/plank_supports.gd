@@ -53,11 +53,12 @@ const FRAME_MIN_H := 40.0
 const LOOKS := {
 	"gym": {"frame": "x", "hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "aca1ba", "foot": ["797767", "58544c", "363330"]},
 	"heartwood": {"frame": "lashed", "hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "f0c02e", "foot": ["797767", "58544c", "363330"]},
-	"boughs": {"frame": "lashed", "hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "a1d684", "foot": ["797767", "58544c", "363330"]},
+	"boughs": {"frame": "forked", "hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "a1d684", "foot": ["797767", "58544c", "363330"]},
 	"hearthroot": {"frame": "x", "hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "f0c02e", "foot": ["867ba2", "645e82", "2f2c3a"]},
 	"haar": {"frame": "piling", "hang": "rope", "lit": "aa9173", "mid": "8a6e56", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "989885", "foot": ["797767", "58544c", "363330"]},
 	"sunken": {"frame": "piling", "hang": "chain", "lit": "aa9173", "mid": "634a41", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "84cbd6", "foot": ["797767", "58544c", "363330"]},
-	"spires": {"frame": "lashed", "hang": "rope", "lit": "bea860", "mid": "9c7f44", "dark": "432d23", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "edce6e", "foot": ["797767", "58544c", "363330"]},
+	# The Spires are a ruined stone city: their footings and piers are its own lilac stone (pass 625).
+	"spires": {"frame": "pier", "hang": "rope", "lit": "bea860", "mid": "9c7f44", "dark": "432d23", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "edce6e", "foot": ["867ba2", "645e82", "2f2c3a"]},
 	"vorrhallow": {"frame": "arch", "hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "d684c6", "foot": ["867ba2", "645e82", "2f2c3a"]},
 	"trials": {"frame": "truss", "hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "b4b4a7", "foot": ["867ba2", "645e82", "2f2c3a"]},
 	"tower": {"frame": "truss", "hang": "chain", "lit": "aca1ba", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "84cbd6", "foot": ["867ba2", "645e82", "2f2c3a"]},
@@ -74,7 +75,15 @@ const LOOKS := {
 ## Tower and the Trials rivet an iron truss ("truss", two chords and a zigzag web);
 ## the dwarf halls spring a stone arch ("arch", voussoirs and a keystone); and the
 ## Evercrown's shelves are grown ("web", two sagging strands of sinew).
-const FRAMES := ["x", "lashed", "piling", "truss", "arch", "web"]
+##
+## Pass 625: the pass 620 grade still saw one scaffold in the Heartwood and the
+## High Boughs, which both lashed timber, as the Spires did. The Heartwood keeps
+## the lashing; the Boughs prop a board on forked limbs cut from the canopy
+## ("forked", a trunk per bay that splits in two under the board, bound with vine
+## and still in leaf); the Spires stand theirs on what is left of the city's
+## stone ("pier", corbels stepping out under the board's ends and a coursed pier
+## between bays, no timber).
+const FRAMES := ["x", "lashed", "piling", "truss", "arch", "web", "forked", "pier"]
 
 ## The plan, one Dictionary per support: {kind: "brace", "post" or "hang", ...}.
 var supports: Array[Dictionary] = []
@@ -317,6 +326,10 @@ static func frame_parts(left: float, right: float, top: float, bottom: float, lo
 			return PlankSupports._arch_parts(x0, x1, top, bottom, look)
 		"web":
 			return PlankSupports._web_parts(x0, x1, top, bottom, look)
+		"forked":
+			return PlankSupports._forked_parts(x0, x1, top, bottom, look)
+		"pier":
+			return PlankSupports._pier_parts(x0, x1, top, bottom, look)
 	var rail := bottom - 9.0
 	var high := top + 9.0
 	var bays := maxi(1, ceili((x1 - x0) / BAY_MAX))
@@ -498,6 +511,87 @@ static func _web_parts(x0: float, x1: float, top: float, bottom: float, look: Di
 		for end: Vector2 in [a, e]:
 			out.append([Rect2(end.x - 1.5, end.y - 1.5, 3.0, 3.0), w[2]])
 			out.append([Rect2(end.x - 1.0, end.y - 1.0, 1.0, 1.0), look.bolt])
+	return out
+
+
+## Forked limbs (the High Boughs, pass 625): in every bay a trunk cut from the
+## canopy stands on the floor and splits in two under the board, each limb
+## running up to it. Vine is bound round the fork, a root flares at the foot and
+## a sprig of leaves still grows at the fork and near a limb's end, in the zone's
+## leaf accent. No rail, no bolts: nothing here was sawn square.
+static func _forked_parts(x0: float, x1: float, top: float, bottom: float, look: Dictionary) -> Array:
+	var w: Array = look.wood
+	var out: Array = []
+	var bays := PlankSupports._bays(x0, x1)
+	var h := bottom - top
+	for b in int(bays.x):
+		var cx := x0 + (b + 0.5) * bays.y
+		# Each trunk leans a little and forks at its own height, so a row is not one stamp.
+		var lean := 1.5 if b % 2 == 0 else -1.5
+		var fork := Vector2(cx + lean, top + h * (0.5 if b % 2 == 0 else 0.42))
+		# Short of the next trunk's limbs, so each fork stands as its own tree.
+		var spread := minf(bays.y * 0.34, h * 0.42)
+		var foot := Vector2(cx - lean, bottom - 1.5)
+		var arms := [Vector2(cx - spread, top + 3.0), Vector2(cx + spread * (0.8 if b % 2 == 0 else 1.0), top + 3.0)]
+		# The trunk: three struts side by side make a limb 3 px thick, lit on its left.
+		PlankSupports._strut(out, foot + Vector2(1.0, 0), fork + Vector2(1.0, 0), w[2], w[1])
+		PlankSupports._strut(out, foot, fork, w[1], w[0])
+		for arm: Vector2 in arms:
+			PlankSupports._strut(out, fork, arm, w[1], w[0])
+		# A root flaring each way at the foot.
+		out.append([Rect2(foot.x - 3.0, bottom - 2.0, 7.0, 1.0), w[1]])
+		out.append([Rect2(foot.x - 4.0, bottom - 1.0, 9.0, 1.0), w[2]])
+		# Vine bound round the fork.
+		PlankSupports._lashing(out, fork + Vector2(0.5, 1.0), look)
+		# Leaves: a sprig at the fork and one near the end of the longer limb.
+		for at: Vector2 in [fork + Vector2(-3.5, -3.0), arms[1].lerp(fork, 0.3) + Vector2(1.5, -2.5)]:
+			out.append([Rect2(at.x, at.y, 2.0, 1.0), look.bolt])
+			out.append([Rect2(at.x + 1.0, at.y - 1.0, 2.0, 1.0), look.bolt])
+			out.append([Rect2(at.x + 0.5, at.y + 1.0, 1.0, 1.0), look.dark])
+	return out
+
+
+## One course of a stone pier or corbel: a block lit along its top and shaded beneath.
+static func _block(out: Array, r: Rect2, f: Array) -> void:
+	out.append([r, f[1]])
+	out.append([Rect2(r.position.x, r.position.y, r.size.x, 0.5), f[0]])
+	out.append([Rect2(r.position.x, r.end.y - 0.5, r.size.x, 0.5), f[2]])
+	out.append([Rect2(r.end.x - 0.5, r.position.y, 0.5, r.size.y), f[2]])
+
+
+## Stone piers (the Spires, pass 625): what the storm left of the city carries
+## the board. Corbels step out under each end, three courses deep, and between
+## bays stands a pier of coursed blocks under a corbelled head, its joints
+## staggered and one block knocked from a flank. No timber between the posts.
+static func _pier_parts(x0: float, x1: float, top: float, bottom: float, look: Dictionary) -> Array:
+	var f: Array = look.foot
+	var out: Array = []
+	var bays := PlankSupports._bays(x0, x1)
+	var head := top + 2.0
+	# Corbels under the board's ends: the top course reaches furthest.
+	for i in 3:
+		var reach := minf(12.0 - i * 4.0, (x1 - x0) * 0.5)
+		PlankSupports._block(out, Rect2(x0, head + i * 3.0, reach, 3.0), f)
+		PlankSupports._block(out, Rect2(x1 - reach, head + i * 3.0, reach, 3.0), f)
+	for b in range(1, int(bays.x)):
+		var cx := x0 + b * bays.y
+		# The head: two courses stepping in to the shaft.
+		PlankSupports._block(out, Rect2(cx - 7.0, head, 14.0, 3.0), f)
+		PlankSupports._block(out, Rect2(cx - 5.0, head + 3.0, 10.0, 3.0), f)
+		# The shaft: courses 5 px deep, their upright joints staggered.
+		var y := head + 6.0
+		var k := 0
+		while y < bottom - 4.0:
+			var ch := minf(5.0, bottom - 4.0 - y)
+			PlankSupports._block(out, Rect2(cx - 3.0, y, 6.0, ch), f)
+			out.append([Rect2(cx - 1.0 + (2.0 if k % 2 == 0 else 0.0), y + 0.5, 0.5, ch - 1.0), f[2]])
+			# A block knocked out of one flank, part of the way down.
+			if k == 2 + b % 2:
+				out.append([Rect2(cx + (1.5 if b % 2 == 0 else -3.0), y, 1.5, ch), f[2]])
+			y += 5.0
+			k += 1
+		# The base: one wide course on the floor.
+		PlankSupports._block(out, Rect2(cx - 5.0, bottom - 4.0, 10.0, 4.0), f)
 	return out
 
 
