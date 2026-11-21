@@ -2693,7 +2693,33 @@ def stillglass_shard(img, rx, ry, ang, length, width, cols):
             block(img, int(round(rx + ax * t + px * k)), int(round(ry + ay * t + py * k)), c(col))
 
 
-def stillglass_growth(img, rx, ry, face, lean, rng, reach, width, cols, crust="crystal-1", glow=None):
+# A growth has a habit (design bible 12.100, pass 624). The independent grade (pass
+# 620) read the hall's stillglass as "one crystal cluster at several angles": every
+# growth was a leader with two or three lesser shards fanned beside it, so each was
+# the same outline turned. There are four habits now, and they differ in outline:
+#   spray  a leader with lesser shards fanned beside it (the old growth)
+#   blade  one long narrow shard and a short spur at its root
+#   druse  a low, wide crust of short stubby points, none of them a leader
+#   twin   two shards of nearly one length, parting from one root
+# A painter deals them out with `stillglass_habits`, so no two growths in a row
+# share one.
+STILLGLASS_HABITS = ("spray", "blade", "druse", "twin")
+
+
+def stillglass_habits(rng, n):
+    """`n` habits in which every habit turns up before any comes again, and no two
+    in a row are the same."""
+    out = []
+    while len(out) < n:
+        deal = list(STILLGLASS_HABITS)
+        rng.shuffle(deal)
+        if out and deal[0] == out[-1]:
+            deal.append(deal.pop(0))
+        out += deal
+    return out[:n]
+
+
+def stillglass_growth(img, rx, ry, face, lean, rng, reach, width, cols, crust="crystal-1", glow=None, habit="spray"):
     """A seated cluster of stillglass at world pixel rx, ry on a stone face whose
     normal is `face` (0 is up, positive turns right; a pillar's right face is pi/2):
     the glass's light on the stone round its root (`glow`: far and near tones, or
@@ -2733,11 +2759,41 @@ def stillglass_growth(img, rx, ry, face, lean, rng, reach, width, cols, crust="c
             block(img, int(round(rx + tx * u + math.sin(a) * t)), int(round(ry + ty * u - math.cos(a) * t)), c("night-0"))
     # The lesser shards first, so the leader lies over them. None leans back into
     # the stone: each stays within 1.2 rad of the face's normal.
-    for f in sorted((rng.uniform(-0.7, 0.7) for _ in range(rng.randint(2, 3))), key=abs, reverse=True):
-        u = (f / 0.7) * span
+    def shard(f, length, wide, u=None):
+        """A shard turned `f` from the lean, its root `u` along the face (by
+        default as far along as it is turned)."""
         ang = face + max(-1.2, min(1.2, lean + f - face))
-        stillglass_shard(img, rx + tx * u, ry + ty * u, ang, reach * rng.uniform(0.45, 0.7), width * rng.uniform(0.55, 0.8), cols)
-    stillglass_shard(img, rx, ry, lean, reach, width, cols)
+        u = (f / 0.7) * span if u is None else u
+        stillglass_shard(img, rx + tx * u, ry + ty * u, ang, length, wide, cols)
+
+    if habit == "blade":
+        # One long narrow shard, and a short spur beside its root on the side it
+        # leans away from.
+        side = -1 if (lean - face) > 0 else 1
+        shard(side * rng.uniform(0.5, 0.8), reach * rng.uniform(0.3, 0.4), width * 0.6)
+        stillglass_shard(img, rx, ry, lean, reach * 1.1, width * 0.88, cols)
+    elif habit == "druse":
+        # A low wide mound of stubby points grown into each other: four to six along
+        # the face at uneven steps, broad enough to overlap, the middle ones the
+        # tallest (half a leader's reach) and the end ones splayed along the face.
+        n = rng.randint(4, 6)
+        at = sorted(rng.uniform(-1, 1) for _ in range(n))
+        for k in sorted(range(n), key=lambda k: abs(at[k]), reverse=True):
+            f = face - lean + (lean - face) * 0.35 + at[k] * 0.8 + rng.uniform(-0.1, 0.1)
+            tall = 0.52 - abs(at[k]) * 0.24 + rng.uniform(-0.05, 0.05)
+            shard(f, reach * tall, width * rng.uniform(0.7, 0.95), at[k] * span * 1.1)
+    elif habit == "twin":
+        # Two broad shards of nearly one length parting a little from one root, and
+        # a short third low on the far side of the lean.
+        part = rng.uniform(0.2, 0.28)
+        low = 1 if (lean - face) > 0 else -1
+        shard(low * rng.uniform(0.75, 0.95), reach * rng.uniform(0.3, 0.42), width * 0.6)
+        shard(part, reach * rng.uniform(0.8, 0.9), width * 0.85, span * 0.4)
+        shard(-part, reach, width * 0.9, -span * 0.4)
+    else:
+        for f in sorted((rng.uniform(-0.7, 0.7) for _ in range(rng.randint(2, 3))), key=abs, reverse=True):
+            shard(f, reach * rng.uniform(0.45, 0.7), width * rng.uniform(0.55, 0.8))
+        stillglass_shard(img, rx, ry, lean, reach, width, cols)
     if glow:
         # Chips of stone burst out of the face where the glass broke through: small
         # lit-topped blocks just off the face, past either end of the roots.
@@ -2791,6 +2847,7 @@ def vorrhallow_far():
     # Stillglass grown out of the far pillars' faces, glowing magenta: each cluster
     # is seated on a pillar's face and leans up and away from it (bible 12.51).
     seats = []
+    habits = stillglass_habits(rng, 9)
     for k in range(9):
         x0, w = pillars[(k * 3 + rng.randrange(2)) % len(pillars)]
         side = rng.choice([-1, 1])
@@ -2798,9 +2855,9 @@ def vorrhallow_far():
         ry = rng.randrange(80, water // D - 30)
         seats.append((rx, ry, side))
         stillglass_growth(img, rx, ry, side * math.pi / 2, side * rng.uniform(0.5, 1.0), rng,
-                          rng.randrange(14, 30), rng.randrange(6, 9),
-                          ("crystal-5", "crystal-3", "crystal-2"))
-    STILLGLASS_SEATS["vorrhallow_far"] = {"pillars": [(x // D, w // D) for x, w in pillars], "seats": seats}
+                          rng.randrange(14, 27), rng.randrange(6, 9),
+                          ("crystal-5", "crystal-3", "crystal-2"), habit=habits[k])
+    STILLGLASS_SEATS["vorrhallow_far"] = {"pillars": [(x // D, w // D) for x, w in pillars], "seats": seats, "habits": habits}
     # Dark water with glints and the crystals' smeared reflections.
     for y in range(water, BG_H):
         for x in range(BG_W):
@@ -2837,6 +2894,8 @@ def vorrhallow_mid():
     # the stone, leaning up and out, and on some columns a lesser one lower down on
     # the other face (bible 12.51). Drawn after every column so none is painted over.
     seats = []
+    habits = []
+    deal = stillglass_habits(rng, 2 * len(columns))
     for x0, w, top in columns:
         side = rng.choice([-1, 1])
         ry = top // D + rng.randrange(24, 80)
@@ -2845,12 +2904,13 @@ def vorrhallow_mid():
                 continue
             rx = (x0 if s_ < 0 else x0 + w - D) // D
             seats.append((rx, ry, s_))
+            habits.append(deal[len(habits)])
             stillglass_growth(img, rx, ry, s_ * math.pi / 2, s_ * rng.uniform(0.5, 0.95), rng,
-                              rng.randrange(12, 18) if n else rng.randrange(22, 36),
+                              rng.randrange(12, 18) if n else rng.randrange(22, 33),
                               rng.randrange(7, 10) if n else rng.randrange(12, 17),
-                              ("crystal-6", "crystal-4", "crystal-2"), glow=("crystal-1", "crystal-2"))
+                              ("crystal-6", "crystal-4", "crystal-2"), glow=("crystal-1", "crystal-2"), habit=habits[-1])
             ry += rng.randrange(50, 110)
-    STILLGLASS_SEATS["vorrhallow_mid"] = {"pillars": [(x // D, w // D) for x, w, _ in columns], "seats": seats}
+    STILLGLASS_SEATS["vorrhallow_mid"] = {"pillars": [(x // D, w // D) for x, w, _ in columns], "seats": seats, "habits": habits}
     # Hanging chains from the vault.
     for _ in range(8):
         x = rng.randrange(BG_W)

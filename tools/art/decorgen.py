@@ -35,7 +35,8 @@ OUT = ROOT / "assets" / "decor"
 D = 2
 CELL_W, CELL_H = 16, 32
 W, H = CELL_W * D, CELL_H * D
-COLS = 6
+## The most variants a row holds (Hearthroot's ceiling has eight; the rest six or fewer).
+COLS = 8
 
 PAL = {}
 for _name, _hue, _sat in palette.RAMPS:
@@ -338,21 +339,76 @@ def hearthroot_chain(rng):
     return c
 
 
-def hearthroot_banner(rng):
+# Hearthroot's banners (design bible 12.100, pass 624). The independent grade (pass
+# 620) read the plaza's ceiling as "identical banners": one painter, so every banner
+# in the town was the same red swallowtail with the same tree. There are three now,
+# and they differ in outline before they differ in colour: the guild's swallowtail
+# on a bar, a long narrow pennon hung by cords, and a short wide cloth, torn along
+# its foot. BANNERS names them; tests/test_decor_copies.gd holds them apart.
+BANNERS = ("swallowtail", "pennon", "cloth")
+
+
+def hearthroot_banner(rng, kind="swallowtail"):
     c = Cell()
-    color, shade = rng.choice((("ember-2", "ember-1"), ("sky-2", "sky-1")))
-    for y in range(2, 26):
-        for x in range(8, 24):
-            if y < 22 or abs(x - 15.5) > (y - 22) * 2 + 0.5:
-                c.px(x, y, shade if x > 20 or (x + y) % 9 == 0 else color)
-    c.rect(8, 2, 2, 22, "gold-3")
-    c.rect(22, 2, 1, 20, "gold-3")
-    c.rect(6, 0, 20, 2, "bark-2")
-    c.rect(6, 0, 20, 1, "bark-3")
-    # An emblem: a small golden tree.
-    c.rect(15, 8, 2, 7, "gold-4")
-    c.disc(16, 8, 4, 3, "gold-4")
-    c.px(14, 7, "gold-6")
+    if kind == "swallowtail":
+        # The town's red, a golden tree on it.
+        color, shade = "ember-2", "ember-1"
+        for y in range(2, 26):
+            for x in range(8, 24):
+                if y < 22 or abs(x - 15.5) > (y - 22) * 2 + 0.5:
+                    c.px(x, y, shade if x > 20 or (x + y) % 9 == 0 else color)
+        c.rect(8, 2, 2, 22, "gold-3")
+        c.rect(22, 2, 1, 20, "gold-3")
+        c.rect(6, 0, 20, 2, "bark-2")
+        c.rect(6, 0, 20, 1, "bark-3")
+        c.rect(15, 8, 2, 7, "gold-4")
+        c.disc(16, 8, 4, 3, "gold-4")
+        c.px(14, 7, "gold-6")
+    elif kind == "pennon":
+        # The watch's blue: long and narrow, hung by two cords from a ring, tapering
+        # to a point with a weight on it; a lamp's diamond and two bars for an emblem.
+        c.rect(15, 0, 2, 2, "stone-4")
+        c.line([(15, 2), (11, 6)], "umber-4")
+        c.line([(16, 2), (20, 6)], "umber-4")
+        c.rect(10, 6, 12, 2, "bark-2")
+        c.rect(10, 6, 12, 1, "bark-4")
+        for y in range(8, 46):
+            half = 5 if y < 30 else 5 - (y - 30) / 3.2
+            for x in range(11, 21):
+                if abs(x - 15.5) <= half:
+                    edge = abs(x - 15.5) > half - 1
+                    fold = (y // 9) % 2 == 0 and x >= 17
+                    c.px(x, y, "gold-3" if edge else "sky-1" if fold or x == 20 else "sky-2")
+        for k in range(4):  # the lamp: a diamond
+            c.rect(15 - k, 12 + k, 2 + 2 * k, 1, "gold-4")
+            c.rect(15 - k, 19 - k, 2 + 2 * k, 1, "gold-4")
+        c.px(15, 14, "gold-6")
+        c.rect(13, 23, 6, 1, "gold-4")
+        c.rect(13, 26, 6, 1, "gold-4")
+        c.rect(15, 46, 2, 3, "gold-5")
+    else:
+        # An old market cloth: short and wide on a rope that sags, moss green with
+        # an ochre band and a ring, its foot torn into uneven tongues and one corner gone.
+        for x in range(4, 28):
+            sag = round(2 - ((x - 15.5) / 11.5) ** 2 * 2)
+            c.px(x, sag, "umber-4")
+            c.px(x, sag + 1, "umber-2")
+        tongues = [rng.randint(15, 22) for _ in range(6)]
+        tongues[rng.randrange(2) * 5] = 9  # the torn corner
+        for x in range(5, 27):
+            sag = round(2 - ((x - 15.5) / 11.5) ** 2 * 2)
+            foot = tongues[min(5, (x - 5) // 4)] - (1 if (x - 5) % 4 in (0, 3) else 0)
+            for y in range(sag + 2, foot):
+                col = "moss-3"
+                if x >= 23 or (x + 2 * y) % 11 == 0:
+                    col = "moss-2"
+                if sag + 5 <= y < sag + 7:
+                    col = "ochre-4"
+                c.px(x, y, col)
+        for a in range(16):  # the ring
+            ang = a * math.pi / 8
+            c.px(15.5 + math.cos(ang) * 3.2, 12 + math.sin(ang) * 3.2, "gold-4")
+        c.px(13, 10, "gold-6")
     c.outline("night-1")
     return c
 
@@ -1114,7 +1170,10 @@ ZONES = {
     },
     "hearthroot": {
         "floor": [hearthroot_weeds, hearthroot_weeds, hearthroot_stones, hearthroot_weeds, hearthroot_stones, hearthroot_crate],
-        "ceiling": [hearthroot_ivy, hearthroot_chain, hearthroot_banner],
+        # Three banners in eight, each a different one (12.100).
+        "ceiling": [hearthroot_ivy, hearthroot_chain, hearthroot_banner, hearthroot_ivy,
+                    lambda r: hearthroot_banner(r, "pennon"), hearthroot_chain, hearthroot_ivy,
+                    lambda r: hearthroot_banner(r, "cloth")],
         "wall": [hearthroot_sconce],
     },
     "tower": {
