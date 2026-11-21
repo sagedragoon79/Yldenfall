@@ -11,6 +11,11 @@ const DIR := "res://assets/decor/"
 const FLOOR_CHANCE := 30
 const CEILING_CHANCE := 24
 const WALL_CHANCE := 8
+## No two pieces of a kind within this many cells of each other (across, up and
+## down) are the same picture (design bible 12.100, pass 624): the independent grade
+## (pass 620) saw "identical banners" in a row along the plaza's ceiling. A piece
+## that would repeat a neighbour takes the next variant its neighbours don't have.
+const NO_REPEAT := Vector2i(5, 1)
 const GLOW_COLORS := {"heartwood": Color("84cbd6"), "hearthroot": Color("f0c02e"), "tower": Color("f09040"), "haar": Color("f0d070"), "boughs": Color("f0e090"), "spires": Color("f0d070"), "vorrhallow": Color("e070e0"), "evercrown": Color("60e8f0"), "sunken": Color("8af0e8"), "trials": Color("e8e4dc")}
 
 ## [kind row, variant, cell] for every placed piece.
@@ -20,6 +25,8 @@ var glows: Array[Vector2] = []
 ## floor around each glow (design bible 12.10). Resolved in `build`.
 var pool_color: Color = Color.WHITE
 
+## kind -> {cell: variant}, for NO_REPEAT.
+var _placed: Dictionary = {}
 var _tex: Texture2D
 var _meta: Dictionary
 var _glow: Node2D
@@ -74,7 +81,7 @@ func _add(row: int, kind: String, variant: int, cell: Vector2i) -> void:
 	var variants: Array = _meta.get(kind, [])
 	if variants.is_empty():
 		return
-	var v := variant % variants.size()
+	var v := _unlike_neighbours(kind, variant % variants.size(), variants.size(), cell)
 	pieces.append([row, v, cell])
 	var origin := _origin(row, cell)
 	for g: Array in variants[v].glow:
@@ -82,6 +89,26 @@ func _add(row: int, kind: String, variant: int, cell: Vector2i) -> void:
 		if row == 3:
 			gx = _meta.cell[0] - gx
 		glows.append(origin + Vector2(gx, g[1]))
+
+
+## `v`, or the next variant after it that no piece of this kind within NO_REPEAT
+## cells has (the cells are scanned row by row, so the neighbours are the ones
+## already placed). With too few variants to avoid them all, `v` stays.
+func _unlike_neighbours(kind: String, v: int, count: int, cell: Vector2i) -> int:
+	var placed: Dictionary = _placed.get_or_add(kind, {})
+	if count > 1 and not placed.is_empty():
+		var taken := {}
+		for dy in range(-NO_REPEAT.y, NO_REPEAT.y + 1):
+			for dx in range(-NO_REPEAT.x, NO_REPEAT.x + 1):
+				var near: int = placed.get(cell + Vector2i(dx, dy), -1)
+				if near >= 0:
+					taken[near] = true
+		for k in count:
+			if not taken.has((v + k) % count):
+				v = (v + k) % count
+				break
+	placed[cell] = v
+	return v
 
 
 ## Top-left of a piece's 16x32 (world pixel) sprite: floor pieces stand on the cell's bottom,

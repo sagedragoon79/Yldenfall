@@ -1965,5 +1965,67 @@ def test_the_shipped_atlases_carry_their_blends():
         assert shipped.crop(box).tobytes() == fresh.crop(box).tobytes(), f"assets/tiles/{zone}.png is stale"
 
 
+def _growth_box(habit, seed):
+    """One growth of `habit` on a bare right-hand face: (how far it stands out of
+    the face, how far it runs along it, how much glass it is, how far its furthest
+    point lies from its root), in world pixels."""
+    import math
+    import random
+    from PIL import Image
+    img = Image.new("RGBA", (tg.BG_W, tg.BG_H), tg.CLEAR)
+    tg.stillglass_growth(img, 100, 200, math.pi / 2, 0.75, random.Random(seed), 30, 14,
+                         ("crystal-6", "crystal-4", "crystal-2"), habit=habit)
+    glass = {tg.c(n) for n in ("crystal-6", "crystal-4", "crystal-2")}
+    pts = [(x // tg.D, y // tg.D) for y in range(0, tg.BG_H, tg.D) for x in range(0, tg.BG_W, tg.D)
+           if img.getpixel((x, y)) in glass]
+    assert pts, f"a {habit} growth draws no glass"
+    out = max(x for x, _ in pts) - 100
+    along = max(y for _, y in pts) - min(y for _, y in pts) + 1
+    far = max(math.hypot(x - 100, y - 200) for x, y in pts)
+    return out, along, len(pts), far
+
+
+def test_stillglass_grows_in_four_habits():
+    # Design bible 12.100 (pass 624): the pass 620 grade read the hall's stillglass as
+    # "one crystal cluster at several angles". A growth has one of four habits, and
+    # they differ in outline, not in the turn of one outline.
+    assert len(set(tg.STILLGLASS_HABITS)) == 4
+    for seed in range(6):
+        box = {h: _growth_box(h, seed) for h in tg.STILLGLASS_HABITS}
+        # The blade stands furthest out of the face, and is less glass than the twin.
+        assert box["blade"][0] > box["spray"][0] and box["blade"][0] > box["twin"][0], f"seed {seed}: the blade is not the longest {box}"
+        # The twin is the fullest: two broad shards, where the blade is one.
+        assert box["twin"][2] > box["spray"][2] and box["twin"][2] > box["blade"][2] * 1.3, f"seed {seed}: the twin is one shard {box}"
+        # The druse is a low mound: no point of it lies further from the root than
+        # three quarters of any other habit's, and it is wider along the face than
+        # it stands out of it.
+        for other in ("spray", "blade", "twin"):
+            assert box["druse"][3] < box[other][3] * 0.75, f"seed {seed}: the druse is not low {box}"
+        assert box["druse"][1] > box["druse"][0], f"seed {seed}: the druse is not a mound {box}"
+
+
+def test_no_two_growths_in_a_row_share_a_habit():
+    # 12.100: both of the hall's backdrops deal the habits out, every habit before
+    # any comes again, and no two growths in a row alike.
+    import random
+    for seed in range(20):
+        deal = tg.stillglass_habits(random.Random(seed), 13)
+        assert len(deal) == 13 and set(deal[:4]) == set(tg.STILLGLASS_HABITS), deal
+        assert all(a != b for a, b in zip(deal, deal[1:])), f"seed {seed}: {deal}"
+    for painter, key in ((tg.vorrhallow_far, "vorrhallow_far"), (tg.vorrhallow_mid, "vorrhallow_mid")):
+        painter()
+        rec = tg.STILLGLASS_SEATS[key]
+        assert len(rec["habits"]) == len(rec["seats"])
+        assert set(rec["habits"]) == set(tg.STILLGLASS_HABITS), f"{key} grows only {set(rec['habits'])}"
+        assert all(a != b for a, b in zip(rec["habits"], rec["habits"][1:])), f"{key}: {rec['habits']}"
+
+
+def test_the_shipped_vorrhallow_backdrops_are_fresh():
+    from PIL import Image
+    for painter, name in ((tg.vorrhallow_far, "vorrhallow_far"), (tg.vorrhallow_mid, "vorrhallow_mid")):
+        shipped = Image.open(tg.BG / f"{name}.png").convert("RGBA")
+        assert shipped.tobytes() == painter().convert("RGBA").tobytes(), f"assets/bg/{name}.png is stale"
+
+
 if __name__ == "__main__":
     main()

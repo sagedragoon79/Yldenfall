@@ -1,1 +1,1 @@
-{"cell": [16, 32], "density": 2, "floor": [{"glow": []}, {"glow": []}, {"glow": []}, {"glow": []}, {"glow": []}, {"glow": []}], "ceiling": [{"glow": []}, {"glow": []}, {"glow": []}], "wall": [{"glow": [[3.2, 11.0]]}]}
+{"cell": [16, 32], "density": 2, "floor": [{"glow": []}, {"glow": []}, {"glow": []}, {"glow": []}, {"glow": []}, {"glow": []}], "ceiling": [{"glow": []}, {"glow": []}, {"glow": []}, {"glow": []}, {"glow": []}, {"glow": []}, {"glow": []}, {"glow": []}], "wall": [{"glow": [[3.2, 11.0]]}]}
