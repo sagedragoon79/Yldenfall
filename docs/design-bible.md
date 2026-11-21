@@ -2869,6 +2869,19 @@ The pass 625 grade, the rest of its first item: terrain has "no top-lip variatio
 
 Judged by eye at 1x and 3x in the storm ledge, the drowned aqueduct, the canopy bridge, the flooded hall and the Drift Well, before and after on the storm ledge and the aqueduct. The first shading scattered the dark tone through each mound on a fixed beat and read as dither; the lee flank reads as form. The first tones were read from the atlas by brightness and came out wrong in three zones (stone and outline colours share the cap's rows), so they come from the ramp. `tests/test_top_lip.gd`.
 
+### 12.104 A ceiling is a few large shapes, not a row of teeth (pass 628)
+
+The pass 625 grade, the last of its first item: terrain is "cut into 45-degree stairs ... with no large form". The haunches (12.78) turned each step into a diagonal, the soffit shade (12.102) put the underside in shadow and the lip (12.103) broke the top line. What was left was the layout: the rooms reshaped in passes 587 to 590 were made ragged with many small forms of one size. The Storm Ledge's overhang was four notches side by side, each about five tiles wide; the Canopy Bridge hung three knots a tile apart; the edge of the Flooded Hall's fallen vault was a comb. A row of equal 45-degree notches is the stair the grade saw.
+
+- **The rule.** Read a ceiling's underside column by column, leaving out any column of ground that comes down past the middle of the room (a wall or a pier). It may change direction, from falling to rising or back, once in seven columns at most: six times in a one-screen room, nine in a room a screen and a half wide. A vault with a hanging mass on each side turns four or five times; a comb turns at every tooth. Every room is held to it (`tests/test_ceiling_forms.gd`).
+- **One form is the largest.** A reshaped ceiling has one form plainly bigger than the rest, and no two forms of one size side by side.
+- **The Storm Ledge** (12.76). One great vault, open to the storm over seven columns at its crown and twelve columns wide at row 4, twice the width of the hollow west of it. Two masses hang from it, a wedge on the west that ends in a prong two tiles long and a shorter spur on the east, with a small peaked pocket past the east spur. Its west side is one diagonal six haunches long; its east side is three, a sheer step and two more.
+- **The Canopy Bridge** (12.77). One great notch eight columns wide, a middle one of three and a small one of two, with a blunt knot two tiles wide between the first two and a tapered one between the last two. The wind's rectangle is untouched.
+- **The Flooded Hall** (12.74). The hole of the fallen vault is one opening whose edge comes down once toward the east, to the hanging voussoir. The bays, the pillars and the heap are as they were.
+- **Not done here.** The slopes are still 45 degrees, the only one the tilesets carry: a second pitch (a shallow haunch two tiles long, a steep one two tiles tall) would let a vault curve, and needs its own tiles, collision and shade. The Drowned Aqueduct's piers still step down under water, where a haunch cannot go (its open half would show dry). The rule counts turns, not size, so a ceiling ruled flat passes it; 12.74 to 12.78 guard against that in the rooms they name.
+
+Judged by eye at 1x, before and after, in the three rooms. The Storm Ledge changed most: the overhang reads as one arch with broken ends. The Canopy Bridge's change is smaller, since its canopy is only three rows deep over the wind. `tests/test_ceiling_forms.gd` checks the rule in every room, the measure itself on a comb, a vault and a pier, and each of the three rooms' forms.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
