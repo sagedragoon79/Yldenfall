@@ -46,6 +46,7 @@ extends Node2D
 ##   --shot-thrust=N            thrust (the Blade skill) on frame N
 ##   --wyrm-drawn               the Haar Wyrm's code-drawn heads and necks, in place of its skeleton (WyrmRig), to compare
 ##   --wyrm-seed=N              the Haar Wyrm's breaths in the same order every run (to film the two side by side)
+##   --storm-at=T               start Carillon's storm clock at T seconds, so a capture can catch a stroke of lightning (RainLanding)
 ##   --wyrm-reel                walk the Haar Wyrm through every state for a film: a doused head, the rage,
 ##                              a head falling limp, and its death
 ##                              (the hero stands on the cistern's grate, and drops through it for each breath)
@@ -170,6 +171,7 @@ func _ready() -> void:
 	PlayerVisual.forced = _args.get("shot-pose", "")
 	HaarWyrm.use_rig = not _args.has("wyrm-drawn")
 	HaarWyrm.seed_with = int(_args.get("wyrm-seed", "0"))
+	RainLanding.clock_from = float(_args.get("storm-at", "0"))
 	if _args.has("room"):
 		var room_id: String = _args["room"]
 		if room_id.begins_with("res://"):

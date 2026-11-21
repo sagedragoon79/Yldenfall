@@ -2484,7 +2484,7 @@ The pass 580 grade: "tile repetition that shows the grid (the aqueduct's sandsto
 
 Only `assets/tiles/tower.png` and `assets/tiles/spires.png` are regenerated; the factory is unchanged. `tests/test_tower_plates.gd` (`test_sheets_run_longer_than_a_tile`) and `tests/test_shrine_ashlar.gd` hold it, with `tools/art/test_tilegen.py` for the joints. Not done here: the aqueduct's sandstone, whose blocks already run through the seams (12.39); what repeats there is the moss mark down a pier's face, which has one variant.
 
-### 12.71 Carillon's storm stands behind the fight (pass 584)
+### 12.71 Carillon's storm stands behind the fight (pass 584; the rain lands and the far strokes light the stone since pass 631, 12.107)
 
 The pass 580 grade: "the Spires fight frame is noisy (thin the rain, keep lightning in the far layer, darken the sky a step)". Three things were louder than the figures.
 
@@ -2913,6 +2913,23 @@ A closed chest carries all three. An opened chest carries none, so what is left 
 - **Not done here.** Item pickups already carry a light and sparkle of their own and were left. Nothing here lifts a chest out of the Haar's fog, which is drawn over the play layer and stays a held item; the rim shows through it faintly. Coins and drops are as they were. A stele does not go dull once read, since reading is not recorded.
 
 Judged by eye at 1x and 2x in `sunken/drowned_aqueduct` (the strongbox and the runestone on the east ledge, the grade's frame), `vorrhallow/flooded_hall` (the chest on the mound), `boughs/leaf_landing` (the hamper and two steles against leaves) and `heartwood/root_shrine`. `tests/test_standout.gd` checks the halo's steps, that every zone's chest is rimmed along its whole top in a tone that reads apart from its body, that an opened chest goes dull, that one glint is open at a time and visits every spot, that the spots sit on the rim, and that every stele shape is rimmed on its outline in an inlay that reads apart from its stone.
+
+### 12.107 Rain lands, and lightning lights the stone (pass 631)
+
+The pass 625 grade: "the rain is one even overlay with no splash or wet stone, and the lightning lights nothing" (the storm ledge, the Spires hit). Carillon's rain (`SheetRain`, 12.71) is a sheet in front of the play field, so it fell past every floor without touching one, and the far layer's bolts are baked in and lit nothing. `RainLanding` (`scripts/world/rain_landing.gd`) is built by every room of a zone it rains in (`RainLanding.ZONES`: the Spires) and draws three things on the ground the rain can reach:
+
+- **Which tops are wet** (`wet_tops`, `SHELTER`). A top of level ground or a board with nothing over it for four cells. A top under an overhang, an awning or a board is dry, so shelter reads as shelter. Slopes, ground under water and a secret's cover take none.
+- **Wet stone** (`sheen`). A broken line of the palette's pale sky tone along a wet top: a dash or two a cell, 2 px to 5 px long, never more than seven tenths of the cell, keyed to the cell so no two neighbours match. Each dash shimmers by 0.15 round 0.6 over 2.6 seconds. On the Spires' moss it reads as water standing on the cap.
+- **Splashes** (`splash`, `FRAMES`). Each wet cell rolls once every 0.3 seconds; in the storm 55 percent of rolls land a drop. A splash is a 2 px streak, then a crown 5 px wide, then four droplets 7 px apart, in a fifth of a second, at the rain's own alpha (0.5, `SheetRain.MAX_ALPHA`). Drawn a step over the moss and the grass so it stands on the top. The share follows `SheetRain.density`, so the drizzle after the Sky Spring splashes a third as often.
+- **Lightning's light** (`stroke_start`, `flash`, `STROKE`). One far stroke in every seven seconds, starting somewhere in the first four, so strokes come 3 to 11 seconds apart. A stroke is two beats and a fade in half a second: full for 0.06 s, a dip to a quarter, 0.8 for 0.05 s, gone by 0.5 s. While it lasts the sky behind the ground lifts by up to 0.16 in the far bolts' own hue (crystal-6, drawn over the backdrop and under the tiles) and every wet top takes a whole rim at up to 0.5, so the room's mass stands dark against a lit sky. It is scaled by the player's flashes option (section 14) and there is none once the Sky Spring has broken the storm.
+
+Nothing is stored per drop or per stroke: both are worked out from the clock and the cell, so a frame costs a few hashes per visible wet cell and a capture can ask for a stroke (`--storm-at=T` starts the storm's clock at T seconds; the first stroke is at 2.36).
+
+This keeps 12.71's rule for weather: the splash is no brighter than a drop, the sky's lift is a sixth, and the rim is under a tell. Bright lightning on the play layer (`LightningArc`) still always means something.
+
+- **Not done here.** No thunder: a stroke is silent (an audio item). The lift does not light the hero, foes or props, and the stroke casts no shadow. The floating islands of the Spires' rooms are scenery, so they take no rain. Walls and slopes do not run with water. A room with a full ceiling still has the rain sheet over it (the broken shrine); `SHELTER` only decides where it lands.
+
+Judged by eye at 1x and 2x in `spires/storm_ledge` (at rest and in a stroke), `spires/sky_steps` (a stroke) and `spires/broken_shrine`. `tests/test_rain_landing.gd` checks which tops are wet (open sky, a roof at and past `SHELTER`, a board, slopes and skipped cells), that the sheen is a broken line that differs by cell, that splashes come to some cells at a time, run three frames, widen, thin with the drizzle and are no brighter than a drop, that strokes are two beats, seconds apart and lit under a tenth of the time, that the flashes option and the Sky Spring both stop the light, and that every Spires room carries a `RainLanding` with no wet top under ground while a Boughs room carries none.
 
 ## 13. Asset Production Plan
 

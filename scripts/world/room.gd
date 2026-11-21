@@ -44,6 +44,8 @@ var _secret_cells := {}
 var _deep_shade: DeepShade
 var _soffit_shade: SoffitShade
 var _top_lip: TopLip
+## Where Carillon's rain lands (design bible 12.107); null where it does not rain.
+var _rain_landing: RainLanding
 ## Time-locked water cells (legend `f`), gathered into Waterfalls after the grid.
 var _falls := {}
 ## Wrong-gravity cells (legend `v`), gathered into GravityDrifts after the grid.
@@ -301,6 +303,13 @@ func build(text: String) -> void:
 
 	_grow_lip()
 
+	# Rain lands on the tops it can reach, and lightning lights them (design bible 12.107).
+	if RainLanding.falls_in(zone):
+		_rain_landing = RainLanding.new()
+		_rain_landing.name = "RainLanding"
+		add_child(_rain_landing)
+		_land_rain()
+
 	# Ambient-occlusion rim shading where solid edges meet open air.
 	var shade := EdgeShade.new()
 	shade.name = "EdgeShade"
@@ -544,6 +553,8 @@ func tear_floor(col_from: int, col_to: int, row_from: int, row_to: int) -> void:
 		_shade_soffits()
 	if _top_lip != null:
 		_grow_lip()
+	if _rain_landing != null:
+		_land_rain()
 	# The ground around the pit gets new edges.
 	for x in range(col_from - 3, col_to + 4):
 		for y in range(row_from - 3, row_to + 4):
@@ -634,6 +645,13 @@ func _grow_lip() -> void:
 	var skip := _secret_cells.duplicate()
 	skip.merge(_water)
 	_top_lip.setup(zone, _solid_look, size_tiles, _slope_cells, skip)
+
+
+## Rain reaches no secret's cover and no ground under water.
+func _land_rain() -> void:
+	var skip := _secret_cells.duplicate()
+	skip.merge(_water)
+	_rain_landing.setup(_solid_look, _planks, size_tiles, _slope_cells, skip)
 
 
 func _shade_soffits() -> void:
