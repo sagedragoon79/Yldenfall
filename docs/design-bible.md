@@ -2598,7 +2598,7 @@ The pass 585 grade saw "the same chest on the same thin table ... in nearly ever
 
 Each lock glows in its zone's accent. An open chest throws its lid back the same way in every zone. The chest is drawn as data (`Chest.parts`, half-pixel rects), so tests read the exact pixels. Every tone is a master palette value. Judged by eye on a contact sheet of every zone at 4x (`tools/art/chest_sheet.tscn`) and in game at 1x in `boughs/leaf_landing` and `haar/marsh_road`. `tests/test_chest.gd` checks that every zone has a look in the palette, that the zones use at least seven kinds with no two silhouettes alike, that every part stays in the chest's box and on its ground line, that the lock's light sits on its plate, and that a room's chest takes its zone.
 
-### 12.81 A plank stands on a built trestle (pass 596; each zone frames it its own way since pass 604, 12.85)
+### 12.81 A plank stands on a built trestle (pass 596; each zone frames it its own way since pass 604, 12.85, and builds its own post since pass 629, 12.105)
 
 The independent grade (pass 595) read the one-way planks in the Hearthroot plaza, the Tower's gear pit and the Lampwick causeway as "bare debug-like sticks on posts": the posts of 12.30 were 2.5 px rods with nothing between them, so a plank on two posts read as a table. `PlankSupports` now draws its posts as built timber (`post_parts`, half-pixel rects in the plank's strut ramp):
 
@@ -2881,6 +2881,23 @@ The pass 625 grade, the last of its first item: terrain is "cut into 45-degree s
 - **Not done here.** The slopes are still 45 degrees, the only one the tilesets carry: a second pitch (a shallow haunch two tiles long, a steep one two tiles tall) would let a vault curve, and needs its own tiles, collision and shade. The Drowned Aqueduct's piers still step down under water, where a haunch cannot go (its open half would show dry). The rule counts turns, not size, so a ceiling ruled flat passes it; 12.74 to 12.78 guard against that in the rooms they name.
 
 Judged by eye at 1x, before and after, in the three rooms. The Storm Ledge changed most: the overhang reads as one arch with broken ends. The Canopy Bridge's change is smaller, since its canopy is only three rows deep over the wind. `tests/test_ceiling_forms.gd` checks the rule in every room, the measure itself on a comb, a vault and a pier, and each of the three rooms' forms.
+
+### 12.105 Each zone builds its own post (pass 629)
+
+The pass 625 grade: "the same cross-braced plank platform in nearly every frame, recoloured". The frames between the posts have differed by zone since passes 604 and 625 (12.85, 12.101), so what repeated was the plank on two upright squared posts: a table's outline, the same in every zone. Each family of zones now builds the post itself its own way (`PlankSupports.POSTS`, a `post` per zone in `LOOKS`), and the run's outline changes with it:
+
+- **The squared post** (`squared`; Hearthroot, the gym, the Evercrown): the pass 596 post (12.81), upright, with a cap block, a bolt, knee brackets and a footing stone.
+- **A raked leg** (`raked`; the Heartwood): the leg stands where the plan puts its foot and leans in under the board, 7 px at most (`RAKE`) and a quarter of its height at most, so the board overhangs both legs as a sawhorse's does. A cap under the board, rope wrapped below the cap in place of a bolt, and a footing stone. The lashed frame's upper corners come in with the legs. A lone post under a one-cell plank stands square.
+- **A cut limb** (`trunk`; the High Boughs): a trunk on a flared root that forks under the board, which lies in the crotch; the limb toward the run's middle reaches further. Vine at the fork and a sprig still in leaf. No cap, no bolt, no footing stone.
+- **A driven pile** (`pile`; the Haar, the Sunken Spring): a round pile 5 px thick. At a run's end its head stands 5 px above the deck (`PILE_HEAD`), banded with iron, with rope wrapped round it under the board; its foot is dark with water to a tide line and stands in a mound of mud. No cap block, brackets or footing stone. A lone pile under a one-cell plank stops under the board, so nothing stands in the middle of a foothold.
+- **A riveted iron column** (`column`; the Tower, the Trials): an H-section (lit flanges on a dark web) with rivets down the web, a gusset plate up to the board and a bolted base plate. Under a run of three cells or more the columns stand 8 px further in from the board's ends (`set_in`, `PlankSupports.place`), still over the floor cell the plan chose, gusseted on both sides, so the deck overhangs them and the truss spans the moved columns.
+- **A stone pier** (`stone`; the Spires, Vorrhallow): coursed blocks 6 px wide in the zone's stone, their upright joints staggered, on a plinth, under a head of two courses that corbel out toward the run's middle. No timber and no bolt, so in Vorrhallow the arch springs from stone and in the Spires the corbels of 12.101 grow out of the pier.
+
+The plan (12.30) is unchanged: which runs get posts, hangers or braces, and where a post's foot stands. Collision is untouched. A pile's head is the only part of any support drawn above a board, and it is 5 px wide at the board's end.
+
+- **Not done here.** The board itself is still the zone's one plank tile, 3 px deep and ruled straight (12.20): a log's belly, a girder's depth or broken board ends would need the tile or a layer over it. Hangers and wall braces are as they were. The Evercrown's posts are still squared, in tissue.
+
+Judged by eye at 1x and 2x in `heartwood/root_shrine` (the sawhorse), `tower/gear_pit` (the deck overhanging its columns over the spikes), `haar/lampwick_causeway` (pile heads above three boardwalks), `boughs/canopy_bridge` (forked limbs at both ends of the bridge) and `vorrhallow/drowned_market` (an arch between two stone piers). The Spires', the Sunken Spring's and the Trials' posts were not looked at in a room: the two rooms shot there (`spires/broken_shrine`, `sunken/drowned_aqueduct`) hang or brace every run. `tests/test_plank_supports.gd` checks that every zone takes a known post and every post is used, that the six graded zones each build their own, each post's signature (the lean and the lashing; the fork; the head above the deck; the H-section, gusset and rivets; coursed stone with no timber), that no post reaches past its board's end or into the floor, that no two draw the same post, the set-in columns and the frame that follows raked legs.
 
 ## 13. Asset Production Plan
 

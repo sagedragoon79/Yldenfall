@@ -204,7 +204,8 @@ func test_plank_every_support_tone_is_in_the_palette() -> void:
 
 ## Pass 596: a post is squared timber with a cap under the board and a footing stone, not a stick.
 func test_plank_a_post_is_built_timber() -> void:
-	var look: Dictionary = PlankSupports.LOOKS["tower"]
+	# The town's post: the Tower's is an iron column since pass 629 (bible 12.105).
+	var look: Dictionary = PlankSupports.LOOKS["hearthroot"]
 	var parts := PlankSupports.post_parts(100.0, 50.0, 98.0, look)
 	var body: Rect2 = parts[0][0]
 	check(body.size.x >= PlankSupports.POST_W and PlankSupports.POST_W >= 4.0, "the post is at least 4 px wide: %s" % body.size.x)
@@ -263,7 +264,7 @@ func test_plank_no_post_juts_past_its_run() -> void:
 						solid[Vector2i(x, y)] = true
 			var look: Dictionary = PlankSupports.LOOKS.get(zone, PlankSupports.LOOKS["gym"])
 			var runs := PlankSupports.runs(planks)
-			for s: Dictionary in PlankSupports.plan(planks, solid, size):
+			for s: Dictionary in PlankSupports.place(PlankSupports.plan(planks, solid, size), look):
 				if s.kind != "post":
 					continue
 				posts += 1
@@ -357,3 +358,129 @@ func test_plank_each_zone_family_frames_its_own_way() -> void:
 		var key_str := str(parts.map(func(p: Array) -> String: return "%s%s" % [p[0], p[1]]))
 		check(not seen.has(key_str), "%s draws a frame of its own" % style)
 		seen[key_str] = true
+
+
+## Pass 629 (bible 12.105): the pass 625 grade still saw "the same cross-braced plank
+## platform in nearly every frame, recoloured". The frames differ by zone, so what
+## repeated was the plank on two upright squared posts. Each family of zones now
+## builds the post itself its own way, and the run's outline changes with it.
+func test_plank_each_zone_family_builds_its_own_post() -> void:
+	var by_style := {}
+	for zone: String in PlankSupports.LOOKS:
+		var style := String(PlankSupports.LOOKS[zone].get("post", ""))
+		check(style in PlankSupports.POSTS, "%s builds its posts a known way (%s)" % [zone, style])
+		if not by_style.has(style):
+			by_style[style] = zone
+	check(by_style.size() == PlankSupports.POSTS.size(), "every post is used (%s)" % [by_style.keys()])
+	var graded := ["hearthroot", "heartwood", "tower", "haar", "boughs", "spires"].map(func(z: String) -> String: return PlankSupports.LOOKS[z].post)
+	var distinct := {}
+	for g: String in graded:
+		distinct[g] = true
+	check(distinct.size() == 6, "the town, the woods, the Tower, the marsh, the Boughs and the Spires each build their own post (%s)" % [graded])
+	var x := 100.0
+	var top := 50.0
+	var bottom := 98.0
+	var seen := {}
+	for style: String in by_style:
+		var look: Dictionary = PlankSupports.LOOKS[by_style[style]]
+		var w: Array = look.wood
+		var f: Array = look.foot
+		# The post at a run's left end: its one knee side is the run's middle, to the right.
+		var parts := PlankSupports.post_parts(x, top, bottom, look, [1])
+		var box := _bounds(parts)
+		check(box.position.x >= x - PlankSupports.INSET - 0.01, "%s: nothing reaches past the board's end (%s)" % [style, box])
+		check(box.end.y <= bottom + 0.01, "%s: nothing goes into the floor (%s)" % [style, box])
+		var timber := parts.filter(func(q: Array) -> bool: return q[1] in w)
+		var stone := parts.filter(func(q: Array) -> bool: return q[1] in f)
+		var bolts := parts.filter(func(q: Array) -> bool: return q[1] == look.bolt)
+		var wraps := parts.filter(func(q: Array) -> bool: return q[0].size.y == 0.5 and q[0].size.x >= 3.0 and q[1] in [look.lit, look.mid])
+		var high := parts.filter(func(q: Array) -> bool: return q[0].position.y < top + 3.0)
+		var low := parts.filter(func(q: Array) -> bool: return q[0].end.y > bottom - 3.0)
+		match style:
+			"squared":
+				check(is_equal_approx(box.position.y, top) and absf(_bounds(high).get_center().x - _bounds(low).get_center().x) < 4.5, "the squared post stands upright under the board")
+			"raked":
+				var lean := _bounds(high).get_center().x - _bounds(low).get_center().x
+				check(lean >= 6.0 and is_equal_approx(PlankSupports.rake(bottom - top), PlankSupports.RAKE), "the raked leg leans in under the board (%s px)" % lean)
+				check(wraps.size() >= 2 and bolts.is_empty() and not stone.is_empty(), "lashed under its cap, no bolt, on a footing stone")
+				var other := _bounds(PlankSupports.post_parts(x, top, bottom, look, [-1]).filter(func(q: Array) -> bool: return q[0].position.y < top + 3.0))
+				check(other.get_center().x < x - 6.0, "and the leg at the run's other end leans the other way (%s)" % other)
+				var lone := PlankSupports.post_parts(x, top, bottom, look)
+				check(absf(_bounds(lone).get_center().x - x) < 1.0, "a lone post under a one-cell plank stands square")
+			"trunk":
+				var caps := parts.filter(func(q: Array) -> bool: return q[0].size.x >= 8.0 and q[0].position.y < top + 3.0)
+				check(stone.is_empty() and caps.is_empty(), "the cut limb has no footing stone and no cap block")
+				var struts := parts.filter(func(q: Array) -> bool: return q[0].size == Vector2(1.5, 1.5))
+				var hx: Array = struts.filter(func(q: Array) -> bool: return q[0].position.y < top + 4.0).map(func(q: Array) -> float: return q[0].get_center().x)
+				check(hx.min() < x - 1.5 and hx.max() > x + 6.0, "it forks under the board, the longer limb toward the run's middle (%s to %s)" % [hx.min(), hx.max()])
+				check(wraps.size() >= 2 and bolts.size() == 2, "bound with vine at the fork and still in leaf")
+			"pile":
+				check(is_equal_approx(box.position.y, top - PlankSupports.BOARD - PlankSupports.PILE_HEAD), "the pile's head stands above the deck (%s)" % box.position.y)
+				check(parts[0][0].size.x == 5.0 and wraps.size() >= 2, "a round pile 5 px thick, rope wrapped under the board")
+				var stones := parts.filter(func(q: Array) -> bool: return q[1] == f[1] and q[0].size.y >= 3.0)
+				check(stones.is_empty(), "driven into the mud: no footing stone")
+				var lone := _bounds(PlankSupports.post_parts(x, top, bottom, look))
+				check(lone.position.y >= top, "a lone pile under a one-cell plank stops under the board (%s)" % lone)
+			"column":
+				check(stone.is_empty(), "the iron column stands on a base plate, not a stone")
+				check(bolts.size() >= 6, "riveted down its web, through its gusset and its base plate (%d)" % bolts.size())
+				var gusset := parts.filter(func(q: Array) -> bool: return q[1] == w[1] and q[0].size.y == 1.0 and q[0].position.x >= x + 2.0)
+				check(gusset.size() == 7, "a gusset plate steps out to the board on the knee side (%d rows)" % gusset.size())
+				check(parts[0][1] == w[2] and parts[1][1] == w[0], "an H-section: lit flanges on a dark web")
+			"stone":
+				check(timber.filter(func(q: Array) -> bool: return not (q[1] in f)).is_empty() and bolts.is_empty(), "the stone pier has no timber and no bolt")
+				var courses := parts.filter(func(q: Array) -> bool: return q[1] == f[1] and q[0].size.x == 6.0)
+				check(courses.size() >= 7, "coursed blocks (%d)" % courses.size())
+				check(box.end.x >= x + 7.0, "its head corbels out toward the run's middle (%s)" % box)
+		var key := str(parts.map(func(q: Array) -> String: return "%s%s" % [q[0], q[1]]))
+		check(not seen.has(key), "%s draws a post of its own" % style)
+		seen[key] = true
+
+
+## Pass 629: the Tower and the Trials set a long run's columns in from its ends, so
+## the deck overhangs them; a short run's posts stay where the plan put them.
+func test_plank_iron_columns_stand_in_from_the_boards_ends() -> void:
+	var look: Dictionary = PlankSupports.LOOKS["tower"]
+	var size := Vector2i(16, 12)
+	var plan := PlankSupports.plan(_planks(8, 2, 13), _box(size), size)
+	var placed := PlankSupports.place(plan, look)
+	check(_kinds(placed) == _kinds(plan), "the same supports, placed: %s" % [_kinds(placed)])
+	var before := plan.filter(func(s: Dictionary) -> bool: return s.kind == "post")
+	var posts := placed.filter(func(s: Dictionary) -> bool: return s.kind == "post")
+	var set_in: float = look.set_in
+	check(set_in >= 8.0, "set in by at least half a tile (%s)" % set_in)
+	check(is_equal_approx(posts[0].x, before[0].x + set_in) and is_equal_approx(posts[1].x, before[1].x - set_in), "both columns move toward the middle: %s, %s" % [posts[0].x, posts[1].x])
+	check(int(posts[0].x / T) == 2 and int(posts[1].x / T) == 13, "each still over the floor cell it was planned on")
+	check(posts[0].knees == [-1, 1] and posts[1].knees == [-1, 1], "gusseted on both sides, under the overhang too")
+	check(is_equal_approx(before[0].x, 2 * T + PlankSupports.INSET), "and the plan itself is unchanged")
+	var frame: Dictionary = placed.filter(func(s: Dictionary) -> bool: return s.kind == "frame")[0]
+	check(is_equal_approx(frame.left, posts[0].x) and is_equal_approx(frame.right, posts[1].x), "the truss spans the moved columns")
+	for q: Dictionary in posts:
+		var box := _bounds(PlankSupports.post_parts(q.x, q.top, q.bottom, look, q.knees))
+		check(box.position.x >= 2 * T and box.end.x <= 14 * T, "a column's gussets stay under its board: %s" % box)
+		check(box.position.x - 2 * T >= 3.0 or 14 * T - box.end.x >= 3.0, "and the board overhangs them")
+	# A two-cell run is too short to overhang.
+	var short := PlankSupports.plan(_planks(8, 6, 7), _box(size), size)
+	var same := PlankSupports.place(short, look)
+	check(same.filter(func(s: Dictionary) -> bool: return s.kind == "post").all(func(s: Dictionary) -> bool: return s.knees.size() == 1), "a two-cell run keeps its posts at its ends")
+	# A zone with no set-in takes the plan as it is.
+	check(PlankSupports.place(plan, PlankSupports.LOOKS["hearthroot"]) == plan, "the town takes the plan as it is")
+	var zones := PlankSupports.LOOKS.keys().filter(func(z: String) -> bool: return PlankSupports.LOOKS[z].has("set_in"))
+	zones.sort()
+	check(zones == ["tower", "trials"], "only the iron zones set their posts in: %s" % [zones])
+
+
+## Pass 629: between raked legs the lashed frame's upper corners come in with the legs.
+func test_plank_the_lashed_frame_follows_raked_legs() -> void:
+	var look: Dictionary = PlankSupports.LOOKS["heartwood"]
+	var square := look.duplicate()
+	square["post"] = "squared"
+	var top := 50.0
+	var bottom := 110.0
+	var upper := func(l: Dictionary) -> Rect2:
+		return _bounds(PlankSupports.frame_parts(100.0, 140.0, top, bottom, l).filter(func(q: Array) -> bool: return q[0].end.y < top + 12.0))
+	var raked: Rect2 = upper.call(look)
+	var plain: Rect2 = upper.call(square)
+	check(raked.end.x <= plain.end.x - 4.0, "the frame's top corner stays inside the leaning leg (%s, %s upright)" % [raked.end.x, plain.end.x])
+	var leg := _bounds(PlankSupports.post_parts(140.0, top, bottom, look, [-1]).filter(func(q: Array) -> bool: return q[0].position.y >= top + 6.0 and q[0].end.y < top + 12.0))
+	check(raked.end.x <= leg.end.x + 0.01, "it does not poke out past the leg (%s, leg %s)" % [raked.end.x, leg.end.x])
