@@ -51,20 +51,20 @@ const FRAME_MIN_H := 40.0
 ## build as the board it carries; `bolt` the fastener accent (tilegen PLANK
 ## `nail`), and `foot` the footing stone (lit, mid, dark).
 const LOOKS := {
-	"gym": {"frame": "x", "hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "aca1ba", "foot": ["797767", "58544c", "363330"]},
-	"heartwood": {"frame": "lashed", "hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "f0c02e", "foot": ["797767", "58544c", "363330"]},
-	"boughs": {"frame": "forked", "hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "a1d684", "foot": ["797767", "58544c", "363330"]},
-	"hearthroot": {"frame": "x", "hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "f0c02e", "foot": ["867ba2", "645e82", "2f2c3a"]},
-	"haar": {"frame": "piling", "hang": "rope", "lit": "aa9173", "mid": "8a6e56", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "989885", "foot": ["797767", "58544c", "363330"]},
-	"sunken": {"frame": "piling", "hang": "chain", "lit": "aa9173", "mid": "634a41", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "84cbd6", "foot": ["797767", "58544c", "363330"]},
+	"gym": {"frame": "x", "post": "squared", "hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "aca1ba", "foot": ["797767", "58544c", "363330"]},
+	"heartwood": {"frame": "lashed", "post": "raked", "hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "f0c02e", "foot": ["797767", "58544c", "363330"]},
+	"boughs": {"frame": "forked", "post": "trunk", "hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "a1d684", "foot": ["797767", "58544c", "363330"]},
+	"hearthroot": {"frame": "x", "post": "squared", "hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "f0c02e", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"haar": {"frame": "piling", "post": "pile", "hang": "rope", "lit": "aa9173", "mid": "8a6e56", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "989885", "foot": ["797767", "58544c", "363330"]},
+	"sunken": {"frame": "piling", "post": "pile", "hang": "chain", "lit": "aa9173", "mid": "634a41", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "84cbd6", "foot": ["797767", "58544c", "363330"]},
 	# The Spires are a ruined stone city: their footings and piers are its own lilac stone (pass 625).
-	"spires": {"frame": "pier", "hang": "rope", "lit": "bea860", "mid": "9c7f44", "dark": "432d23", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "edce6e", "foot": ["867ba2", "645e82", "2f2c3a"]},
-	"vorrhallow": {"frame": "arch", "hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "d684c6", "foot": ["867ba2", "645e82", "2f2c3a"]},
-	"trials": {"frame": "truss", "hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "b4b4a7", "foot": ["867ba2", "645e82", "2f2c3a"]},
-	"tower": {"frame": "truss", "hang": "chain", "lit": "aca1ba", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "84cbd6", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"spires": {"frame": "pier", "post": "stone", "hang": "rope", "lit": "bea860", "mid": "9c7f44", "dark": "432d23", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "edce6e", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"vorrhallow": {"frame": "arch", "post": "stone", "hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "d684c6", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"trials": {"frame": "truss", "post": "column", "set_in": 8.0, "hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "b4b4a7", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"tower": {"frame": "truss", "post": "column", "set_in": 8.0, "hang": "chain", "lit": "aca1ba", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "84cbd6", "foot": ["867ba2", "645e82", "2f2c3a"]},
 	# The Evercrown's shelves are grown, not built (bible 12.34, pass 542): they hang on
 	# sinew strands (night-5, night-3, crystal-1: wine, not red, bible 12.48), not hot crystal chains.
-	"evercrown": {"frame": "web", "hang": "sinew", "lit": "af92c9", "mid": "5d4997", "dark": "421e48", "wood": ["8265b8", "5d4997", "2c2541"], "bolt": "b5e3e1", "foot": ["8265b8", "5d4997", "2c2541"]},
+	"evercrown": {"frame": "web", "post": "squared", "hang": "sinew", "lit": "af92c9", "mid": "5d4997", "dark": "421e48", "wood": ["8265b8", "5d4997", "2c2541"], "bolt": "b5e3e1", "foot": ["8265b8", "5d4997", "2c2541"]},
 }
 
 ## How each zone frames two posts under one run (pass 604): the pass 600 grade saw
@@ -85,6 +85,24 @@ const LOOKS := {
 ## between bays, no timber).
 const FRAMES := ["x", "lashed", "piling", "truss", "arch", "web", "forked", "pier"]
 
+## How each zone builds the post itself (pass 629, design bible 12.105). The pass
+## 625 grade still saw "the same cross-braced plank platform in nearly every
+## frame, recoloured": the frames differ by zone, so what repeated was the plank on
+## two upright squared posts, a table's outline in every zone. The town keeps the
+## squared post ("squared"); the Heartwood rakes its legs in under the board as a
+## sawhorse does ("raked"); the Boughs stand a board in the crotch of a cut limb
+## ("trunk"); the marsh and the spring drive round piles whose heads stand above the
+## deck ("pile"); the Tower and the Trials set riveted iron columns in from the
+## board's ends on gusset plates, so the deck overhangs them ("column", `set_in`);
+## the Spires and the dwarf halls build coursed stone piers ("stone").
+const POSTS := ["squared", "raked", "trunk", "pile", "column", "stone"]
+## How far a raked leg leans in under the board, world px (a quarter of its height at most).
+const RAKE := 7.0
+## How far a pile's head stands above the deck, world px.
+const PILE_HEAD := 5.0
+## A run must be at least this many cells long for its posts to be set in from its ends.
+const SET_IN_CELLS := 3
+
 ## The plan, one Dictionary per support: {kind: "brace", "post" or "hang", ...}.
 var supports: Array[Dictionary] = []
 var _look: Dictionary = LOOKS["gym"]
@@ -97,7 +115,7 @@ func _ready() -> void:
 ## Plans the supports for `planks` (cells of `-`) given which cells look solid.
 func setup(zone: String, planks: Dictionary, solid: Dictionary, size: Vector2i) -> void:
 	_look = LOOKS.get(zone, LOOKS["gym"])
-	supports = PlankSupports.plan(planks, solid, size)
+	supports = PlankSupports.place(PlankSupports.plan(planks, solid, size), _look)
 	queue_redraw()
 
 
@@ -146,7 +164,7 @@ static func plan(planks: Dictionary, solid: Dictionary, size: Vector2i) -> Array
 			if below >= 1 and below <= POST_MAX:
 				# Knee brackets toward the run's middle only, so none juts past its end.
 				var knees: Array = [-1, 1] if run.y == run.z else [1 if i == 0 else -1]
-				var post := {"kind": "post", "x": x, "top": row * TILE + BOARD, "bottom": float((row + 1 + below) * TILE), "knees": knees}
+				var post := {"kind": "post", "x": x, "top": row * TILE + BOARD, "bottom": float((row + 1 + below) * TILE), "knees": knees, "cells": run.z - run.y + 1}
 				out.append(post)
 				posts.append(post)
 				continue
@@ -162,7 +180,29 @@ static func plan(planks: Dictionary, solid: Dictionary, size: Vector2i) -> Array
 		if posts.size() == 2:
 			var low := minf(posts[0].bottom, posts[1].bottom)
 			if low - posts[0].top >= FRAME_MIN_H:
-				out.append({"kind": "frame", "left": posts[0].x, "right": posts[1].x, "top": posts[0].top, "bottom": low})
+				out.append({"kind": "frame", "left": posts[0].x, "right": posts[1].x, "top": posts[0].top, "bottom": low, "cells": run.z - run.y + 1})
+	return out
+
+
+## The plan as a zone builds it (pass 629): a look with `set_in` stands the end
+## posts of a run of `SET_IN_CELLS` cells or more that far in from where the plan
+## put them (still over the same floor cell), braced to the board on both sides,
+## and its frame spans the moved posts. Other looks take the plan as it is.
+static func place(planned: Array[Dictionary], look: Dictionary) -> Array[Dictionary]:
+	var shift: float = look.get("set_in", 0.0)
+	if shift <= 0.0:
+		return planned
+	var out: Array[Dictionary] = []
+	for s: Dictionary in planned:
+		var d := s.duplicate()
+		if int(s.get("cells", 1)) >= SET_IN_CELLS:
+			if s.kind == "post" and s.knees.size() == 1:
+				d.x = s.x + s.knees[0] * shift
+				d.knees = [-1, 1]
+			elif s.kind == "frame":
+				d.left = s.left + shift
+				d.right = s.right - shift
+		out.append(d)
 	return out
 
 
@@ -269,6 +309,19 @@ func _draw_parts(parts: Array) -> void:
 ## the board with a bolt, knee brackets on the `knees` sides (-1 left, 1 right),
 ## and a footing stone.
 static func post_parts(x: float, top: float, bottom: float, look: Dictionary, knees: Array = [-1, 1]) -> Array:
+	match String(look.get("post", "squared")):
+		"raked":
+			# A lone post under a one-cell plank has no side to lean to: it stands square.
+			if knees.size() == 1:
+				return PlankSupports._raked_post(x, top, bottom, look, knees[0])
+		"trunk":
+			return PlankSupports._trunk_post(x, top, bottom, look, knees)
+		"pile":
+			return PlankSupports._pile_post(x, top, bottom, look, knees)
+		"column":
+			return PlankSupports._column_post(x, top, bottom, look, knees)
+		"stone":
+			return PlankSupports._stone_post(x, top, bottom, look, knees)
 	var w: Array = look.wood
 	var f: Array = look.foot
 	var h := bottom - top
@@ -301,6 +354,165 @@ static func post_parts(x: float, top: float, bottom: float, look: Dictionary, kn
 	out.append([Rect2(x - half - 2.0, bottom - 3.0, POST_W + 4.0, 0.5), f[0]])
 	out.append([Rect2(x - half - 2.0, bottom - 0.5, POST_W + 4.0, 0.5), f[2]])
 	out.append([Rect2(x + half + 1.0, bottom - 2.5, 1.0, 2.5), f[2]])
+	return out
+
+
+## How far a raked leg of height `h` leans in at its top.
+static func rake(h: float) -> float:
+	return minf(RAKE, h * 0.25)
+
+
+## The wide stone a timber post stands on, lit along its top.
+static func _footing(out: Array, x: float, bottom: float, f: Array) -> void:
+	out.append([Rect2(x - 4.0, bottom - 3.0, 8.0, 3.0), f[1]])
+	out.append([Rect2(x - 4.0, bottom - 3.0, 8.0, 0.5), f[0]])
+	out.append([Rect2(x - 4.0, bottom - 0.5, 8.0, 0.5), f[2]])
+	out.append([Rect2(x + 3.0, bottom - 2.5, 1.0, 2.5), f[2]])
+
+
+## A raked leg (the Heartwood, pass 629): squared timber that stands where the
+## plan put its foot and leans in under the board toward `dir`, so the board
+## overhangs it as a sawhorse's does. A cap under the board, rope wrapped below
+## the cap in place of a bolt, and a footing stone.
+static func _raked_post(x: float, top: float, bottom: float, look: Dictionary, dir: int) -> Array:
+	var w: Array = look.wood
+	var out: Array = []
+	var h := bottom - top
+	var lean := PlankSupports.rake(h)
+	var y := top
+	while y < bottom - 2.0:
+		var cx := snappedf(x + dir * lean * (1.0 - (y - top) / h), 0.5)
+		out.append([Rect2(cx - 2.0, y, 4.0, 1.0), w[1]])
+		out.append([Rect2(cx - 2.0, y, 1.0, 1.0), w[0]])
+		out.append([Rect2(cx + 1.0, y, 1.0, 1.0), w[2]])
+		if int(y - top) % 5 == 3:
+			out.append([Rect2(cx - 0.5, y, 1.0, 1.0), w[2]])
+		y += 1.0
+	var tx := snappedf(x + dir * lean, 0.5)
+	out.append([Rect2(tx - 4.0, top, 8.0, 2.0), w[2]])
+	out.append([Rect2(tx - 4.0, top + 1.5, 8.0, 0.5), w[1]])
+	PlankSupports._lashing(out, Vector2(tx - dir * 0.5, top + 4.5), look)
+	PlankSupports._footing(out, x, bottom, look.foot)
+	return out
+
+
+## A cut limb (the High Boughs, pass 629): a trunk that stands on a flared root
+## and forks under the board, which lies in the crotch. The limb toward the run's
+## middle reaches further; under a one-cell plank both reach alike. Vine bound
+## at the fork and a sprig still in leaf. No cap, no bolt, no footing stone.
+static func _trunk_post(x: float, top: float, bottom: float, look: Dictionary, knees: Array) -> Array:
+	var w: Array = look.wood
+	var out: Array = []
+	var h := bottom - top
+	var dir: int = knees[0] if knees.size() == 1 else 0
+	var foot := Vector2(x, bottom - 1.5)
+	var fork := Vector2(x + dir * 1.0, top + minf(10.0, h * 0.4))
+	PlankSupports._strut(out, foot + Vector2(1.0, 0), fork + Vector2(1.0, 0), w[2], w[2])
+	PlankSupports._strut(out, foot, fork, w[1], w[1])
+	PlankSupports._strut(out, foot + Vector2(-1.0, 0), fork + Vector2(-1.0, 0), w[0], w[0])
+	for side: int in [-1, 1]:
+		var reach := 6.0 if dir == 0 else (7.0 if side == dir else 2.5)
+		var arm := Vector2(x + side * reach, top + 2.0)
+		PlankSupports._strut(out, fork + Vector2(0, 1.0), arm + Vector2(0, 1.0), w[2], w[2])
+		PlankSupports._strut(out, fork, arm, w[1], w[0])
+	out.append([Rect2(x - 3.0, bottom - 2.0, 6.0, 1.0), w[1]])
+	out.append([Rect2(x - 4.0, bottom - 1.0, 8.0, 1.0), w[2]])
+	PlankSupports._lashing(out, fork + Vector2(0, 2.0), look)
+	var leaf := fork + Vector2((dir if dir != 0 else 1) * 3.0 - 1.0, -4.0)
+	out.append([Rect2(leaf.x, leaf.y, 2.0, 1.0), look.bolt])
+	out.append([Rect2(leaf.x + 0.5, leaf.y - 1.0, 2.0, 1.0), look.bolt])
+	out.append([Rect2(leaf.x + 0.5, leaf.y + 1.0, 1.0, 1.0), look.dark])
+	return out
+
+
+## A driven pile (the marsh and the spring, pass 629): a round pile 5 px thick
+## with no cap, brackets or footing stone. At a run's end its head stands
+## `PILE_HEAD` px above the deck, banded with iron, and rope is wrapped round it
+## under the board; its foot is dark with water and stands in a little mud. A
+## lone pile under a one-cell plank stops under the board.
+static func _pile_post(x: float, top: float, bottom: float, look: Dictionary, knees: Array) -> Array:
+	var w: Array = look.wood
+	var f: Array = look.foot
+	var out: Array = []
+	var head := knees.size() == 1
+	var y0 := top - BOARD - PILE_HEAD if head else top
+	var body := y0 + (1.0 if head else 0.0)
+	out.append([Rect2(x - 2.5, body, 5.0, bottom - body), w[1]])
+	out.append([Rect2(x - 2.5, body, 1.0, bottom - body), w[0]])
+	out.append([Rect2(x + 1.0, body, 1.5, bottom - body), w[2]])
+	if head:
+		# The rounded head and its iron band.
+		out.append([Rect2(x - 1.5, y0, 3.0, 1.0), w[0]])
+		out.append([Rect2(x - 2.5, y0 + 3.0, 5.0, 1.0), w[2]])
+		out.append([Rect2(x - 0.5, y0 + 3.0, 1.0, 1.0), look.bolt])
+	else:
+		out.append([Rect2(x - 0.5, top + 1.0, 1.0, 1.0), look.bolt])
+	# Rope wrapped round the pile under the board.
+	for k in 3:
+		out.append([Rect2(x - 3.0, top + 2.0 + k, 6.0, 0.5), look.mid if k != 1 else look.lit])
+	out.append([Rect2(x - 3.0, top + 5.0, 6.0, 0.5), look.dark])
+	# The foot, dark with water up to a tide line, in a mound of mud.
+	out.append([Rect2(x - 2.5, bottom - 7.0, 5.0, 7.0), w[2]])
+	out.append([Rect2(x - 2.5, bottom - 7.5, 3.5, 0.5), w[0]])
+	out.append([Rect2(x - 4.0, bottom - 1.5, 8.0, 1.5), f[2]])
+	out.append([Rect2(x - 3.0, bottom - 2.0, 6.0, 0.5), f[1]])
+	return out
+
+
+## A riveted iron column (the Tower and the Trials, pass 629): an H-section 4 px
+## wide (two lit flanges and a dark web) with rivets down the web, a gusset plate
+## up to the board on each `knees` side and a bolted base plate. No footing stone.
+static func _column_post(x: float, top: float, bottom: float, look: Dictionary, knees: Array) -> Array:
+	var w: Array = look.wood
+	var out: Array = []
+	var h := bottom - top
+	out.append([Rect2(x - 2.0, top, 4.0, h), w[2]])
+	out.append([Rect2(x - 2.0, top, 1.0, h), w[0]])
+	out.append([Rect2(x + 1.0, top, 1.0, h), w[1]])
+	var y := top + 12.0
+	while y < bottom - 5.0:
+		out.append([Rect2(x - 0.5, y, 1.0, 1.0), look.bolt])
+		y += 9.0
+	# Gusset plates: a stepped triangle from the flange out to the board's underside.
+	for side: int in knees:
+		for i in 7:
+			var run := 7.0 - i
+			var px := x + 2.0 if side > 0 else x - 2.0 - run
+			out.append([Rect2(px, top + 2.0 + i, run, 1.0), w[1]])
+			out.append([Rect2(px + (run - 1.0 if side > 0 else 0.0), top + 2.0 + i, 1.0, 1.0), w[0]])
+		out.append([Rect2(x + side * 4.0 - 0.5, top + 3.5, 1.0, 1.0), look.bolt])
+	# The cap plate under the board and the base plate, bolted down.
+	out.append([Rect2(x - 3.0, top, 6.0, 2.0), w[1]])
+	out.append([Rect2(x - 3.0, top, 6.0, 0.5), w[0]])
+	out.append([Rect2(x - 4.0, bottom - 2.0, 8.0, 2.0), w[1]])
+	out.append([Rect2(x - 4.0, bottom - 2.0, 8.0, 0.5), w[0]])
+	for bx: float in [x - 3.5, x + 2.5]:
+		out.append([Rect2(bx, bottom - 1.5, 1.0, 1.0), look.bolt])
+	return out
+
+
+## A stone pier (the Spires and the dwarf halls, pass 629): coursed blocks 6 px
+## wide in the footing's stone, their upright joints staggered, on a plinth, under
+## a head of two courses that corbel out toward each `knees` side. No timber and
+## no bolt.
+static func _stone_post(x: float, top: float, bottom: float, look: Dictionary, knees: Array) -> Array:
+	var f: Array = look.foot
+	var out: Array = []
+	var y := top + 6.0
+	var k := 0
+	while y < bottom - 3.0:
+		var ch := minf(5.0, bottom - 3.0 - y)
+		PlankSupports._block(out, Rect2(x - 3.0, y, 6.0, ch), f)
+		if ch > 2.0:
+			out.append([Rect2(x - 1.0 + (2.0 if k % 2 == 0 else 0.0), y + 0.5, 0.5, ch - 1.0), f[2]])
+		y += 5.0
+		k += 1
+	for i in 2:
+		var reach := 4.0 - i * 2.0
+		var l := x - 3.0 - (reach if -1 in knees else 0.0)
+		var r := x + 3.0 + (reach if 1 in knees else 0.0)
+		PlankSupports._block(out, Rect2(l, top + i * 3.0, r - l, 3.0), f)
+	PlankSupports._block(out, Rect2(x - 4.0, bottom - 3.0, 8.0, 3.0), f)
 	return out
 
 
@@ -398,10 +610,19 @@ static func _lashed_parts(x0: float, x1: float, top: float, bottom: float, look:
 	var rail := bottom - 9.0
 	var high := top + 7.0
 	var bays := PlankSupports._bays(x0, x1)
+	# Between raked legs (pass 629) the frame's upper corners come in with the legs.
+	var rk := 0.0
+	if String(look.get("post", "")) == "raked":
+		rk = PlankSupports.rake(bottom - top) * (1.0 - (high - top) / (bottom - top))
+	var last := int(bays.x) - 1
 	for b in int(bays.x):
 		var a := x0 + b * bays.y
 		var e := a + bays.y
 		var up := b % 2 == 0
+		if up and b == last:
+			e -= rk
+		if not up and b == 0:
+			a += rk
 		PlankSupports._strut(out, Vector2(a, rail if up else high), Vector2(e, high if up else rail), w[1], w[0])
 		if b > 0:
 			out.append([Rect2(a - 1.0, top, 2.0, rail - top), w[1]])
@@ -411,6 +632,10 @@ static func _lashed_parts(x0: float, x1: float, top: float, bottom: float, look:
 		var a := x0 + b * bays.y
 		var e := a + bays.y
 		var up := b % 2 == 0
+		if up and b == last:
+			e -= rk
+		if not up and b == 0:
+			a += rk
 		PlankSupports._lashing(out, Vector2(a + 2.0, (rail if up else high)), look)
 		PlankSupports._lashing(out, Vector2(e - 2.0, (high if up else rail)), look)
 	return out
