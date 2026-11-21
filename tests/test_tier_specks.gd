@@ -7,11 +7,12 @@ const ROOMS := ["vorrhallow/flooded_hall", "spires/storm_ledge", "sunken/drowned
 const SIDES: Array[Vector2i] = [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
 
 
-## The tier an atlas tile is painted in (1 to 3).
+## The tier an atlas tile is painted in (1 to 3). A blend (design bible 12.99)
+## counts as the darker of its two: the tier of the cell that draws it.
 func _tier_of(coords: Vector2i) -> int:
-	if TilesetFactory.DEEP.has(coords):
+	if TilesetFactory.DEEP.has(coords) or TilesetFactory.BLEND_DEEP.has(coords):
 		return 3
-	if TilesetFactory.MID.has(coords):
+	if TilesetFactory.MID.has(coords) or TilesetFactory.BLEND_MID.has(coords):
 		return 2
 	if TilesetFactory.is_patch(coords):
 		return coords.y - TilesetFactory.PATCH_ROW + 1

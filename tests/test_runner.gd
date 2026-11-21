@@ -68,6 +68,7 @@ const SUITES := [
 	preload("res://tests/test_town_skyline.gd"),
 	preload("res://tests/test_spires_skyline.gd"),
 	preload("res://tests/test_tier_specks.gd"),
+	preload("res://tests/test_tier_blends.gd"),
 ]
 
 var _passed := 0

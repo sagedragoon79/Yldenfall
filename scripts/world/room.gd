@@ -610,7 +610,11 @@ func _depth(cell: Vector2i) -> int:
 		for c: Vector2i in _solid_look:
 			raw[c] = _raw_depth(c)
 		_tiers = TilesetFactory.settle_tiers(raw)
-	return int(_tiers.get(cell, _raw_depth(cell)))
+	# Not `_tiers.get(cell, _raw_depth(cell))`: that works the fallback out on
+	# every call, and a blend asks for five cells' depths (design bible 12.99).
+	if _tiers.has(cell):
+		return int(_tiers[cell])
+	return _raw_depth(cell)
 
 
 ## How far a ground cell is from open air, in tiles (1 to 3).
@@ -631,18 +635,36 @@ func _raw_depth(cell: Vector2i) -> int:
 func _ground_tile(cell: Vector2i) -> Vector2i:
 	if _in_patch(cell):
 		return TilesetFactory.patch(cell, _depth(cell), not _in_patch(cell + Vector2i.LEFT), not _in_patch(cell + Vector2i.RIGHT))
-	return TilesetFactory.ground(_ground_mask(cell), cell, _depth(cell), TilesetFactory.has_edges(zone))
+	return TilesetFactory.ground(_ground_mask(cell), cell, _depth(cell), TilesetFactory.has_edges(zone), _blends(cell))
+
+
+## True if a ground cell draws the blend of its tier and the one above (design
+## bible 12.99): the zone's atlas has blends, and the cell stands edge to edge
+## with a ground cell of a lighter tier. So a tier ends block by block, not
+## along the tile grid.
+func _blends(cell: Vector2i) -> bool:
+	if not TilesetFactory.has_blends(zone) or not _solid_look.has(cell) or _slope_cells.has(cell):
+		return false
+	var depth := _depth(cell)
+	if depth < 2:
+		return false
+	for d: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+		var n := cell + d
+		if _solid_look.has(n) and not _slope_cells.has(n) and _depth(n) < depth:
+			return true
+	return false
 
 
 ## True if a cell is drawn as a patch tile: the zone's atlas has patches, the
 ## slow noise is high there, and the cell is inside a wall (solid on all eight
-## sides). Outside the room the noise alone decides, so a patch runs off-screen.
+## sides) and not where two tiers blend (design bible 12.99). Outside the room
+## the noise alone decides, so a patch runs off-screen.
 func _in_patch(cell: Vector2i) -> bool:
 	if not TilesetFactory.has_patches(zone) or not TilesetFactory.in_patch(cell):
 		return false
 	if cell.x < 0 or cell.y < 0 or cell.x >= size_tiles.x or cell.y >= size_tiles.y:
 		return true
-	if not _solid_look.has(cell) or _slope_cells.has(cell):
+	if not _solid_look.has(cell) or _slope_cells.has(cell) or _blends(cell):
 		return false
 	return TilesetFactory.reduce_mask(_ground_mask(cell)) == TilesetFactory.FULL
 
