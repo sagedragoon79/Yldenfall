@@ -80,6 +80,11 @@ base, a bridge's thickness and clearance, the far plane's tones and the seam.
 
 Full suite: 30,713 checks passed, 0 failed.
 
+CI's first run failed one check of pass 621's `test_a_blow_knocks_chips_off_the_foe`: "four
+frames on, every chip has leapt 8 px or more". The chips' dice are their own and unseeded; the
+slowest chip at the steepest throw (260 px/s, 1.12 rad off the level) covers 6.5 px in four
+braked steps, so the bound could fail by chance. It is now 5 px. No game code changed for it.
+
 ## Not done
 
 - The near plane is still one tone under its lit walls.
