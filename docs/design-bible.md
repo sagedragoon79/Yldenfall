@@ -783,7 +783,7 @@ Bands of wind blow across the open sky between Sylvarre's boughs (legend `>` blo
 | Drop out | hold Down to fall out of it |
 | Against a wall | a current pressing you into a wall stops bearing you up, and you slide down the face (pass 224). It had held you hanging still: once the Sky Spring turned the Thicket Road's band, a jump into it rode to the wind-niche with the head 16 px up against the lintel and stopped there, the opening just below, until you thought to hold Down. `test_the_wind_niche_needs_the_spring_of_sky` plays the real controller: 42 jump, second-jump and air-dash timings with the Featherstep Boots and the Stride never get in against the wind, and one jump with it turned does |
 | Reversal | once the Sky Spring is restored (`spring:sky`), every current in the High Boughs blows the other way (pass 92). The Inner Rings' currents never turn (pass 160) |
-| Look | a faint wash of the sky, streaks racing downwind and torn leaves tumbling with them |
+| Look | a faint wash of the sky that fades at its edges, gusts racing downwind that thin out behind their heads (12.108), and torn leaves tumbling with them |
 
 The reachability checker rides a current downwind (turned after `sky_spring`) from wherever a jump or fall enters it, adding every spot it can stand on or drop to with Down, and at the band's end it lands or falls on. The Thicket Road's sealed niche (its chest) faces the far side of a current, so only the turned wind carries you into it.
 
@@ -2242,7 +2242,7 @@ The pass 560 grade, the half 12.51 left: "the foe at the waterline is nearly inv
 Stillglass is a light in this world (the shards on the floor glow), so the crystal he is made of lights the dark behind him and his body stands against it:
 
 - **`FoeGlow`**, a child of the foe drawn behind it, additive, in the crystal's colour (`CrystalDwarf.CRYSTAL_LIGHT`). It sits on the crystal on his back (`CRYSTAL_AT`, mirrored with his facing) and reaches 40 by 34 px (`GLOW_REACH`), wider than his body, so it shows all round him.
-- **Steps, not a gradient.** Four tones (`LEVELS`) fall off from the centre through a 4 x 4 ordered dither in 2-pixel blocks, the grain of the fire seal's halo (12.40) and the water (12.39, 12.41). The inmost fifth is the top tone whole. Drawn once per size as a texture.
+- **Steps, not a gradient.** (Since pass 632 the steps are 14 fine tones and the falloff is steeper, so the light reads as soft: 12.108.) Four tones (`LEVELS`) fall off from the centre through a 4 x 4 ordered dither in 2-pixel blocks, the grain of the fire seal's halo (12.40) and the water (12.39, 12.41). The inmost fifth is the top tone whole. Drawn once per size as a texture.
 - **How bright.** `PEAK` 0.44 at rest, breathing 12% down and back slowly; the light it adds behind him is brighter than his steel is in the hall's light, which is what makes him a silhouette. It swells through his windup to `PEAK_TELL` 0.6, so the tell starts to read before the fist blazes, and it goes out when he dies.
 - **Not a rim light.** Nothing is drawn on the figure, and no other foe gets a glow for being hard to see: this is for foes made of stillglass (style guide 1). Rim light on figures stays a watched call.
 
@@ -2930,6 +2930,19 @@ This keeps 12.71's rule for weather: the splash is no brighter than a drop, the 
 - **Not done here.** No thunder: a stroke is silent (an audio item). The lift does not light the hero, foes or props, and the stroke casts no shadow. The floating islands of the Spires' rooms are scenery, so they take no rain. Walls and slopes do not run with water. A room with a full ceiling still has the rain sheet over it (the broken shrine); `SHELTER` only decides where it lands.
 
 Judged by eye at 1x and 2x in `spires/storm_ledge` (at rest and in a stroke), `spires/sky_steps` (a stroke) and `spires/broken_shrine`. `tests/test_rain_landing.gd` checks which tops are wet (open sky, a roof at and past `SHELTER`, a board, slopes and skipped cells), that the sheen is a broken line that differs by cell, that splashes come to some cells at a time, run three frames, widen, thin with the drizzle and are no brighter than a drop, that strokes are two beats, seconds apart and lit under a tenth of the time, that the flashes option and the Sky Spring both stop the light, and that every Spires room carries a `RainLanding` with no wet top under ground while a Boughs room carries none.
+
+### 12.108 A soft light and a gust are not dither and dashes (pass 632)
+
+The pass 630 grade: "a square of magenta dither round the foe in the flooded hall, white dash clusters in the canopy sky", both read as rendering artifacts. Each was a thing the game means (a stillglass foe's light, 12.52; a wind current, 6.9), drawn in a way that looked like a fault.
+
+- **The glow** (`FoeGlow`). It fell off in four tones through a 4 x 4 ordered dither, so two neighbouring blocks could differ by a quarter of the peak: a magenta checkerboard, cut square where the water covers it. It now has 14 tones (`LEVELS`), still mixed through the dither in 2-pixel blocks, so one tone is 0.04 of alpha in a tell and no two neighbouring blocks differ by more than 0.1 (`MAX_STEP`); the pattern is under what the eye picks out and the light reads as soft. The falloff is steeper (`CURVE` 1.5 from 1.15): the outer half of its reach, three quarters of its area, holds under half its light, so it lights a pocket behind the crystal and its rim fades out rather than ending. Its peak, breath, tell and reach are unchanged.
+- **The wind** (`WindCurrent`). A current was a flat wash with ruled edges under one-pixel white dashes at 0.85 over a blue under-line, all the same from end to end. A dash is now a **gust** (`gust`): a line a pixel thick and 26 to 54 px long in five pieces that brighten from a faint tail to a head at 0.62 downwind (`GUST_ALPHA`, `gust_fade`), bowed by a pixel along its length, with no under-line. There is one to every 22 px of the band. The wash is four nested boxes (`wash`) that add up to 0.05 in the middle and step down over 8 px at every edge, so the band has no border. The leaves are unchanged. The band still reads for play: the gusts show which way it blows by their taper, where the dashes showed it only by moving.
+
+**The rule:** a light or a weather effect that the player is meant to read as part of the world has no step between neighbours large enough to see as a pattern, and no ruled edge. Ordered dither stays for materials (water, bronze, fire) and is kept fine in a light. The Haar's lamp halos break this rule and stay held with the fog (the hydra and steam branches).
+
+Judged by eye at 1x and 4x in `vorrhallow/flooded_hall` and `boughs/canopy_bridge`, before and after. `tests/test_foe_glow.gd` (a new test for the step between neighbours, the rim and where the light lies) and `tests/test_wind_look.gd` (the taper and its direction, the alpha, the bow, the count, the band's bounds, the wash's steps) hold it.
+
+- **Not done here.** The Inner Rings' currents take the same gusts and were not looked at one by one. The water still cuts the glow at the waterline (a reflection on the water is a waterline item). The Haar's unlit lava pillar, the third thing in the same grade line, is under the held fog.
 
 ## 13. Asset Production Plan
 

@@ -7,11 +7,24 @@ extends Node2D
 ## current bears them level. On a floor you brace and it doesn't move you; hold
 ## Down to drop out. Once the Sky Spring is restored (`spring:sky`) the storm
 ## breaks and every current in the High Boughs blows the other way.
-## Drawn as streaks of air and drifting leaves racing along the band.
+## Drawn as gusts of air and drifting leaves racing along the band (bible 12.108).
 
 const FLAG := "spring:sky"
 const STREAK := Color("f4fbff")
-const EDGE := Color("4a86b8")
+## The wash over the band at its middle, and how far in from each edge it fades
+## (px, in WASH_STEPS steps), so the band has no ruled border.
+const WASH := 0.05
+const WASH_FEATHER := 8.0
+const WASH_STEPS := 4
+## A gust: a line of air a pixel thick, drawn in GUST_PARTS pieces from a faint
+## tail to its head downwind, bowed GUST_BOW px along its length. One to every
+## GUST_EVERY px of the band (and GUST_SPARE more), racing at GUST_SPEED px/s.
+const GUST_ALPHA := 0.62
+const GUST_PARTS := 5
+const GUST_BOW := 2.0
+const GUST_EVERY := 22.0
+const GUST_SPARE := 3
+const GUST_SPEED := 260.0
 const LEAF := Color("7cbf52")
 ## The inner rings has no leaves: pale flecks of the void ride its winds.
 const FLECK := Color("c9c6d6")
@@ -51,26 +64,64 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 
+## The wash as nested boxes, each [Rect2, alpha]: the alphas add up to WASH in
+## the middle and step down to nothing over WASH_FEATHER px at every edge.
+static func wash(w: float, h: float) -> Array:
+	var out := []
+	for s in WASH_STEPS:
+		var inset := minf(WASH_FEATHER * s / WASH_STEPS, minf(w, h) * 0.5 - 1.0)
+		out.append([Rect2(inset, inset, w - inset * 2.0, h - inset * 2.0), WASH / WASH_STEPS])
+	return out
+
+
+## How many gusts cross a band `w` px long.
+static func gust_count(w: float) -> int:
+	return int(w / GUST_EVERY) + GUST_SPARE
+
+
+## The share of GUST_ALPHA the piece `part` of a gust shows (0 its tail,
+## GUST_PARTS - 1 its head): it thins out behind, so a gust has a direction.
+static func gust_fade(part: int) -> float:
+	return pow(float(part + 1) / GUST_PARTS, 1.3)
+
+
+## Gust `i` of a band `w` by `h` px at `t` seconds, blowing `d` (1 east, -1
+## west): its pieces from tail to head, each [Rect2, alpha], cut to the band.
+## Empty while the gust is off either end.
+static func gust(i: int, w: float, h: float, t: float, d: float) -> Array:
+	var y := fmod(i * 37.0, maxf(h - 8.0, 1.0)) + 4.0
+	var length := 26.0 + (i % 3) * 14.0
+	var head := fmod(t * GUST_SPEED + i * 71.0, w + length)
+	var piece := length / GUST_PARTS
+	var out := []
+	for part in GUST_PARTS:
+		# From the head back: piece GUST_PARTS - 1 ends at the head.
+		var x1 := head - piece * (GUST_PARTS - 1 - part)
+		var x0 := x1 - piece
+		var bow := roundf(sin(float(part) / (GUST_PARTS - 1) * PI + i) * GUST_BOW * 0.5)
+		if d < 0.0:
+			var m := x0
+			x0 = w - x1
+			x1 = w - m
+		x0 = clampf(roundf(x0), 0.0, w)
+		x1 = clampf(roundf(x1), 0.0, w)
+		if x1 - x0 < 1.0:
+			continue
+		out.append([Rect2(x0, y + bow, x1 - x0, 1.0), GUST_ALPHA * gust_fade(part)])
+	return out
+
+
 func _draw() -> void:
 	var w := float(cells.size.x * Room.TILE)
 	var h := float(cells.size.y * Room.TILE)
 	var d := float(dir())
-	# A faint wash over the band, so its edges read.
-	draw_rect(Rect2(0, 0, w, h), Color(STREAK, 0.07))
-	# Streaks racing along the band, a darker edge so they read on a pale sky.
-	for i in int(w / 12.0) + 6:
-		var y := fmod(i * 37.0, h - 4.0) + 2.0
-		var len := 14.0 + (i % 3) * 8.0
-		var x := fmod(_t * 260.0 + i * 71.0, w + len)
-		if d < 0.0:
-			x = w - x
-		x -= len * 0.5
-		var x0 := clampf(x, 0.0, w)
-		var x1 := clampf(x + len, 0.0, w)
-		if x1 - x0 < 2.0:
-			continue
-		draw_rect(Rect2(x0, y + 1.0, x1 - x0, 1.0), Color(EDGE, 0.35))
-		draw_rect(Rect2(x0, y, x1 - x0, 1.0), Color(STREAK, 0.85))
+	# A faint wash over the band, fading at its edges.
+	for box: Array in wash(w, h):
+		draw_rect(box[0], Color(STREAK, box[1]))
+	# Gusts racing along the band, each thinning out behind its head.
+	for i in gust_count(w):
+		for piece: Array in gust(i, w, h, _t, d):
+			draw_rect(piece[0], Color(STREAK, piece[1]))
 	# A few leaves tumbling along with it.
 	var room := get_parent() as Room
 	var leaf := FLECK if room != null and room.zone == "trials" else LEAF

@@ -1,6 +1,6 @@
 extends TestSuite
 ## Pass 564 (bible 12.52): a foe made of stillglass carries its own light. The
-## Crystal Dwarf's crystal throws a stepped, dithered glow onto the dark behind
+## Crystal Dwarf's crystal throws a soft glow in fine steps onto the dark behind
 ## him, so his dark body stands against it; it swells with his tell and goes
 ## out when he dies.
 
@@ -51,6 +51,39 @@ func test_the_glow_falls_off_in_dithered_steps() -> void:
 		var c := FoeGlow.level_at(x + 2 * FoeGlow.GRAIN, 0, half)
 		mixed = mixed or (a != b and a == c)
 	check(mixed, "neighbouring steps mix through the dither")
+
+
+## Pass 632 (bible 12.108): the pass 630 grade read the glow as "a square of
+## magenta dither round the foe". It is a soft light: no block stands out from
+## its neighbour, and its rim fades to almost nothing.
+func test_the_glow_is_a_soft_light_not_a_checkerboard() -> void:
+	var half := Vector2(CrystalDwarf.GLOW_REACH)
+	var worst := 0
+	var rim := 0
+	for y in range(-int(half.y), int(half.y), FoeGlow.GRAIN):
+		for x in range(-int(half.x), int(half.x), FoeGlow.GRAIN):
+			var here := FoeGlow.level_at(x, y, half)
+			worst = maxi(worst, absi(here - FoeGlow.level_at(x + FoeGlow.GRAIN, y, half)))
+			worst = maxi(worst, absi(here - FoeGlow.level_at(x, y + FoeGlow.GRAIN, half)))
+			# The rim: a lit block beside one that is clear.
+			if here > 0 and (FoeGlow.level_at(x + FoeGlow.GRAIN, y, half) == 0 or FoeGlow.level_at(x - FoeGlow.GRAIN, y, half) == 0):
+				rim = maxi(rim, here)
+	var step := FoeGlow.level_alpha(worst) * FoeGlow.PEAK_TELL
+	check(step <= FoeGlow.MAX_STEP, "no block is more than %.2f from its neighbour, even in a tell (%.3f)" % [FoeGlow.MAX_STEP, step])
+	check(FoeGlow.level_alpha(1) * FoeGlow.PEAK_TELL <= 0.05, "one tone is too small a step to see as a pattern (%.3f)" % (FoeGlow.level_alpha(1) * FoeGlow.PEAK_TELL))
+	check(FoeGlow.level_alpha(rim) * FoeGlow.PEAK_TELL <= FoeGlow.MAX_STEP, "its rim fades out, it is not cut (%.3f)" % (FoeGlow.level_alpha(rim) * FoeGlow.PEAK_TELL))
+	# Most of the light is near the crystal: the outer half of its reach holds
+	# under half of it though it is three quarters of the area, so it lights a pocket.
+	var inner := 0.0
+	var outer := 0.0
+	for y in range(-int(half.y), int(half.y)):
+		for x in range(-int(half.x), int(half.x)):
+			var d := Vector2(x / half.x, y / half.y).length()
+			if d < 0.5:
+				inner += FoeGlow.level_at(x, y, half)
+			else:
+				outer += FoeGlow.level_at(x, y, half)
+	check(outer < (inner + outer) * 0.5, "the outer half of its reach holds %.0f%% of the light" % (100.0 * outer / (inner + outer)))
 
 
 func test_the_glow_breathes_swells_and_goes_out() -> void:

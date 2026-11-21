@@ -22,6 +22,7 @@ const SUITES := [
 	preload("res://tests/test_top_lip.gd"),
 	preload("res://tests/test_standout.gd"),
 	preload("res://tests/test_rain_landing.gd"),
+	preload("res://tests/test_wind_look.gd"),
 	preload("res://tests/test_swim_water_art.gd"),
 	preload("res://tests/test_tide_wake.gd"),
 	preload("res://tests/test_water_edge.gd"),
