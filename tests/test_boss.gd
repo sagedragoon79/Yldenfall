@@ -1412,6 +1412,9 @@ func test_the_grate_is_there_before_the_wyrm_is() -> void:
 	for cell in cells:
 		floored = floored and w.room.is_one_way_at(Vector2(cell * Room.TILE) + Vector2(8, 2))
 	check(floored and String(w.room.header.get("grate", "")) != "", "the room floors the whole of the pit's mouth as it loads (its `grate:` header)")
+	# And draws it: before the fight there is no cistern to, and he stood on air.
+	var span := Rect2(Vector2(cells[0] * Room.TILE), Vector2(cells.size() * Room.TILE, Room.TILE))
+	check(w.room.grate_drawn != null and w.room.grate_drawn.is_visible_in_tree() and w.room.grate_spans == [span], "and draws it over the pit's whole mouth (%s)" % [w.room.grate_spans])
 	w.player.teleport(at)
 	await frames(30)
 	check(w.player.is_on_floor() and absf(w.player.global_position.y - at.y) < 1.0, "and it holds whoever is set down on it (feet at %.1f, the floor at %.0f)" % [w.player.global_position.y, at.y])

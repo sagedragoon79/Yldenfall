@@ -200,28 +200,30 @@ func _draw_back() -> void:
 		n += 1
 
 
-## The grate, seen edge on: a rail along the top, the bars under it with the pit showing
-## between them, and a bearer every few bars with its end let into the stone.
-func _draw_grate() -> void:
-	var y := inside.position.y
-	var x := inside.position.x
-	while x < inside.end.x:
-		draw_rect(Rect2(x, y + 1.0, 2.0, GRATE - 1.0), IRON)
-		draw_rect(Rect2(x, y + GRATE - 1.0, 2.0, 1.0), IRON_DARK)
+## The grate, seen edge on, across `span` (its top edge and width): a rail along the
+## top, the bars under it with the pit showing between them, and a bearer every few bars
+## with its end let into the stone. The room draws it (`Room.lay_grate`), over the
+## cistern's water, so it shows before the fight as well as during it.
+static func draw_grate(ci: CanvasItem, span: Rect2) -> void:
+	var y := span.position.y
+	var x := span.position.x
+	while x < span.end.x:
+		ci.draw_rect(Rect2(x, y + 1.0, 2.0, GRATE - 1.0), IRON)
+		ci.draw_rect(Rect2(x, y + GRATE - 1.0, 2.0, 1.0), IRON_DARK)
 		x += 4.0
-	draw_rect(Rect2(inside.position.x, y, inside.size.x, 2.0), IRON_DARK)
-	draw_rect(Rect2(inside.position.x, y, inside.size.x, 1.0), IRON_LIGHT)
-	x = inside.position.x
-	while x <= inside.end.x + 0.5:
-		var bx := clampf(x - 2.0, inside.position.x, inside.end.x - 4.0)
-		draw_rect(Rect2(bx, y, 4.0, GRATE + 3.0), IRON_DARK)
-		draw_rect(Rect2(bx + 1.0, y + 1.0, 2.0, GRATE + 1.0), IRON)
-		draw_rect(Rect2(bx + 1.0, y, 2.0, 1.0), IRON_LIGHT)
+	ci.draw_rect(Rect2(span.position.x, y, span.size.x, 2.0), IRON_DARK)
+	ci.draw_rect(Rect2(span.position.x, y, span.size.x, 1.0), IRON_LIGHT)
+	x = span.position.x
+	while x <= span.end.x + 0.5:
+		var bx := clampf(x - 2.0, span.position.x, span.end.x - 4.0)
+		ci.draw_rect(Rect2(bx, y, 4.0, GRATE + 3.0), IRON_DARK)
+		ci.draw_rect(Rect2(bx + 1.0, y + 1.0, 2.0, GRATE + 1.0), IRON)
+		ci.draw_rect(Rect2(bx + 1.0, y, 2.0, 1.0), IRON_LIGHT)
 		x += GRATE_BEARER
 	# Where it sits in the coping at each end.
-	for end_x: float in [inside.position.x - 3.0, inside.end.x]:
-		draw_rect(Rect2(end_x, y, 3.0, 3.0), IRON_DARK)
-		draw_rect(Rect2(end_x, y, 3.0, 1.0), IRON)
+	for end_x: float in [span.position.x - 3.0, span.end.x]:
+		ci.draw_rect(Rect2(end_x, y, 3.0, 3.0), IRON_DARK)
+		ci.draw_rect(Rect2(end_x, y, 3.0, 1.0), IRON)
 
 
 func _draw() -> void:
@@ -237,9 +239,7 @@ func _draw() -> void:
 			var y := top + roundf(sin(t * 3.0 + x * 0.09))
 			draw_rect(Rect2(x, y, w, 1), Color(WATER_TOP, 0.85))
 			x += 12.0
-	# Over the water: brim-full, the surface laps at its bars, and it must still read as
-	# something to stand on.
-	_draw_grate()
+	# The grate over the water is the room's (`Room.lay_grate`, a layer above this one).
 	if boiling:
 		# A rolling boil: bubbles and steam pouring off the surface.
 		var k := clampf(_boil / BOIL_TIME, 0.0, 1.0)
