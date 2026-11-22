@@ -2961,6 +2961,19 @@ Judged by eye at 2x in the art lineup for all twenty-two foes with a point (the 
 
 - **Not done here.** The rear is one transform for every foe; a foe whose own wind-up frames already crouch forward (the Thunder Beetle) leans back a little against its pose. The three small foes whose whole body is inside the squares (the Bog Puffcap, the Sap Spitter, the Meteor Slug) are warm all over, graded. New wind-up frames with a larger pose of their own are an art-loop item.
 
+### 12.110 What stands on the ground is grounded (pass 634)
+
+The pass 630 grade: "props are not grounded: no contact shadows under chests, steles, the hero or foes, and the plaza's doorway is an orange frame floating on the skyline".
+
+- **A contact shadow.** `ContactShadow` (`scripts/fx/contact_shadow.gd`) draws a pool on the ground under what stands there: four rows of whole pixels, one above the ground line (under the feet) and three on the ground's top, so it darkens the lip a body stands on. The rows taper (`ROW_SHARE` 0.6, 1.0, 0.78, 0.45 of the pool's half width; the ground line is the widest), a faint band (`EDGE` 0.36) with a darker core over its middle 60% (`CORE` 0.34 more), in the master palette's deepest neutral. Pixel rows, not a blur, and soft: never a black bar. It draws in front of the tiles (absolute z 0) and behind its body.
+- **Who casts one.** The hero (10 px to a side), every foe that is not a guardian (its body's half width and 2 px), chests (13), steles (12), shrines (14), people (10) and inner doorways (26, the wall's width). A guardian draws its own ground and casts none here. A foe that has died casts nothing until it comes back.
+- **A body in the air.** The hero's and the foes' pools fall on the ground below them (a ray down the world layer). As the body rises the pool fades with the height and narrows to half its width at `REACH` (72 px); past it, or over a pit, there is none. A flier casts a faint one on the floor under it. The pool stays level when a body turns (a crawler on a wall).
+- **A doorway is set in a wall.** `DoorMarker` draws a wall round its frame: courses of 8 px blocks, 48 px wide and 56 tall, with a broken top (the two top courses stop short), a jamb of tall stones each side (the light's side lit), a lintel with a raised keystone and a worn threshold step. The stone is the zone's, from the lore tablets' tones (the room hands the door its zone).
+
+Judged by eye at 1x and 4x in the plaza (the door in its wall, the chest on the trestle, the hero on the lit lip) and in the fight frames (the hero and the Rot Dwarf in the Heartwood, where the floor is dark moss and the pool reads faintest). `tests/test_contact_shadow.gd` holds who casts one, where it is drawn, the taper and strength, the pool under a jump and a flier, a dead foe's, and the doorway's wall and zone.
+
+- **Not done here.** Decor that stands on the floor (statues, the fountain, set pieces) and the guardians have no pool. On the darkest floors (the Heartwood's moss, the Haar's mire) the pool is faint by nature.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

@@ -374,6 +374,7 @@ func build(text: String) -> void:
 		}
 		if found[n].edge == "inner":
 			var marker := DoorMarker.new()
+			marker.zone = zone
 			marker.door = n
 			_spawn(marker, Vector2((r.position.x + r.size.x * 0.5) * TILE, r.end.y * TILE))
 
