@@ -59,7 +59,10 @@ Six new tests in `tests/test_contact_shadow.gd`. Mutation-checked:
 | `test_a_doorway_stands_in_a_wall` | the room does not hand the door its zone | fails |
 | `test_a_dead_foe_casts_nothing` | a dead foe still casts | fails |
 
-Full suite: see the pull request.
+Full suite: 33,702 checks. 33,657 passed in the whole run (pass 633: 33,657 of 33,659). The
+45 that failed were six bible-reading tests: this pass's edits had left Windows line endings
+in the working copy of the bible and the scripts (the commit itself was normalized). With
+the files back to LF, all six pass alone (350 checks).
 
 ## Not done
 
