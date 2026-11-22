@@ -64,7 +64,7 @@ step off the woods by value (0.08) or by saturation (0.15) with a dark outline.
 | no mist (mist equal to the fade) | fails (the mist, the knight's step, both outlines) |
 | `fade_at` ignores the mist | fails (the curve, the knight's step, both outlines) |
 
-Full suite: see below.
+Full suite: 33,725 checks run. The first run failed 44 checks in five tests that read the bible's tables, because my edit had left the working copy of the bible with CRLF line endings (the committed file was LF); with LF restored, those five tests pass (342 checks), and every other check passed in the full run (pass 635: 33,701).
 
 ## Not done
 
