@@ -30,6 +30,9 @@ var secrets: TileMapLayer
 var phantoms: TileMapLayer
 ## One-way floors a set piece lays and draws itself (`lay_grate`): the tiles are never seen.
 var grates: TileMapLayer
+## What draws the grates, and the spans it draws (`lay_grate`).
+var grate_drawn: Node2D
+var grate_spans: Array[Rect2] = []
 var sheen: OnyxSheen
 ## Door number -> {rect: Rect2 (pixels), edge: "left"/"right"/"top"/"bottom"/"inner",
 ## target: room id, target_door: int}.
@@ -1262,6 +1265,27 @@ func lay_grate(cells: Array[Vector2i]) -> void:
 		_grates[cell] = true
 	# It holds from this frame on, not the next: someone may be standing there.
 	grates.update_internals()
+	# And it shows from this frame on: before a fight brings the cistern, a grate that
+	# held the hero without being drawn left him standing on air over the pit. Drawn over
+	# the cistern's water (`HydraCistern` is at 2), one span per row of cells.
+	var rows := {}
+	for cell: Vector2i in _grates:
+		var r: Vector2i = rows.get(cell.y, Vector2i(cell.x, cell.x))
+		rows[cell.y] = Vector2i(mini(r.x, cell.x), maxi(r.y, cell.x))
+	var spans: Array[Rect2] = []
+	for y: int in rows:
+		var r: Vector2i = rows[y]
+		spans.append(Rect2(r.x * TILE, y * TILE, (r.y - r.x + 1) * TILE, TILE))
+	if grate_drawn == null:
+		grate_drawn = Node2D.new()
+		grate_drawn.name = "GrateDrawn"
+		grate_drawn.z_index = 3
+		add_child(grate_drawn)
+		grate_drawn.draw.connect(func() -> void:
+			for s: Rect2 in grate_spans:
+				HydraCistern.draw_grate(grate_drawn, s))
+	grate_spans = spans
+	grate_drawn.queue_redraw()
 
 
 func is_one_way_at(world_pos: Vector2) -> bool:
