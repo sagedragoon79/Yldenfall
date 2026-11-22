@@ -2585,7 +2585,7 @@ The pass 590 grade called the shop's "Jump: choose / Dash: leave" odd. It named 
 
 Judged by eye in the 21 shop pictures at 1x and 4x. The first caps were a pixel too short and clipped the top of their letters. Tests: `test_a_menu_names_its_keys_and_what_they_do` (`tests/test_shop_pictures.gd`). The title screen's save picker keeps its own line of words for now.
 
-### 12.80 Every zone houses its own chest (pass 595; a closed one is haloed, rimmed and glints since pass 630, 12.106)
+### 12.80 Every zone houses its own chest (pass 595; a closed one is haloed, rimmed and glints since pass 630, 12.106; set down with things beside it since pass 638, 12.114)
 
 The pass 585 grade saw "the same chest on the same thin table ... in nearly every room": one brown domed trunk stood in all 68 chest cells, in colors from outside the master palette. `Chest` (`scripts/pickups/chest.gd`) now draws a chest in its room's zone look, the way each zone carves its own stele (12.31). Eight kinds:
 
@@ -3014,7 +3014,20 @@ The pass 635 grade: "props repeat across zones: the same orange A-frame trestle"
 
 Judged by eye at 1x and 3x in the root shrine, the dwarf hall and the plaza. `test_plank_the_heartwood_builds_in_old_grey_timber_with_moss` (`tests/test_plank_supports.gd`) holds the timber (no tone shared with the town or the Boughs, grey, lit as the town's), the flax, where the moss grows and that the town grows none; `test_the_heartwoods_plank_is_old_grey_timber` (`tools/art/test_tilegen.py`) holds the board.
 
-- **Not done here.** The lone chests on bare plinths and boards, the other half of the grade's item.
+- **Not done here.** The lone chests on bare plinths and boards, the other half of the grade's item (done in pass 638, 12.114).
+
+### 12.114 A chest is set down, not stood on a plinth (pass 638)
+
+The pass 635 grade: "lone chests sit on featureless plinths" (the plaza's chest on its trestle, the flooded hall's on its heap). Since 12.80 every zone has its own chest, but each stood alone on its floor, a box on a stand.
+
+- **What lies beside it.** `Chest.setting` draws, behind the chest, a little heap of spilled coins and what the zone left with it (`Chest.COMPANIONS`): a tied sack in the gym and the Trials, a leaf-tied bundle in the High Boughs, red toadstools on a cushion of moss (and a pale one in a mound on the other side) in the Heartwood, a coil of rope and a corked green bottle in the Haar, a hooped keg and a lit lantern (its glass the chest's glow) by every dwarf strongbox (Hearthroot, the Sunken Spring, Vorrhallow), a heap of gold-flecked ore and a small crate by the Tower's crate, two lit votive candles on a dish by the Spires' reliquary, and crystal grown out of the floor beside the Evercrown's geode.
+- **Drawn as heavy as the chest.** The props are code-drawn in whole world pixels (`PROP_SCALE` 2 half-pixels) with a one-pixel outline in the chest's own outline tone, the weight of the chest's outline; a keg stands about as tall as the strongbox, the coins a few pixels high. Every tone is a master palette value.
+- **Only where there is floor.** The room measures the floor beside each chest (`Room.floor_run`): open cells over a flat top (ground or a plank, not a slope or a gap), up to three a side (`SEAT_CELLS`), and hands it over as `reach_left` and `reach_right`. The larger prop goes to the side with more floor, the coins between it and the chest, the smaller prop to the other side; a prop that does not fit is left out, so a chest in a one-cell niche (the Spires' broken shrine) has none, and the flooded hall's two-cell top takes only the coins.
+- **The chest is unchanged.** Its halo, rim and glint (12.106) and its contact shadow (12.110) are its own; the setting stays when it is opened.
+
+Judged by eye at 1x and 4x in the plaza (lantern, strongbox, coins, keg on the trestle), the flooded hall, the drowned stair, Amberlee and the broken shrine, and on a sheet of every zone at 3x. `test_chest_is_set_down_with_things_beside_it` and `test_chest_the_room_measures_its_floor` (`tests/test_chest.gd`) hold the tones, the ground line, that nothing lies on the chest or past its floor, both sides on a broad floor, none on a narrow one, that the zones' settings differ, and the room's measure.
+
+- **Not done here.** A lantern by a strongbox throws no light on its floor (12.43's room light is for the room's own lamps).
 
 ## 13. Asset Production Plan
 

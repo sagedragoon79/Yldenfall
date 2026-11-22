@@ -346,6 +346,9 @@ func build(text: String) -> void:
 		add_child(holds)
 		holds.setup(zone, _planks, _solid_look, size_tiles)
 
+	# A chest is set down on its floor with a few things beside it (design bible 12.114).
+	_seat_chests()
+
 	# A floating stone hangs on a keel of the rock it tore free with (design bible 12.82).
 	if zone in StoneKeel.ZONES:
 		var blocked := _solid_look.duplicate()
@@ -1165,6 +1168,37 @@ func float_raft(x0: int, x1: int, row: int) -> void:
 		var cell := Vector2i(x, row)
 		tiles.set_cell(cell, TilesetFactory.SOURCE_ID, TilesetFactory.ONE_WAY)
 		_one_way[cell] = true
+
+
+## How many cells of floor run on from a chest to each side (bible 12.114),
+## at most `SEAT_CELLS`: a cell counts while it is open and the cell under it is
+## a flat top (ground or a plank), not a slope or a gap.
+const SEAT_CELLS := 3
+
+
+func _seat_chests() -> void:
+	for n in get_children():
+		if n is Chest:
+			var chest: Chest = n
+			var cell := cell_at(chest.position - Vector2(0, TILE * 0.5))
+			chest.reach_left = Chest.HALF_CELL + 2 * Chest.HALF_CELL * floor_run(cell, -1)
+			chest.reach_right = Chest.HALF_CELL + 2 * Chest.HALF_CELL * floor_run(cell, 1)
+
+
+## How many open cells with a flat top under them run on from `cell` in
+## direction `dx` (at most `SEAT_CELLS`).
+func floor_run(cell: Vector2i, dx: int) -> int:
+	var n := 0
+	while n < SEAT_CELLS:
+		var c := cell + Vector2i(dx * (n + 1), 0)
+		var under := c + Vector2i.DOWN
+		if _solid_look.has(c) or _slope_cells.has(c) or _one_way.has(c):
+			break
+		var flat := (_solid_look.has(under) and not _slope_cells.has(under)) or _one_way.has(under)
+		if not flat:
+			break
+		n += 1
+	return n
 
 
 ## How hard this room's foes and guardians hit (CombatTuning.ZONE_THREAT,
