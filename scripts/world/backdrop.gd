@@ -60,6 +60,27 @@ const ZONE_HAZE := {
 	"trials": Color8(46, 40, 62),
 	"spires": Color8(64, 37, 42),
 }
+## Day air (design bible 12.112, pass 636): a sunlit zone's nearer layers, the
+## ridge and the mid, recede into the pale air of its sky instead of its dark
+## haze, so a foe or a plank drawn dark over them stands against light. The
+## pass 635 grade saw the canopy bridge's foes "small and low-contrast against
+## the foliage": the Boughs' woods had faded toward the same dark green the
+## foes' own bodies sit at. Each colour is the zone's sky at the horizon. The far
+## layer, the sky itself, keeps the haze; zones under a roof or a night keep it
+## for every layer.
+const ZONE_AIR := {
+	"boughs": Color8(116, 141, 130),
+}
+## The layers that take a zone's day air, and how far each fades into it at its top
+## (AIR_FADE) and at its foot (AIR_MIST): a valley mist, deeper low down where the
+## play line and its foes stand in front of the layer, while the crests keep the
+## forms of 12.111. The ridge recedes further than the mid, so the two still
+## recede in order. The mist rises between MIST_FROM and MIST_TO of the layer's
+## height (mirrors shaders/atmosphere.gdshader).
+const AIR_FADE := {"ridge": 0.45, "mid": 0.3}
+const AIR_MIST := {"ridge": 0.75, "mid": 0.5}
+const MIST_FROM := 0.3
+const MIST_TO := 0.8
 const SIZE := Vector2(640, 480)
 ## A room slides a layer in steps this wide, world px (see room_shift).
 const SHIFT_STEP := 16.0
@@ -148,7 +169,7 @@ func set_zone(next: String) -> void:
 		sprite.scale = SIZE / sprite.texture.get_size()
 		sprite.centered = false
 		sprite.position = OFFSET
-		sprite.material = atmos_material(suffix, haze_for(zone))
+		sprite.material = layer_material(zone, suffix)
 		layer.add_child(sprite)
 		layer.scroll_offset = Vector2(Backdrop.room_shift(room_id, suffix), 0.0)
 		_layers[suffix] = layer
@@ -308,6 +329,33 @@ static func fore_offset(view_height: float) -> Vector2:
 ## the default night haze for a zone with none.
 static func haze_for(a_zone: String) -> Color:
 	return ZONE_HAZE.get(a_zone, HAZE)
+
+
+## What a zone's layer recedes into: its day air for a nearer layer of a sunlit
+## zone (ZONE_AIR, AIR_LAYERS), otherwise the zone's dark haze (haze_for).
+static func layer_haze(a_zone: String, suffix: String) -> Color:
+	if ZONE_AIR.has(a_zone) and AIR_FADE.has(suffix):
+		return ZONE_AIR[a_zone]
+	return haze_for(a_zone)
+
+
+## A zone's atmospheric-perspective material for one of its layers: the haze, or
+## the day air at its own fade (layer_haze, AIR_FADE).
+static func layer_material(a_zone: String, suffix: String) -> ShaderMaterial:
+	var mat := atmos_material(suffix, layer_haze(a_zone, suffix))
+	if mat != null and ZONE_AIR.has(a_zone) and AIR_FADE.has(suffix):
+		mat.set_shader_parameter("fade", AIR_FADE[suffix])
+		mat.set_shader_parameter("mist", AIR_MIST[suffix])
+	return mat
+
+
+## The fade a layer takes at height `v` (0 its top, 1 its foot): `fade`, deepening
+## to `mist` between MIST_FROM and MIST_TO, or `fade` throughout when `mist` is
+## negative. Mirrors shaders/atmosphere.gdshader.
+static func fade_at(fade: float, mist: float, v: float) -> float:
+	if mist < 0.0:
+		return fade
+	return lerpf(fade, mist, smoothstep(MIST_FROM, MIST_TO, v))
 
 
 ## The atmospheric-perspective material for a layer, or null if the suffix has no

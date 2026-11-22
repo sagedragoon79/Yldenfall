@@ -477,3 +477,79 @@ func test_zones_differ_in_fog_colour() -> void:
 	var green := Backdrop.haze_for("boughs")
 	check(warm.r > cold.r, "the warm hearth fog is redder than the cold spring fog")
 	check(green.g > warm.g and green.g > cold.g, "the canopy fog is the greenest")
+
+
+func test_a_sunlit_zones_woods_recede_into_light() -> void:
+	# Design bible 12.112 (pass 636): the pass 635 grade saw the canopy bridge's
+	# foes "small and low-contrast against the foliage". The Boughs' woods faded
+	# toward the same dark green the foes' bodies sit at. A sunlit zone's nearer
+	# layers now recede into the pale air of its sky.
+	check(Backdrop.ZONE_AIR.has("boughs"), "the Boughs have day air")
+	for zone: String in Backdrop.ZONE_AIR:
+		var air: Color = Backdrop.ZONE_AIR[zone]
+		check(FoeLight.luma(air) > FoeLight.luma(Backdrop.haze_for(zone)) + 0.2, "%s: its air is light, not a haze" % zone)
+		for suffix: String in Backdrop.AIR_FADE:
+			check(Backdrop.layer_haze(zone, suffix) == air, "%s %s: recedes into the air" % [zone, suffix])
+			var mat := Backdrop.layer_material(zone, suffix)
+			check_near(float(mat.get_shader_parameter("fade")), Backdrop.AIR_FADE[suffix], 0.0001, "%s %s: at its own fade" % [zone, suffix])
+			check_near(float(mat.get_shader_parameter("mist")), Backdrop.AIR_MIST[suffix], 0.0001, "%s %s: and its mist" % [zone, suffix])
+			check(Backdrop.AIR_MIST[suffix] > Backdrop.AIR_FADE[suffix], "%s %s: the mist is deeper at the foot" % [zone, suffix])
+		check(Backdrop.layer_haze(zone, "far") == Backdrop.haze_for(zone), "%s: the sky keeps the haze" % zone)
+	check(Backdrop.layer_haze("heartwood", "ridge") == Backdrop.haze_for("heartwood"), "a zone under a roof keeps its haze")
+	check(Backdrop.layer_material("heartwood", "ridge").get_shader_parameter("fade") == Backdrop.ATMOS["ridge"]["fade"],
+		"at the haze's fade")
+	check(Backdrop.AIR_FADE["ridge"] > Backdrop.AIR_FADE["mid"] and Backdrop.AIR_MIST["ridge"] > Backdrop.AIR_MIST["mid"],
+		"the ridge recedes further than the mid")
+	check(Backdrop.layer_material("heartwood", "ridge").get_shader_parameter("mist") == null,
+		"a haze sets no mist (the shader's default keeps one fade)")
+	# The mist: the fade at the top, deepening down the layer, the mist at the foot.
+	check_near(Backdrop.fade_at(0.4, 0.8, 0.0), 0.4, 0.0001, "the top takes the fade")
+	check_near(Backdrop.fade_at(0.4, 0.8, Backdrop.MIST_FROM), 0.4, 0.0001, "down to MIST_FROM")
+	check_near(Backdrop.fade_at(0.4, 0.8, 1.0), 0.8, 0.0001, "the foot takes the mist")
+	check(Backdrop.fade_at(0.4, 0.8, 0.55) > 0.4 and Backdrop.fade_at(0.4, 0.8, 0.55) < 0.8, "and it rises between")
+	check_near(Backdrop.fade_at(0.4, -1.0, 1.0), 0.4, 0.0001, "no mist leaves the fade")
+
+	# Measured: the lower half of the Boughs' woods, where a foe stands in front of
+	# them, against the middle of the Bark Knight's and the Leaf Mantis's lit bodies.
+	var img := (load(Backdrop.DIR + "boughs_ridge.png") as Texture2D).get_image()
+	var mat_r := Backdrop.layer_material("boughs", "ridge")
+	var haze_r: Color = mat_r.get_shader_parameter("haze")
+	var desat_r := float(mat_r.get_shader_parameter("desat"))
+	var fade_r := float(mat_r.get_shader_parameter("fade"))
+	var mist_r := float(mat_r.get_shader_parameter("mist"))
+	var woods: Array[float] = []
+	var woods_sat: Array[float] = []
+	for y in range(img.get_height() / 2, img.get_height(), 2):
+		var f := Backdrop.fade_at(fade_r, mist_r, float(y) / img.get_height())
+		for x in range(0, img.get_width(), 2):
+			var c := img.get_pixel(x, y)
+			if c.a > 0.9:
+				var seen_c := Backdrop.haze_color(c, desat_r, f, haze_r)
+				woods.append(FoeLight.luma(seen_c))
+				woods_sat.append(seen_c.s)
+	woods.sort()
+	woods_sat.sort()
+	var behind := woods[woods.size() / 2]
+	var behind_sat := woods_sat[woods_sat.size() / 2]
+	for id: String in ["bark_knight", "leaf_mantis"]:
+		var meta: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://assets/sprites/%s.json" % id))
+		var cell: Array = meta["cell"]
+		var sheet: Image = (load("res://assets/sprites/%s.png" % id) as Texture2D).get_image()
+		var body: Array[float] = []
+		var body_sat: Array[float] = []
+		for y in int(cell[1]):
+			for x in int(cell[0]):
+				var p := sheet.get_pixel(x, y)
+				if p.a > 0.8:
+					var lit_p := FoeLight.lit(p, "boughs", id)
+					body.append(FoeLight.luma(lit_p))
+					body_sat.append(lit_p.s)
+		body.sort()
+		body_sat.sort()
+		var mid := body[body.size() / 2]
+		var mid_sat := body_sat[body_sat.size() / 2]
+		# A step in value, or in colour: a leaf-green mantis is as light as the
+		# misted woods but far more saturated than their grey-green air.
+		check(absf(behind - mid) > 0.08 or mid_sat - behind_sat > 0.15,
+			"%s: its body (value %.2f, saturation %.2f) is a step off the woods behind it (%.2f, %.2f)" % [id, mid, mid_sat, behind, behind_sat])
+		check(behind - body[0] > 0.25, "%s: and its outline is dark against them (%.2f)" % [id, body[0]])
