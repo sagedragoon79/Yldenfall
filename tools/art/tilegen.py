@@ -3383,11 +3383,46 @@ def _ridge_roll(rng):
 
 
 def _tri(teeth, cx, half, peak, lean=0):
-    """A triangular crest `half` wide, `peak` tall, into `teeth` (indices wrap)."""
+    """A triangular crest `half` wide, `peak` tall, into `teeth` (indices wrap). A
+    `lean` slides both feet that far sideways under the apex at `cx`. (Until pass 635
+    each column was slid instead, which left gaps in a leaning shard's crest, and each
+    gap drew a cleft: the crystal halls' ridge was striped.)"""
+    left, right = min(-1, lean - half), max(1, lean + half)
+    for o in range(left, right + 1):
+        v = peak * (o - left) / -left if o <= 0 else peak * (right - o) / right
+        i = (cx + o) % BG_W
+        teeth[i] = max(teeth[i], v)
+
+
+FIR_TIP = 0.25   # a tier's top width, as a share of its drooping bottom
+FIR_FLARE = 0.7  # how fast the tiers widen down the tree (1 is a straight cone)
+
+
+def _fir_height(half, peak, tiers, d):
+    """The top of a tiered fir at `d` px out from its trunk (-1 past its widest tier):
+    each tier flares from a narrow top to drooping tips at its bottom, wider tier by
+    tier down the tree (bible 12.111)."""
+    th = peak / tiers
+    best = -1.0
+    for k in range(tiers):  # 0 is the top tier
+        low = peak - (k + 1) * th
+        bot = half * ((k + 1) / tiers) ** FIR_FLARE
+        top = bot * FIR_TIP if k else 0.0
+        if d <= top:
+            best = max(best, low + th)
+        elif d <= bot:
+            best = max(best, low + th * (bot - d) / (bot - top))
+    return best
+
+
+def _fir(teeth, cx, half, peak, tiers):
+    """A fir of `tiers` drooping tiers, `half` wide at its foot and `peak` tall, into
+    `teeth` (indices wrap): the crest is a row of stepped trees, not a sawtooth."""
     for dx in range(-half, half + 1):
-        t = 1.0 - abs(dx) / max(1, half)
-        i = (cx + int(lean * (1 - t)) + dx) % BG_W
-        teeth[i] = max(teeth[i], peak * t)
+        v = _fir_height(half, peak, tiers, abs(dx))
+        if v >= 0:
+            i = (cx + dx) % BG_W
+            teeth[i] = max(teeth[i], v)
 
 
 def _block(teeth, cx, half, peak):
@@ -3550,7 +3585,12 @@ def _ridge_profile(kind, rng, houses=None, ground=None):
             _tri(teeth, x, rng.randint(14, 26) * D, rng.randint(4, 10) * D)
             x += rng.randint(30, 60) * D
         elif kind == "fir":
-            _tri(teeth, x, rng.randint(5, 10) * D, rng.randint(22, 46) * D)
+            # A tiered tree (pass 635, 12.111); until then a plain triangle, and a
+            # row of them read as a sawtooth band.
+            half, peak, tiers = rng.randint(7, 12) * D, rng.randint(22, 46) * D, rng.randint(3, 5)
+            _fir(teeth, x, half, peak, tiers)
+            if houses is not None:
+                houses.append({"form": "fir", "x": x, "half": half, "peak": peak, "tiers": tiers})
             x += rng.randint(10, 20) * D
         elif kind == "shard":
             _tri(teeth, x, rng.randint(4, 9) * D, rng.randint(26, 54) * D, lean=rng.randint(-4, 4) * D)
@@ -3606,6 +3646,23 @@ RIDGE_MIST = (3 * D, 3 * D, 3 * D, 4 * D)  # the mist bands above the near crest
 RIDGE_MIST_A = (88, 64, 42, 22)            # their rim alpha, thinning upward
 RIDGE_FACE = 6 * D             # how far a lit west face reaches below its crest
 RIDGE_FACE_A = 96
+# Form in a natural ridge (bible 12.111, pass 635). The pass 630 grade still read the
+# woods, mounds and crags as one-value cutouts: past the thin lit faces each plane was
+# a single colour. Now the upper slopes catch the sky and fade, each east face falls
+# into shadow, and the woods are rows of trees, each lit on its west flank.
+RIDGE_FORMED = ("fir", "mound", "shard", "crag")
+RIDGE_SKY = 26 * D             # how far the sky's light reaches below a crest
+RIDGE_SKY_A = (78, 46)         # its alpha at the crest, on the far plane and the near one
+RIDGE_SHADE = 8 * D            # how far an east face's shadow reaches below its crest
+RIDGE_SHADE_A = 150
+FIR_FLANK_A = (64, 120)        # a tree's lit west flank (the rim) and shaded east one (the seam)
+FIR_ROW_DROP = (26 * D, 50 * D)  # the inner rows of trees: how far below the ground line they stand
+FIR_ROW_FILL_A = 96            # an inner tree's body, the seam over the plane
+RIDGE_FOLD_DROP = (24 * D, 46 * D)  # the nearer folds of hills, crystal and crags, below the ground line
+RIDGE_FOLD_SCALE = 0.45        # their height, as a share of the crest's
+RIDGE_FOLD_FILL_A = (64, 104)  # each fold's body, the seam over the plane, darker nearer
+RIDGE_FOLD_SKY = 12 * D        # the sky's light below a fold's crest
+RIDGE_FOLD_SKY_A = 90
 ## The distant lights in a ridge's far plane, by zone: lit windows in the town and
 ## the Spires' halls, forge lamps in the Tower, crystal glints in the two crystal
 ## halls. Dark shades (index 2), so the ridge stays under the haze.
@@ -3630,17 +3687,31 @@ def _ridge_shade(name):
     return f"{ramp}-{max(0, int(i) - 1)}"
 
 
-def _ridge_plane(img, h, base, body, rim, body_a, faces=True):
+def _ridge_plane(img, h, base, body, rim, body_a, faces=True, sky=0):
     """One crest plane: `h` (canvas px above `base` per column) filled down to the
     bottom edge in `body`, rimmed in `rim`, with each west face lit below the crest
-    (unless `faces` is off: a roofline's houses light their walls instead)."""
+    (unless `faces` is off: a roofline's houses light their walls instead). With
+    `sky`, the upper slopes catch the sky's light at that alpha, fading downward, and
+    each east face falls into shadow (12.111), so the plane is not one value."""
+    seam = _ridge_shade(body)
     for x in range(BG_W):
         top = base - int(round(h[x]))
         for y in range(max(0, top), BG_H):
             put(img, x, y, c(body, body_a))
+        if sky:
+            for y in range(top + 1, min(BG_H, top + RIDGE_SKY)):
+                _over(img, x, y, rim, sky * (top + RIDGE_SKY - y) // RIDGE_SKY)
+            # (Over two columns a side, so a leaning shard's ragged edge shades whole.)
+            fall = (h[x - 2] + h[x - 1] - h[x] - h[(x + 1) % BG_W]) / 2
+            if fall > 0.5:
+                depth = min(RIDGE_SHADE * 2, int(RIDGE_SHADE * (1 + min(fall, 4) / 4)))
+                for y in range(top + 1, min(BG_H, top + depth)):
+                    _over(img, x, y, seam, RIDGE_SHADE_A * (top + depth - y) // depth)
         # A face that rises to the east looks west, toward the light: it is lit
         # for RIDGE_FACE below the crest, deeper on a steep face.
-        rise = h[x] - h[x - 1]
+        # (Over two columns a side since pass 635, so a leaning shard's ragged edge,
+        # whose columns rise and fall in turn, lights whole instead of in stripes.)
+        rise = (h[x] + h[(x + 1) % BG_W] - h[x - 1] - h[x - 2]) / 2
         if faces and rise > 0.5:
             depth = min(RIDGE_FACE * 2, int(RIDGE_FACE * (1 + min(rise, 4) / 4)))
             for y in range(top + 1, min(BG_H, top + depth)):
@@ -3883,6 +3954,66 @@ def _spire_detail(img, things, roll, far_h, far_tops, near_tops, rim, seam, ligh
                 put(img, x, solid_y, c(rim, RIDGE_RIM_A))
 
 
+def _fir_tree(img, cx, foot, half, peak, tiers, rim, seam, fill_a, below):
+    """One tiered fir standing on canvas row `foot` at column `cx`: its west flank lit,
+    its east flank shaded, and with `fill_a` its body laid in the seam first (a tree of
+    an inner row, standing out from the plane behind it). Paints only inside the
+    plane, and only below row `below[x]` (the plane's crest)."""
+    for dx in range(-half, half + 1):
+        v = _fir_height(half, peak, tiers, abs(dx))
+        if v < 0:
+            continue
+        x = (cx + dx) % BG_W
+        top = foot - int(round(v))
+        for y in range(max(top, below[x] + 1, 0), min(foot, BG_H)):
+            if not img.getpixel((x, y))[3]:
+                continue
+            if fill_a:
+                _over(img, x, y, seam, fill_a)
+            if dx < 0:
+                _over(img, x, y, rim, FIR_FLANK_A[0])
+            elif dx > half // 6:
+                _over(img, x, y, seam, FIR_FLANK_A[1])
+        if fill_a and top > below[x] and 0 <= top < BG_H and img.getpixel((x, top))[3]:
+            # An inner tree's own edge: lit on the west, dark on the east.
+            _over(img, x, top, rim if dx < 0 else seam, 170)
+
+
+def _fir_detail(img, trees, ground, far_tops, rim, seam, rng):
+    """The woods (12.111): every tree on the crest is lit on its west flank and shaded
+    on its east, and two inner rows of trees stand lower in the plane, each darker
+    than the last, so the far plane is a forest in depth rather than one flat band."""
+    for t in trees:
+        foot = RIDGE_BASE - int(round(ground[t["x"] % BG_W]))
+        _fir_tree(img, t["x"], foot, t["half"], t["peak"], t["tiers"], rim, seam, 0, far_tops)
+    for row, drop in enumerate(FIR_ROW_DROP):
+        x = rng.randint(0, 12) * D
+        while x < BG_W:
+            half, peak, tiers = rng.randint(6, 10) * D, rng.randint(18, 34) * D, rng.randint(3, 4)
+            foot = RIDGE_BASE - int(round(ground[x % BG_W])) + drop
+            _fir_tree(img, x, foot, half, peak, tiers, rim, seam, FIR_ROW_FILL_A + 40 * row, far_tops)
+            x += rng.randint(14, 26) * D
+
+
+def _ridge_folds(img, kind, ground, far_tops, rim, seam, rng):
+    """Hills, crystal and crags (12.111): two nearer folds of the same material stand
+    lower in the far plane, each darker than the last, with a lit crest line and the
+    sky's light fading below it, so the plane steps back in depth instead of being
+    one flat band."""
+    for row, drop in enumerate(RIDGE_FOLD_DROP):
+        h = [v * RIDGE_FOLD_SCALE for v in _ridge_profile(kind, rng)]
+        for x in range(BG_W):
+            top = RIDGE_BASE - int(round(ground[x] + h[x])) + drop
+            for y in range(max(top, far_tops[x] + 1, 0), BG_H):
+                if not img.getpixel((x, y))[3]:
+                    continue
+                _over(img, x, y, seam, RIDGE_FOLD_FILL_A[row])
+                if y < top + RIDGE_FOLD_SKY:
+                    _over(img, x, y, rim, RIDGE_FOLD_SKY_A * (top + RIDGE_FOLD_SKY - y) // RIDGE_FOLD_SKY)
+            if far_tops[x] < top < BG_H and img.getpixel((x, top))[3]:
+                _over(img, x, top, rim, 150)
+
+
 def _ridge_detail(img, zone, far_h, near_tops, rng, houses=None, ground=None):
     """The zone's distant detail in the far plane, between its crest and the mist."""
     kind = RIDGE_KIND[zone]
@@ -3896,6 +4027,10 @@ def _ridge_detail(img, zone, far_h, near_tops, rng, houses=None, ground=None):
     if kind == "spire":
         _spire_detail(img, houses or [], ground, far_h, far_tops, near_tops, rim, seam, light)
         return
+    if kind == "fir":
+        _fir_detail(img, houses or [], ground, far_tops, rim, seam, rng)
+    elif kind in RIDGE_FORMED:
+        _ridge_folds(img, kind, ground, far_tops, rim, seam, rng)
     if kind == "crag":
         # Strata: short broken ledges slanting through the rock, each a dark
         # bedding line under a lit lip.
@@ -3946,7 +4081,8 @@ def ridge(zone):
     houses, ground = [], []
     h = _ridge_profile(RIDGE_KIND[zone], rng, houses, ground)
     faces = RIDGE_KIND[zone] != "roof"  # a roofline lights its walls, not its slopes
-    _ridge_plane(img, h, RIDGE_BASE, body, rim, RIDGE_A, faces)
+    formed = RIDGE_KIND[zone] in RIDGE_FORMED
+    _ridge_plane(img, h, RIDGE_BASE, body, rim, RIDGE_A, faces, RIDGE_SKY_A[0] if formed else 0)
     # The nearer crest, of the same material and lower, and its own seed.
     near_rng = random.Random(sum(ord(ch) for ch in zone) + 2600)
     near_ground = []
@@ -3967,7 +4103,7 @@ def ridge(zone):
                 if under[3]:
                     img.putpixel((x, yy), blend(under, c(rim), alpha))
             y -= band
-    _ridge_plane(img, near, near_base, _ridge_shade(body), body, 255, faces)
+    _ridge_plane(img, near, near_base, _ridge_shade(body), body, 255, faces, RIDGE_SKY_A[1] if formed else 0)
     if spires:
         # A near spire's west wall catches the light down to the ground it stands on.
         for x in range(BG_W):
