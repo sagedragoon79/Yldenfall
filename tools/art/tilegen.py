@@ -2760,6 +2760,42 @@ def stillglass_shard(img, rx, ry, ang, length, width, cols):
             block(img, int(round(rx + ax * t + px * k)), int(round(ry + ay * t + py * k)), c(col))
 
 
+# Glass grows through its stone (design bible 12.115, pass 639). The pass 635 grade
+# still read the hall's near shards as floating: each growth met its column at one
+# dark crust, and the stone a hand's width away was untouched, so nothing said the
+# glass had come from inside the column. Lit seams now run from each root back into
+# the stone, up and down the column along its courses, thinning as they go.
+VEIN_COUNT = 3
+VEIN_REACH = (18, 36)
+
+
+def stillglass_veins(img, rx, ry, face, cols):
+    """Seams of glass from a root at world pixel rx, ry on a face whose normal is
+    `face`, running back into the stone: `cols` is the seam's lit body and its dark
+    edge. Their own rng (seeded by the seat), so a layer's other draws keep theirs.
+    Returns the world pixels of the lit body."""
+    rng = random.Random(rx * 7919 + ry * 104729)
+    nx = round(math.sin(face))  # out of the face: +1 a right face, -1 a left one
+    lit = []
+    for k in range(VEIN_COUNT):
+        x, y = rx - nx * (1 + k), ry + rng.randint(-2, 2)
+        up = -1 if k % 2 == 0 else 1
+        length = rng.randint(*VEIN_REACH)
+        for t in range(length):
+            # Mostly along the column (its courses run down it), now and then a step
+            # further into the stone; never back out of the face.
+            if rng.random() < 0.3:
+                x -= nx
+            else:
+                y += up
+            edge = t > length * 0.6
+            block(img, x, y, c(cols[1] if edge else cols[0]))
+            if not edge:
+                lit.append((x, y))
+                block(img, x - nx, y, c(cols[1]))  # its shadowed side, deeper in
+    return lit
+
+
 # A growth has a habit (design bible 12.100, pass 624). The independent grade (pass
 # 620) read the hall's stillglass as "one crystal cluster at several angles": every
 # growth was a leader with two or three lesser shards fanned beside it, so each was
@@ -2779,13 +2815,18 @@ def stillglass_habits(rng, n):
     return deal_habits(rng, n, STILLGLASS_HABITS)
 
 
-def stillglass_growth(img, rx, ry, face, lean, rng, reach, width, cols, crust="crystal-1", glow=None, habit="spray"):
+def stillglass_growth(img, rx, ry, face, lean, rng, reach, width, cols, crust="crystal-1", glow=None, habit="spray",
+                      stone=None, chip="stone-2", veins=None):
     """A seated cluster of stillglass at world pixel rx, ry on a stone face whose
     normal is `face` (0 is up, positive turns right; a pillar's right face is pi/2):
     the glass's light on the stone round its root (`glow`: far and near tones, or
     None), cracks into the stone, chips of stone burst out of the face, a leader
     along `lean` with shorter shards fanned beside it, their roots spread along the
-    face, and a crust laid on the face over them."""
+    face, and a crust laid on the face over them. `stone`, if given, is the set of
+    colours the glow may fall on (a layer drawn over its own sky), and `chip` the
+    tone of the burst stone (None: no chips, and no draws on `rng` for them).
+    `veins` (a body and an edge tone, or None) runs lit seams of glass from the
+    root back through the stone (see `stillglass_veins`)."""
     tx, ty = math.cos(face), math.sin(face)  # along the face
     nx, ny = math.sin(face), -math.cos(face)  # out of it
     span = width * 0.9
@@ -2804,6 +2845,8 @@ def stillglass_growth(img, rx, ry, face, lean, rng, reach, width, cols, crust="c
                 here = img.getpixel((wx * D, wy * D))
                 if here[3] == 0 or here == c("night-0"):
                     continue  # open air, and the mortar courses, stay as they are
+                if stone is not None and here[:3] not in stone:
+                    continue  # the sky behind a far pillar stays sky
                 # An ordered dither, so the pool reads as light and not as noise.
                 bayer = BAYER4[wy % 4][wx % 4] / 16
                 lit = (1 - d) ** 1.2
@@ -2811,6 +2854,10 @@ def stillglass_growth(img, rx, ry, face, lean, rng, reach, width, cols, crust="c
                     block(img, wx, wy, c(glow[1]))
                 elif lit > bayer * 0.8:
                     block(img, wx, wy, c(glow[0]))
+    if veins:
+        # Under the glass and its crust, so no seam is drawn over a shard; they
+        # reach past the crust's ends.
+        stillglass_veins(img, rx, ry, face, veins)
     # Cracks run back into the stone from the root.
     for _ in range(3):
         a = face + math.pi + rng.uniform(-0.9, 0.9)
@@ -2854,7 +2901,7 @@ def stillglass_growth(img, rx, ry, face, lean, rng, reach, width, cols, crust="c
         for f in sorted((rng.uniform(-0.7, 0.7) for _ in range(rng.randint(2, 3))), key=abs, reverse=True):
             shard(f, reach * rng.uniform(0.45, 0.7), width * rng.uniform(0.55, 0.8))
         stillglass_shard(img, rx, ry, lean, reach, width, cols)
-    if glow:
+    if glow and chip:
         # Chips of stone burst out of the face where the glass broke through: small
         # lit-topped blocks just off the face, past either end of the roots.
         for k in range(rng.randint(3, 5)):
@@ -2865,13 +2912,26 @@ def stillglass_growth(img, rx, ry, face, lean, rng, reach, width, cols, crust="c
             if nx < 0:
                 bx -= cw - 1  # on a left face, the chip grows out to the left
             for i in range(cw):
-                block(img, bx + i, by, c("stone-2"))
+                block(img, bx + i, by, c(chip))
                 block(img, bx + i, by + 1, c("night-0"))
     # The crust: a ragged dark knuckle of wine glass on the face, across the roots.
     for h in range(int(-span * 2) - 4, int(span * 2) + 5):
         u = h / 2
         for t in range(-1, rng.randint(2, 4)):
             block(img, int(round(rx + tx * u + nx * t)), int(round(ry + ty * u + ny * t)), c(crust))
+
+
+# The far glass sits as deep as its pillars (design bible 12.115, pass 639). The pass
+# 635 grade still read the hall's shards as floating: the far layer's glass was drawn
+# in nearly the near layer's tones (crystal-5 rim, crystal-3 body) on pillars that
+# stop at stone-1, so it stood a value step in front of everything round it and the
+# eye put it in the air before the pillars. It now takes the ramp two steps down from
+# the mid layer's, and lights its own stone as the mid's does, more faintly.
+FAR_STILLGLASS = ("crystal-4", "crystal-2", "crystal-1")
+MID_STILLGLASS = ("crystal-6", "crystal-4", "crystal-2")
+FAR_STILLGLASS_GLOW = ("night-1", "crystal-1")
+MID_STILLGLASS_GLOW = ("crystal-1", "crystal-2")
+MID_STILLGLASS_VEIN = ("crystal-3", "crystal-1")
 
 
 def vorrhallow_far():
@@ -2916,7 +2976,8 @@ def vorrhallow_far():
         seats.append((rx, ry, side))
         stillglass_growth(img, rx, ry, side * math.pi / 2, side * rng.uniform(0.5, 1.0), rng,
                           rng.randrange(14, 27), rng.randrange(6, 9),
-                          ("crystal-5", "crystal-3", "crystal-2"), habit=habits[k])
+                          FAR_STILLGLASS, glow=FAR_STILLGLASS_GLOW, habit=habits[k],
+                          stone={c(n)[:3] for n in ("stone-1", "night-1")}, chip=None)
     STILLGLASS_SEATS["vorrhallow_far"] = {"pillars": [(x // D, w // D) for x, w in pillars], "seats": seats, "habits": habits}
     # Dark water with glints and the crystals' smeared reflections.
     for y in range(water, BG_H):
@@ -2968,7 +3029,7 @@ def vorrhallow_mid():
             stillglass_growth(img, rx, ry, s_ * math.pi / 2, s_ * rng.uniform(0.5, 0.95), rng,
                               rng.randrange(12, 18) if n else rng.randrange(22, 33),
                               rng.randrange(7, 10) if n else rng.randrange(12, 17),
-                              ("crystal-6", "crystal-4", "crystal-2"), glow=("crystal-1", "crystal-2"), habit=habits[-1])
+                              MID_STILLGLASS, glow=MID_STILLGLASS_GLOW, habit=habits[-1], veins=MID_STILLGLASS_VEIN)
             ry += rng.randrange(50, 110)
     STILLGLASS_SEATS["vorrhallow_mid"] = {"pillars": [(x // D, w // D) for x, w, _ in columns], "seats": seats, "habits": habits}
     # Hanging chains from the vault.

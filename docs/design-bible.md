@@ -3029,6 +3029,18 @@ Judged by eye at 1x and 4x in the plaza (lantern, strongbox, coins, keg on the t
 
 - **Not done here.** A lantern by a strongbox throws no light on its floor (12.43's room light is for the room's own lamps).
 
+### 12.115 The still water mirrors the hall, and its glass grows through the stone (pass 639)
+
+The pass 635 grade: "the flooded hall's purple shards float with no anchoring and its water has no reflection". Vorrhallow's tide (4.4) was a dithered teal band with a breathing surface line, and nothing above it showed in it. The hall's stillglass had been seated on its pillars (12.51), lit its own stone (12.82) and grown in four habits (12.100), but each near growth still met its column at one dark crust, and the far glass was drawn nearly as bright as the near.
+
+- **A mirror in the still water.** `Tide` lays one `ColorRect` over each run of the surface row (`Tide.surface_runs`), from `REFLECT_FROM` (2) px under the surface line to the row's floor. Its shader (`REFLECT_SHADER`) reads the screen behind it and samples, for the row `k` px under the line, the row `k + 1` px above it, so the world over the water stands in it upside down: the hero's and a foe's legs, the bases of the pillars, a crystal's glow. It is mixed `REFLECT_MIX` (0.22) toward the water's teal and shows at `REFLECT_ALPHA` (0.5) just under the line, fading to nothing at the row's floor (`Tide.reflect_alpha`). Past `REFLECT_STILL` (4) px down, each row sways sideways by up to one whole pixel on the tide's clock, so the mirror stays pixel art and the water still reads as water. The surface line, its glints, the ripples and the waterline across a wading body are drawn by the tide itself and stay clear above it. The mirror goes when the hall drains.
+- **The far glass sits as deep as its pillars.** The far layer's stillglass takes `FAR_STILLGLASS` (crystal-4 rim, crystal-2 body, crystal-1 shade), every tone darker than the near ramp's (`MID_STILLGLASS`, crystal-6/4/2), and lights its own stone faintly (`FAR_STILLGLASS_GLOW`), only where there is stone: the sky between the far pillars keeps its gradient. It grows no stone chips, so the layer's other draws keep their places.
+- **The near glass grows through its stone.** Each near growth runs three lit seams of glass (`stillglass_veins`, `MID_STILLGLASS_VEIN` crystal-3 with a crystal-1 edge) from its root back into the column, up and down it along the courses for 18 to 36 px, thinning to the dark edge tone, past both ends of the crust. They are drawn under the glass and its crust, never over a shard, and seeded by the seat, so they shift nothing else in the layer.
+
+Judged by eye at 1x and 3x in the flooded hall, the hero and a Crystal Dwarf wading (their legs and the dwarf's glow mirrored), and the near columns before and after. `test_the_still_water_mirrors_what_stands_over_it` (`tests/test_tide_wake.gd`) holds the runs, the mirror's extent, the screen read and its axis, the fade, the clock and the drained hall. `test_vorrhallows_far_glass_sits_as_deep_as_its_pillars` and `test_vorrhallows_near_glass_grows_through_its_stone` (`tools/art/test_tilegen.py`) hold the ramps, the far glow's stone-only reach and the seams.
+
+- **Not done here.** The deep swim water (the Sunken Spring, the aqueduct) has no mirror yet; the aqueduct's flat water and its waterfall are next.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
