@@ -2155,3 +2155,26 @@ def test_the_shipped_spires_islands_are_fresh():
 
 if __name__ == "__main__":
     main()
+
+
+def test_the_heartwoods_plank_is_old_grey_timber():
+    # Pass 637 (bible 12.113): the pass 635 grade saw "the same orange A-frame trestle"
+    # in the Heartwood and the town. The Heartwood's boards are now grey, moss-toned
+    # timber, so its plank differs from the town's bark one and is half as saturated.
+    # (Restoring PLANK["heartwood"]["wood"] = "bark" fails this.)
+    import colorsys
+    assert tg.PLANK["heartwood"]["wood"] != tg.PLANK["hearthroot"]["wood"]
+    assert tg.PLANK["heartwood"]["strut"] != tg.PLANK["boughs"]["strut"]
+    assert _dominant_board_ramp("heartwood") == "moss"
+
+    def mean_sat(zone):
+        t = _one_way_tile(zone).load()
+        sats = []
+        for y in range(2, 8 * tg.D):
+            for x in range(tg.T):
+                r, g, b, a = t[x, y]
+                if a:
+                    sats.append(colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)[1])
+        return sum(sats) / len(sats)
+
+    assert mean_sat("heartwood") < 0.32 < mean_sat("gym"), (mean_sat("heartwood"), mean_sat("gym"))

@@ -1181,7 +1181,8 @@ def darken(img, ox, oy, steps):
 # does not use this painter.
 PLANK = {
     "gym": {"wood": "bark", "nail": "stone-5", "strut": "bark"},
-    "heartwood": {"wood": "bark", "nail": "gold-4", "strut": "bark"},
+    # The Heartwood's boards are old grey timber, not the town's fresh bark (pass 637).
+    "heartwood": {"wood": "moss", "nail": "gold-4", "strut": "moss"},
     "boughs": {"wood": "bark", "nail": "leaf-5", "strut": "bark"},
     "haar": {"wood": "umber", "nail": "ash-4", "strut": "umber"},
     "sunken": {"wood": "umber", "nail": "sky-5", "strut": "umber"},

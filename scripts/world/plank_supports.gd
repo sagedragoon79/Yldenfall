@@ -49,10 +49,12 @@ const FRAME_MIN_H := 40.0
 ## hanger's three tones; `wood` the post and brace timber (lit, mid, dark), in
 ## the plank's own strut ramp (tilegen PLANK) so the support reads as the same
 ## build as the board it carries; `bolt` the fastener accent (tilegen PLANK
-## `nail`), and `foot` the footing stone (lit, mid, dark).
+## `nail`), and `foot` the footing stone (lit, mid, dark). `moss`, where a zone has it
+## (lit, mid, dark), grows on the rail and climbs each leg from its footing (pass 637).
 const LOOKS := {
 	"gym": {"frame": "x", "post": "squared", "hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "aca1ba", "foot": ["797767", "58544c", "363330"]},
-	"heartwood": {"frame": "lashed", "post": "raked", "hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "f0c02e", "foot": ["797767", "58544c", "363330"]},
+	# The Heartwood's timber is old and grey, grown over with moss, and lashed with flax (pass 637).
+	"heartwood": {"frame": "lashed", "post": "raked", "hang": "rope", "lit": "aa9173", "mid": "8a6e56", "dark": "3c2c2a", "wood": ["728061", "4f5c47", "2f392d"], "moss": ["49aa36", "2b782c", "1e4825"], "bolt": "f0c02e", "foot": ["797767", "58544c", "363330"]},
 	"boughs": {"frame": "forked", "post": "trunk", "hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "a1d684", "foot": ["797767", "58544c", "363330"]},
 	"hearthroot": {"frame": "x", "post": "squared", "hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "f0c02e", "foot": ["867ba2", "645e82", "2f2c3a"]},
 	"haar": {"frame": "piling", "post": "pile", "hang": "rope", "lit": "aa9173", "mid": "8a6e56", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "989885", "foot": ["797767", "58544c", "363330"]},
@@ -354,6 +356,7 @@ static func post_parts(x: float, top: float, bottom: float, look: Dictionary, kn
 	out.append([Rect2(x - half - 2.0, bottom - 3.0, POST_W + 4.0, 0.5), f[0]])
 	out.append([Rect2(x - half - 2.0, bottom - 0.5, POST_W + 4.0, 0.5), f[2]])
 	out.append([Rect2(x + half + 1.0, bottom - 2.5, 1.0, 2.5), f[2]])
+	PlankSupports._moss_climb(out, x, bottom - 3.0, h, look)
 	return out
 
 
@@ -393,7 +396,44 @@ static func _raked_post(x: float, top: float, bottom: float, look: Dictionary, d
 	out.append([Rect2(tx - 4.0, top + 1.5, 8.0, 0.5), w[1]])
 	PlankSupports._lashing(out, Vector2(tx - dir * 0.5, top + 4.5), look)
 	PlankSupports._footing(out, x, bottom, look.foot)
+	PlankSupports._moss_climb(out, x, bottom - 3.0, h, look)
 	return out
+
+
+## Moss on the top of a timber from `x0` to `x1` at `y` (pass 637): cushions a few
+## px wide every so often, placed by position so a run is the same each load, and
+## now and then a strand hanging under it. Nothing where the zone has no moss.
+static func _moss_beam(out: Array, x0: float, x1: float, y: float, look: Dictionary) -> void:
+	if not look.has("moss"):
+		return
+	var m: Array = look.moss
+	var x := x0 + 2.0
+	while x < x1 - 3.0:
+		var k := int(absf(x * 7.0 + y * 3.0)) % 5
+		var wide := 3.0 + k % 3
+		if k != 4:
+			out.append([Rect2(x, y - 1.5, wide, 1.0), m[1]])
+			out.append([Rect2(x + 1.0, y - 2.0, wide - 2.0, 0.5), m[0]])
+			out.append([Rect2(x, y - 0.5, wide, 0.5), m[2]])
+		if k == 1:
+			out.append([Rect2(x + 1.0, y + 1.5, 1.0, 2.0 + k), m[2]])
+		x += wide + 4.0 + k
+
+
+## Moss climbing a leg from its footing at `foot`, a third of the way up at most (pass 637).
+static func _moss_climb(out: Array, x: float, foot: float, h: float, look: Dictionary) -> void:
+	if not look.has("moss"):
+		return
+	var m: Array = look.moss
+	var up := minf(8.0, h * 0.33)
+	out.append([Rect2(x - 2.5, foot - 1.0, 5.0, 1.0), m[1]])
+	out.append([Rect2(x - 2.0, foot - 1.5, 4.0, 0.5), m[0]])
+	var y := foot - 2.0
+	var k := 0
+	while y > foot - up:
+		out.append([Rect2(x - 2.0 + (1.0 if k % 2 else 0.0), y, 2.0, 1.0), m[1] if k % 3 else m[2]])
+		y -= 1.5
+		k += 1
 
 
 ## A cut limb (the High Boughs, pass 629): a trunk that stands on a flared root
@@ -628,6 +668,7 @@ static func _lashed_parts(x0: float, x1: float, top: float, bottom: float, look:
 			out.append([Rect2(a - 1.0, top, 2.0, rail - top), w[1]])
 			out.append([Rect2(a - 1.0, top, 0.5, rail - top), w[0]])
 	PlankSupports._beam(out, x0, x1, rail, w)
+	PlankSupports._moss_beam(out, x0, x1, rail, look)
 	for b in int(bays.x):
 		var a := x0 + b * bays.y
 		var e := a + bays.y

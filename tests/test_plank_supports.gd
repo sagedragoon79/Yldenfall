@@ -197,6 +197,7 @@ func test_plank_every_support_tone_is_in_the_palette() -> void:
 		var tones: Array = [look.lit, look.mid, look.dark, look.bolt]
 		tones.append_array(look.wood)
 		tones.append_array(look.foot)
+		tones.append_array(look.get("moss", []))
 		for t: String in tones:
 			check(palette.has(t), "%s: %s is a palette value" % [zone, t])
 		check(not (look.bolt in look.wood), "%s: its bolts stand out from the timber" % zone)
@@ -484,3 +485,47 @@ func test_plank_the_lashed_frame_follows_raked_legs() -> void:
 	check(raked.end.x <= plain.end.x - 4.0, "the frame's top corner stays inside the leaning leg (%s, %s upright)" % [raked.end.x, plain.end.x])
 	var leg := _bounds(PlankSupports.post_parts(140.0, top, bottom, look, [-1]).filter(func(q: Array) -> bool: return q[0].position.y >= top + 6.0 and q[0].end.y < top + 12.0))
 	check(raked.end.x <= leg.end.x + 0.01, "it does not poke out past the leg (%s, leg %s)" % [raked.end.x, leg.end.x])
+
+
+## Pass 637 (bible 12.113): the pass 635 grade saw "the same orange A-frame trestle" in the
+## root shrine, the plaza and the Heartwood tell. The Heartwood's timber is old grey wood
+## grown over with moss and lashed with flax; the town keeps its fresh bark.
+func test_plank_the_heartwood_builds_in_old_grey_timber_with_moss() -> void:
+	var wood: Array = PlankSupports.LOOKS["heartwood"].wood
+	var hw: Dictionary = PlankSupports.LOOKS["heartwood"]
+	for other: String in ["hearthroot", "boughs"]:
+		var theirs: Array = PlankSupports.LOOKS[other].wood
+		for t: String in wood:
+			check(not (t in theirs), "the Heartwood's timber %s is not %s's" % [t, other])
+	var mid := Color(wood[1])
+	var town := Color(PlankSupports.LOOKS["hearthroot"].wood[1])
+	check(mid.s < 0.25 and mid.s < town.s - 0.3, "the Heartwood's timber is grey, not orange (saturation %.2f, the town's %.2f)" % [mid.s, town.s])
+	var town_lit := Color(PlankSupports.LOOKS["hearthroot"].wood[0])
+	check(absf(Color(wood[0]).get_luminance() - town_lit.get_luminance()) < 0.1, "it is lit about as the town's is, so it still reads (%.2f, %.2f)" % [Color(wood[0]).get_luminance(), town_lit.get_luminance()])
+	for k: String in ["lit", "mid", "dark"]:
+		check(Color(hw[k]).s < 0.45 and not (hw[k] in PlankSupports.LOOKS["hearthroot"].wood), "its lashing is flax, not orange rope: %s" % hw[k])
+	check(hw.has("moss") and hw.moss.size() == 3, "the Heartwood has moss")
+	var moss: Array = hw.moss
+	var is_moss := func(q: Array) -> bool: return q[1] in moss
+	var top := 50.0
+	var bottom := 110.0
+	var frame := PlankSupports.frame_parts(100.0, 196.0, top, bottom, hw)
+	var on_frame := frame.filter(is_moss)
+	check(on_frame.size() >= 6, "moss grows along the rail (%d parts)" % on_frame.size())
+	var rail := bottom - 9.0
+	for q: Array in on_frame:
+		var r: Rect2 = q[0]
+		check(r.position.x >= 100.0 and r.end.x <= 196.0, "moss stays on the rail's length: %s" % r)
+		check(r.position.y >= rail - 2.5 and r.end.y <= rail + 7.0, "moss sits on the rail or hangs just under it: %s" % r)
+	var leg := PlankSupports.post_parts(100.0, top, bottom, hw, [1]).filter(is_moss)
+	check(leg.size() >= 3, "moss climbs a leg (%d parts)" % leg.size())
+	for q: Array in leg:
+		check(q[0].position.y >= bottom - 3.0 - 8.5 and q[0].end.y <= bottom - 1.5, "it climbs only from the footing: %s" % q[0])
+	var lone := PlankSupports.post_parts(100.0, top, bottom, hw, [-1, 1]).filter(is_moss)
+	check(lone.size() >= 3, "and a lone square post (%d parts)" % lone.size())
+	# Zones with no moss grow none.
+	var town_look: Dictionary = PlankSupports.LOOKS["hearthroot"]
+	var town_parts := PlankSupports.frame_parts(100.0, 196.0, top, bottom, town_look)
+	town_parts.append_array(PlankSupports.post_parts(100.0, top, bottom, town_look))
+	check(town_parts.filter(is_moss).is_empty(), "the town's trestle grows no moss")
+	check(PlankSupports.post_parts(100.0, top, bottom, town_look).all(func(q: Array) -> bool: return not (q[1] in wood)), "and is not built of the Heartwood's timber")
