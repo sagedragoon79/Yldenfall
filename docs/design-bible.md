@@ -1710,6 +1710,8 @@ included, as the player sees them.
 
 **Easing the murkiest zones (pass 513):** the two murkiest zones — the Haar and the Sunken Spring — were read by the independent grade as a low-contrast grey-green / grey-teal where the play field and backdrop merged (a consequence of their dark fog, the darkest of the ten). Their `ZONE_HAZE` entries are desaturated toward neutral (the Haar from a saturated dark blue to a paler slate, the Sunken likewise), so the backdrop recedes as a paler mist and separates from the dark play field. Luminance rises while the HSV value stays under the `.v < 0.4` dark-tone cap and the colour keeps its cool-blue lean, so the night mood holds. Only the backdrop layers carry the haze; the tiles, hazards and foes are drawn in front of it and keep their contrast, so combat readability is untouched by construction. This is the ZONE_HAZE (backdrop) half of the queued "tile-vs-backdrop value collapse in the murkiest zones" concern; the play-field half — warming those two zones' tiles from cool stone to warm umber — followed in pass 524 (12.22).
 
+**Day air (pass 636):** a sunlit zone's ridge and mid layers fade into the pale air of its sky, deepening to a valley mist toward their foot, instead of into its dark haze, so a foe drawn over them stands against light (12.112). Only the High Boughs have it.
+
 ### 12.6 Backdrop gradients
 
 The sky of every painted far layer (`<zone>_far.png`) is a palette-locked vertical gradient from `tilegen.gradient(top, bottom)`. **Ramp, not a two-colour screen (pass 502):** the gradient is a ramp of several master-palette colours between `top` and `bottom` (`gradient_ramp`, each step the nearest palette match to an even RGB interpolation), and a pixel is dithered only across the thin seam between two *adjacent* ramp colours (`gradient_pixel`), using value noise (`hash2`), not a fixed ordered grid. Because the dither mixes near-identical neighbours from noise rather than a rigid 50/50 screen of the two far-apart endpoints, a transition reads as a soft grain — never the uniform dot/crosshatch dither grid that the independent grade flagged as flat moire across the midground (pass 497/500/501). This is code-first: no art is repainted, and the output stays deterministic (`hash2` is pure), so the committed PNGs do not churn.
@@ -2987,6 +2989,19 @@ The pass 630 grade: "midground layers are flat cutouts that repeat: the sawtooth
 Each far plane now spans at least three tenths of its lightest value. Judged by eye at 1x and 2x in the root shrine (rows of tiered firs where the sawtooth band was), the canopy bridge (a forest in depth behind the trestle), the gear pit (crags in folds) and the flooded hall (shards in folds, no stripes). `tools/art/test_tilegen.py` holds the spread (`test_a_natural_ridge_is_not_one_value`), the tiers and the whole shard.
 
 - **Not done here.** The town's tower skyline and the Spires' wavy terraces (named in the same defect) keep their own painters. In the crystal halls the body is the ramp's darkest step, so a fold cannot go darker and their spread is the narrowest. The Haar's fog still covers its ridge (held).
+
+### 12.112 A sunlit zone's woods recede into light (pass 636)
+
+The pass 635 grade: "the canopy bridge's foes are small and low-contrast against the foliage, while the bee is brighter and more detailed". Every parallax layer faded toward its zone's dark haze (12.5), and the Boughs' haze is a dark green: behind the bridge the woods sat at a luma of 0.25 to 0.32, the middle value of the Bark Knight's lit body (0.31), so he vanished into them, and the Leaf Mantis was a lighter green on green. The bee is the one warm thing in the room.
+
+- **Day air.** A sunlit zone (`Backdrop.ZONE_AIR`; the Boughs, the only zone open to a day sky over woods) has an air colour: its sky at the horizon, greyed toward mist (116, 141, 130). Its ridge and mid layers fade into the air instead of the haze. The far layer, the sky itself, keeps the haze, and every other zone, under a roof, a fog or a night, keeps the haze for every layer.
+- **A valley mist.** The fade deepens down the layer: from `AIR_FADE` at the top (ridge 0.45, mid 0.3) to `AIR_MIST` at the foot (0.75, 0.5), rising between `MIST_FROM` 0.3 and `MIST_TO` 0.8 of the layer's height (`shaders/atmosphere.gdshader`, mirrored by `Backdrop.fade_at`). The crests keep the forms of 12.111; the band the play line stands in front of is lifted. The ridge fades further than the mid at both ends, so the layers still recede in order.
+- **What it buys.** The woods behind a foe now sit at 0.41: the Bark Knight's body stands a step darker than them, and both foes' outlines (0.09) are dark against them. The Leaf Mantis is as light as the mist but far more saturated (0.36 against 0.19): a leaf-green body against grey-green air.
+- **The foes are unchanged.** Nothing is drawn round or over a figure (the rim light stays Sean's call, 12.5), and the room light of 12.43 and 12.89 is as it was.
+
+Judged by eye at 1x and 3x in the canopy bridge, the sunlit bough and the thorn yard. `test_a_sunlit_zones_woods_recede_into_light` (`tests/test_backdrop.gd`) holds the air, the mist and its order, and, measured on the shipped ridge art and the two sheets, that each foe stands a step off the woods behind it by value or by colour, with a dark outline.
+
+- **Not done here.** The Spires are also open to the sky, but a storm, and keep their haze. The mid layer's large leaves fade with the woods; the foreground (12.11) is unchanged.
 
 ## 13. Asset Production Plan
 
