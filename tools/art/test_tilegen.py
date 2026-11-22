@@ -11,6 +11,8 @@ game test suite is Godot-only and CI does not run Python unit tests; run this
 guard with `python tools/art/test_tilegen.py` after touching either. Exit code
 is non-zero on the first failure, so it mutation-checks by a plain re-run.
 """
+import math
+import random as _r
 import sys
 from pathlib import Path
 
@@ -1378,7 +1380,7 @@ def test_evercrown_cells_join_across_tile_edges():
 # --- Sky islands (design bible 12.33) ---------------------------------------------------
 
 def _island_image(cx=300, cy=200, w=160, seed=3):
-    import random as _r
+    import math
     img = tg.Image.new("RGBA", (tg.BG_W, tg.BG_H), tg.CLEAR)
     tg.island(img, cx * tg.D, cy * tg.D, w * tg.D, _r.Random(seed))
     return img
@@ -1693,7 +1695,7 @@ def test_vorrhallows_stillglass_is_seated_on_the_stone():
     # attached to no rock". Every growth in both backdrops has a seat on a pillar's
     # face, leans away from that pillar, and no shard lies far from a seat.
     D, W = tg.D, tg.BG_W // tg.D
-    for painter, key, lit, reach in ((tg.vorrhallow_far, "vorrhallow_far", "crystal-5", 34),
+    for painter, key, lit, reach in ((tg.vorrhallow_far, "vorrhallow_far", tg.FAR_STILLGLASS[0], 34),
                                      (tg.vorrhallow_mid, "vorrhallow_mid", "crystal-6", 40)):
         px, rec = _seated(painter, key, lit, reach)
         glass = {tg.c(n) for n in (lit, "crystal-3", "crystal-4", "crystal-2", "crystal-1")}
@@ -2153,8 +2155,6 @@ def test_the_shipped_spires_islands_are_fresh():
     assert shipped.tobytes() == tg.spires_mid().convert("RGBA").tobytes(), "assets/bg/spires_mid.png is stale"
 
 
-if __name__ == "__main__":
-    main()
 
 
 def test_the_heartwoods_plank_is_old_grey_timber():
@@ -2178,3 +2178,85 @@ def test_the_heartwoods_plank_is_old_grey_timber():
         return sum(sats) / len(sats)
 
     assert mean_sat("heartwood") < 0.32 < mean_sat("gym"), (mean_sat("heartwood"), mean_sat("gym"))
+
+
+def test_vorrhallows_far_glass_sits_as_deep_as_its_pillars():
+    # Design bible 12.115 (pass 639): the pass 635 grade still read the hall's shards
+    # as floating. The far glass was drawn a step brighter than anything round it, so
+    # it stood in front of its own pillars. Every tone of the far ramp is now darker
+    # than the near ramp's tone in the same place, and the far glass lights its own
+    # stone but never the sky between the pillars.
+    for far, mid in zip(tg.FAR_STILLGLASS, tg.MID_STILLGLASS):
+        assert _lum(tg.c(far)) + 15 < _lum(tg.c(mid)), f"far {far} is as bright as near {mid}"
+    # The far rim is no brighter than the near glass's body.
+    assert _lum(tg.c(tg.FAR_STILLGLASS[0])) <= _lum(tg.c(tg.MID_STILLGLASS[1]))
+    # Painted with and without its glow (the glow draws nothing on the rng, so the
+    # two layers differ only where the glow fell).
+    img = tg.vorrhallow_far()
+    rec = tg.STILLGLASS_SEATS["vorrhallow_far"]
+    keep = tg.FAR_STILLGLASS_GLOW
+    try:
+        tg.FAR_STILLGLASS_GLOW = None
+        bare = tg.vorrhallow_far()
+    finally:
+        tg.FAR_STILLGLASS_GLOW = keep
+    px, bx = img.load(), bare.load()
+    D, W = tg.D, tg.BG_W // tg.D
+    stone = {tg.c("stone-1"), tg.c("night-1")}  # the far pillars' and arches' lit tones
+    sky_cols = {tg.c(n) for n in ("sky-1",)}
+    lit, stray = 0, 0
+    for y in range(0, tg.BG_H // D):
+        for x in range(W):
+            was = bx[x * D, y * D]
+            if px[x * D, y * D] != was:
+                if was in stone:
+                    lit += 1
+                elif was not in {tg.c(n) for n in tg.FAR_STILLGLASS + ("crystal-1", "night-0")}:
+                    stray += 1
+    assert lit >= 15 * len(rec["seats"]), f"the far glass lights only {lit} px of its stone"
+    # The open air between the pillars keeps its own gradient: the glow falls only on
+    # stone (the glass and its crust cover their own pixels either way).
+    assert stray == 0, f"the far glow falls on {stray} px of open air"
+
+
+def test_vorrhallows_near_glass_grows_through_its_stone():
+    # Design bible 12.115 (pass 639): each near growth met its column at one dark
+    # crust and the stone a hand's width off was untouched. Lit seams of glass now
+    # run from every root back into the column, up and down it, past the crust.
+    import math
+    img = tg.Image.new("RGBA", (400 * tg.D, 400 * tg.D), (0, 0, 0, 0))
+    for face, nx in ((math.pi / 2, 1), (-math.pi / 2, -1)):
+        lit = tg.stillglass_veins(img, 200, 200, face, tg.MID_STILLGLASS_VEIN)
+        assert len(lit) >= tg.VEIN_COUNT * 8, f"the seams are only {len(lit)} px of glass"
+        # Every lit pixel lies in the stone: behind the face, never out in the air.
+        assert all((200 - x) * nx >= 1 for x, _ in lit), "a seam runs out of the face"
+        # Their lit bodies run along the column both up and down from the root, and
+        # with their dark ends they reach past where the crust ends (about 14 px).
+        assert min(y for _, y in lit) <= 200 - 6 and max(y for _, y in lit) >= 200 + 6, "the seams stay at the root"
+        edge = tg.c(tg.MID_STILLGLASS_VEIN[1])
+        ys = [y for y in range(150, 251) for x in range(190, 211) if img.getpixel((x * tg.D, y * tg.D)) == edge]
+        assert ys and min(ys) <= 200 - 14 and max(ys) >= 200 + 14, "the seams end inside the crust"
+        img = tg.Image.new("RGBA", (400 * tg.D, 400 * tg.D), (0, 0, 0, 0))
+    # Seeded by the seat, so they never shift a layer's other draws.
+    a = tg.Image.new("RGBA", (400 * tg.D, 400 * tg.D), (0, 0, 0, 0))
+    b = tg.Image.new("RGBA", (400 * tg.D, 400 * tg.D), (0, 0, 0, 0))
+    tg.stillglass_veins(a, 120, 90, math.pi / 2, tg.MID_STILLGLASS_VEIN)
+    tg.stillglass_veins(b, 120, 90, math.pi / 2, tg.MID_STILLGLASS_VEIN)
+    assert a.tobytes() == b.tobytes()
+    # In the hall's near layer every growth shows its seams: their lit tone (no other
+    # glass in the layer takes it) in the column, deeper than the crust lies (it is
+    # laid at most 3 px into the face).
+    mid = tg.vorrhallow_mid()
+    px = mid.load()
+    D, W = tg.D, tg.BG_W // tg.D
+    vein = tg.c(tg.MID_STILLGLASS_VEIN[0])
+    assert vein not in {tg.c(n) for n in tg.MID_STILLGLASS + tg.MID_STILLGLASS_GLOW}
+    rec = tg.STILLGLASS_SEATS["vorrhallow_mid"]
+    for rx, ry, side in rec["seats"]:
+        far_seam = sum(1 for back in range(4, 12) for dy in range(-40, 41)
+                       if 0 <= ry + dy < tg.BG_H // D and px[((rx - side * back) % W) * D, (ry + dy) * D] == vein)
+        assert far_seam >= 3, f"the growth at {rx},{ry} has no seam past its crust ({far_seam} px)"
+
+
+if __name__ == "__main__":
+    main()

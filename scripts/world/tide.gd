@@ -45,6 +45,51 @@ const SUNK_RIM := 0.9
 ## teeth stand against. Alpha at the tips' row, fading to nothing at the floor.
 const SUNK_GLOW := 0.2
 
+## The still water mirrors what stands over it (pass 639, design bible 12.115): the
+## world above the surface, upside down and dimmed, laid over the body in runs of
+## the surface row. REFLECT_FROM px under the surface line it starts (the line,
+## its glints and the ripples stay on top); its alpha is REFLECT_ALPHA there and
+## fades to nothing at the floor of the row. Past REFLECT_STILL px down a row
+## sways sideways by up to REFLECT_SWAY whole pixels, slower than the lap.
+const REFLECT_FROM := 2
+const REFLECT_ALPHA := 0.5
+const REFLECT_TINT := Color("3d8a94")
+const REFLECT_MIX := 0.22
+const REFLECT_STILL := 4
+const REFLECT_SWAY := 1.0
+const REFLECT_PACE := 1.4
+
+const REFLECT_SHADER := "shader_type canvas_item;
+uniform sampler2D screen_tex : hint_screen_texture, filter_nearest, repeat_disable;
+// This rect's first row under the surface line (px) and its depth, and the tide's clock.
+uniform float top = 2.0;
+uniform float depth = 14.0;
+uniform float time = 0.0;
+uniform float alpha = 0.42;
+uniform vec4 tint : source_color = vec4(0.24, 0.54, 0.58, 1.0);
+uniform float tint_mix = 0.3;
+uniform float still = 4.0;
+uniform float sway = 1.0;
+uniform float pace = 1.4;
+// How far one local pixel down and one across move in screen UV.
+varying vec2 step_uv;
+void vertex() {
+	mat4 m = SCREEN_MATRIX * CANVAS_MATRIX * MODEL_MATRIX;
+	vec4 a = m * vec4(VERTEX, 0.0, 1.0);
+	vec4 b = m * vec4(VERTEX + vec2(1.0, 1.0), 0.0, 1.0);
+	step_uv = abs(b.xy - a.xy) * 0.5;
+}
+void fragment() {
+	// The row under the surface line, in whole pixels (0 is the line's own row).
+	float k = floor(top + UV.y * depth);
+	// Its mirror stands k + 1 px above the line: 2k + 1 rows up from here.
+	float up = 2.0 * k + 1.0;
+	float s = k >= still ? floor(sin(time * pace + k * 0.9) * sway + 0.5) : 0.0;
+	vec4 above = texture(screen_tex, SCREEN_UV + vec2(s, -up) * step_uv);
+	float fade = clamp(1.0 - (k - top) / depth, 0.0, 1.0);
+	COLOR = vec4(mix(above.rgb, tint.rgb, tint_mix), alpha * fade);
+}"
+
 ## The lap at a bank (12.97): still water laps slower and fainter than deep water.
 const LAP_PACE := 0.6
 const LAP_ALPHA := 0.8
@@ -66,6 +111,8 @@ var wakes: Array = []
 var rings: Array = []
 
 var _t := 0.0
+## The reflection laid over each run of the surface row (see REFLECT_SHADER).
+var reflections: Array[ColorRect] = []
 ## Columns (tiles) the surface spans, sorted.
 var _cols: Array[int] = []
 ## The same columns as a set.
@@ -97,6 +144,55 @@ func _ready() -> void:
 	var solid := func(c: Vector2i) -> bool: return stone.has(c) and not cells.has(c)
 	banks = WaterEdge.banks(top, solid)
 	sunk = WaterEdge.sunk(cells, solid, Room.TILE)
+	_lay_reflections()
+
+
+## The runs of the surface row (each [first column, last column], tiles).
+func surface_runs() -> Array:
+	var out: Array = []
+	for x in _cols:
+		if out.is_empty() or int(out[-1][1]) != x - 1:
+			out.append([x, x])
+		else:
+			out[-1][1] = x
+	return out
+
+
+## How strongly the mirror shows `k` px under the surface line (0 at the line).
+static func reflect_alpha(k: int) -> float:
+	if k < REFLECT_FROM:
+		return 0.0
+	var depth := float(Room.TILE - REFLECT_FROM)
+	return REFLECT_ALPHA * clampf(1.0 - float(k - REFLECT_FROM) / depth, 0.0, 1.0)
+
+
+func _lay_reflections() -> void:
+	for r in reflections:
+		r.queue_free()
+	reflections.clear()
+	if drained():
+		return
+	var shader := Shader.new()
+	shader.code = REFLECT_SHADER
+	var y := surface_y()
+	for run: Array in surface_runs():
+		var rect := ColorRect.new()
+		rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		rect.position = Vector2(int(run[0]) * Room.TILE, y + REFLECT_FROM)
+		rect.size = Vector2((int(run[1]) - int(run[0]) + 1) * Room.TILE, Room.TILE - REFLECT_FROM)
+		var mat := ShaderMaterial.new()
+		mat.shader = shader
+		mat.set_shader_parameter("top", float(REFLECT_FROM))
+		mat.set_shader_parameter("depth", rect.size.y)
+		mat.set_shader_parameter("alpha", REFLECT_ALPHA)
+		mat.set_shader_parameter("tint", REFLECT_TINT)
+		mat.set_shader_parameter("tint_mix", REFLECT_MIX)
+		mat.set_shader_parameter("still", float(REFLECT_STILL))
+		mat.set_shader_parameter("sway", REFLECT_SWAY)
+		mat.set_shader_parameter("pace", REFLECT_PACE)
+		rect.material = mat
+		add_child(rect)
+		reflections.append(rect)
 
 
 ## True once Thane Vorrund is at rest and the water has gone.
@@ -188,8 +284,12 @@ func _process(delta: float) -> void:
 	if drained():
 		wakes.clear()
 		rings.clear()
+		if not reflections.is_empty():
+			_lay_reflections()
 		return
 	_t += delta
+	for r in reflections:
+		(r.material as ShaderMaterial).set_shader_parameter("time", _t)
 	_wake(delta)
 	sunk_spikes()
 	queue_redraw()

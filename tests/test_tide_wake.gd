@@ -158,3 +158,51 @@ func test_spikes_under_the_water_keep_their_rim() -> void:
 	await frames(2)
 	check(tide.sunk_spikes().is_empty(), "drained, the spikes stand dry and draw their own rim")
 	GameState.data.flags.erase(Tide.DRAIN_FLAG)
+
+
+## Pass 639 (bible 12.115): the pass 635 grade saw the flooded hall's water as a flat
+## band with no reflection. The still water mirrors what stands over it: the world
+## above the surface, upside down, dimmed toward the water's tone, laid over each run
+## of the surface row, strongest just under the line and gone at the row's floor.
+func test_the_still_water_mirrors_what_stands_over_it() -> void:
+	var w := _hall()
+	await frames(3)
+	var tide: Tide = w.room.tide
+	var runs := tide.surface_runs()
+	check(runs.size() >= 2, "the hall's surface comes in runs between its stone (%d)" % runs.size())
+	check(tide.reflections.size() == runs.size(), "one mirror to each run (%d of %d)" % [tide.reflections.size(), runs.size()])
+	var covered := 0
+	for i in mini(runs.size(), tide.reflections.size()):
+		var run: Array = runs[i]
+		var r: ColorRect = tide.reflections[i]
+		var y := tide.surface_y()
+		check(r.position.x == int(run[0]) * Room.TILE and r.size.x == (int(run[1]) - int(run[0]) + 1) * Room.TILE, "a mirror spans its run exactly")
+		check(r.position.y == y + Tide.REFLECT_FROM and r.position.y + r.size.y == y + Room.TILE, "and lies under the surface line, down to the row's floor")
+		covered += int(run[1]) - int(run[0]) + 1
+		var mat := r.material as ShaderMaterial
+		check(mat != null and "hint_screen_texture" in mat.shader.code, "it shows the world behind the water")
+		check("2.0 * k + 1.0" in mat.shader.code, "mirrored about the surface line")
+		check(is_equal_approx(float(mat.get_shader_parameter("alpha")), Tide.REFLECT_ALPHA), "at the mirror's strength")
+	var cols := 0
+	for c: Vector2i in tide.cells:
+		cols += 1 if c.y == tide.row else 0
+	check(covered == cols, "the mirrors cover the whole surface row and nothing else (%d of %d)" % [covered, cols])
+	# Strongest just under the line, fading to nothing at the row's floor.
+	check(Tide.reflect_alpha(0) == 0.0 and Tide.reflect_alpha(Tide.REFLECT_FROM - 1) == 0.0, "the line and its glints stay clear")
+	check(is_equal_approx(Tide.reflect_alpha(Tide.REFLECT_FROM), Tide.REFLECT_ALPHA), "the mirror is strongest just under them")
+	var fading := true
+	for k in range(Tide.REFLECT_FROM + 1, Room.TILE):
+		fading = fading and Tide.reflect_alpha(k) < Tide.reflect_alpha(k - 1)
+	check(fading, "and only fades with depth")
+	check(Tide.reflect_alpha(Room.TILE) <= 0.001, "gone at the row's floor")
+	check(Tide.REFLECT_ALPHA < 0.75, "a dim mirror: the water stays water")
+	# It moves with the tide's clock.
+	var t0 := float((tide.reflections[0].material as ShaderMaterial).get_shader_parameter("time"))
+	await frames(5)
+	var t1 := float((tide.reflections[0].material as ShaderMaterial).get_shader_parameter("time"))
+	check(t1 > t0, "its sway runs on the tide's clock")
+	# Drained, there is nothing to mirror.
+	GameState.set_flag(Tide.DRAIN_FLAG)
+	await frames(3)
+	check(tide.reflections.is_empty(), "the drained hall mirrors nothing")
+	GameState.data.flags.erase(Tide.DRAIN_FLAG)
