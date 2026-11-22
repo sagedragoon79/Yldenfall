@@ -135,6 +135,11 @@ Bible 7: every tell is a pose, a flash and a sound, at least 0.35 s.
   wind-up animation of a new sheet, add the striking end's position to `Enemy.TELL_POINTS`
   (cell pixels; a list with a point per frame when the weapon travels). Check it in the
   lineup. A sheet with no point falls back to the whole rim and tint.
+- **The code also rears the foe.** Since pass 633 (bible 12.109) a wind-up with a point leans
+  the whole frame back from its facing and stretches it a little, and the weapon's light falls
+  on the near part of the body. Draw the wind-up upright or leaning back, never lunging
+  forward, so the art and the rear agree, and keep the pose's own change as large as the cell
+  allows: the code adds to a pose, it does not replace one.
 - **A charge glow** (the Shade Knight's blade point, an eye lighting up) is code, drawn at a
   point the art gives in the frame's metadata or at a fixed offset, so it tracks the pose.
 

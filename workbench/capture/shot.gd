@@ -72,9 +72,16 @@ func _process(_delta: float) -> void:
 		# frame that shows it (at most two beats), so the picture is the warning.
 		# The viewport's picture can trail the drawing by a frame, so wait for the
 		# second lit frame in a row.
-		if String(_args["when"]) == "tell" and _frames < due + 16:
-			_lit = _lit + 1 if pulsing(get_tree()) else 0
-			if _lit < 2:
+		# And the picture is the tell at its strongest (pass 633): a glint gathers
+		# through the wind-up, so wait for one that is whole. A wind-up that ends
+		# first is let go, and the next one is waited for.
+		if String(_args["when"]) == "tell":
+			if not moment(get_tree(), "tell") and _frames < at_frame:
+				_moment = -1
+				_lit = 0
+				return
+			_lit = _lit + 1 if pulsing(get_tree()) and gathered(get_tree()) else 0
+			if _lit < 2 and _frames < at_frame and (_frames < due + 16 or gathering(get_tree())):
 				return
 	elif _frames < at_frame:
 		return
@@ -145,6 +152,26 @@ static func moment(tree: SceneTree, what: String) -> bool:
 static func pulsing(tree: SceneTree) -> bool:
 	for e in tree.get_nodes_in_group("enemy"):
 		if e is Enemy and not e.dead and e.tell_drawn():
+			return true
+	return false
+
+
+## True when every tell drawn lit is at its strongest: a foe with a glint on its
+## weapon (`Enemy.glint_drawn`) wears it nearly whole (`GATHERED` of its growth); a
+## foe with none is whole from its first lit frame.
+const GATHERED := 0.85
+static func gathered(tree: SceneTree) -> bool:
+	var need := lerpf(Enemy.GLINT_MIN, Enemy.GLINT_MAX, GATHERED) + Enemy.GLINT_PULSE
+	for e in tree.get_nodes_in_group("enemy"):
+		if e is Enemy and not e.dead and e.tell_drawn():
+			return e.glint_drawn() == 0.0 or e.glint_drawn() >= need
+	return false
+
+
+## True while a living foe wears a glint: a tell that is still gathering.
+static func gathering(tree: SceneTree) -> bool:
+	for e in tree.get_nodes_in_group("enemy"):
+		if e is Enemy and not e.dead and e.glint_drawn() > 0.0:
 			return true
 	return false
 

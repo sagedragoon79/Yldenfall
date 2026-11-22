@@ -82,6 +82,22 @@ const GLINT_CORE := Color(1.0, 0.97, 0.86)
 const TELL_REACH: Array[float] = [5.0, 8.0, 12.0]
 const TELL_REACH_CELL := 56.0
 const TELL_REACH_RIM := 0.45
+## A wind-up shows on the body (bible 12.109, pass 633). The pass 630 grade read the
+## glint alone as "a few-pixel sparkle with no pose or color change". Through a
+## wind-up with a point, a sheet foe **rears**: it leans back from the way it faces
+## (`REAR_LEAN`, a shear: world pixels its head moves per pixel up) and stretches
+## tall and narrow (`REAR_STRETCH`), eased in over `REAR_TIME` seconds, and snaps
+## upright as the blow goes. And the weapon's **light** falls on it: its silhouette
+## in `TELL_TINT`, once inside each square of `LIGHT_REACH` (half its side, world
+## pixels, scaled to the cell like the rim) at `LIGHT_STEP`, so it is warm at the
+## weapon and gone in its own colors by the far side of the body. The light gathers
+## with the glint and does not pulse: a tint that blinks over a whole foe is the
+## overlay pass 611 took off.
+const REAR_LEAN := 0.16
+const REAR_STRETCH := 0.09
+const REAR_TIME := 0.16
+const LIGHT_REACH: Array[float] = [5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0]
+const LIGHT_STEP := 0.05
 ## Where the glint sits: per sheet and wind-up animation, the striking end of the
 ## weapon (or the horn, the jaws, the fist) in the cell's own pixels, placed by eye
 ## on the frame. A list is a point per frame, for a wind-up whose weapon travels.
@@ -214,6 +230,10 @@ var _hit_rim_drawn := false
 ## and where it sat, relative to the sheet's origin, before facing.
 var _glint_drawn := 0.0
 var _glint_at := Vector2.ZERO
+## How far into its rear this foe's last sheet frame was drawn (0 to 1), and the
+## most of the weapon's light that lay on it (an alpha; 0 with none).
+var _rear_drawn := 0.0
+var _light_drawn := 0.0
 ## The sheet this foe last drew itself from through `draw_sheet` ("" for none).
 var _sheet_drawn := ""
 ## The chips the last blow knocked off this foe (tests; freed when they have fallen).
@@ -753,6 +773,8 @@ func draw_sheet(sheet: String, anim: String, t: float, white := false, offset :=
 	var glint := not dead and _flash <= 0.0 and has_tell_point(sheet, anim)
 	_hit_rim_drawn = white and not _tell_drawn
 	_glint_drawn = 0.0
+	_light_drawn = 0.0
+	_rear_drawn = rear_at(state_time) if glint else 0.0
 	if _tell_drawn and glint:
 		# The tell lights the weapon, not the foe: the rim only near the point.
 		_sheet_white_alpha = 0.0
@@ -773,6 +795,7 @@ func draw_sheet(sheet: String, anim: String, t: float, white := false, offset :=
 	if white and not (_tell_drawn and glint):
 		Sheet.draw(self, sheet, anim, f, over, true)
 	if glint:
+		_draw_body_light(sheet, anim, f)
 		_draw_glint(sheet, tell_point(sheet, anim, f), _tell_drawn)
 	draw_set_transform(Vector2.ZERO)
 	return f
@@ -796,6 +819,49 @@ static func tell_reach_scale(sheet: String) -> float:
 	var s := Sheet.get_sheet(sheet)
 	var cell: Vector2 = s.cell
 	return minf(1.0, minf(cell.x, cell.y) / float(s.density) / TELL_REACH_CELL)
+
+
+## How far a foe has reared `time` seconds into a wind-up, 0 to 1: quick at first,
+## so the pose reads from the wind-up's first frames, and whole by `REAR_TIME`.
+static func rear_at(time: float) -> float:
+	var x := clampf(time / REAR_TIME, 0.0, 1.0)
+	return 1.0 - (1.0 - x) * (1.0 - x)
+
+
+## How far into its rear this foe's last sheet frame was drawn (0 upright).
+func rear_drawn() -> float:
+	return _rear_drawn
+
+
+## The weapon's light on a foe's body `dist` world pixels from the tell's point
+## (the larger of the two axes), `time` seconds into the wind-up, for a foe whose
+## squares are scaled by `scale` (`tell_reach_scale`): an alpha of `TELL_TINT`.
+static func body_light(dist: float, time: float, scale := 1.0) -> float:
+	var through := 1.0
+	var step := LIGHT_STEP * clampf(time / GLINT_GATHER, 0.0, 1.0)
+	for reach: float in LIGHT_REACH:
+		if dist <= reach * scale:
+			through *= 1.0 - step
+	return 1.0 - through
+
+
+## The most of the weapon's light this foe's last sheet drawing wore (0 with none).
+func light_drawn() -> float:
+	return _light_drawn
+
+
+## The weapon's light on the body: the frame's silhouette in the tell's tint, once
+## in each square about the point. Drawn under the sheet's transform.
+func _draw_body_light(sheet: String, anim: String, f: int) -> void:
+	var step := LIGHT_STEP * clampf(state_time / GLINT_GATHER, 0.0, 1.0)
+	if step <= 0.0:
+		return
+	var at := tell_point(sheet, anim, f)
+	var k := tell_reach_scale(sheet) * float(Sheet.get_sheet(sheet).density)
+	for reach: float in LIGHT_REACH:
+		var half := Vector2(reach, reach) * k
+		Sheet.draw_part(self, sheet, anim, f, Rect2(at - half, half * 2.0), Color(TELL_TINT, step), true)
+	_light_drawn = body_light(0.0, state_time)
 
 
 ## How long the glint's arms are `time` seconds into a wind-up, lit or between beats.
@@ -872,10 +938,12 @@ func lean_drawn() -> float:
 func _sheet_transform(offset: Vector2) -> Transform2D:
 	var k := recoil()
 	_lean_drawn = recoil_lean()
-	var sx := float(facing) * (1.0 + RECOIL_SQUASH * k)
-	var sy := 1.0 - RECOIL_SQUASH * 0.6 * k
-	# A point h pixels up (y = -h) moves recoil_lean() * h along x.
-	return Transform2D(Vector2(sx, 0.0), Vector2(-recoil_lean() * sy, sy), offset)
+	# The rear (12.109): back from the facing, taller and narrower.
+	var lean := recoil_lean() - float(facing) * REAR_LEAN * _rear_drawn
+	var sx := float(facing) * (1.0 + RECOIL_SQUASH * k) * (1.0 - REAR_STRETCH * 0.5 * _rear_drawn)
+	var sy := (1.0 - RECOIL_SQUASH * 0.6 * k) * (1.0 + REAR_STRETCH * _rear_drawn)
+	# A point h pixels up (y = -h) moves `lean` * h along x.
+	return Transform2D(Vector2(sx, 0.0), Vector2(-lean * sy, sy), offset)
 
 
 ## The color of the flat overlay a foe drawn from a sheet wears while `white`:

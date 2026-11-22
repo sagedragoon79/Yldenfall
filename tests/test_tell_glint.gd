@@ -149,3 +149,98 @@ func test_a_rot_dwarfs_tell_is_a_glint_on_his_axe() -> void:
 	await frames(1)
 	check(d.glint_drawn() == 0.0 and not d.tell_drawn(), "struck, the glint gives way to the blow's flash")
 	await frames(14)
+
+
+## A wind-up is a pose (pass 633, bible 12.109): the rear is quick, whole well inside
+## the shortest wind-up, and large enough to change the silhouette.
+func test_a_wind_up_rears_the_foe() -> void:
+	check(Enemy.rear_at(0.0) == 0.0, "upright as the wind-up starts")
+	check(is_equal_approx(Enemy.rear_at(Enemy.REAR_TIME), 1.0) and is_equal_approx(Enemy.rear_at(9.0), 1.0), "whole after REAR_TIME, and it stays")
+	check(Enemy.REAR_TIME <= Enemy.MIN_TELEGRAPH * 0.5, "whole in the first half of the shortest wind-up")
+	check(Enemy.rear_at(Enemy.REAR_TIME * 0.3) >= 0.5, "half of it in the first frames (%.2f)" % Enemy.rear_at(Enemy.REAR_TIME * 0.3))
+	var last := -1.0
+	for i in 9:
+		var k := Enemy.rear_at(Enemy.REAR_TIME * i / 8.0)
+		check(k > last, "it only grows (%.2f after %.2f)" % [k, last])
+		last = k
+	check(Enemy.REAR_LEAN >= 0.1 and Enemy.REAR_LEAN <= 0.25, "a lean that moves a head 3 px or more, short of a fall (%.2f)" % Enemy.REAR_LEAN)
+	check(Enemy.REAR_STRETCH >= 0.06 and Enemy.REAR_STRETCH <= 0.15, "a stretch of two pixels or more on a 30 px foe (%.2f)" % Enemy.REAR_STRETCH)
+
+	var d := _dwarf()
+	await frames(2)
+	check(d.rear_drawn() == 0.0, "a dwarf on patrol stands as he is drawn")
+	var rest: Transform2D = d._sheet_transform(Vector2.ZERO)
+	for side: int in [1, -1]:
+		d.facing = side
+		d.set_state("windup")
+		await frames(int(Enemy.REAR_TIME * 60.0) + 3)
+		check(d.state == "windup" and d.rear_drawn() > 0.95, "reared, facing %d (%.2f)" % [side, d.rear_drawn()])
+		var x: Transform2D = d._sheet_transform(Vector2.ZERO)
+		var head := x * Vector2(0, -30)
+		check(head.x * side <= -3.0, "his head is back from the way he faces (%.1f px)" % head.x)
+		check(head.y <= -32.0, "and higher (%.1f)" % head.y)
+		check(absf(x.x.x) < absf(rest.x.x), "he is narrower (%.2f)" % x.x.x)
+		check(x * Vector2.ZERO == Vector2.ZERO, "his feet have not moved")
+		check(d.lean_drawn() == 0.0, "it is not a blow's recoil")
+	d.set_state("swing")
+	await frames(1)
+	check(d.rear_drawn() == 0.0, "he snaps upright as the blow goes")
+	d.set_state("windup")
+	await frames(6)
+	d.take_hit(1, Vector2(float(d.facing), 0))
+	await frames(1)
+	check(d.rear_drawn() == 0.0 and d.light_drawn() == 0.0, "struck, the rear and the light give way to the blow")
+	await frames(14)
+
+
+## And a light (pass 633, bible 12.109): warm at the weapon, graded, gone by the far
+## side of the body, gathering with the glint and never blinking.
+func test_the_weapons_light_falls_on_the_body() -> void:
+	var whole := Enemy.GLINT_GATHER
+	check(Enemy.body_light(0.0, 0.0) == 0.0, "no light as the wind-up starts")
+	var top := Enemy.body_light(0.0, whole)
+	check(top >= 0.2 and top <= 0.35, "at the weapon it is plain, and under the soft flash (%.2f)" % top)
+	check(Enemy.body_light(0.0, whole * 0.5) < top and Enemy.body_light(0.0, whole * 2.0) == top, "it gathers with the glint and holds")
+	check(Enemy.LIGHT_REACH.size() >= 6, "it falls off over six steps or more")
+	check(Enemy.LIGHT_STEP <= FoeGlow.MAX_STEP, "no step is one the eye picks out (12.108)")
+	var last := top
+	var wide := 0.0
+	for reach: float in Enemy.LIGHT_REACH:
+		check(reach > wide, "each square is wider than the last")
+		wide = reach
+		var here := Enemy.body_light(reach + 0.5, whole)
+		check(here < last and last - here <= Enemy.LIGHT_STEP + 0.001, "one step down past %.0f px (%.3f after %.3f)" % [reach, here, last])
+		last = here
+	check(last == 0.0, "and none past the widest")
+	# It is not a tint over a whole figure: a foe as tall as a dwarf keeps its far end.
+	for sheet: String in ["rot_dwarf", "iron_dwarf", "shade_knight", "spire_sentinel", "bark_knight"]:
+		var s := Sheet.get_sheet(sheet)
+		for anim: String in Enemy.TELL_POINTS[sheet]:
+			var p := Enemy.tell_point(sheet, anim, 0)
+			var far := 0.0
+			var mask: Image = (s.mask as Texture2D).get_image()
+			if mask.is_compressed():
+				mask.decompress()
+			var at := Sheet.region(sheet, anim, 0)
+			for y in range(0, int(at.size.y), 2):
+				for x in range(0, int(at.size.x), 2):
+					if mask.get_pixel(int(at.position.x) + x, int(at.position.y) + y).a > 0.5:
+						far = maxf(far, maxf(absf(x - p.x), absf(y - p.y)) / float(s.density))
+			check(Enemy.body_light(far, whole, Enemy.tell_reach_scale(sheet)) == 0.0,
+				"%s/%s: the far end of the body (%.0f px off) keeps its own colors" % [sheet, anim, far])
+
+	var d := _dwarf()
+	await frames(2)
+	check(d.light_drawn() == 0.0, "a dwarf on patrol wears no light")
+	d.set_state("windup")
+	var before := 0.0
+	var seen := 0
+	for i in 24:
+		await frames(1)
+		if d.state != "windup":
+			break
+		check(d.light_drawn() >= before, "the light never drops between beats (%.3f after %.3f)" % [d.light_drawn(), before])
+		check(d.white_strength() == 0.0, "and it is not a flat tint over him")
+		before = d.light_drawn()
+		seen += 1
+	check(seen >= 20 and is_equal_approx(before, top), "gathered, it is whole (%.2f)" % before)
