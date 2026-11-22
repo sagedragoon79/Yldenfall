@@ -602,6 +602,70 @@ def test_ridge_far_plane_is_not_one_flat_colour():
         assert share >= 0.12, f"{z}: only {share:.3f} of the far plane differs from the flat body"
 
 
+# --- Form in a natural ridge (bible 12.111, pass 635) -----------------------------
+def _far_plane_lumas(zone):
+    """The luma of every other column's far-plane pixels, between the crest and the
+    opaque near plane."""
+    img = tg.ridge(zone)
+    a = img.getchannel("A").load()
+    px = img.load()
+    w, h = img.size
+    vals = []
+    for x in range(0, w, 2):
+        y = 0
+        while y < h and a[x, y] == 0:
+            y += 1
+        top = y
+        y += 2 * tg.D
+        while y < h and a[x, y] != 255:
+            y += 1
+        for yy in range(top + 1, y):
+            r, g, b, _ = px[x, yy]
+            vals.append(0.299 * r + 0.587 * g + 0.114 * b)
+    return sorted(vals)
+
+
+def test_a_natural_ridge_is_not_one_value():
+    # The pass 630 grade read the woods, hills and crags as "muddy one-value cutouts":
+    # past the thin lit faces each far plane was one colour (its middle 80 percent
+    # spanned 4 to 8 steps of luma, an eighth of its lightest value). The sky's light
+    # on the upper slopes, shaded east faces, and rows of trees or nearer folds now
+    # spread it over at least three tenths. (Without the folds and the sky light the
+    # hills and crags fall back to a tenth; without the tree rows, the woods to a fifth.)
+    for z, kind in tg.RIDGE_KIND.items():
+        if kind not in tg.RIDGE_FORMED:
+            continue
+        v = _far_plane_lumas(z)
+        lo, hi = v[len(v) // 10], v[len(v) * 9 // 10]
+        assert (hi - lo) / hi >= 0.3, f"{z}: the far plane spans only {hi - lo:.1f} of {hi:.1f} in luma"
+
+
+def test_a_fir_on_the_crest_is_tiered():
+    # A fir was a plain triangle and a row of them read as a sawtooth band. Its outline
+    # now steps in at the foot of every tier but the lowest, on each side of the trunk:
+    # there the crest drops at least twice the tree's mean slope in one column. (A
+    # straight cone never does and fails here.)
+    for tiers in (3, 4, 5):
+        teeth = [0.0] * tg.BG_W
+        tg._fir(teeth, 200, 20, 60, tiers)
+        steps = sum(1 for i in range(1, tg.BG_W) if abs(teeth[i] - teeth[i - 1]) >= 2 * 60 / 20)
+        assert steps >= 2 * (tiers - 1), f"a {tiers}-tier fir steps only {steps} times"
+    assert tg.RIDGE_KIND["heartwood"] == tg.RIDGE_KIND["boughs"] == "fir"
+
+
+def test_a_leaning_shard_has_no_gaps():
+    # A leaning shard slid each column sideways, leaving holes in its crest, and every
+    # hole drew a cleft: the crystal halls' ridge was striped. It is whole now: from
+    # foot to apex and apex to foot its crest never turns back.
+    for lean in (-8, -3, 0, 5, 8):
+        teeth = [0.0] * tg.BG_W
+        tg._tri(teeth, 300, 10, 80, lean=lean)
+        row = [teeth[i] for i in range(250, 350)]
+        apex = row.index(max(row))
+        assert all(a <= b for a, b in zip(row[:apex], row[1:apex + 1])), f"lean {lean}: the west side turns back"
+        assert all(a >= b for a, b in zip(row[apex:], row[apex + 1:])), f"lean {lean}: the east side turns back"
+
+
 def test_ridge_carries_the_zones_distant_lights():
     # Lit windows in the town and the Spires, forge lamps in the Tower and the
     # Trials, crystal glints in the two crystal halls; none in the woods and mists.
