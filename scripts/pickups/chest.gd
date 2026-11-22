@@ -46,10 +46,16 @@ const BOUNDS := Rect2(-28, -52, 56, 52)
 
 var pickup_id := ""
 var value := 100
+## How far the floor runs from the chest's middle to each side, in half-pixels
+## (the room sets it, bible 12.114). One cell, the chest's own, by default.
+var reach_left := HALF_CELL
+var reach_right := HALF_CELL
 ## The room's zone: picks the chest's look. Set before the chest is added.
 var zone := ""
 
 var _open := false
+var _setting: Array = []
+var _setting_built := false
 var _parts_open := -1
 var _parts: Array = []
 var _rim: Array = []
@@ -308,6 +314,198 @@ static func parts(look: Dictionary, open: bool) -> Array:
 	return p
 
 
+## A chest is set down somewhere, not stood on a bare plinth (pass 638, bible
+## 12.114): the pass 635 grade saw "lone chests on featureless plinths". Beside
+## it lie a few spilled coins and what the zone left with it: a sack in the gym
+## and the Trials, a leaf-tied bundle in the High Boughs, toadstools in the
+## Heartwood's moss, a coil of rope and a bottle in the Haar, a hooped keg and a
+## lantern by a dwarf strongbox, a heap of ore by the Tower's crate, votive
+## candles by the Spires' reliquary, and crystal grown up beside the geode.
+
+## Half a cell in half-pixels: the floor under the chest's own cell.
+const HALF_CELL := 16
+## The chest's body reaches this far to each side (half-pixels); the setting
+## starts past it.
+const BODY_HALF := 23
+## No part of the setting lies further out than this from the chest's middle.
+const SETTING_REACH := 112
+## A prop is drawn in world pixels: two half-pixels to its every one.
+const PROP_SCALE := 2
+## Gold of the spilled coins, the same in every zone.
+const COIN := "cb8d16"
+const COIN_LIT := "f0c02e"
+const COIN_DARK := "8d4e16"
+
+## What each kind of chest is set beside: [the larger prop, the smaller one].
+const COMPANIONS := {
+	"trunk": ["sack", "coins"],
+	"coffer": ["toadstools", "moss"],
+	"hamper": ["bundle", "coins"],
+	"sea_chest": ["rope", "bottle"],
+	"strongbox": ["keg", "lantern"],
+	"crate": ["ore", "crate_small"],
+	"reliquary": ["candles", "coins"],
+	"geode": ["crystals", "coins"],
+}
+
+
+## The setting as data, like `parts`: [[x, y, w, h, hex], ...] in half-pixels,
+## drawn behind the chest. `left` and `right` are how far the floor runs from
+## the chest's middle; nothing is set where there is no floor.
+static func setting(look: Dictionary, left: int, right: int) -> Array:
+	var kind := String(look["kind"])
+	var pair: Array = COMPANIONS.get(kind, COMPANIONS["trunk"])
+	var big := String(pair[0])
+	var small := String(pair[1])
+	left = mini(left, SETTING_REACH)
+	right = mini(right, SETTING_REACH)
+	# The larger prop goes to the side with more floor (east on a tie), with
+	# the coins spilled between it and the chest.
+	var wide := 1 if right >= left else -1
+	var wide_room := right if wide == 1 else left
+	var narrow_room := left if wide == 1 else right
+	var p: Array = []
+	var x := BODY_HALF
+	var spill := prop("coins", look)
+	var w_coins := prop_width("coins")
+	var w_big := prop_width(big)
+	if x + w_coins + 1 + w_big <= wide_room:
+		p.append_array(_placed(spill, x, wide))
+		x += w_coins + 1
+	if x + w_big <= wide_room:
+		p.append_array(_placed(prop(big, look), x, wide))
+	elif x + w_coins <= wide_room:
+		p.append_array(_placed(spill, x, wide))
+	if BODY_HALF + prop_width(small) <= narrow_room:
+		p.append_array(_placed(prop(small, look), BODY_HALF, -wide))
+	return p
+
+
+## The width of a prop, in half-pixels.
+static func prop_width(name: String) -> int:
+	var w := 0
+	for q: Array in prop(name, LOOKS["gym"]):
+		w = maxi(w, int(q[0]) + int(q[2]))
+	return w
+
+
+## `rects` (a prop drawn from x = 0 eastward) set `gap` half-pixels out from the
+## chest's middle on side `side` (1 east, -1 west, mirrored).
+static func _placed(rects: Array, gap: int, side: int) -> Array:
+	var out: Array = []
+	for q: Array in rects:
+		var x: int = gap + int(q[0]) if side == 1 else -gap - int(q[0]) - int(q[2])
+		out.append([x, q[1], q[2], q[3], q[4]])
+	return out
+
+
+## A prop drawn eastward from x = 0, standing on y = 0: its fills each wear a
+## one-pixel outline (never below the ground line), then its details.
+static func _outlined(fills: Array, details: Array, out: String) -> Array:
+	var p: Array = []
+	for f: Array in fills:
+		var top := int(f[1]) - 1
+		var bottom := mini(int(f[1]) + int(f[3]) + 1, 0)
+		p.append([int(f[0]) - 1, top, int(f[2]) + 2, bottom - top, out])
+	for f: Array in fills:
+		p.append(f)
+	p.append_array(details)
+	# Shift east by the outline, so the prop starts at x = 0, and draw it in
+	# whole world pixels (`PROP_SCALE` half-pixels), as heavy as the chest's
+	# own outline.
+	var shifted: Array = []
+	for q: Array in p:
+		shifted.append([(int(q[0]) + 1) * PROP_SCALE, int(q[1]) * PROP_SCALE, int(q[2]) * PROP_SCALE, int(q[3]) * PROP_SCALE, q[4]])
+	return shifted
+
+
+## One prop of the setting, for a chest of `look`.
+static func prop(name: String, look: Dictionary) -> Array:
+	var o: String = look["out"]
+	match name:
+		"coins":
+			# A little heap of coins where they spilled, and one rolled off.
+			return _outlined(
+				[[0, -2, 6, 2, COIN], [1, -3, 4, 1, COIN], [7, -1, 3, 1, COIN]],
+				[[1, -3, 2, 1, COIN_LIT], [0, -2, 1, 1, COIN_LIT], [7, -1, 1, 1, COIN_LIT], [3, -1, 2, 1, COIN_DARK]], o)
+		"sack", "bundle":
+			# A tied sack slumped on the ground; in the Boughs, bound with leaf.
+			var tie: String = look["band"] if name == "bundle" else "6e5135"
+			return _outlined(
+				[[1, -11, 12, 11, "9c7f44"], [0, -8, 14, 7, "9c7f44"], [3, -14, 8, 3, "9c7f44"], [5, -17, 4, 3, "9c7f44"]],
+				[[1, -10, 2, 8, "ccbe8e"], [3, -14, 2, 2, "ccbe8e"], [5, -17, 1, 2, "ccbe8e"], [9, -10, 3, 9, "6e5135"],
+					[11, -7, 2, 5, "6e5135"], [3, -14, 8, 1, tie], [6, -9, 1, 4, "6e5135"]], o)
+		"toadstools":
+			# Red-capped toadstools on a cushion of moss.
+			return _outlined(
+				[[0, -2, 16, 2, MOSS_DARK], [3, -7, 2, 5, "d6ae84"], [0, -10, 8, 3, "c02a20"], [11, -4, 2, 2, "d6ae84"], [9, -6, 6, 2, "c02a20"]],
+				[[1, -2, 9, 1, MOSS_LIT], [0, -10, 3, 1, "e55439"], [5, -9, 1, 1, "ecbdac"], [2, -9, 1, 1, "ecbdac"],
+					[6, -8, 2, 1, "861d25"], [9, -6, 2, 1, "e55439"], [12, -5, 1, 1, "ecbdac"]], o)
+		"moss":
+			# A low mound of moss with one pale toadstool.
+			return _outlined(
+				[[0, -3, 10, 3, MOSS_DARK], [6, -6, 2, 3, "d6ae84"], [4, -7, 6, 2, "d6ae84"]],
+				[[1, -3, 5, 1, MOSS_LIT], [4, -7, 2, 1, "f3ece2"]], o)
+		"rope":
+			# A coil of salt-stiff rope seen a little from above: a ring with a
+			# dark hole, lit round its top, a groove between its turns.
+			return _outlined(
+				[[3, -8, 8, 1, "aa9173"], [1, -7, 12, 1, "aa9173"], [0, -6, 14, 3, "aa9173"], [1, -3, 12, 2, "aa9173"], [2, -1, 10, 1, "aa9173"]],
+				[[3, -8, 8, 1, "d6cec2"], [1, -7, 2, 1, "d6cec2"], [11, -7, 2, 1, "8a6e56"], [5, -6, 4, 2, "3c2c2a"], [3, -6, 2, 1, "8a6e56"],
+					[9, -6, 2, 1, "8a6e56"], [0, -3, 14, 1, "8a6e56"], [2, -1, 10, 1, "634a41"], [2, -4, 1, 1, "d6cec2"], [6, -4, 1, 1, "d6cec2"],
+					[10, -4, 1, 1, "d6cec2"], [4, -2, 1, 1, "d6cec2"], [8, -2, 1, 1, "d6cec2"]], o)
+		"bottle":
+			# A green glass bottle, corked.
+			return _outlined(
+				[[0, -7, 5, 7, "4f5c47"], [1, -10, 3, 3, "4f5c47"], [1, -12, 3, 2, "8a6e56"]],
+				[[1, -6, 1, 4, "959f7e"], [3, -6, 1, 5, "2f392d"], [1, -12, 1, 1, "aa9173"]], o)
+		"keg":
+			# A squat keg, its staves bound with iron hoops.
+			return _outlined(
+				[[1, -15, 12, 15, "783c2b"], [0, -11, 14, 7, "783c2b"]],
+				[[2, -14, 2, 12, "aa6336"], [5, -15, 1, 15, "48201e"], [9, -15, 1, 15, "48201e"], [11, -14, 2, 13, "48201e"],
+					[0, -13, 14, 2, "4a465d"], [0, -13, 5, 1, "867ba2"], [0, -4, 14, 2, "4a465d"], [0, -4, 5, 1, "867ba2"]], o)
+		"lantern":
+			# A dwarf's lantern set down on the floor, still lit.
+			var glow: String = look["glow"]
+			return _outlined(
+				[[0, -2, 7, 2, "2f2c3a"], [1, -10, 5, 8, "2f2c3a"], [2, -12, 3, 2, "2f2c3a"], [3, -14, 1, 2, "2f2c3a"]],
+				[[2, -9, 3, 6, glow], [3, -7, 1, 2, "f7f1de"], [1, -10, 5, 1, "645e82"], [0, -2, 7, 1, "645e82"]], o)
+		"ore":
+			# A heap of ore lumps, flecked with gold.
+			return _outlined(
+				[[0, -4, 18, 4, "2f2c3a"], [2, -7, 8, 3, "2f2c3a"], [10, -6, 6, 2, "2f2c3a"]],
+				[[3, -7, 4, 1, "645e82"], [11, -6, 3, 1, "645e82"], [1, -4, 3, 1, "4a465d"], [14, -4, 3, 1, "4a465d"],
+					[5, -5, 2, 1, COIN], [13, -3, 1, 1, COIN_LIT], [8, -2, 1, 1, COIN]], o)
+		"crate_small":
+			# A small crate of the same boards, its lid nailed down.
+			return _outlined(
+				[[0, -11, 12, 11, "8d4e16"]],
+				[[0, -11, 12, 1, "aa6336"], [0, -6, 12, 1, "542512"], [0, -11, 1, 11, "aa6336"], [10, -10, 2, 10, "542512"],
+					[1, -9, 1, 1, "867ba2"], [9, -3, 1, 1, "867ba2"]], o)
+		"candles":
+			# Two votive candles on a clay dish, lit, wax run down them.
+			return _outlined(
+				[[0, -2, 14, 2, "6e5135"], [2, -16, 4, 14, "ddd6bb"], [8, -10, 4, 8, "ddd6bb"]],
+				[[0, -2, 14, 1, "9c7f44"], [2, -16, 1, 14, "f1eee4"], [5, -14, 1, 12, "bea860"], [8, -10, 1, 8, "f1eee4"],
+					[11, -9, 1, 7, "bea860"], [6, -13, 1, 3, "ddd6bb"], [3, -20, 2, 3, "f0c02e"], [3, -19, 1, 1, "f7f1de"],
+					[9, -14, 2, 3, "f0c02e"], [9, -13, 1, 1, "f7f1de"]], o)
+		"crystals":
+			# Crystal grown up out of the floor beside the casket.
+			var fills: Array = []
+			var tips: Array = []
+			for s: Array in [[0, 4, 9], [4, 5, 15], [10, 4, 7]]:
+				var sx: int = s[0]
+				var sw: int = s[1]
+				var sh: int = s[2]
+				for r in sh:
+					var w := maxi(1, sw - floori(r * sw / float(sh)))
+					fills.append([sx, -1 - r, w, 1, look["band"] if r < sh / 2 else look["band_lit"]])
+				tips.append([sx, -sh, 1, 1, look["iron_lit"]])
+			return _outlined(fills, tips, o)
+	return []
+
+
 ## Where the lock's pulsing light sits, in half-pixels.
 const KEYHOLE := Rect2(-1, -23, 2, 3)
 
@@ -341,6 +539,11 @@ func _draw() -> void:
 		_parts = parts(look, _open)
 		_rim = rim(look)
 		_spots = Standout.glint_spots(_rim, GLINTS)
+	if not _setting_built:
+		_setting_built = true
+		_setting = setting(look, reach_left, reach_right)
+	for q: Array in _setting:
+		_px(q[0], q[1], q[2], q[3], Color(String(q[4])))
 	for q: Array in _parts:
 		_px(q[0], q[1], q[2], q[3], Color(String(q[4])))
 	if stands_out():
