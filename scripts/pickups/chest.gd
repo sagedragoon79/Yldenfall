@@ -15,6 +15,8 @@ extends Interactable
 ##
 ## Drawn at 2x render density: every part is in half-pixels.
 
+## Half the width of the chest's contact shadow (bible 12.110).
+const SHADOW_HALF := 13.0
 const KINDS := ["trunk", "coffer", "hamper", "sea_chest", "strongbox", "crate", "reliquary", "geode"]
 
 ## Per-zone chest. `kind` picks the build; `out` the outline; `dark`, `mid`,
@@ -58,6 +60,7 @@ func _ready() -> void:
 	super()
 	prompt_height = 26.0
 	z_index = -1
+	add_child(ContactShadow.make(SHADOW_HALF))
 	if pickup_id != "" and GameState.is_collected(pickup_id):
 		_open = true
 		remove_from_group("interactable")

@@ -6,6 +6,8 @@ extends Interactable
 ## What a rest says when the save file could not be written (pass 255).
 const NOT_SAVED := "Rested, but the journey could not be saved."
 
+## Half the width of the shrine's contact shadow (bible 12.110).
+const SHADOW_HALF := 14.0
 const STONE := Color("6b6380")
 const STONE_DARK := Color("4a4458")
 const STONE_LIGHT := Color("8d84a3")
@@ -24,6 +26,7 @@ func _ready() -> void:
 	super()
 	prompt_height = 34.0
 	z_index = -1
+	add_child(ContactShadow.make(SHADOW_HALF))
 	# Its rune burns through the Haar's fog (see Fog).
 	add_to_group("light")
 	# And casts a pool of rune-light onto the stone around it (design bible 12.10).

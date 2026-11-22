@@ -19,6 +19,8 @@ const WARD_SOUND := "ward"
 ## A guard held with too little MP to pay for a blow breaks (pass 242).
 const GUARD_BREAK_SOUND := "guard_break"
 const BODY_SIZE := Vector2(12, 40)
+## Half the width of the hero's contact shadow (bible 12.110): a stride's width.
+const SHADOW_HALF := 10.0
 ## A crouch's low cut (bible 6.15): as long as a side slash, this tall, along the floor.
 const LOW_SLASH_HEIGHT := 18.0
 ## How high above the feet a crouched cast or Rune Dagger leaves (px), low
@@ -407,6 +409,9 @@ func _ready() -> void:
 	add_child(shape)
 	_body_shape = rect
 	_body_node = shape
+
+	# The pool on the ground under the hero (bible 12.110).
+	add_child(ContactShadow.make(SHADOW_HALF, true))
 
 	visual = PlayerVisual.new()
 	visual.player = self

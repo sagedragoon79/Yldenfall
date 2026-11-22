@@ -10,6 +10,9 @@ const KING_GOLD := 1500
 const LEAF_READ := "leaf_read"
 const OUTLINE := Color("1d1a2b")
 
+## Half the width of a person's contact shadow (bible 12.110).
+const SHADOW_HALF := 10.0
+
 var npc_id := ""
 var info := {}
 
@@ -23,6 +26,7 @@ func _ready() -> void:
 	_look = info.get("look", {})
 	prompt_height = 50.0
 	z_index = -1
+	add_child(ContactShadow.make(SHADOW_HALF))
 
 
 func interact(p: Player) -> void:

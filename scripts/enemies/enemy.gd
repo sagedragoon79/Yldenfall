@@ -263,6 +263,14 @@ func _ready() -> void:
 	home = global_position
 	_rest_material = FoeLight.material_for(FoeLight.zone_of(self), FoeLight.id_of(self))
 	material = _rest_material
+	# The pool on the ground under the foe (bible 12.110); guardians draw their own ground.
+	if not is_in_group("boss"):
+		add_child(ContactShadow.make(shadow_half(), true))
+
+
+## Half the width of the foe's contact shadow: its body and two pixels each side.
+func shadow_half() -> float:
+	return body_size.x * 0.5 + 2.0
 
 
 func _corrupt() -> void:

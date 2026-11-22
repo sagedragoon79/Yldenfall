@@ -18,6 +18,8 @@ const FACE := Rect2(-6, -19, 12, 15)
 const PLINTH := Rect2(-10, -3, 20, 3)
 
 ## Silhouettes. Each is a column profile (see `profile`).
+## Half the width of the stele's contact shadow (bible 12.110): the plinth and two pixels.
+const SHADOW_HALF := 12.0
 const SHAPES := ["arch", "gable", "waystone", "runestone", "shard"]
 
 ## Per-zone stele. `shape` picks the silhouette; `out`, `dark`, `mid`, `lit`
@@ -83,6 +85,7 @@ func _ready() -> void:
 	super()
 	prompt_height = 32.0
 	z_index = -1
+	add_child(ContactShadow.make(SHADOW_HALF))
 
 
 func interact(_p: Player) -> void:
