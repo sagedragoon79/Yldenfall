@@ -2129,7 +2129,7 @@ The pass 550 grade called the Proving Scar's tall seal "a flat noisy rectangle w
 - **One time.** Every tile of a seal steps on the same frame, so a lick crosses the seams whole. The halo's breath stays out of step per tile.
 - **The halo.** It reaches `HALO` 32 px (6 onto the floor), peaks at 0.42 against the flames, and falls on a curve (`HALO_CURVE` 1.7): bright at the fire, a long thin tail. Still four dithered steps, drawn once.
 
-Hitboxes, the burn, the runes, the coals, the pools and the douse are unchanged. The grade's other half, "over half the screen is empty void", is the room's solid mass under `DeepShade` (12.38), which is meant to sink into the dark; it stays in the queue as a room-layout item. Judged by eye at 1x and 3x in `evercrown/proving_scar`. `test_fire_seal_burns_in_tall_licks` checks the runs, the field, the bank, the halo's curve and the shared time.
+Hitboxes, the burn, the runes, the coals, the pools and the douse are unchanged. The grade's other half, "over half the screen is empty void", is the room's solid mass under `DeepShade` (12.38), which is meant to sink into the dark; it stayed in the queue as a room-layout item, and the deep mass shows its zone's forms since pass 647 (12.123). Judged by eye at 1x and 3x in `evercrown/proving_scar`. `test_fire_seal_burns_in_tall_licks` checks the runs, the field, the bank, the halo's curve and the shared time.
 
 ### 12.43 A foe stands in its room's light (pass 553)
 
@@ -3155,6 +3155,20 @@ Through a hit flash a foe drawn from a sheet (`Enemy.draw_sheet`) is now drawn i
 A tell never wears the edge, nor does a foe that dies of the blow. A code-drawn foe or guardian has no sheet to set back and keeps the 0.3 wash.
 
 Judged by eye at 1x and 3x in the fight frames of `tower/foot` (the brute) and `boughs/canopy_bridge` (the Bark Knight). `test_a_struck_foe_is_lit_on_the_side_the_blow_came_from` (`tests/test_hit_flash.gd`) holds it.
+
+### 12.123 What the deep holds (pass 647)
+
+The independent grade of pass 645 named "dead voids": the grub burrows' black top half. That half is the room's solid mass above the tunnel under `DeepShade` (12.38), which sinks the interior to 86% of a near-black. Far from the room's air, a whole band of the frame was one flat dark with nothing in it, as the grade of pass 550 found in `evercrown/proving_scar`, left then as a room-layout item (12.42).
+
+The darkness stays; what lies in it now shows. Over the full shade, `DeepShade` draws the zone's buried matter faintly (`DeepShade.MOTIF`, `MOTIF_COLORS`):
+
+- **Roots** in the Heartwood, the High Boughs and the Haar: they hang from the top of the deep mass, one in every three columns of it, each set off its slot so none cross, and run down, wandering a little. Each tapers from a 6-pixel trunk to a 2-pixel tip, in a dark bark with a lit upper edge, and some fork once.
+- **Crystal veins** in the Evercrown and Vorrhallow: straight runs that turn sharp and alternate their turns, so they zigzag like a crack along a facet instead of curling, with a glint of the zone's crystal every few blocks. They are a third as many as the roots.
+- **Bedding seams** in the stone zones (the Tower, the Trials, Hearthroot, the Spires, the Sunken Spring): runs near level, broken by gaps, each a dark seam under a lit lip.
+
+Every form is drawn in 2-pixel blocks, only where the shade's field is at least 0.8 (`MOTIF_FROM`), fading in from there, so the lit rock round a room, its step in and its falloff are untouched. Forms are faint (a body at 0.62 and an edge at 0.33 over the shade) and sparse, never a fill. They are seeded by the room's id, so a room shows the same forms every visit and no two rooms share them, and they are built once per room load with the shade: at most 60 forms a room (`MOTIF_MAX`) and at most 14 ms, since the rooms with the most deep mass (the Trials, the Proving Scar) load closest to the 500 ms budget (14). Secret cells carry none of the main shade's forms; the secret layer's own shade draws its own.
+
+Judged by eye at 1x and 2x in `heartwood/grub_burrows` (roots hanging into the dark over the tunnel), `evercrown/proving_scar` (violet cracks), `tower/old_flue` and `vorrhallow/waterfall_stair`. `tests/test_deep_shade.gd` holds it: `test_the_deepest_mass_holds_its_zones_forms` and `test_the_deep_forms_are_the_rooms_own_and_only_where_meant`.
 
 ## 13. Asset Production Plan
 
