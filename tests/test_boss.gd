@@ -1211,6 +1211,7 @@ func test_haar_wyrm_telegraphs_are_fair() -> void:
 	for t: float in [HaarWyrm.PLUME_TELL, HaarWyrm.GEYSER_TELL, HaarWyrm.FOG_TELL]:
 		check(z.tell(t) >= Enemy.MIN_TELEGRAPH, "tell %.2f s is at least %.2f s" % [z.tell(t), Enemy.MIN_TELEGRAPH])
 	check(HaarWyrm.FOG_TELL >= 2.5, "the fog's wind-up is long, the time to get water in (%.1f s)" % HaarWyrm.FOG_TELL)
+	check(z.tell(HaarWyrm.FOG_TELL) == HaarWyrm.FOG_TELL, "and it never quickens")
 	check(HaarWyrm.GEYSER_TELL - HaarWyrm.GEYSER_LOCK >= Enemy.MIN_TELEGRAPH and HaarWyrm.GEYSER_LOCK >= Enemy.MIN_TELEGRAPH, "the geyser aims, then locks long enough to leave the line")
 	z.free()
 
@@ -1298,8 +1299,34 @@ func test_a_doused_head_dies_and_the_rest_quicken() -> void:
 	check(plume.dead and plume.mode == "limp" and not plume.active, "the head dies and hangs limp")
 	check(z.phase == 2, "the fight turns (phase %d)" % z.phase)
 	check(z.tell(HaarWyrm.GEYSER_TELL) < before, "the others quicken")
+	check(z.tell(HaarWyrm.FOG_TELL) == HaarWyrm.FOG_TELL, "but not the fog's wind-up, the time to fill the cistern")
 	await _until(func() -> bool: return z.step == "gap", 400)
-	check(not z.order.has(plume.index) and z.order.size() == 2, "and a dead head breathes no more (%s)" % [z.order])
+	check(z.order.has(plume.index) and z.order.size() == 3, "a dead head keeps its turn in the round (%s)" % [z.order])
+	# Its turn is a rest: no breath, and a longer gap before the next.
+	z.order = [plume.index, z.head_for(HydraHead.GEYSER).index]
+	z.attacker = null
+	z._to("gap")
+	z.step_time = 99.0
+	await frames(2)
+	check(z.attacker == null and z.step == "gap", "a dead head's turn passes without a breath (%s)" % z.step)
+	var gap := HaarWyrm.GAP * pow(HaarWyrm.QUICKEN, z.dead_heads())
+	await frames(roundi((HaarWyrm.REST + gap) * 60.0) - 20)
+	check(z.attacker == null, "and the gap runs %.1f s longer" % HaarWyrm.REST)
+	await frames(40)
+	check(z.attacker == z.head_for(HydraHead.GEYSER), "then the next head breathes")
+
+
+## Sean, 2026-11-22: "not enough time to hit all 3 after killing the first head".
+## From the rage's end to the fog, a round with a dead head gives at least as long to fill
+## the cistern as most of the full round did (the side heads still quicken).
+func test_a_dead_head_does_not_bring_the_fog_sooner() -> void:
+	var gap0 := HaarWyrm.GAP
+	var side0 := HaarWyrm.GEYSER_TELL
+	var full := gap0 * 3.0 + side0 * 2.0 + HaarWyrm.FOG_TELL
+	var gap1 := HaarWyrm.GAP * HaarWyrm.QUICKEN
+	var side1 := HaarWyrm.GEYSER_TELL * HaarWyrm.QUICKEN
+	var one_dead := gap1 * 3.0 + side1 + HaarWyrm.REST + HaarWyrm.FOG_TELL
+	check(one_dead >= full * 0.9, "the fog comes %.1f s after the rage with a head dead, %.1f s with none" % [one_dead, full])
 
 
 ## Forces head `breath_id` to wind up its breath now.
