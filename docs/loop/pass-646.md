@@ -51,7 +51,7 @@ wash.
 
 ## Full suite
 
-FULL_SUITE_RESULT
+Full suite (`TEST_TIMEOUT=7200`): 37,094 checks; 37,090 passed and 4 failed, all timing checks: two frame-spike checks in `test_a_long_journey_through_the_whole_game_stays_lean`, one in `test_a_journey_after_the_end_stays_lean`, and `trials/falling` loading in 607 ms in `test_every_room_loads_and_settles_inside_the_budget`. Run alone afterwards, the soak and load tests pass: 139 checks, all passed. This pass touches only a struck foe's drawing, so these were the machine's load during the long run.
 
 ## Rubric (design bible 15.3)
 
