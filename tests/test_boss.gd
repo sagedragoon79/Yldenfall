@@ -1166,10 +1166,16 @@ func test_spring_of_haar_wakes_the_hydra() -> void:
 	check(z.cistern != null and z.cistern.level == 0, "the great cistern stands dry")
 	var intakes := _intakes(w)
 	check(intakes.size() == 3, "three intakes feed it (%d)" % intakes.size())
-	var heights := {}
+	var heads := {}
 	for i: HydraIntake in intakes:
-		heights[roundi(i.global_position.y)] = true
-	check(heights.size() == 3, "at three heights (%s)" % [heights.keys()])
+		heads[i.head] = i
+	check(heads.size() == 3, "one to each head (%s)" % [heads.keys()])
+	for h in z.heads:
+		var i: HydraIntake = heads.get(h.index)
+		check(i != null and i.breath == h.breath, "the %s head's pipe bears its breath" % h.breath)
+	var mid: HydraIntake = heads.get(1)
+	check(mid != null and mid.hung and mid.global_position.y < heads[0].global_position.y, "the middle head's pipe hangs from the ceiling, above the others")
+	check(heads[0].global_position.x < mid.global_position.x and mid.global_position.x < heads[2].global_position.x, "west, middle and east, like the heads")
 	var spring: Spring = null
 	for c in w.room.get_children():
 		if c is Spring:
@@ -1260,20 +1266,35 @@ func test_an_intake_takes_deluge_only_into_its_mouth() -> void:
 	check(not other.wants(), "and none wants it while the cistern boils")
 
 
-func test_a_full_cistern_douses_the_last_breather_then_the_rage_boils_it_dry() -> void:
+## Sean, 2026-11-22: "each pipe represents a head and depending on which one is filled
+## last, determines which head becomes vulnerable".
+func test_a_full_cistern_douses_the_head_whose_pipe_filled_last_then_the_rage_boils_it_dry() -> void:
 	var setup := await _hydra_world()
 	var w: World = setup[0]
 	var z: HaarWyrm = setup[2]
 	var geyser := z.head_for(HydraHead.GEYSER)
 	geyser.hp = HaarWyrm.HEAD_FLOOR
 	z.attacker = null
-	z.last_breather = geyser
+	# Whoever breathed last, the pipe chooses.
+	z.last_breather = z.head_for(HydraHead.PLUME)
 	z._to("gap")
+	z.step_time = -999.0
 	for i: HydraIntake in _intakes(w):
-		i.douse()
+		if i.head != geyser.index:
+			i.douse()
+	z.intake_of(geyser).douse()
 	check(z.cistern.full(), "three intakes fill it")
+	check(z.chosen_head() == geyser, "the geyser head's pipe went last")
 	await frames(2)
-	check(z.step == "weak" and geyser.weak, "the head that breathed last is doused and weak (%s)" % z.step)
+	check(z.step == "weak" and geyser.weak, "the head whose pipe filled it last is doused and weak (%s)" % z.step)
+	var drench: HydraDrench = null
+	for c in w.room.get_children():
+		if c is HydraDrench:
+			drench = c
+	check(drench != null and drench.target == geyser, "its pipe bursts over it")
+	check(drench != null and drench.from.distance_to(z.intake_of(geyser).spout()) < 1.0, "from that pipe's spout")
+	await frames(20)
+	check(drench != null and is_instance_valid(drench) and drench.pouring(), "and the water is landing on the head")
 	geyser.take_hit(20, Vector2.RIGHT)
 	check(geyser.hp == HaarWyrm.HEAD_FLOOR - 20, "and falls below half (%d)" % geyser.hp)
 	z.step_time = HaarWyrm.WEAK_TIME
@@ -1327,6 +1348,114 @@ func test_a_dead_head_does_not_bring_the_fog_sooner() -> void:
 	var side1 := HaarWyrm.GEYSER_TELL * HaarWyrm.QUICKEN
 	var one_dead := gap1 * 3.0 + side1 + HaarWyrm.REST + HaarWyrm.FOG_TELL
 	check(one_dead >= full * 0.9, "the fog comes %.1f s after the rage with a head dead, %.1f s with none" % [one_dead, full])
+
+
+## The douse waits for the pause between breaths: a pipe filled during the fog's wind-up
+## does not stop the fog.
+func test_the_douse_waits_for_the_pause() -> void:
+	var setup := await _hydra_world()
+	var w: World = setup[0]
+	var z: HaarWyrm = setup[2]
+	var fog := _force(z, HydraHead.FOG)
+	await frames(2)
+	check(z.attacker == fog and fog.mode == "tell", "the middle head winds up")
+	for i: HydraIntake in _intakes(w):
+		i.douse()
+	await frames(10)
+	check(not fog.weak and z.step == "attack", "a full cistern mid-breath douses nothing yet")
+
+
+## A dead head's pipe is capped, and the cistern fills from the others.
+func test_a_dead_heads_pipe_is_sealed() -> void:
+	var setup := await _hydra_world()
+	var w: World = setup[0]
+	var z: HaarWyrm = setup[2]
+	var plume := z.head_for(HydraHead.PLUME)
+	var pipe := z.intake_of(plume)
+	pipe.douse()
+	check(z.cistern.level == 1, "its pipe ran")
+	z._kill_head(plume)
+	check(pipe.sealed and not pipe.flowing and not pipe.wants(), "his pipe is capped")
+	check(z.cistern.level == 0 and z.cistern.need() == 2, "and its water goes; two pipes fill it now (%d)" % z.cistern.need())
+	pipe.douse()
+	check(z.cistern.level == 0, "a bolt into a capped pipe only splashes")
+	z.attacker = null
+	z.order.clear()
+	z._to("gap")
+	z.step_time = -999.0
+	for i: HydraIntake in _intakes(w):
+		i.douse()
+	check(z.cistern.full(), "the two open pipes fill it")
+	await _until(func() -> bool: return z.cistern.shown >= HydraCistern.THIRDS - 0.01, 120)
+	check(z.cistern.surface_y() <= z.cistern.inside.position.y + 0.5, "to the brim")
+	await frames(2)
+	check(z.step == "weak" and z.weakened != plume and z.weakened != null, "and douse a living head")
+
+
+## The fog boils away the pipe filled last, undoing the choice.
+func test_the_fog_undoes_the_last_pipe() -> void:
+	var setup := await _hydra_world()
+	var w: World = setup[0]
+	var z: HaarWyrm = setup[2]
+	var pipes := _intakes(w)
+	pipes[0].douse()
+	pipes[2].douse()
+	z.cistern.lose_third()
+	check(pipes[0].flowing and not pipes[2].flowing, "the last pipe filled runs dry")
+	check(z.cistern.last_filled() == pipes[0], "and the one before it chooses again")
+
+
+## Every pipe can be filled from somewhere you can stand: a ledge or the floor on its
+## mouth's side within a bolt's range, from which a jump (under the ceiling), or a drop
+## off its edge, puts a cast level with the mouth, with nothing solid in the bolt's way.
+func test_every_pipe_can_be_reached_with_deluge() -> void:
+	var setup := await _hydra_world()
+	var w: World = setup[0]
+	var room := w.room
+	var t := float(Room.TILE)
+	var reach := 300.0 * TorrentBolt.LIFE
+	var jump := w.player.tuning.jump_height
+	for i: HydraIntake in _intakes(w):
+		var mouth := Rect2(i.global_position - Vector2(8, 8), Vector2(16, 16))
+		var where := ""
+		for col in room.size_tiles.x:
+			for row in range(1, room.size_tiles.y):
+				if where != "":
+					break
+				var foot := Vector2(col * t + t * 0.5, row * t)
+				if signf(foot.x - i.global_position.x) != float(i.facing):
+					continue
+				if absf(foot.x - i.global_position.x) > reach - 12.0:
+					continue
+				var below := foot + Vector2(0, 2)
+				var above := foot - Vector2(0, 2)
+				if not (room.is_solid_at(below) or room.is_one_way_at(below)) or room.is_solid_at(above):
+					continue
+				var top_feet := foot.y
+				var y := foot.y - 1.0
+				while y > foot.y - jump and not room.is_solid_at(Vector2(foot.x, y - w.player.body_height())):
+					top_feet = y
+					y -= 1.0
+				# Off the ledge's edge toward the pipe, down to whatever is under it.
+				var low_feet := foot.y
+				var x_off := foot.x - float(i.facing) * t
+				var yy := foot.y + 1.0
+				while yy < room.size_tiles.y * t and not room.is_solid_at(Vector2(x_off, yy)) and not room.is_one_way_at(Vector2(x_off, yy)):
+					low_feet = yy
+					yy += 1.0
+				var cy := clampf(mouth.get_center().y, top_feet - Player.CAST_HEIGHT, low_feet - Player.CAST_HEIGHT)
+				if absf(cy - mouth.get_center().y) > 8.0 + TorrentBolt.SIZE.y * 0.5 - 1.0:
+					continue
+				var clear := true
+				var x := minf(foot.x, mouth.end.x)
+				while x < maxf(foot.x, mouth.position.x):
+					if room.is_solid_at(Vector2(x, cy)):
+						clear = false
+						break
+					x += 4.0
+				if clear:
+					where = "%d,%d" % [col, row]
+		check(where != "", "the %s head's pipe at %s can be reached (from %s)" % [i.breath, room.cell_at(i.global_position), where])
 
 
 ## Forces head `breath_id` to wind up its breath now.
@@ -5685,7 +5814,7 @@ func test_the_spell_guardians_fall_to_the_buttons_at_the_slowest_game_speed() ->
 		check(ran, "the Haar Wyrm: the Spell button sends Deluge into the intake at y %.0f at 70%%" % i.global_position.y)
 	var g := z.head_for(HydraHead.GEYSER)
 	var weak := await _until(func() -> bool: return z.step == "weak", 120)
-	check(weak and g.weak, "the Haar Wyrm: the full cistern douses the head that breathed last at 70%")
+	check(weak and g.weak, "the Haar Wyrm: the full cistern douses the head whose pipe filled it last at 70%")
 	for h in z.heads:
 		if h != g:
 			h.kill()

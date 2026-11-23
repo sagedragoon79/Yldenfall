@@ -13,12 +13,13 @@ extends Enemy
 ##
 ## Each round the plume and the geyser go in a random order, and the fog always
 ## comes third. Deluge is the only water: a bolt into each of the cistern's three
-## intakes (at three heights) fills it a third. A head can't be beaten below
-## HEAD_FLOOR until a full cistern douses it: the head that breathed last sags
-## onto the lip, weak, for WEAK_TIME. Then the hydra rages and boils the cistern
-## dry, and the loop begins again. A weakened head at 0 dies; the fight ends with
-## the third. So to bring down the plume or the geyser head, fill the cistern
-## before the fog and ride the fog out in the water.
+## intakes fills it a third, and each intake feeds one head. A head can't be beaten
+## below HEAD_FLOOR until a full cistern douses it: at the next pause between breaths,
+## the head whose pipe was filled last is drenched by it and sags onto the lip, weak,
+## for WEAK_TIME. Then the hydra rages and boils the cistern dry, and the loop begins
+## again. A weakened head at 0 dies and its pipe is capped; the fight ends with the
+## third. The fog boils away the share of the pipe filled last, so the choice is undone
+## until that pipe is filled again.
 ##
 ## Drawn on a skeleton from Sean's PixelLab art (`WyrmRig`, since 2026-11-19): the body
 ## crouches in the tunnel's dark and the three necks grow from its shoulders. The
@@ -54,8 +55,13 @@ const HANG := 110.0
 ## columns and its inside is the pit between them, on these rows (the room is cut to match).
 const CISTERN_COLS := Vector2i(22, 37)
 const CISTERN_ROWS := Vector2i(20, 22)
-## The intakes: tile, and which way the mouth opens.
-const INTAKES := [[Vector2i(19, 11), -1], [Vector2i(40, 16), 1], [Vector2i(40, 5), 1]]
+## The intakes, one to a head (Sean, 2026-11-22): tile, which way the mouth opens, and the
+## head it feeds. The side heads' pipes stand on their pillars of the arch, under their
+## heads; the middle head's hangs from the ceiling over the cistern, its mouth reached with
+## a jumping shot from the high west ledge.
+const INTAKES := [[Vector2i(19, 11), -1, 0], [Vector2i(25, 5), -1, 1], [Vector2i(40, 11), 1, 2]]
+## The room's ceiling, which the middle head's pipe hangs from (the first open row).
+const CEILING_ROW := 4
 
 ## The wind-ups (each at least Enemy.MIN_TELEGRAPH, before the speed-up).
 const PLUME_TELL := 0.9
@@ -127,6 +133,7 @@ var step_time := 0.0
 ## Heads still to breathe this round, by index.
 var order: Array[int] = []
 var attacker: HydraHead
+## The head that breathed last (the douse once fell on it; now the pipes choose).
 var last_breather: HydraHead
 var weakened: HydraHead
 
@@ -202,6 +209,10 @@ static func build_cistern(room: Node, full: bool) -> HydraCistern:
 		var i := HydraIntake.new()
 		var cell: Vector2i = spec[0]
 		i.facing = spec[1]
+		i.head = spec[2]
+		i.breath = BREATHS[i.head]
+		i.hung = i.head == 1
+		i.ceiling_y = CEILING_ROW * t
 		i.position = Vector2(cell) * t + Vector2(t, t) * 0.5
 		room.add_child(i)
 		c.add_intake(i)
@@ -295,7 +306,7 @@ func hit_segment(seg: BossSegment, damage: int, dir: Vector2) -> void:
 		get_parent().add_child(g)
 		g.global_position = h.global_position
 		Sfx.play("guard", 0.1, -4.0)
-		_hint("floor", "Its scales are scalding hot and turn your blade. Fill the cistern through its three intakes to douse it.")
+		_hint("floor", "Its scales are scalding hot and turn your blade. Fill the cistern through its intakes to douse it: the pipe you fill last picks the head.")
 		return
 	h.hp -= dealt
 	h.flash = 0.12
@@ -331,6 +342,10 @@ func _on_blocked(_dir: Vector2) -> void:
 
 func _kill_head(h: HydraHead) -> void:
 	h.kill()
+	# Its pipe is capped: the cistern fills from the others now.
+	var pipe := intake_of(h)
+	if pipe != null:
+		cistern.seal(pipe)
 	phase = 1 + dead_heads()
 	order.erase(h.index)
 	if h == attacker:
@@ -341,6 +356,25 @@ func _kill_head(h: HydraHead) -> void:
 	Feel.add_trauma(0.5)
 	Sfx.play("hydra_roar", 0.1, 2.0)
 	GameState.toast.emit("The %s head falls limp." % _head_name(h))
+
+
+## The pipe that feeds `h`.
+func intake_of(h: HydraHead) -> HydraIntake:
+	if cistern == null:
+		return null
+	for i in cistern.intakes:
+		if i.head == h.index:
+			return i
+	return null
+
+
+## The head a full cistern douses: the one whose pipe filled it last.
+func chosen_head() -> HydraHead:
+	var pipe := cistern.last_filled() if cistern != null else null
+	if pipe == null or pipe.head < 0 or pipe.head >= heads.size():
+		return null
+	var h := heads[pipe.head]
+	return null if h.dead else h
 
 
 func _head_name(h: HydraHead) -> String:
@@ -427,8 +461,8 @@ func _fight(delta: float) -> void:
 	step_time += delta
 	match step:
 		"gap":
-			if cistern.full() and last_breather != null and not last_breather.dead:
-				_weaken(last_breather)
+			if cistern.full() and chosen_head() != null:
+				_weaken(chosen_head())
 			elif step_time >= GAP * pow(QUICKEN, dead_heads()):
 				_next_breath()
 		"attack":
@@ -474,10 +508,19 @@ func _next_breath() -> void:
 	_to("attack")
 
 
-## A full cistern douses the head that breathed last: it droops on the lip, weak.
+## A full cistern douses the head whose pipe filled it last: that pipe bursts over it,
+## and it droops on the lip, weak.
 func _weaken(h: HydraHead) -> void:
 	weakened = h
 	h.weak = true
+	var pipe := intake_of(h)
+	if pipe != null:
+		var d := HydraDrench.new()
+		d.from = pipe.spout()
+		d.target = h
+		d.life = WEAK_TIME
+		get_parent().add_child(d)
+		Sfx.play("flood", 0.05, 2.0)
 	h.set_mode("weak")
 	h.flash = 0.2
 	order.clear()
