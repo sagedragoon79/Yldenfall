@@ -154,7 +154,9 @@ func test_the_tint_keeps_more_than_half_of_the_foes_contrast() -> void:
 	check(Enemy.FLASH_WASH >= 0.7 and Enemy.SHEET_WHITE >= 0.8, "the pop is nearly white")
 	check(Enemy.FLASH_SOFT_WASH <= 0.45 and Enemy.SHEET_SOFT_WHITE <= 0.45,
 		"the tint keeps more than half of the foe's own contrast")
-	check(Enemy.FLASH_SOFT_WASH >= 0.3 and Enemy.SHEET_SOFT_WHITE >= 0.3, "and is still seen as a flash")
+	check(Enemy.FLASH_SOFT_WASH >= 0.3, "a code-drawn foe has no edge, so its tint is still seen as a flash")
+	check(Enemy.SHEET_SOFT_WHITE >= 0.1 and Enemy.SHEET_SOFT_WHITE <= 0.2,
+		"a sheet foe's struck edge carries the flash, so its body keeps most of its colors (pass 646)")
 
 
 ## The tell's numbers (bible 6.7, pass 585): it keeps more than half of the foe's
@@ -212,8 +214,46 @@ func test_a_struck_foe_keeps_its_own_colors_through_the_flash() -> void:
 	# A dark violet foe under the soft phase stays well below the pale grey a ghost reads as.
 	var violet := Color("3a2f4a")
 	var seen := violet.lerp(Color(t, 1.0), soft.a)
-	check(seen.v < 0.5 and seen.r > seen.b, "a dark violet foe stays dark and turns warm, not lavender (%s)" % seen)
+	# Since pass 646 a sheet foe's tint is lighter still: it keeps its own hue, and the struck edge carries the blow.
+	check(seen.v < 0.5 and absf(seen.h - violet.h) < 0.08, "a dark violet foe stays dark and keeps its hue, not lavender (%s)" % seen)
+	var cream := violet.lerp(Color(t, 1.0), Enemy.FLASH_SOFT_WASH)
+	check(cream.v < 0.5 and cream.r > cream.b, "under a code-drawn foe's wash it stays dark and turns warm (%s)" % cream)
 	h.wash(true)
 	var mat := h.material as ShaderMaterial
 	check(mat != null and (mat.get_shader_parameter("tint") as Color).is_equal_approx(t), "a code-drawn foe's soft wash takes the same tint")
 	await frames(12)
+
+
+## Pass 646 (bible 6.7): the pass 645 grade called the fight's contact points "mush";
+## under the cream tint the struck foe was a muddy shape. Through a hit flash a sheet
+## foe wears a crescent of warm white inside its outline on the side the blow came
+## from, and keeps its own colors elsewhere.
+func test_a_struck_foe_is_lit_on_the_side_the_blow_came_from() -> void:
+	var h := _hornet()
+	await frames(2)
+	check(h.struck_edge_drawn() == 0, "a hornet at rest wears no struck edge")
+	h.take_hit(1, Vector2(1, 0))
+	await frames(1)
+	check(h.struck_edge_drawn() == -1, "a blow pushing it right lights its left side (%d)" % h.struck_edge_drawn())
+	await frames(2)
+	check(h.struck_edge_drawn() == -1 and h.white_strength() == Enemy.SHEET_SOFT_WHITE,
+		"and still through the soft phase")
+	await frames(14)
+	check(h.struck_edge_drawn() == 0, "it goes with the flash")
+	h.take_hit(1, Vector2(-1, 0))
+	await frames(1)
+	check(h.struck_edge_drawn() == 1, "a blow pushing it left lights its right side (%d)" % h.struck_edge_drawn())
+	await frames(16)
+	var e := Enemy.STRUCK_EDGE
+	check(e.v >= 0.95 and e.r >= e.b, "the edge is a warm white (%s)" % e)
+	check(e.s < Enemy.TELL_TINT.s * 0.5, "never to be taken for a tell's gold")
+	check(Enemy.STRUCK_EDGE_WIDTH >= 1.0 and Enemy.STRUCK_EDGE_WIDTH <= 2.0, "one to two world pixels wide")
+	h.set_state("windup")
+	var tells := 0
+	for i in 8:
+		await frames(1)
+		if h.tell_drawn():
+			tells += 1
+			check(h.struck_edge_drawn() == 0, "a tell never wears it")
+	check(tells >= 1, "the wind-up pulsed (%d frames)" % tells)
+	h.state = "idle"
