@@ -3086,7 +3086,21 @@ The Heartwood's ridge (`RIDGE_KIND` "root", `tools/art/tilegen.py`) is now a row
 
 Judged by eye at 1x and 2x in the Heartwood's rooms, over the far layer and through the haze. `test_the_heartwood_stands_on_roots_of_its_own` (`tools/art/test_tilegen.py`) holds it.
 
-- **Not done here.** The grade's "trunk columns": the full-height columns in the far layers of the Heartwood (its fibres), Vorrhallow (its pillars) and the Tower (its shafts) still read as one band of vertical bars; and no foreground layer frames the rooms.
+- **Not done here.** The grade's "trunk columns" (done in pass 643, 12.119): the full-height columns in the far layers of the Heartwood (its fibres), Vorrhallow (its pillars) and the Tower (its shafts) still read as one band of vertical bars; and no foreground layer frames the rooms.
+
+### 12.119 The far columns break (pass 643)
+
+The rest of the pass 640 grade's first item: the far layers of the Heartwood, Vorrhallow and the Tower were each a row of columns running the full height of the layer (the Heartwood's fibres, Vorrhallow's pillars, the Tower's shafts), so three zones read as one band of vertical bars.
+
+No far column now runs from the top of its layer to the bottom (`FAR_RUN_MAX`, 0.8 of the height, in `tools/art/tilegen.py`):
+
+- **The Heartwood** (`heartwood_far`, `_fibre`). Half the great fibres hang from the hollow's roof and half rise from its floor, each 0.4 to 0.7 of the layer long, leaning its own way and curving, narrowing to a quarter of its width at its end, lit on its west edge. One in two forks partway, the strand leaning away on its own. Hanging and rising fibres cross, so the far wall reads as a braid.
+- **The Tower** (`tower_far`). The far shafts stand in three storeys, each on a gallery floor (a lit lip over a dark slab, with a railing). Each storey's five shafts sit half a bay over from the storey under it, and each shaft's head steps out in corbels under the floor above it. The slit windows and gears stay.
+- **Vorrhallow** (`vorrhallow_far`). The pillars rise out of the water to capitals at one spring line, with round voussoir arches between them; the vault above is lost in the dark. Two pillars are broken off lower, with jagged tops and no capital, and the arches beside them have fallen, leaving a stub on the standing side. The stillglass is seated on the pillars below their tops.
+
+Judged by eye at 1x and 2x in `heartwood/entrance`, `tower/foot` and `vorrhallow/alpha_den`. `test_no_far_column_runs_the_height_of_its_layer` (`tools/art/test_tilegen.py`) holds it.
+
+- **Not done here.** The mid layers' columns (the Tower's girders, Vorrhallow's colonnade) still run the height of the room, and no foreground layer frames the rooms.
 
 ## 13. Asset Production Plan
 

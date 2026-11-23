@@ -679,6 +679,53 @@ def test_the_heartwood_stands_on_roots_of_its_own():
     assert thin > tg.BG_W // 2 * 0.4, f"the far layer shows through the arches in only {thin} columns"
 
 
+def _far_column_run(img, top, bottom):
+    """The longest vertical run, as a share of the layer's height, of anything drawn
+    over a far layer's sky (the `gradient` from `top` to `bottom`) in one column of
+    pixels, bridging gaps of up to 12 world px (mortar courses, a grain's breaks)."""
+    from PIL import Image
+    sky = Image.new("RGBA", (tg.BG_W, tg.BG_H))
+    tg.gradient(sky, top, bottom)
+    a, b = img.load(), sky.load()
+    longest = 0
+    for x in range(0, tg.BG_W, 2):
+        run = gap = 0
+        for y in range(tg.BG_H):
+            if a[x, y] != b[x, y]:
+                run = run + gap + 1 if run else 1
+                gap = 0
+                longest = max(longest, run)
+            else:
+                gap += 1
+                if gap > 12 * tg.D:
+                    run = gap = 0
+    return longest / tg.BG_H
+
+
+def test_no_far_column_runs_the_height_of_its_layer():
+    # The pass 640 grade saw "the same trunk columns behind five areas": the far
+    # fibres of the Heartwood, the far pillars of Vorrhallow and the far shafts of the
+    # Tower each ran the full height of the layer. Now none does (bible 12.119, pass
+    # 643): the fibres hang or rise, lean and end; the shafts stand in storeys set
+    # between each other; the pillars stop at capitals under arches, over the dark.
+    # (Running any of them the full height again fails here.)
+    for painter, top, bottom in ((tg.heartwood_far, "night-0", "bark-0"), (tg.tower_far, "night-0", "ember-0"),
+                                 (tg.vorrhallow_far, "night-0", "sky-1")):
+        run = _far_column_run(painter(), top, bottom)
+        assert run <= tg.FAR_RUN_MAX, f"{painter.__name__}: a column runs {run:.2f} of the layer's height"
+    # And the far layers still have their columns: something stands in most of the
+    # width of each, so the fix is not an empty sky.
+    for painter, top, bottom in ((tg.heartwood_far, "night-0", "bark-0"), (tg.tower_far, "night-0", "ember-0"),
+                                 (tg.vorrhallow_far, "night-0", "sky-1")):
+        from PIL import Image
+        sky = Image.new("RGBA", (tg.BG_W, tg.BG_H))
+        tg.gradient(sky, top, bottom)
+        a, b = painter().load(), sky.load()
+        y = int(tg.BG_H * 0.55)
+        stood = sum(1 for x in range(0, tg.BG_W, 2) if any(a[x, yy] != b[x, yy] for yy in range(y - 4, y + 4)))
+        assert stood > tg.BG_W // 2 * 0.25, f"{painter.__name__}: columns stand in only {stood} of the width"
+
+
 def test_a_leaning_shard_has_no_gaps():
     # A leaning shard slid each column sideways, leaving holes in its crest, and every
     # hole drew a cleft: the crystal halls' ridge was striped. It is whole now: from

@@ -1934,24 +1934,60 @@ def far_motes(img, rng, cols, glows=5):
             img.putpixel((x, y), c(col))
 
 
+# The far columns break (design bible 12.119, pass 643). The pass 640 grade saw "the
+# same trunk columns behind five areas": the Heartwood's far fibres, Vorrhallow's far
+# pillars and the Tower's far shafts were each a row of bars running the full height
+# of the layer, so three zones read as one band of stripes. Now no far column runs
+# from top to bottom: the Heartwood's fibres hang from the roof or rise from the floor,
+# lean, fork and taper to a tip; the Tower's shafts stand in three storeys, each on a
+# gallery floor and set between the shafts of the storey under it; Vorrhallow's
+# pillars carry capitals and round arches, with the vault lost in the dark above, and
+# two of them are broken off.
+FAR_RUN_MAX = 0.8  # the longest a far column may run, as a share of the layer's height
+
+
+def _fibre(img, x0, y0, down, length, w, lean, col, seed, depth=0):
+    """One fibre of the great tree, far off: from x0, y0 it runs `length` rows down
+    (or up), leaning `lean` px a row and curving, from `w` wide to a tip; a streaked
+    grain runs along it and its lit side is to the west. Some fibres fork."""
+    grain = "night-0" if col == "bark-1" else "bark-0"
+    fork = int(length * (0.4 + 0.25 * hash2(seed, 3, 77))) if depth == 0 and hash2(seed, 4, 77) > 0.4 else None
+    for t in range(length):
+        y = y0 + (t if down else -t)
+        k = t / length
+        ww = max(3 * D, int(w * (1 - 0.75 * k ** 1.3)))
+        cx = x0 + lean * t + math.sin(t * 0.012 + seed) * 4 * D
+        left = int(cx - ww / 2)
+        for dx in range(ww):
+            if hash2(dx // 2, y // 9, seed) > 0.08:
+                put(img, left + dx, y, c(col))
+        for g in range(3, ww - 2, 7):
+            if hash2(g, y // 40, seed + 50) > 0.45:
+                put(img, left + g, y, c(grain))
+        if ww > 4 * D:
+            put(img, left, y, c("bark-2" if col == "bark-1" else "bark-1"))
+        if t == fork:
+            # A strand parts from the fibre and leans away on its own.
+            _fibre(img, cx, y, down, int((length - t) * 0.8), max(4 * D, int(ww * 0.55)),
+                   -lean * 1.6 + (0.15 if lean <= 0 else -0.15), col, seed + 31, depth + 1)
+
+
 def heartwood_far():
     img = Image.new("RGBA", (BG_W, BG_H), c("night-0"))
     gradient(img, "night-0", "bark-0")
     rng = random.Random(5)
-    # Great fibres of the trunk's heartwood, far away, with a streaked grain.
-    for i in range(14):
+    # Great fibres of the trunk's heartwood, far away (bible 12.119): half hang from
+    # the hollow's roof and half rise from its floor, none runs the whole height, and
+    # each leans its own way, so the far wall reads as a braid and not as a row of
+    # trunks.
+    for i in range(22):
+        down = i % 2 == 0
         x0 = rng.randrange(BG_W)
-        w = rng.randrange(10, 26) * D
+        w = rng.randrange(16, 36) * D
+        length = rng.randrange(int(BG_H * 0.4), int(BG_H * 0.7))
+        lean = rng.uniform(0.12, 0.4) * rng.choice([-1, 1])
         col = "bark-1" if i % 3 else "night-1"
-        for y in range(BG_H):
-            sway = int(math.sin(y * 0.01 + i) * 6 * D)
-            for dx in range(w):
-                if hash2(dx // 2, y // 9, i) > 0.08:
-                    put(img, x0 + sway + dx, y, c(col))
-            # Grain lines down the fibre.
-            for g in range(3, w - 2, 7):
-                if hash2(g, y // 40, i + 50) > 0.45:
-                    put(img, x0 + sway + g, y, c("night-0" if col == "bark-1" else "bark-0"))
+        _fibre(img, x0, 0 if down else BG_H - 1, down, length, w, lean, col, i)
     # Faint glowing spores, a few of them larger and haloed.
     for k in range(240):
         x, y = rng.randrange(BG_W), rng.randrange(BG_H)
@@ -2164,24 +2200,51 @@ def tower_far():
     img = Image.new("RGBA", (BG_W, BG_H), c("night-0"))
     gradient(img, "night-0", "ember-0")
     rng = random.Random(21)
-    # The tower's far shafts: tall stone columns with lit slit windows.
-    for i in range(6):
-        x0 = rng.randrange(BG_W)
-        w = rng.randrange(30, 60) * D
-        cs = masonry_courses(0, BG_H, 210 + i, 12 * D)
-        for y in range(BG_H):
-            for dx in range(w):
-                col = masonry_shade(x0 + dx, y, 210 + i, "night-0", "night-1", "stone-2")
-                if y in cs:
-                    col = "night-0"  # a weathered mortar course
-                elif dx % (16 * D) == 0 and hash2(dx // D, y // (10 * D), i) > 0.45:
-                    col = "night-0"  # a worn vertical joint, broken by height
-                put(img, x0 + dx, y, c(col))
-        for wy in range(rng.randrange(20, 60) * D, BG_H, rng.randrange(60, 110) * D):
-            wx = x0 + w // 2 - 2 * D
-            for yy in range(wy, wy + 8 * D):
-                for xx in range(wx, wx + 3 * D):
-                    put(img, xx, yy, c("gold-3" if yy > wy + 2 else "gold-4"))
+    # The tower's far shafts (bible 12.119): three storeys, each standing on a
+    # gallery floor, and each storey's shafts set between the shafts of the one
+    # under it, so no shaft runs the height of the tower.
+    floors = [0, int(BG_H * 0.34) + rng.randrange(-20, 20) * D, int(BG_H * 0.68) + rng.randrange(-20, 20) * D, BG_H]
+    slot = BG_W // 5
+    for tier in range(3):
+        top, bottom = floors[tier], floors[tier + 1]
+        for k in range(5):
+            w = rng.randrange(24, 44) * D
+            cx = k * slot + (slot // 2 if tier % 2 else 0) + rng.randrange(-8, 9) * D
+            x0 = cx - w // 2
+            seed = 210 + tier * 5 + k
+            cs = masonry_courses(top, bottom, seed, 12 * D)
+            for y in range(top, bottom):
+                for dx in range(w):
+                    col = masonry_shade(x0 + dx, y, seed, "night-0", "night-1", "stone-2")
+                    if y in cs:
+                        col = "night-0"  # a weathered mortar course
+                    elif dx % (16 * D) == 0 and hash2(dx // D, y // (10 * D), seed) > 0.45:
+                        col = "night-0"  # a worn vertical joint, broken by height
+                    put(img, x0 + dx, y, c(col))
+            # The shaft's head: corbels stepping out under the floor above.
+            if tier:
+                for step in range(3):
+                    for yy in range(top + 4 * D + step * 3 * D, top + 4 * D + (step + 1) * 3 * D):
+                        for dx in range(-(3 - step) * 2 * D, w + (3 - step) * 2 * D):
+                            put(img, x0 + dx, yy, c("night-0" if yy == top + 4 * D + (step + 1) * 3 * D - 1 else "night-1"))
+            if bottom - top > 60 * D and rng.random() < 0.7:
+                wy = top + rng.randrange(20, max(21, (bottom - top) // D - 40)) * D
+                wx = x0 + w // 2 - 2 * D
+                for yy in range(wy, wy + 8 * D):
+                    for xx in range(wx, wx + 3 * D):
+                        put(img, xx, yy, c("gold-3" if yy > wy + 2 else "gold-4"))
+    # The gallery floors: a lit lip over a dark slab, and a railing on it.
+    for fy in floors[1:3]:
+        for y in range(fy - 4 * D, fy + 4 * D):
+            for x in range(BG_W):
+                col = "stone-2" if y < fy - 3 * D else ("night-0" if y >= fy + 3 * D else "night-1")
+                put(img, x, y, c(col))
+        for x in range(0, BG_W, 14 * D):
+            for y in range(fy - 14 * D, fy - 4 * D):
+                put(img, x, y, c("night-1"))
+                put(img, x + 1, y, c("night-1"))
+        for x in range(BG_W):
+            put(img, x, fy - 14 * D, c("night-1"))
     # Great gears turning in the dark.
     for i in range(4):
         gear(img, rng.randrange(BG_W), rng.randrange(80, BG_H - 80), rng.randrange(50, 110), rng.choice([10, 12, 14]),
@@ -2941,14 +3004,23 @@ def vorrhallow_far():
     # The drowned capital's great hall: rows of colossal pillars and arches
     # sunk to their knees in dark water, crystal light glowing between them.
     water = int(BG_H * 0.72)
-    pillars = []
+    # The arcade (bible 12.119): the pillars carry capitals at one spring line and
+    # round arches between them, the vault above is lost in the dark, and two of the
+    # pillars are broken off, the arches beside them fallen.
+    spring = int(BG_H * 0.38)
+    broken = set(rng.sample(range(7), 2))
+    pillars, tops = [], []
     for i in range(7):
         x0 = int((i + rng.uniform(0.0, 0.4)) * BG_W / 7)
         w = rng.randrange(24, 40) * D
+        top = spring + rng.randrange(30, 90) * D if i in broken else spring
         pillars.append((x0, w))
-        cs = masonry_courses(0, BG_H, 440 + i, 18 * D)
-        for y in range(BG_H):
+        tops.append(top)
+        cs = masonry_courses(top, BG_H, 440 + i, 18 * D)
+        for y in range(top, BG_H):
             for dx in range(w):
+                if i in broken and y < top + int(hash2(dx // (3 * D), 1, 440 + i) * 14 * D):
+                    continue  # the broken top, jagged
                 # The far pillars: weathered courses on a jittered period, each
                 # stone a touch lighter or darker, so the great hall stops reading
                 # as one stamped column (bible 12.14). Muted (stone-1, no stone-2)
@@ -2957,13 +3029,30 @@ def vorrhallow_far():
                 if y in cs:
                     col = "night-0"  # a weathered mortar course
                 put(img, x0 + dx, y, c(col))
-        # An arch springing to the next pillar.
-        span = BG_W // 7
-        for dx in range(span):
-            k = dx / span
-            top = int(60 * D + math.sin(k * math.pi) * -40 * D) + 90 * D
-            for y in range(top - 10 * D, top):
-                put(img, x0 + w + dx, y, c("night-1"))
+        if i not in broken:
+            # The capital: a block stepped out over the shaft, lit on its top.
+            for y in range(spring - 8 * D, spring):
+                for dx in range(-3 * D, w + 3 * D):
+                    col = "stone-1" if y < spring - 6 * D else ("night-0" if y >= spring - D else "night-1")
+                    put(img, x0 + dx, y, c(col))
+    # Round arches from each capital to the next; one beside a broken pillar has
+    # fallen, leaving its springing on the standing side as a stub.
+    for i in range(7):
+        x0, w = pillars[i]
+        x1 = pillars[(i + 1) % 7][0] + (BG_W if i == 6 else 0)
+        a, b = x0 + w + 3 * D, x1 - 3 * D
+        span = b - a
+        if span < 20 * D:
+            continue
+        for dx in range(-3 * D, span + 3 * D):
+            if i in broken and dx < span * 0.6 or (i + 1) % 7 in broken and dx > span * 0.4:
+                continue
+            u = min(1.0, max(-1.0, (dx - span / 2) / (span / 2 + 3 * D)))
+            inner = spring - 8 * D - int(math.sqrt(1 - u * u) * (span / 2) * 0.8)
+            for y in range(inner - 10 * D, inner):
+                joint = int(math.atan2(spring - y, dx - span / 2) / 0.16) != int(math.atan2(spring - y, dx + D - span / 2) / 0.16)
+                col = "night-0" if joint or y == inner - 10 * D else ("night-1" if y >= inner - 2 * D else "stone-1")
+                put(img, a + dx, y, c(col))
     # Stillglass grown out of the far pillars' faces, glowing magenta: each cluster
     # is seated on a pillar's face and leans up and away from it (bible 12.51).
     seats = []
@@ -2972,7 +3061,7 @@ def vorrhallow_far():
         x0, w = pillars[(k * 3 + rng.randrange(2)) % len(pillars)]
         side = rng.choice([-1, 1])
         rx = (x0 if side < 0 else x0 + w - D) // D
-        ry = rng.randrange(80, water // D - 30)
+        ry = rng.randrange(tops[pillars.index((x0, w))] // D + 24, water // D - 30)
         seats.append((rx, ry, side))
         stillglass_growth(img, rx, ry, side * math.pi / 2, side * rng.uniform(0.5, 1.0), rng,
                           rng.randrange(14, 27), rng.randrange(6, 9),
