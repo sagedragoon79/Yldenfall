@@ -3,8 +3,9 @@ extends Node2D
 ## The great cistern in the middle of the Haar Spring (design bible 8.4). It fills
 ## a third at a time, one third through each of its three intakes, and Deluge is
 ## the only water there is. Standing in it with a third or more shelters you from
-## the hydra's thermal fog; full, it douses the head that breathed last. The fog
-## boils a third of it away, and the hydra's rage boils it dry.
+## the hydra's thermal fog; full, it douses the head whose pipe filled it last. The fog
+## boils away the share of the pipe filled last, and the hydra's rage boils it dry. A
+## dead head's pipe is capped, and the open pipes fill it between them (`need`).
 ##
 ## It is sunk in the floor (Sean, 2026-11-20): a pit cut into the room, brim-full at
 ## the floor's own level, with a low lip of coping round it. The lip is the far side
@@ -38,7 +39,7 @@ const IRON_DARK := Color("1c1f24")
 ## The cistern's inside in world pixels: the pit, from the floor's level down to its bed.
 var inside := Rect2(368, 320, 224, 48)
 var intakes: Array[HydraIntake] = []
-## Thirds of water in it, 0 to 3.
+## The pipes running into it, 0 to `need()`.
 var level := 0
 ## The water as drawn, easing toward `level`.
 var shown := 0.0
@@ -69,31 +70,61 @@ func add_intake(i: HydraIntake) -> void:
 
 ## Full from the start (once the hydra is beaten, for good).
 func fill_now() -> void:
+	_running.clear()
 	for i in intakes:
+		if i.sealed:
+			continue
 		i.flowing = true
 		_running.append(i)
-	level = mini(intakes.size(), THIRDS)
-	shown = level
+	level = need()
+	shown = _thirds()
+
+
+## How many pipes fill it: the open ones (a dead head's pipe is capped).
+func need() -> int:
+	var n := 0
+	for i in intakes:
+		if not i.sealed:
+			n += 1
+	return maxi(n, 1)
 
 
 func full() -> bool:
-	return level >= THIRDS
+	return level >= need()
+
+
+## The pipe that ran last (null if none): a full cistern douses its head.
+func last_filled() -> HydraIntake:
+	return null if _running.is_empty() else _running.back()
+
+
+## Thirds of water the pipes running now make (so it brims whichever pipes are open).
+func _thirds() -> float:
+	return float(level) * THIRDS / need()
 
 
 ## Takes water unless the hydra is boiling it away.
 func accepts() -> bool:
-	return not boiling and level < THIRDS
+	return not boiling and level < need()
 
 
 func fill_from(intake: HydraIntake) -> void:
 	_running.append(intake)
-	level = mini(level + 1, THIRDS)
+	level = mini(level + 1, need())
 	Sfx.play("splash", 0.1, 0.0)
-	Sfx.play("flood", 0.1, -8.0 if level < THIRDS else 0.0)
+	Sfx.play("flood", 0.1, -8.0 if level < need() else 0.0)
 	filled.emit(level)
 
 
-## The fog's heat boils a third away; its intake runs dry and opens again.
+## A head died: its pipe is capped, and the water it gave goes with it.
+func seal(intake: HydraIntake) -> void:
+	if _running.has(intake):
+		_running.erase(intake)
+		level = maxi(level - 1, 0)
+	intake.seal()
+
+
+## The fog's heat boils a share away; the pipe filled last runs dry and opens again.
 func lose_third() -> void:
 	if level <= 0 or _running.is_empty():
 		return
@@ -152,7 +183,7 @@ func _physics_process(delta: float) -> void:
 			for i in intakes:
 				i.reset()
 			_running.clear()
-	shown = move_toward(shown, level, delta * (THIRDS / BOIL_TIME if boiling else 1.0 / RISE_TIME))
+	shown = move_toward(shown, _thirds(), delta * (THIRDS / BOIL_TIME if boiling else 1.0 / RISE_TIME))
 	queue_redraw()
 	_back.queue_redraw()
 
