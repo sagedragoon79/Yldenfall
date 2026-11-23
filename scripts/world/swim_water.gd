@@ -57,8 +57,49 @@ const SPLASH_SPEED := 140.0
 ## design bible 12.116; `Tide.REFLECT_SHADER`). Its alpha just under the line;
 ## it fades to nothing at the floor of the surface row. Under a roof the mirror
 ## is dimmer (there is less light above to show), by REFLECT_SHADE.
-const REFLECT_ALPHA := 0.45
+const REFLECT_ALPHA := 0.6
 const REFLECT_SHADE := 0.5
+## Pass 641 (design bible 12.117): the mirror reaches two rows down where the
+## water goes on under the surface row (one where it does not), so a pier's
+## image hangs as deep as its first course.
+const REFLECT_ROWS := 2
+
+## Pass 641 (design bible 12.117): stone that stands in the water (water on both
+## sides of it along its row) is drowned. It takes the body's tone by depth, from
+## DROWN_MIN just under the surface to DROWN_MAX at DEPTH_FULL, in DROWN_STEP-px
+## bands, so a pier fades into the water instead of standing on it as a cut-out.
+const DROWN_MIN := 0.22
+const DROWN_MAX := 0.62
+const DROWN_STEP := 4
+## Everything under the surface wavers: each pixel row slides sideways by up to
+## WAVER whole pixels on a slow wave (WAVER_PACE rad/s, WAVER_FREQ rad per row).
+## The top WAVER_STILL px under the pool's top hold still, under the mirror.
+const WAVER := 1.0
+const WAVER_PACE := 1.1
+const WAVER_FREQ := 0.32
+const WAVER_STILL := 3
+const WAVER_SHADER := "shader_type canvas_item;
+uniform sampler2D screen_tex : hint_screen_texture, filter_nearest, repeat_disable;
+// Depth (px) of this rect's top under the pool's top, and the water's clock.
+uniform float top = 0.0;
+uniform float time = 0.0;
+uniform float waver = 1.0;
+uniform float pace = 1.1;
+uniform float freq = 0.32;
+uniform float still = 3.0;
+uniform vec2 size = vec2(16.0, 16.0);
+varying vec2 step_uv;
+void vertex() {
+	mat4 m = SCREEN_MATRIX * CANVAS_MATRIX * MODEL_MATRIX;
+	vec4 a = m * vec4(VERTEX, 0.0, 1.0);
+	vec4 b = m * vec4(VERTEX + vec2(1.0, 1.0), 0.0, 1.0);
+	step_uv = abs(b.xy - a.xy) * 0.5;
+}
+void fragment() {
+	float d = top + floor(UV.y * size.y);
+	float s = d >= still ? floor(sin(time * pace + d * freq) * waver + 0.5) : 0.0;
+	COLOR = vec4(texture(screen_tex, SCREEN_UV + vec2(s, 0.0) * step_uv).rgb, 1.0);
+}"
 
 ## The water's cells (tiles) -> true.
 var cells := {}
@@ -93,6 +134,14 @@ var _was_in := false
 var _splashes: Array[Vector3] = []   # x, y, age
 ## The mirror laid over each run of surface cells (see `Tide.REFLECT_SHADER`).
 var reflections: Array[ColorRect] = []
+## Stone standing in the water (tiles) -> its depth (px) under the pool's top.
+var drowned := {}
+## The drowned cells that are the bed's course (their tone fades down the tile).
+var bed := {}
+## The waver laid over each row of water and drowned stone (see `WAVER_SHADER`).
+var wavers: Array[ColorRect] = []
+## The pool's top (px).
+var _top := 0.0
 
 
 func _ready() -> void:
@@ -105,11 +154,20 @@ func _ready() -> void:
 	_body.draw.connect(_draw_body)
 	add_child(_body)
 	_build_edges()
-	# The stone's part is drawn once: it does not move.
+	# The stone's part and the drowned stone's tone are drawn once, behind this
+	# node's front and before the waver reads the screen, so they waver with the
+	# stone under them.
 	var edge := Node2D.new()
 	edge.name = "Stone"
+	edge.show_behind_parent = true
 	edge.draw.connect(_draw_stone.bind(edge))
 	add_child(edge)
+	var drown := Node2D.new()
+	drown.name = "Drowned"
+	drown.show_behind_parent = true
+	drown.draw.connect(_draw_drowned.bind(drown))
+	add_child(drown)
+	_lay_wavers()
 	_lay_reflections()
 
 
@@ -141,7 +199,7 @@ func _lay_reflections() -> void:
 		# Drawn before this node's own front: the crest, its sheen and the caustics stay on top.
 		rect.show_behind_parent = true
 		rect.position = Vector2(int(run[1]) * Room.TILE, int(run[0]) * Room.TILE + Tide.REFLECT_FROM)
-		rect.size = Vector2((int(run[2]) - int(run[1]) + 1) * Room.TILE, Room.TILE - Tide.REFLECT_FROM)
+		rect.size = Vector2((int(run[2]) - int(run[1]) + 1) * Room.TILE, mirror_rows(run) * Room.TILE - Tide.REFLECT_FROM)
 		var mat := ShaderMaterial.new()
 		mat.shader = shader
 		mat.set_shader_parameter("top", float(Tide.REFLECT_FROM))
@@ -155,6 +213,129 @@ func _lay_reflections() -> void:
 		rect.material = mat
 		add_child(rect)
 		reflections.append(rect)
+
+
+## How many rows (tiles) a run's mirror reaches down: REFLECT_ROWS where the
+## water goes on under every cell of the run, else fewer.
+func mirror_rows(run: Array) -> int:
+	for k in range(1, REFLECT_ROWS):
+		for c in range(int(run[1]), int(run[2]) + 1):
+			if not cells.has(Vector2i(c, int(run[0]) + k)):
+				return k
+	return REFLECT_ROWS
+
+
+## Stone in the water: solid cells that fill a gap in a row of water (water on
+## both sides along the row), and the first course of the bed and the walls.
+## Each maps to its depth (px) under the pool's top.
+func find_drowned() -> Dictionary:
+	var out := {}
+	var rows := {}
+	for c: Vector2i in cells:
+		if not rows.has(c.y):
+			rows[c.y] = []
+		rows[c.y].append(c.x)
+	for y: int in rows:
+		var xs: Array = rows[y]
+		xs.sort()
+		for i in xs.size() - 1:
+			var a: int = xs[i]
+			var b: int = xs[i + 1]
+			if b - a <= 1:
+				continue
+			var all_solid := true
+			for x in range(a + 1, b):
+				if not _solid(Vector2i(x, y)):
+					all_solid = false
+					break
+			if all_solid:
+				for x in range(a + 1, b):
+					out[Vector2i(x, y)] = float(y * Room.TILE) - _top
+	# The shore's first course: the bed under the water (and under stone standing
+	# in it) and a wall's face beside it are under the surface too.
+	# The bed's course fades out down the tile (it meets dry stone under it).
+	bed.clear()
+	for c: Vector2i in cells:
+		for dir: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT]:
+			var n: Vector2i = c + dir
+			if _solid(n) and not out.has(n):
+				out[n] = float(n.y * Room.TILE) - _top
+	for c: Vector2i in out.keys() + cells.keys():
+		var under: Vector2i = c + Vector2i.DOWN
+		if _solid(under) and not out.has(under):
+			out[under] = float(under.y * Room.TILE) - _top
+			bed[under] = true
+	return out
+
+
+## The drowned tone's alpha `depth` px under the pool's top.
+static func drown_alpha(depth: float) -> float:
+	return lerpf(DROWN_MIN, DROWN_MAX, sqrt(clampf(depth / DEPTH_FULL, 0.0, 1.0)))
+
+
+func _draw_drowned(ci: Node2D) -> void:
+	for c: Vector2i in drowned:
+		var d: float = drowned[c]
+		var y := 0
+		while y < Room.TILE:
+			var a := drown_alpha(d + y)
+			if bed.has(c):
+				a *= 1.0 - float(y) / float(Room.TILE)
+			ci.draw_rect(Rect2(c.x * Room.TILE, c.y * Room.TILE + y, Room.TILE, DROWN_STEP), Color(SUNK_TONE, a))
+			y += DROWN_STEP
+
+
+## The rows the waver covers: each [row, first column, last column] (tiles),
+## water and drowned stone together.
+func waver_runs() -> Array:
+	var all := {}
+	for c: Vector2i in cells:
+		all[c] = true
+	for c: Vector2i in drowned:
+		all[c] = true
+	var keys := all.keys()
+	keys.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y or (a.y == b.y and a.x < b.x))
+	var out: Array = []
+	for c: Vector2i in keys:
+		if out.is_empty() or int(out[-1][0]) != c.y or int(out[-1][2]) != c.x - 1:
+			out.append([c.y, c.x, c.x])
+		else:
+			out[-1][2] = c.x
+	return out
+
+
+func _lay_wavers() -> void:
+	for r in wavers:
+		r.queue_free()
+	wavers.clear()
+	var shader := Shader.new()
+	shader.code = WAVER_SHADER
+	for run: Array in waver_runs():
+		var rect := ColorRect.new()
+		rect.name = "Waver"
+		rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		rect.show_behind_parent = true
+		rect.position = Vector2(int(run[1]) * Room.TILE, int(run[0]) * Room.TILE)
+		rect.size = Vector2((int(run[2]) - int(run[1]) + 1) * Room.TILE, Room.TILE)
+		var mat := ShaderMaterial.new()
+		mat.shader = shader
+		mat.set_shader_parameter("top", rect.position.y - _top)
+		mat.set_shader_parameter("size", rect.size)
+		mat.set_shader_parameter("waver", WAVER)
+		mat.set_shader_parameter("pace", WAVER_PACE)
+		mat.set_shader_parameter("freq", WAVER_FREQ)
+		mat.set_shader_parameter("still", float(WAVER_STILL))
+		rect.material = mat
+		add_child(rect)
+		wavers.append(rect)
+
+
+## The row slide (whole px) the waver gives `d` px under the pool's top at `t`
+## (the shader's own sum, for tests).
+static func waver_shift(d: float, t: float) -> int:
+	if d < WAVER_STILL:
+		return 0
+	return floori(sin(t * WAVER_PACE + d * WAVER_FREQ) * WAVER + 0.5)
 
 
 ## The crest's lift (px, negative is up) at `x` (px) and time `t`: two swells
@@ -201,6 +382,7 @@ func _build_edges() -> void:
 				break
 	banks = WaterEdge.banks(top, _solid)
 	sunk = WaterEdge.sunk(cells, _solid, Room.TILE)
+	drowned = find_drowned()
 
 
 func _draw_stone(edge: Node2D) -> void:
@@ -271,6 +453,7 @@ func _build_runs() -> void:
 	var top := INF
 	for c: Vector2i in cells:
 		top = minf(top, c.y * Room.TILE)
+	_top = top if top < INF else 0.0
 	for c: Vector2i in cells:
 		if not rows.has(c.y):
 			rows[c.y] = []
@@ -326,6 +509,8 @@ func _physics_process(delta: float) -> void:
 		if _splashes[i].z > 0.6:
 			_splashes.remove_at(i)
 	for r in reflections:
+		(r.material as ShaderMaterial).set_shader_parameter("time", _t)
+	for r in wavers:
 		(r.material as ShaderMaterial).set_shader_parameter("time", _t)
 	queue_redraw()
 

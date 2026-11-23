@@ -201,7 +201,8 @@ func test_the_deep_water_mirrors_what_stands_over_it() -> void:
 		var r: ColorRect = water.reflections[i]
 		var y := int(run[0]) * Room.TILE
 		check(r.position.x == int(run[1]) * Room.TILE and r.size.x == (int(run[2]) - int(run[1]) + 1) * Room.TILE, "a mirror spans its run exactly")
-		check(r.position.y == y + Tide.REFLECT_FROM and r.position.y + r.size.y == y + Room.TILE, "under the surface line, down to the row's floor")
+		check(water.mirror_rows(run) == 2, "the water goes on under every run here, so its mirror reaches two rows (%d)" % water.mirror_rows(run))
+		check(r.position.y == y + Tide.REFLECT_FROM and r.position.y + r.size.y == y + water.mirror_rows(run) * Room.TILE, "under the surface line, down to the floor of its last row")
 		check(r.show_behind_parent, "drawn under the crest, its sheen and the caustics")
 		covered += int(run[2]) - int(run[1]) + 1
 		var mat := r.material as ShaderMaterial
@@ -220,3 +221,103 @@ func test_the_deep_water_mirrors_what_stands_over_it() -> void:
 	await frames(4)
 	var t1 := float((water.reflections[0].material as ShaderMaterial).get_shader_parameter("time"))
 	check(t1 > t0, "its sway runs on the water's clock")
+
+
+## Pass 641 (design bible 12.117): the grade found the deep water still a flat
+## slab, the piers standing on it as cut-outs. Stone in the water takes its tone.
+func test_stone_in_the_water_takes_its_tone() -> void:
+	var room := make_room(ROWS)
+	var water := _water(room)
+	if not check(water != null, "the room has its water"):
+		return
+	await frames(2)
+	var pier := [Vector2i(6, 5), Vector2i(7, 5), Vector2i(6, 6), Vector2i(7, 6)]
+	for c: Vector2i in pier:
+		check(water.drowned.has(c) and not water.bed.has(c), "the pier is drowned where water stands both sides of it (%s)" % c)
+	check(not water.drowned.has(Vector2i(6, 4)) and not water.drowned.has(Vector2i(7, 4)), "but not over the surface")
+	check(water.drowned.has(Vector2i(0, 5)) and water.drowned.has(Vector2i(15, 7)), "a wall's face beside the water is drowned")
+	check(not water.drowned.has(Vector2i(0, 4)) and not water.drowned.has(Vector2i(1, 3)), "dry stone is not")
+	var beds := 0
+	for x in range(1, 15):
+		if water.drowned.has(Vector2i(x, 8)) and water.bed.has(Vector2i(x, 8)):
+			beds += 1
+	check(beds == 14, "the bed's course under the whole pool is drowned, and fades down its tile (%d of 14)" % beds)
+	for c: Vector2i in water.drowned:
+		check(not water.cells.has(c), "drowned stone is stone, not water (%s)" % c)
+	check(is_equal_approx(float(water.drowned[Vector2i(6, 6)]) - float(water.drowned[Vector2i(6, 5)]), Room.TILE), "its depth counts from the pool's top")
+	var prev := -1.0
+	var rising := true
+	for d in range(0, 200, 8):
+		var a := SwimWater.drown_alpha(float(d))
+		rising = rising and a >= prev
+		prev = a
+	check(rising, "deeper stone is deeper in the water's tone")
+	check(is_equal_approx(SwimWater.drown_alpha(0.0), SwimWater.DROWN_MIN) and SwimWater.drown_alpha(SwimWater.DEPTH_FULL) <= 0.75, "from a light veil under the surface to most of the stone's tone, never all of it")
+	var tone := water.get_node_or_null("Drowned") as Node2D
+	check(tone != null and tone.show_behind_parent, "drawn behind the water's front, with the stone")
+
+
+## Pass 641 (design bible 12.117): everything under the surface wavers.
+func test_everything_under_the_surface_wavers() -> void:
+	var room := make_room(ROWS)
+	var water := _water(room)
+	if not check(water != null, "the room has its water"):
+		return
+	await frames(2)
+	var covered := 0
+	var seen := {}
+	for run: Array in water.waver_runs():
+		for x in range(int(run[1]), int(run[2]) + 1):
+			var c := Vector2i(x, int(run[0]))
+			check(not seen.has(c), "each cell once (%s)" % c)
+			seen[c] = true
+			covered += 1
+	check(covered == water.cells.size() + water.drowned.size(), "the waver covers the water and the drowned stone (%d of %d)" % [covered, water.cells.size() + water.drowned.size()])
+	check(seen.has(Vector2i(6, 5)) and seen.has(Vector2i(3, 8)), "the pier and the bed waver with the water")
+	check(water.wavers.size() == water.waver_runs().size(), "one waver to each run")
+	var first_waver := 9999
+	var last_waver := -1
+	for r: ColorRect in water.wavers:
+		check(r.show_behind_parent and r.size.y == Room.TILE, "a row, drawn behind the water's front")
+		check((r.material as ShaderMaterial).shader.code == SwimWater.WAVER_SHADER, "the waver's shader")
+		first_waver = mini(first_waver, r.get_index())
+		last_waver = maxi(last_waver, r.get_index())
+	check(water.get_node("Drowned").get_index() < first_waver and water.get_node("Stone").get_index() < first_waver, "the stone's tone is laid before the waver reads the screen")
+	for m: ColorRect in water.reflections:
+		check(m.get_index() > last_waver, "the mirror is laid over the waver")
+	var shifts := {}
+	var smooth := true
+	var still := true
+	for step in 30:
+		var t := step * 0.37
+		var prev := SwimWater.waver_shift(float(SwimWater.WAVER_STILL), t)
+		for d in range(0, 160):
+			var s := SwimWater.waver_shift(float(d), t)
+			shifts[s] = true
+			if d < SwimWater.WAVER_STILL:
+				still = still and s == 0
+			elif d > SwimWater.WAVER_STILL:
+				smooth = smooth and absi(s - prev) <= 1
+				prev = s
+	check(still, "the rows just under the surface hold still")
+	check(shifts.has(-1) and shifts.has(1) and shifts.size() == 3, "a row slides a pixel either way, no more (%s)" % [shifts.keys()])
+	check(smooth, "and never tears: neighbouring rows differ by a pixel at most")
+	var t0 := float((water.wavers[0].material as ShaderMaterial).get_shader_parameter("time"))
+	await frames(4)
+	check(float((water.wavers[0].material as ShaderMaterial).get_shader_parameter("time")) > t0, "on the water's clock")
+
+
+func test_a_shallow_pool_mirrors_one_row() -> void:
+	var room := make_room([
+		"##########",
+		"#........#",
+		"#aaaaaaaa#",
+		"##########",
+	])
+	var water := _water(room)
+	if not check(water != null, "the room has its water"):
+		return
+	await frames(2)
+	var runs := water.surface_runs()
+	check(runs.size() == 1 and water.mirror_rows(runs[0]) == 1, "a pool one row deep mirrors one row")
+	check(water.reflections.size() == 1 and water.reflections[0].size.y == Room.TILE - Tide.REFLECT_FROM, "and its mirror stops at the bed")
