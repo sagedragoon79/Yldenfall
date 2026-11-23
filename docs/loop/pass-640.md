@@ -73,7 +73,17 @@ clock).
 
 ## Full suite
 
-FULL_SUITE
+Full suite (`TEST_TIMEOUT=7200`): 36,853 checks, 36,847 passed (pass 639: 35,741). The six
+failures, each run again on its own and all passing:
+
+- `test_every_room_loads_and_settles_inside_the_budget`: `gym/gym` loaded in 591 ms (500 allowed).
+  The gym has no water and nothing here touches it; run alone it loads in 462 ms and passes. The
+  Sunken Spring's rooms, which carry the new mirror, settle at 2.2 to 3.9 ms a frame.
+- Five tests that "left global state changed: saves changed (save_2.json)". Four pass alone; the
+  fifth, `test_elven_stride_crosses_the_gap_to_the_warden_cache`, failed once alone and passed
+  twice more on this branch and twice on main. Nothing in this pass reads or writes a save.
+
+The first run, at the runner's default 2,700 s, was cut off before its summary, as pass 639 found.
 
 ## Rubric (design bible 15.3)
 
