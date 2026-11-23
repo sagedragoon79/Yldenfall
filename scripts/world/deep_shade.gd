@@ -92,6 +92,9 @@ const MOTIF_BODY_A := 0.62
 const MOTIF_LIT_A := 0.55
 ## Deep cells per form.
 const MOTIF_CELLS := 6
+## The most forms one room builds: the rooms with the most deep mass (the
+## Trials, the Proving Scar) load closest to the 500 ms budget (bible 14).
+const MOTIF_MAX := 60
 ## Roots hang one to so many columns of deep mass.
 const ROOT_SPACING := 3
 ## A form's length, world px.
@@ -304,13 +307,15 @@ func _build_motif() -> void:
 				tops[c.x] = c.y
 		var xs: Array = tops.keys()
 		xs.sort()
-		var slots := maxi(1, xs.size() / ROOT_SPACING)
+		var slots := clampi(xs.size() / ROOT_SPACING, 1, MOTIF_MAX)
 		for i in slots:
 			var x: int = xs[mini(xs.size() - 1, int((i + rng.randf_range(0.1, 0.9)) * xs.size() / slots))]
 			var start := Vector2((x + rng.randf()) * TILE, int(tops[x]) * TILE)
 			_walk(kind, start, PI / 2.0 + rng.randf_range(-0.35, 0.35), rng.randf_range(MOTIF_LEN.x, MOTIF_LEN.y) * 1.4, rng, cols, seen, true)
 		return
-	var count := maxi(1, deep.size() / (MOTIF_CELLS * (3 if kind == "veins" else 1)))
+	# Veins a third as many as the roots; seams half as many (they run long, and
+	# the stone halls hold the most deep mass, so this keeps the load lean).
+	var count := clampi(deep.size() / (MOTIF_CELLS * (3 if kind == "veins" else 2)), 1, MOTIF_MAX)
 	for i in count:
 		var start := (Vector2(deep[rng.randi_range(0, deep.size() - 1)]) + Vector2(rng.randf(), rng.randf())) * TILE
 		_walk(kind, start, -1.0, rng.randf_range(MOTIF_LEN.x, MOTIF_LEN.y), rng, cols, seen, true)

@@ -57,6 +57,17 @@ test checks a built Evercrown room's mass holds forms.
 | no forms drawn | fails (11 checks) |
 | roots run sideways | fails (1 check) |
 
+## Load cost
+
+The first full suite failed one check: `trials/stillness` loaded in 502 ms against the 500 ms
+budget of `test_every_room_loads_and_settles_inside_the_budget`. That room holds the most deep mass
+in the game (1,557 cells), so the forms were part of it, not only the machine's load. Measured alone
+(`ROOM_REPORT`), against main: stillness 417 ms (main 346), `tower/old_flue` 345 (293). Seams are now
+half as many per deep cell and a room builds at most 60 forms (`MOTIF_MAX`). Then: stillness 381,
+`trials/falling` 271 (237), `tower/old_flue` 303 (293), `evercrown/proving_scar` 456 (450, already the
+closest to the budget on main). Building the forms takes at most 14 ms in any room (about 4,000
+blocks in the Trials), once per load.
+
 ## Full suite
 
 Pending.
@@ -72,7 +83,7 @@ Pending.
 | Bosses | 10 | 99 | Unchanged. |
 | Systems | 10 | 99 | Unchanged. |
 | Audio | 5 | 99 | Unchanged. |
-| Stability and performance | 5 | 99 | A few hundred more rects per room with deep mass, built once at load. |
+| Stability and performance | 5 | 99 | Up to 14 ms more at a deep room's load, at most 60 forms a room. |
 | Story and world | 5 | 99 | Unchanged. |
 
 Weighted: 98.85.
