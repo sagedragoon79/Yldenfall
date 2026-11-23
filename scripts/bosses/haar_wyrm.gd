@@ -71,8 +71,14 @@ const RISE_TIME := 0.5
 const GAP := 1.4
 const WEAK_TIME := 6.5
 const RAGE_TIME := 2.2
-## Each dead head quickens the rest by this much (never under MIN_TELEGRAPH).
+## Each dead head quickens the rest by this much (never under MIN_TELEGRAPH). Not the
+## fog's wind-up: that is the time to get water in, and it stays whole.
 const QUICKEN := 0.85
+## A dead head keeps its turn in the round, as a rest this long added to the gap: the
+## breath and the gap it would have taken. Without it, each death shortened the round,
+## and the fog came sooner with less time to fill the cistern (Sean, 2026-11-22: "not
+## enough time to hit all 3 after killing the first head"; "the whisper comes faster").
+const REST := 3.0
 const EMERGE_TIME := 1.2
 ## The intro: darkness, three pairs of eyes, breathing, then the heads come out.
 const INTRO_TIME := 6.8
@@ -238,6 +244,8 @@ func health_fraction() -> float:
 
 ## A wind-up, quickened as heads die, never under Enemy.MIN_TELEGRAPH.
 func tell(base: float) -> float:
+	if base == FOG_TELL:
+		return FOG_TELL
 	return maxf(Enemy.MIN_TELEGRAPH, base * pow(QUICKEN, dead_heads()))
 
 
@@ -397,18 +405,21 @@ func _to(s: String) -> void:
 	step_time = 0.0
 
 
-## A round: the plume and the geyser in a random order, then the fog.
+## A round: the plume and the geyser in a random order, then the fog. A dead head
+## keeps its place, as a rest (`REST`).
 func _new_round() -> void:
 	order.clear()
+	if dead_heads() >= heads.size():
+		return
 	var pair: Array[int] = []
 	for h in heads:
-		if not h.dead and h.breath != HydraHead.FOG:
+		if h.breath != HydraHead.FOG:
 			pair.append(h.index)
 	if pair.size() == 2 and rng.randf() < 0.5:
 		pair.reverse()
 	order.append_array(pair)
 	var fog := head_for(HydraHead.FOG)
-	if fog != null and not fog.dead:
+	if fog != null:
 		order.append(fog.index)
 
 
@@ -445,6 +456,9 @@ func _next_breath() -> void:
 		return
 	var h := heads[order.pop_front()]
 	if h.dead:
+		# Its turn passes as a longer gap; a cistern filled in it still douses.
+		_to("gap")
+		step_time = -REST
 		return
 	attacker = h
 	h.set_mode("tell")
