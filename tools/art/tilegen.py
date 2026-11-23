@@ -3558,6 +3558,231 @@ def foreground(zone):
     return img
 
 
+# --- The hanging frame (design bible 12.121) ------------------------------------
+# The independent grade of pass 640: no foreground layer frames the rooms. The
+# low fringe (12.11, 12.29) only edges the bottom of the view. This is its
+# partner at the top: the zone's own material hanging into the view from above
+# (root tangles, leaf clumps, moss beards, crystal stalactites, a broken lintel
+# with chains, a rafter with ropes), in clusters with clear air between them, so
+# the play field is seen through a near frame the way Hollow Knight and
+# Blasphemous frame theirs. Backdrop locks it to the view's top edge and slides
+# it a little slower than the low fringe (HANG_SCROLL), so the two near layers
+# shear against each other. No band: nothing runs the width (Sean's note of
+# 2026-11-09 on the dark band, 12.25), and nothing drops below HANG_MAX_DROP.
+HANG_KIND = {
+    "heartwood": "roots", "boughs": "leaves",
+    "haar": "moss", "sunken": "moss",
+    "evercrown": "shards", "vorrhallow": "shards",
+    "tower": "chains", "trials": "chains",
+    "hearthroot": "rafter", "spires": "rafter",
+}
+# The deepest a hanging shape reaches below the view's top, world pixels
+# (Backdrop.HANG_MAX_DROP mirrors it): a sixth of the 360 px view.
+HANG_MAX_DROP = 60
+# The share of the top row the clusters may cover at most, so air shows between.
+HANG_MAX_COVER = 0.5
+# More solid than the low fringe (176): a frame is the darkest thing on screen,
+# where a see-through fringe over the ground washed out into the fog.
+MASS_A, STRAND_A, HANG_RIM_A = 224, 200, 212
+
+
+def _hang_put(img, x, y, alpha=STRAND_A, rim=False):
+    if 0 <= y < HANG_MAX_DROP * D:
+        put(img, x, y, c(FORE_RIM if rim else FORE_BODY, HANG_RIM_A if rim else alpha))
+
+
+def _hang_mass(img, x0, w, depth, rng, lumps=None):
+    """An irregular clump hugging the top edge: overlapping half-ellipses at most
+    `depth` deep across `w`, with a faint rim along its lower edge. Returns the
+    lowest y of the mass in each column, for strands to hang from."""
+    lumps = lumps or max(2, w // (14 * D))
+    low = {}
+    for k in range(lumps):
+        cx = x0 + int((k + 0.5) * w / lumps) + rng.randint(-3, 3) * D
+        rx = max(4 * D, int(w / lumps * rng.uniform(0.6, 0.95)))
+        ry = max(3 * D, int(depth * rng.uniform(0.45, 1.0)))
+        for dx in range(-rx, rx + 1):
+            f = 1.0 - (dx / rx) ** 2
+            if f <= 0:
+                continue
+            low[cx + dx] = max(low.get(cx + dx, 0), int(ry * f ** 0.5))
+    # A ragged underside, not a clean scallop: the edge wanders by a smoothed
+    # random walk, and short tips (hairs, leaf points, grit) hang off it.
+    walk = 0.0
+    for col in sorted(low):
+        walk = max(-2.5 * D, min(2.5 * D, walk + rng.uniform(-0.9, 0.9) * D))
+        if low[col] > 2 * D:
+            low[col] = max(D, low[col] + int(walk))
+            if rng.random() < 0.18:
+                low[col] += rng.randint(1, 4) * D
+    for col, yb in low.items():
+        for y in range(yb):
+            _hang_put(img, col, y, MASS_A)
+        _hang_put(img, col, yb, rim=True)
+    return low
+
+
+def _hang_strand(img, x, y0, length, w, rng, sway=None, rim=True):
+    """A tapering strand hanging from (x, y0), bending in one gentle curve."""
+    sway = rng.uniform(-6, 6) * D if sway is None else sway
+    for i in range(length):
+        t = i / max(1, length)
+        half = int(w * (1.0 - 0.75 * t) / 2)
+        cx = x + int(sway * math.sin(t * math.pi * 0.5))
+        for dx in range(-half, half + 1):
+            _hang_put(img, cx + dx, y0 + i)
+        if rim:
+            _hang_put(img, cx + half + 1, y0 + i, rim=True)
+    return x + int(sway)
+
+
+def _hang_roots(img, x, rng):
+    """A root tangle: a knotted clump with thick roots hanging out of it, some forked."""
+    w = rng.randint(40, 90) * D
+    low = _hang_mass(img, x, w, rng.randint(8, 16) * D, rng)
+    for _ in range(rng.randint(3, 6)):
+        cx = x + rng.randint(4, w // D - 4) * D
+        top = low.get(cx, 0)
+        length = rng.randint(16, 44) * D
+        end = _hang_strand(img, cx, top, length, rng.randint(2, 4) * D, rng)
+        if rng.random() < 0.5:  # a fork, thinner and shorter
+            _hang_strand(img, (cx + end) // 2, top + length // 2, length // 2, 2 * D, rng,
+                         sway=rng.choice([-1, 1]) * 5 * D)
+    return w + rng.randint(60, 140) * D
+
+
+def _hang_leaves(img, x, rng):
+    """A leaf clump with vines hanging out of it, leaf pairs down each vine."""
+    w = rng.randint(50, 100) * D
+    low = _hang_mass(img, x, w, rng.randint(14, 26) * D, rng, lumps=rng.randint(4, 7))
+    for _ in range(rng.randint(2, 4)):
+        cx = x + rng.randint(6, w // D - 6) * D
+        top = low.get(cx, 0)
+        length = rng.randint(14, 34) * D
+        sway = rng.uniform(-5, 5) * D
+        _hang_strand(img, cx, top, length, D, rng, sway=sway, rim=False)
+        side = rng.choice([-1, 1])
+        for j in range(3 * D, length, 5 * D):  # leaves alternate down the vine, drooping
+            lx = cx + int(sway * math.sin(j / length * math.pi * 0.5)) + side * 2 * D
+            ly = top + j + 3 * D
+            for dy in range(-4 * D, 4 * D + 1):
+                for dx in range(-2 * D, 2 * D + 1):
+                    if (dx / (2.2 * D)) ** 2 + (dy / (4.2 * D)) ** 2 <= 1.0:
+                        _hang_put(img, lx + dx + (side * dy) // 3, ly + dy)
+            side = -side
+    return w + rng.randint(90, 160) * D  # wide clumps, so wider air between
+
+
+def _hang_moss(img, x, rng):
+    """A moss beard: a thin clump with many ragged strands, longest in its middle."""
+    w = rng.randint(40, 80) * D
+    low = _hang_mass(img, x, w, rng.randint(5, 11) * D, rng)
+    for _ in range(rng.randint(8, 14)):
+        cx = x + rng.randint(2, w // D - 2) * D
+        mid = abs((cx - x) / w - 0.5)
+        length = max(4 * D, int(rng.randint(8, 46) * D * (1.0 - mid)))
+        _hang_strand(img, cx, low.get(cx, 0), length, rng.choice([1, 2, 2]) * D, rng,
+                     sway=rng.uniform(-2, 2) * D, rim=False)
+    return w + rng.randint(60, 140) * D
+
+
+def _hang_shards(img, x, rng):
+    """A rock lip with crystal stalactites: straight tapering points."""
+    w = rng.randint(36, 70) * D
+    low = _hang_mass(img, x, w, rng.randint(6, 12) * D, rng)
+    for _ in range(rng.randint(2, 5)):
+        cx = x + rng.randint(4, w // D - 4) * D
+        top = low.get(cx, 0)
+        length = rng.randint(12, 42) * D
+        half0 = rng.randint(3, 7) * D
+        lean = rng.randint(-3, 3) * D
+        for i in range(length):
+            t = i / length
+            half = int(half0 * (1.0 - t))
+            ox = cx + int(lean * t)
+            for dx in range(-half, half + 1):
+                _hang_put(img, ox + dx, top + i)
+            _hang_put(img, ox - half - 1, top + i, rim=True)
+    return w + rng.randint(60, 140) * D
+
+
+def _hang_chains(img, x, rng):
+    """A broken stone lintel at the top edge, with a chain or two hanging from it."""
+    w = rng.randint(40, 80) * D
+    depth = rng.randint(10, 16) * D
+    chip_l, chip_r = rng.randint(2, 8) * D, rng.randint(2, 8) * D
+    for i in range(w):  # flat underside, chipped at both ends
+        yb = depth
+        if i < chip_l:
+            yb = int(depth * (0.3 + 0.7 * i / chip_l))
+        elif i > w - chip_r:
+            yb = int(depth * (0.3 + 0.7 * (w - i) / chip_r))
+        for y in range(yb):
+            _hang_put(img, x + i, y, MASS_A)
+        _hang_put(img, x + i, yb, rim=True)
+    for _ in range(rng.randint(1, 2)):
+        cx = x + rng.randint(8, w // D - 8) * D
+        length = rng.randint(16, 40) * D
+        link = 5 * D
+        for j in range(0, length, link):
+            y = depth + j
+            if (j // link) % 2 == 0:  # a link face on: an open oval
+                for a in range(32):
+                    ang = a / 32 * math.tau
+                    _hang_put(img, cx + int(2 * D * math.cos(ang)), y + link // 2 + int(link / 2 * math.sin(ang)))
+            else:  # a link edge on: a short bar
+                for yy in range(link):
+                    _hang_put(img, cx, y + yy)
+                    _hang_put(img, cx + 1, y + yy)
+        if rng.random() < 0.6:  # a hook at the end
+            y = depth + length + D
+            for a in range(20):
+                ang = a / 20 * math.pi
+                _hang_put(img, cx + int(3 * D * math.cos(ang)), y + int(3 * D * math.sin(ang)))
+    return w + rng.randint(60, 140) * D
+
+
+def _hang_rafter(img, x, rng):
+    """A rafter's end slanting down out of the top edge, with ropes off it."""
+    w = rng.randint(60, 110) * D
+    drop = rng.randint(14, 26) * D
+    thick = rng.randint(5, 8) * D
+    d = rng.choice([-1, 1])
+    for i in range(w):
+        yc = int(drop * (i / w if d > 0 else 1.0 - i / w))
+        for y in range(max(0, yc - thick), yc):
+            _hang_put(img, x + i, y, MASS_A)
+        _hang_put(img, x + i, yc, rim=True)
+    for _ in range(rng.randint(1, 3)):  # ropes, frayed at the end
+        i = rng.randint(8, w // D - 8) * D
+        yc = int(drop * (i / w if d > 0 else 1.0 - i / w))
+        length = rng.randint(10, 30) * D
+        _hang_strand(img, x + i, yc, length, D, rng, sway=rng.uniform(-2, 2) * D, rim=False)
+        for f in (-1, 0, 1):
+            for m in range(3 * D):
+                _hang_put(img, x + i + f * (m // 2), yc + length + m)
+    return w + rng.randint(70, 150) * D
+
+
+HANG_SHAPE = {
+    "roots": _hang_roots, "leaves": _hang_leaves, "moss": _hang_moss,
+    "shards": _hang_shards, "chains": _hang_chains, "rafter": _hang_rafter,
+}
+
+
+def hanging(zone):
+    """The near frame hanging into the top of the view for `zone` (bible
+    12.121): clusters of the zone's material over a transparent canvas the size
+    of the other layers, wrapping sideways."""
+    img = Image.new("RGBA", (BG_W, BG_H), CLEAR)
+    shape = HANG_SHAPE[HANG_KIND[zone]]
+    rng = random.Random(sum(ord(ch) for ch in zone) + 1211)
+    x = rng.randint(0, 60) * D
+    while x < BG_W - 40 * D:
+        x += shape(img, x, rng)
+    return img
+
+
 # --- Ridge parallax layer (design bible 12.12) ---------------------------------
 # A distant silhouette ridgeline between the far backdrop and the mid layer, so
 # the parallax recedes through three depths instead of two (the independent
@@ -4515,6 +4740,8 @@ def main():
         save_png(ridge(zone), BG / f"{zone}_ridge.png")
     for zone in FORE_KIND:
         save_png(foreground(zone), BG / f"{zone}_fore.png")
+    for zone in HANG_KIND:
+        save_png(hanging(zone), BG / f"{zone}_hang.png")
 
 
 if __name__ == "__main__":

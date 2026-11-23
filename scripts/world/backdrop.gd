@@ -117,6 +117,19 @@ const FORE_MAX_RISE := 36.0
 ## How far the silhouettes lean toward the zone's fog colour (haze_for), so the
 ## nearest layer reads as near air in the zone's own tint, not flat black (12.29).
 const FORE_TINT := 0.55
+## The hanging frame (design bible 12.121): the zone's material hanging into the
+## top of the view (tools/art/tilegen.py paints <zone>_hang.png), the low fringe's
+## partner, so the play field is framed above and below. Locked to the view's top
+## edge (scroll y 0) and sliding a little slower than the fringe, so the two near
+## layers shear against each other; drawn at FORE_Z, thinned round actors the same way.
+const HANG_SCROLL := Vector2(1.3, 0.0)
+## The deepest a hanging shape reaches below the view's top, in world pixels
+## (mirrors tools/art/tilegen.py HANG_MAX_DROP).
+const HANG_MAX_DROP := 60.0
+## How far the frame leans toward the zone's fog: less than the fringe (FORE_TINT),
+## because a frame must stay darker than the scene behind it. At FORE_TINT the
+## Haar's blue-grey fog turned it into pale ghosts over the darker room.
+const HANG_TINT := 0.2
 ## The height of the view at the normal framing (GameCamera.view_size.y), in world pixels.
 const VIEW_HEIGHT := 360.0
 ## The foreground thins in front of actors (design bible 12.26): the groups whose
@@ -124,7 +137,9 @@ const VIEW_HEIGHT := 360.0
 ## padding around each actor's box and the soft edge beyond it (world pixels), and
 ## how many actors at most (the nearest to the view's centre; mirrors
 ## MAX_HOLES in shaders/fore_reveal.gdshader).
-const REVEAL_GROUPS := ["player", "npc", "enemy", "boss"]
+## Since pass 645 (12.121) the hanging frame also covers the top of the view, where
+## ceiling spikes, enemy shots, chests and pickups sit, so both layers thin in front of those too.
+const REVEAL_GROUPS := ["player", "npc", "enemy", "boss", "hazard", "enemy_projectile", "interactable", "pickup"]
 const REVEAL_KEEP := 0.2
 const REVEAL_PAD := 4.0
 const REVEAL_SOFT := 8.0
@@ -140,6 +155,8 @@ var room_id := ""
 var _layers := {}
 ## The foreground layer of the current zone, or null (see _process).
 var _fore: Parallax2D
+## The hanging frame of the current zone, or null (see _process).
+var _hang: Parallax2D
 
 
 
@@ -177,6 +194,9 @@ func set_zone(next: String) -> void:
 	_fore = fore_layer(zone)
 	if _fore != null:
 		add_child(_fore)
+	_hang = hang_layer(zone)
+	if _hang != null:
+		add_child(_hang)
 
 
 ## Slides each layer sideways for the room (design bible 12.101, pass 625). A zone
@@ -231,14 +251,37 @@ static func fore_layer(a_zone: String) -> Parallax2D:
 	return layer
 
 
+## The hanging frame for a zone (design bible 12.121), or null when the zone has
+## no <zone>_hang.png. Built like the foreground (fore_layer), but seated on the
+## view's top edge and sliding at HANG_SCROLL.
+static func hang_layer(a_zone: String) -> Parallax2D:
+	var path := DIR + "%s_hang.png" % a_zone
+	if not ResourceLoader.exists(path):
+		return null
+	var layer := Parallax2D.new()
+	layer.scroll_scale = HANG_SCROLL
+	layer.repeat_size = Vector2(SIZE.x, 0)
+	layer.repeat_times = 3
+	layer.ignore_camera_scroll = true
+	layer.z_as_relative = false
+	layer.z_index = FORE_Z
+	var sprite := Sprite2D.new()
+	sprite.texture = load(path)
+	sprite.scale = SIZE / sprite.texture.get_size()
+	sprite.centered = false
+	sprite.material = fore_material(haze_for(a_zone), HANG_TINT)
+	layer.add_child(sprite)
+	return layer
+
+
 ## The foreground's reveal material (design bible 12.26): no holes until
 ## _process feeds the actors in view. It leans the art toward the zone's fog
-## colour `haze` by FORE_TINT (12.29).
-static func fore_material(haze: Color = HAZE) -> ShaderMaterial:
+## colour `haze` by `tint` (FORE_TINT for the fringe, 12.29; HANG_TINT for the frame).
+static func fore_material(haze: Color = HAZE, tint: float = FORE_TINT) -> ShaderMaterial:
 	var mat := ShaderMaterial.new()
 	mat.shader = FORE_SHADER
 	mat.set_shader_parameter("haze", haze)
-	mat.set_shader_parameter("tint", FORE_TINT)
+	mat.set_shader_parameter("tint", tint)
 	mat.set_shader_parameter("size", SIZE)
 	mat.set_shader_parameter("keep", REVEAL_KEEP)
 	mat.set_shader_parameter("soft", REVEAL_SOFT)
@@ -400,12 +443,18 @@ func _process(_delta: float) -> void:
 	var offset := -t.origin / t.get_scale()
 	for layer in get_children():
 		(layer as Parallax2D).screen_offset = offset
-	if _fore != null and is_instance_valid(_fore) and _fore.get_child_count() > 0:
-		var view_size := vp.get_visible_rect().size / t.get_scale()
-		var sprite := _fore.get_child(0) as Sprite2D
-		sprite.position = fore_offset(view_size.y)
+	var view_size := vp.get_visible_rect().size / t.get_scale()
+	var boxes: Array[Rect2] = []
+	for near: Parallax2D in [_fore, _hang]:
+		if near == null or not is_instance_valid(near) or near.get_child_count() == 0:
+			continue
+		var sprite := near.get_child(0) as Sprite2D
+		if near == _fore:
+			sprite.position = fore_offset(view_size.y)
+		if boxes.is_empty():
+			boxes = _actor_boxes(Rect2(offset, view_size))
 		# Thin the silhouettes in front of the actors in view (design bible 12.26).
-		var holes := holes_for(sprite, _actor_boxes(Rect2(offset, view_size)))
+		var holes := holes_for(sprite, boxes)
 		var mat := sprite.material as ShaderMaterial
 		if mat != null:
 			var packed: Array[Vector4] = holes.duplicate()

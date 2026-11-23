@@ -432,6 +432,33 @@ def test_foreground_stays_a_low_fringe():
         assert rise <= tg.FORE_MAX_RISE, f"{z}: silhouettes rise {rise:.1f} px, over {tg.FORE_MAX_RISE}"
 
 
+def test_the_hanging_frame_frames_the_top_without_a_band():
+    # The grade of pass 640: no foreground layer frames the rooms. Every zone with
+    # a low fringe also has a frame hanging into the top of the view (bible
+    # 12.121): it reaches the top edge, drops no deeper than HANG_MAX_DROP, is a
+    # dark silhouette, and leaves air between its clusters (no band across the
+    # width, Sean's 2026-11-09 note, 12.25): at most HANG_MAX_COVER of the top row
+    # is covered, and somewhere a run of 80 world px is clear.
+    assert set(tg.HANG_KIND) == set(tg.FORE_KIND), "every fringe zone has a frame"
+    for z in tg.HANG_KIND:
+        img = tg.hanging(z)
+        a = img.getchannel("A")
+        bbox = a.getbbox()
+        assert bbox is not None and bbox[1] == 0, f"{z}: the frame hangs from the top edge"
+        drop = bbox[3] / tg.D
+        assert 20 < drop <= tg.HANG_MAX_DROP, f"{z}: drops {drop:.1f} px (over 20, at most {tg.HANG_MAX_DROP})"
+        row = [a.getpixel((x, 0)) > 0 for x in range(img.width)]
+        cover = sum(row) / len(row)
+        assert 0.1 <= cover <= tg.HANG_MAX_COVER, f"{z}: covers {cover:.2f} of the top row"
+        best = run = 0
+        for v in row + row:  # the layer wraps sideways
+            run = 0 if v else run + 1
+            best = max(best, run)
+        assert best >= 80 * tg.D, f"{z}: the widest clear run is {best / tg.D:.0f} px"
+        maxch = max(ch[1] for ch in img.convert("RGB").getextrema())
+        assert maxch < 70, f"{z}: brightest channel {maxch} is too light for a silhouette"
+
+
 def _ridge(zone):
     """One zone's ridge image (bible 12.12) and its silhouette measurements: the
     first opaque y per column (the crest line), the sky clear above, the band at
