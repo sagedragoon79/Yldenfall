@@ -726,6 +726,43 @@ def test_no_far_column_runs_the_height_of_its_layer():
         assert stood > tg.BG_W // 2 * 0.25, f"{painter.__name__}: columns stand in only {stood} of the width"
 
 
+def _mid_column_run(img):
+    """The longest vertical run, as a share of the layer's height, of anything drawn
+    on a (transparent) mid layer in one column of pixels, bridging gaps of up to 12
+    world px."""
+    a = img.getchannel("A").load()
+    longest = 0
+    for x in range(0, tg.BG_W, 2):
+        run = gap = 0
+        for y in range(tg.BG_H):
+            if a[x, y]:
+                run = run + gap + 1 if run else 1
+                gap = 0
+                longest = max(longest, run)
+            else:
+                gap += 1
+                if gap > 12 * tg.D:
+                    run = gap = 0
+    return longest / tg.BG_H
+
+
+def test_no_mid_column_runs_the_height_of_the_room():
+    # After the far columns broke (pass 643), the mid layers' columns still ran the
+    # room's height: the Tower's girders roof to floor, Vorrhallow's colonnade from
+    # high in the hall to the water. Now the Tower's trusses hang to their own depths
+    # and its posts rise to beams, and Vorrhallow's columns are broken off lower
+    # (bible 12.120, pass 644). Running any of them the height again fails here.
+    for painter in (tg.tower_mid, tg.vorrhallow_mid):
+        img = painter()
+        run = _mid_column_run(img)
+        assert run <= tg.MID_RUN_MAX, f"{painter.__name__}: a column runs {run:.2f} of the layer's height"
+        # And the layer still has its columns: something stands at the hall's
+        # middle height, or near the floor, in a good share of the width.
+        a = img.getchannel("A").load()
+        stood = sum(1 for x in range(0, tg.BG_W, 2) if any(a[x, y] for y in range(int(tg.BG_H * 0.7), int(tg.BG_H * 0.75))))
+        assert stood > tg.BG_W // 2 * 0.06, f"{painter.__name__}: columns stand in only {stood} of the width"
+
+
 def test_a_leaning_shard_has_no_gaps():
     # A leaning shard slid each column sideways, leaving holes in its crest, and every
     # hole drew a cleft: the crystal halls' ridge was striped. It is whole now: from

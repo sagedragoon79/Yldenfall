@@ -3100,7 +3100,20 @@ No far column now runs from the top of its layer to the bottom (`FAR_RUN_MAX`, 0
 
 Judged by eye at 1x and 2x in `heartwood/entrance`, `tower/foot` and `vorrhallow/alpha_den`. `test_no_far_column_runs_the_height_of_its_layer` (`tools/art/test_tilegen.py`) holds it.
 
-- **Not done here.** The mid layers' columns (the Tower's girders, Vorrhallow's colonnade) still run the height of the room, and no foreground layer frames the rooms.
+- **Not done here.** The mid layers' columns (the Tower's girders, Vorrhallow's colonnade; done in pass 644, 12.120) still run the height of the room, and no foreground layer frames the rooms.
+
+### 12.120 The mid columns break (pass 644)
+
+After 12.119, the mid layers still had columns running the room's height: the Tower's five girders from roof to floor, and Vorrhallow's colonnade from high in the hall down to the water.
+
+No mid column now runs more than `MID_RUN_MAX` (0.7 of the layer's height, in `tools/art/tilegen.py`):
+
+- **The Tower** (`tower_mid`, `_hanging_truss`, `_rising_post`). Five lattice trusses hang from the roof, each to its own depth (0.32 to 0.65 of the layer): two chords, a zigzag web with a strut at each joint, and at the foot a bracket plate, a pulley wheel and a hook. Between them four bolted posts rise from the floor (0.26 to 0.44 of the layer) and carry a riveted beam on two knee braces; one bay stands open to the far wall. The chains and hanging lamps stay.
+- **Vorrhallow** (`vorrhallow_mid`). The colonnade's columns are broken off lower, between 0.35 and 0.6 of the hall's height, each across a fracture of its own: a slant one way or the other, chipped, its broken face lit. The stillglass is seated on each column below its break, and the vault's chains end well above the columns.
+
+Judged by eye at 1x and 2x in `tower/foot` and `vorrhallow/alpha_den`. `test_no_mid_column_runs_the_height_of_the_room` (`tools/art/test_tilegen.py`) holds it.
+
+- **Not done here.** No foreground layer frames the rooms.
 
 ## 13. Asset Production Plan
 
