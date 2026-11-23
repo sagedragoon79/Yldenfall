@@ -3406,7 +3406,9 @@ def foreground(zone):
 # crystal halls, broken crags over the stone towers, battlemented roofs over the
 # hearth towns, low mounds over the marsh springs.
 RIDGE_KIND = {
-    "heartwood": "fir", "boughs": "fir",
+    # The Heartwood stands on great arching roots of its own (pass 642, 12.118): it
+    # shared the High Boughs' firs, and the pass 640 grade saw one pine band behind both.
+    "heartwood": "root", "boughs": "fir",
     "haar": "mound", "sunken": "mound",
     "evercrown": "shard", "vorrhallow": "shard",
     "tower": "crag", "trials": "crag",
@@ -3630,6 +3632,141 @@ def _spire_span(rng, a, b, roll, roofs, whole):
     return {"form": "span", "deck": deck, "under": under, "solid": solid, "whole": whole}
 
 
+# The Heartwood's roots (bible 12.118, pass 642). The pass 640 grade saw "the same pine
+# band" behind five areas: the Heartwood, a hollow under one great tree, stood on the
+# High Boughs' firs. It now stands on a row of great roots, each arching out of the
+# ground and back in, broad at its buttressed feet and thin at its crown. The root is
+# darker than the plane and the far haze shows through the arch under it, with
+# rootlets hanging into it and fungus glowing at its feet; two inner rows of smaller
+# roots stand lower in the plane, each darker than the last.
+ROOT_HALF = (24, 52)    # an arch's half-width to each foot, px at 1x (each side its own)
+ROOT_PEAK = (18, 44)    # its crown's height above the ground
+ROOT_THICK = (4, 7)     # the root's thickness at the crown; its feet flare to more than twice that
+ROOT_STEP = (30, 56)    # from one arch to the next, so neighbours cross at the feet
+ROOT_FLARE = 1.6        # how much thicker a root grows toward its feet
+ROOT_BODY_A = (70, 120, 160)  # a root's body, the seam over the plane: the crest row, then the inner rows
+ROOT_ROW_DROP = (22 * D, 44 * D)  # the inner rows: how far below the ground line they stand
+ROOT_ROW_SCALE = 0.7    # their size, as a share of a crest root's
+ROOT_HAZE_A = 44        # the far haze in the arch under a root, in the rim
+ROOT_LIT_A = 90         # the west half of a root's back catches the light
+ROOTLET_A = 110         # the rootlets hanging into the arch, in the seam
+ROOT_SEE_A = 48         # the plane's alpha in the arch under a crest root: the far layer shows through
+
+
+def _root_crown(r, dx):
+    """A root arch's back, px above the ground at `dx` from its crown (-1 past its feet)."""
+    half = r["west"] if dx < 0 else r["east"]
+    k = abs(dx) / half
+    if k > 1:
+        return -1.0
+    return r["peak"] * (1 - k * k) ** 0.55 + r["knots"].get(dx, 0.0)
+
+
+def _root_under(r, dx):
+    """The underside of the arch at `dx`: the crown less the root's thickness, which
+    flares toward the feet (a buttress), never under the ground."""
+    half = r["west"] if dx < 0 else r["east"]
+    k = abs(dx) / half
+    return max(0.0, _root_crown(r, dx) - r["thick"] * (1 + ROOT_FLARE * k * k))
+
+
+def _root_make(cx, rng, scale=1.0):
+    r = {"form": "root", "x": cx, "west": int(rng.randint(*ROOT_HALF) * D * scale),
+         "east": int(rng.randint(*ROOT_HALF) * D * scale), "peak": int(rng.randint(*ROOT_PEAK) * D * scale),
+         "thick": max(2 * D, int(rng.randint(*ROOT_THICK) * D * scale)), "knots": {}}
+    for _ in range(rng.randint(0, 2)):
+        at, w, hgt = rng.randint(-r["west"] // 2, r["east"] // 2), rng.randint(3, 5) * D, rng.randint(1, 2) * D
+        for o in range(-w, w + 1):
+            r["knots"][at + o] = max(r["knots"].get(at + o, 0.0), hgt * (1 - (o / w) ** 2))
+    return r
+
+
+def _root_arch(teeth, cx, rng):
+    """A great root arching from the ground to its crown at `cx` and back, into `teeth`
+    (indices wrap); each side has its own reach, so it leans, and a knot or two swells
+    its back."""
+    r = _root_make(cx, rng)
+    for dx in range(-r["west"], r["east"] + 1):
+        v = _root_crown(r, dx)
+        if v >= 0:
+            i = (cx + dx) % BG_W
+            teeth[i] = max(teeth[i], v)
+    return r
+
+
+def _root_paint(img, r, foot, far_tops, near_tops, rim, seam, body_a, rng):
+    """One root standing on canvas row `foot`: its body in the seam, its west back lit,
+    the far haze in the arch under it, rootlets hanging into the arch."""
+    for dx in range(-r["west"], r["east"] + 1):
+        v = _root_crown(r, dx)
+        if v < 0:
+            continue
+        x = (r["x"] + dx) % BG_W
+        top, under = foot - int(round(v)), foot - int(round(_root_under(r, dx)))
+        lo = min(foot, near_tops[x] - 2 * D, BG_H)
+        for y in range(max(top, far_tops[x] + 1, 0), lo):
+            if not img.getpixel((x, y))[3]:
+                continue
+            if y > under:
+                _over(img, x, y, rim, ROOT_HAZE_A)
+                continue
+            _over(img, x, y, seam, body_a)
+            if dx < 0 and y < top + max(D, (under - top) // 2):
+                _over(img, x, y, rim, ROOT_LIT_A)
+        if far_tops[x] < top < lo and img.getpixel((x, top))[3]:
+            _over(img, x, top, rim if dx < 0 else seam, 170)
+        if under < lo and hash2(x // D, r["x"], 78) > 0.94:
+            for y in range(under + 1, min(lo, under + 1 + rng.randint(3, 9) * D)):
+                _over(img, x, y, seam, ROOTLET_A)
+
+
+def _root_detail(img, roots, ground, far_tops, near_tops, rim, seam, light, rng):
+    """The roots in the far plane (12.118): the crest's roots, then two inner rows of
+    smaller ones lower and darker, and fungus glowing at a foot or two. Only inside
+    the plane, under its crest and above the valley mist."""
+    rows = [[(r, RIDGE_BASE - int(round(ground[r["x"] % BG_W]))) for r in roots]]
+    for drop in ROOT_ROW_DROP:
+        row, x = [], rng.randint(0, 20) * D
+        while x < BG_W:
+            row.append((_root_make(x, rng, ROOT_ROW_SCALE), RIDGE_BASE - int(round(ground[x % BG_W])) + drop))
+            x += int(rng.randint(*ROOT_STEP) * D * ROOT_ROW_SCALE)
+        rows.append(row)
+    # Under a crest root's arch the plane thins, so the far layer shows through it,
+    # except where another root's body crosses the arch.
+    body, hollow = [set() for _ in range(BG_W)], [set() for _ in range(BG_W)]
+    for r, foot in rows[0]:
+        for dx in range(-r["west"], r["east"] + 1):
+            v = _root_crown(r, dx)
+            if v < 0:
+                continue
+            x = (r["x"] + dx) % BG_W
+            top, under = foot - int(round(v)), foot - int(round(_root_under(r, dx)))
+            body[x].update(range(top, under + 1))
+            hollow[x].update(range(under + 1, foot))
+    for x in range(BG_W):
+        for y in hollow[x] - body[x]:
+            if far_tops[x] < y < near_tops[x] - 2 * D and 0 <= y < BG_H:
+                p = img.getpixel((x, y))
+                if p[3]:
+                    img.putpixel((x, y), p[:3] + (min(p[3], ROOT_SEE_A),))
+    for k, row in enumerate(rows):
+        for r, foot in row:
+            _root_paint(img, r, foot, far_tops, near_tops, rim, seam, ROOT_BODY_A[k], rng)
+    if not light:
+        return
+    for r, foot in rows[0]:
+        for side in (-1, 1):
+            if rng.random() < 0.4:
+                continue
+            half = r["west"] if side < 0 else r["east"]
+            fx = r["x"] + side * int(half * rng.uniform(0.5, 0.75))
+            fy = foot - D
+            if far_tops[fx % BG_W] + 6 * D < fy < near_tops[fx % BG_W] - 2 * D:
+                for xx in range(fx - D, fx + 2 * D):
+                    _over(img, xx, fy, light, 230)
+                    _over(img, xx, fy - D, light, 230)
+
+
 def _ridge_profile(kind, rng, houses=None, ground=None):
     """The crest height (canvas px above RIDGE_BASE) per column: a rolling
     baseline with the zone's teeth raised onto it, seamless across the seam.
@@ -3654,6 +3791,12 @@ def _ridge_profile(kind, rng, houses=None, ground=None):
             if houses is not None:
                 houses.append({"form": "fir", "x": x, "half": half, "peak": peak, "tiers": tiers})
             x += rng.randint(10, 20) * D
+        elif kind == "root":
+            # A great root arching out of the ground and back in (pass 642, 12.118).
+            root = _root_arch(teeth, x, rng)
+            if houses is not None:
+                houses.append(root)
+            x += rng.randint(*ROOT_STEP) * D
         elif kind == "shard":
             _tri(teeth, x, rng.randint(4, 9) * D, rng.randint(26, 54) * D, lean=rng.randint(-4, 4) * D)
             x += rng.randint(12, 24) * D
@@ -3712,7 +3855,7 @@ RIDGE_FACE_A = 96
 # woods, mounds and crags as one-value cutouts: past the thin lit faces each plane was
 # a single colour. Now the upper slopes catch the sky and fade, each east face falls
 # into shadow, and the woods are rows of trees, each lit on its west flank.
-RIDGE_FORMED = ("fir", "mound", "shard", "crag")
+RIDGE_FORMED = ("fir", "mound", "shard", "crag", "root")
 RIDGE_SKY = 26 * D             # how far the sky's light reaches below a crest
 RIDGE_SKY_A = (78, 46)         # its alpha at the crest, on the far plane and the near one
 RIDGE_SHADE = 8 * D            # how far an east face's shadow reaches below its crest
@@ -3731,6 +3874,8 @@ RIDGE_FOLD_SKY_A = 90
 RIDGE_LIGHT = {
     "hearthroot": "gold-2", "spires": "ember-2", "tower": "ember-2", "trials": "gold-2",
     "vorrhallow": "crystal-2", "evercrown": "crystal-2",
+    # Glowing fungus in the hollows under the Heartwood's roots (12.118).
+    "heartwood": "sky-2",
 }
 
 
@@ -4088,6 +4233,9 @@ def _ridge_detail(img, zone, far_h, near_tops, rng, houses=None, ground=None):
         return
     if kind == "spire":
         _spire_detail(img, houses or [], ground, far_h, far_tops, near_tops, rim, seam, light)
+        return
+    if kind == "root":
+        _root_detail(img, houses or [], ground, far_tops, near_tops, rim, seam, light, rng)
         return
     if kind == "fir":
         _fir_detail(img, houses or [], ground, far_tops, rim, seam, rng)

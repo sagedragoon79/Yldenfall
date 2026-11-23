@@ -1782,7 +1782,7 @@ Still open from Sean's lighting/depth request after pass 510: **rim light on fig
 
 The "more parallax layers" piece of Sean's 2026-11-07 lighting/depth request: a third painted back layer between `far` and `mid`, so the parallax recedes through three depths instead of two and the play field reads clear of the backdrop (the independent grade's recurring "depth collapse").
 
-`tools/art/tilegen.py` paints one `<zone>_ridge.png` per shipped zone with a single parametrized painter (like the foreground, 12.11): a seamless rolling ridgeline filled from the horizon (`RIDGE_BASE`, canvas y = 0.56·height) down, over a transparent sky, whose crest profile is the zone's distant material (`RIDGE_KIND`) — **firs** (Heartwood, the High Boughs), **low mounds** (the Haar, the Sunken Spring), **crystal shards** (the Evercrown, Vorrhallow), **broken crags** (the Tower, the Trials) and **a town's roofs** (Hearthroot: battlemented blocks until pass 617, since then gables, hips, lean-tos and towers, 12.94; the Spires shared them until pass 601, when they took a row of **ruined spires**, 12.84, which since pass 622 are needles, crowns, sheared towers and keeps joined by bridges on a terraced hill, 12.98). The silhouette is a dark shade of each zone's dominant ramp with a one-step-lighter crest rim (`RIDGE_COLOR`), so a warm hearth and a cold spring never share one ridge; the roll is built from whole-cycle sines and the teeth wrap at the seam, so the layer tiles sideways with no join. (Since pass 598 the ground below the crest is two planes under valley mist, with lit faces and each zone's distant detail: 12.83; since pass 635 the woods, hills, crystal and crags have forms in it, 12.111.)
+`tools/art/tilegen.py` paints one `<zone>_ridge.png` per shipped zone with a single parametrized painter (like the foreground, 12.11): a seamless rolling ridgeline filled from the horizon (`RIDGE_BASE`, canvas y = 0.56·height) down, over a transparent sky, whose crest profile is the zone's distant material (`RIDGE_KIND`) — **firs** (the High Boughs, and the Heartwood until pass 642, when it took a row of **great roots**, 12.118), **low mounds** (the Haar, the Sunken Spring), **crystal shards** (the Evercrown, Vorrhallow), **broken crags** (the Tower, the Trials) and **a town's roofs** (Hearthroot: battlemented blocks until pass 617, since then gables, hips, lean-tos and towers, 12.94; the Spires shared them until pass 601, when they took a row of **ruined spires**, 12.84, which since pass 622 are needles, crowns, sheared towers and keeps joined by bridges on a terraced hill, 12.98). The silhouette is a dark shade of each zone's dominant ramp with a one-step-lighter crest rim (`RIDGE_COLOR`), so a warm hearth and a cold spring never share one ridge; the roll is built from whole-cycle sines and the teeth wrap at the seam, so the layer tiles sideways with no join. (Since pass 598 the ground below the crest is two planes under valley mist, with lit faces and each zone's distant detail: 12.83; since pass 635 the woods, hills, crystal and crags have forms in it, 12.111.)
 
 `Backdrop` draws it like the other back layers, between `far` and `mid`:
 
@@ -3072,6 +3072,21 @@ The pass 640 grade: "the deep water still a flat teal slab (strengthen the mirro
 The swimmer wavers with the water by a pixel at most; the eels' tells are unchanged and read as before. Judged by eye at 1x and 3x in all four rooms of the Sunken Spring, before and after. `test_stone_in_the_water_takes_its_tone`, `test_everything_under_the_surface_wavers`, `test_a_shallow_pool_mirrors_one_row` and `test_the_deep_water_mirrors_what_stands_over_it` (`tests/test_water_edge.gd`) hold it.
 
 - **Not done here.** Light shafts through the deep water are still left for a later pass (12.116).
+
+### 12.118 The Heartwood stands on roots of its own (pass 642)
+
+The pass 640 grade: "the same pine band and trunk columns behind five areas". The Heartwood, a hollow under one great tree, shared the High Boughs' distant ridge of firs (12.12, 12.111), so a band of pines stood behind both, and in the Heartwood they made no sense under a roof of roots.
+
+The Heartwood's ridge (`RIDGE_KIND` "root", `tools/art/tilegen.py`) is now a row of great roots:
+
+- **The crest.** Each root arches out of the ground to its crown and back in (`_root_arch`), each side with its own reach (`ROOT_HALF` 24 to 52 px), so it leans, 18 to 44 px high (`ROOT_PEAK`), with a knot or two swelling its back. It is 4 to 7 px thick at the crown (`ROOT_THICK`) and flares toward its feet (`ROOT_FLARE`), so it stands on buttresses. Neighbours (`ROOT_STEP` 30 to 56 px apart) cross at the feet.
+- **Through the arch.** Under a crest root the plane thins to `ROOT_SEE_A` (48), so the far layer shows through the arch, except where another root's body crosses it.
+- **In the far plane** (`_root_detail`). Each root's body is laid in the seam, darker than the plane, its west back lit and its edge lit on the west and dark on the east; the far haze lies in the arch under it, and rootlets hang into it. Two inner rows of smaller roots (`ROOT_ROW_SCALE` 0.7) stand 22 and 44 px lower (`ROOT_ROW_DROP`), each darker than the last, so the plane is a tangle of roots in depth. Fungus glows dim cyan (`sky-2`, `RIDGE_LIGHT`) at a foot or two.
+- The nearer plane (12.83) repeats the roots lower and darker as a silhouette. The High Boughs keep their firs.
+
+Judged by eye at 1x and 2x in the Heartwood's rooms, over the far layer and through the haze. `test_the_heartwood_stands_on_roots_of_its_own` (`tools/art/test_tilegen.py`) holds it.
+
+- **Not done here.** The grade's "trunk columns": the full-height columns in the far layers of the Heartwood (its fibres), Vorrhallow (its pillars) and the Tower (its shafts) still read as one band of vertical bars; and no foreground layer frames the rooms.
 
 ## 13. Asset Production Plan
 

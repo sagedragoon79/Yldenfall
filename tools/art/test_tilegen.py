@@ -652,7 +652,31 @@ def test_a_fir_on_the_crest_is_tiered():
         tg._fir(teeth, 200, 20, 60, tiers)
         steps = sum(1 for i in range(1, tg.BG_W) if abs(teeth[i] - teeth[i - 1]) >= 2 * 60 / 20)
         assert steps >= 2 * (tiers - 1), f"a {tiers}-tier fir steps only {steps} times"
-    assert tg.RIDGE_KIND["heartwood"] == tg.RIDGE_KIND["boughs"] == "fir"
+    assert tg.RIDGE_KIND["boughs"] == "fir"
+
+
+def test_the_heartwood_stands_on_roots_of_its_own():
+    # The pass 640 grade saw "the same pine band" behind five areas: the Heartwood
+    # stood on the High Boughs' firs. Its ridge is a row of great roots (bible 12.118,
+    # pass 642): each arches out of the ground and back in, thicker at its feet than its
+    # crown, the far layer shows through the arch under a crest root, and two inner
+    # rows of roots stand lower in the plane. (Giving it the firs back fails the first
+    # check; a root without its flare, the second; a filled arch, the third.)
+    import random
+    assert tg.RIDGE_KIND["heartwood"] == "root" != tg.RIDGE_KIND["boughs"], "the Heartwood has a ridge of its own"
+    roots = []
+    tg._ridge_profile("root", random.Random(sum(ord(ch) for ch in "heartwood") + 1300), roots)
+    assert len(roots) >= 12, f"only {len(roots)} roots on the crest"
+    for r in roots:
+        crown = r["peak"] - tg._root_under(r, 0)
+        feet = [tg._root_crown(r, dx) - tg._root_under(r, dx) for dx in (-r["west"] * 3 // 4, r["east"] * 3 // 4)]
+        assert min(feet) > crown * 1.5, f"a root's feet ({feet}) flare from its crown ({crown})"
+        assert tg._root_under(r, 0) > 0, "and arch over open ground"
+    assert len({(r["west"], r["east"]) for r in roots}) > len(roots) // 2, "the roots lean their own ways"
+    img = tg.ridge("heartwood")
+    a = img.getchannel("A").load()
+    thin = sum(1 for x in range(0, tg.BG_W, 2) if any(0 < a[x, y] < tg.RIDGE_A // 2 for y in range(tg.RIDGE_BASE - 60 * tg.D, tg.RIDGE_BASE + 30 * tg.D)))
+    assert thin > tg.BG_W // 2 * 0.4, f"the far layer shows through the arches in only {thin} columns"
 
 
 def test_a_leaning_shard_has_no_gaps():
