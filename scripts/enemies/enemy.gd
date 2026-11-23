@@ -38,7 +38,16 @@ const SOFT_TINT := Color(1.0, 0.92, 0.76)
 const RECOIL_LEAN := 0.3
 const RECOIL_SQUASH := 0.1
 const SHEET_WHITE := 0.85
-const SHEET_SOFT_WHITE := 0.3
+## Since pass 646 a sheet foe's soft phase is lighter still (0.3 before): the pass 645
+## grade called the fight's contact points "mush", and the struck foe under a cream
+## tint was a muddy, low-contrast shape. The blow now shows as a lit edge instead.
+const SHEET_SOFT_WHITE := 0.15
+## The struck edge (bible 6.7, pass 646): through a hit flash a sheet foe wears a
+## crescent of warm white `STRUCK_EDGE_WIDTH` world pixels wide inside its outline,
+## on the side the blow came from, the cut's light on its body, while the rest of it
+## keeps its own colors and the dark rim parts it from the swing's white arc.
+const STRUCK_EDGE := Color(1.0, 0.96, 0.86)
+const STRUCK_EDGE_WIDTH := 1.0
 ## A tell's pulse (bible 6.7, passes 585 and 586) is a warm tint and a rim, never
 ## a white cutout. A foe drawn from a sheet wears a rim of `TELL_TINT` one pixel
 ## wide (`TELL_RIM`), which carries the warning, and only a light tint over its body
@@ -226,6 +235,8 @@ var _sheet_white_alpha := 0.0
 var _tell_drawn := false
 ## Whether this foe's last sheet drawing wore the dark rim of a hit flash (pass 602).
 var _hit_rim_drawn := false
+## The side of this foe's last sheet drawing that wore the struck edge: -1 left, 1 right, 0 none.
+var _struck_edge_drawn := 0
 ## The arm of the glint this foe's last sheet drawing wore, in world pixels (0: none),
 ## and where it sat, relative to the sheet's origin, before facing.
 var _glint_drawn := 0.0
@@ -507,6 +518,17 @@ func _raise_while_struck(delta: float) -> void:
 ## True when this foe's last sheet drawing wore a hit flash's dark rim (pass 602).
 func hit_rim_drawn() -> bool:
 	return _hit_rim_drawn
+
+
+## The side the struck edge was lit on in this foe's last sheet drawing, in world
+## terms: -1 its left, 1 its right, 0 none (pass 646).
+func struck_edge_drawn() -> int:
+	return _struck_edge_drawn
+
+
+## Which side a blow's light falls on: the side it came from, against its push.
+func struck_side() -> int:
+	return -int(_blow_side) if _blow_side != 0.0 else facing
 
 
 ## True while a blow's flash and recoil draw this foe above the swing (pass 599).
@@ -798,6 +820,20 @@ func draw_sheet(sheet: String, anim: String, t: float, white := false, offset :=
 		for step: Vector2 in RIM_STEPS:
 			draw_set_transform_matrix(_sheet_transform(offset + step))
 			Sheet.draw(self, sheet, anim, f, rim, true)
+	_struck_edge_drawn = 0
+	if _hit_rim_drawn and not dead:
+		# The struck edge: the body in white, then the body itself set back from the
+		# blow by the edge's width, so a crescent of the white shows inside the outline
+		# on the blow's side. The rim is drawn again about the set-back body.
+		var side := struck_side()
+		var back := Vector2(-side * STRUCK_EDGE_WIDTH, 0.0)
+		for step: Vector2 in RIM_STEPS:
+			draw_set_transform_matrix(_sheet_transform(offset + back + step))
+			Sheet.draw(self, sheet, anim, f, Color(HIT_RIM_COLOR, HIT_RIM), true)
+		draw_set_transform_matrix(_sheet_transform(offset))
+		Sheet.draw(self, sheet, anim, f, STRUCK_EDGE, true)
+		offset += back
+		_struck_edge_drawn = side
 	draw_set_transform_matrix(_sheet_transform(offset))
 	Sheet.draw(self, sheet, anim, f)
 	if white and not (_tell_drawn and glint):
