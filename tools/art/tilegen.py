@@ -4668,6 +4668,91 @@ def _ridge_detail(img, zone, far_h, near_tops, rng, houses=None, ground=None):
         placed += 1
 
 
+# The crystal halls' near plane (design bible 12.124, pass 648). The pass 645 grade read
+# the Evercrown's backdrop as a dead void of flat purple: under its shard crest the near
+# plane was one fill to the layer's foot, and its lights did not show, since its body is
+# the darkest step of the ramp and the plane's rim was that same step. The near plane is
+# now lit in the next step up, and two rows of great crystal masses grow up through it
+# from below, each a leader and lesser shards, lit on the west facet, dark on the east,
+# with a lit west edge and a few glints, the nearer row darker.
+NEAR_MASS_ROWS = (  # per row: the foot (canvas px below the near crest's base), height range, alpha of body, lit facet, edge, dark facet
+    {"foot": 150 * D, "tall": (105 * D, 150 * D), "half": (16, 26), "step": (30, 52), "body": 34, "lit": 72, "edge": 120, "dark": 70},
+    {"foot": 172 * D, "tall": (60 * D, 92 * D), "half": (18, 30), "step": (40, 70), "body": 16, "lit": 44, "edge": 84, "dark": 110},
+)
+NEAR_MASS_CLEAR = 8 * D   # a mass's tip stays this far under the near crest
+NEAR_GLINT_SHARE = 0.5    # the share of masses with a glint on their lit facet
+
+
+def _near_shard(img, fx, fy, half, length, ang, row, rim, seam, glint, tops, rng):
+    """One great shard of the near plane, rooted at fx, fy (canvas px) and pointing
+    along `ang` (radians from straight up, east positive): its west facet lit, its
+    east facet dark, its west edge lit, laid in D-pixel blocks over the plane only."""
+    ux, uy = math.sin(ang), -math.cos(ang)       # along the shard, foot to tip
+    px, py = -uy, ux                              # across it, west to east (for a shard pointing up)
+    tx, ty = fx + ux * length, fy + uy * length
+    cut = []
+    xs = [fx - px * half, fx + px * half, tx]
+    ys = [fy - py * half, fy + py * half, ty]
+    x0, x1 = int(min(xs)) // D * D, int(max(xs)) + D
+    y0, y1 = max(0, int(min(ys)) // D * D), min(BG_H, int(max(ys)) + D)
+    for by in range(y0, y1, D):
+        for bx in range(x0, x1, D):
+            cx, cy = bx + D / 2 - fx, by + D / 2 - fy
+            along = cx * ux + cy * uy
+            if not 0 <= along <= length:
+                continue
+            across = cx * px + cy * py
+            w = half * (1 - along / length)
+            if abs(across) > w:
+                continue
+            if by < tops[bx % BG_W] + NEAR_MASS_CLEAR:
+                continue
+            cut.append((bx, by, across, w))
+    for bx, by, across, w in cut:
+        name, alpha = (rim, row["lit"]) if across < 0 else (seam, row["dark"])
+        if across < 0 and across < -w + D:
+            alpha = row["edge"]                   # the lit west edge
+        for yy in range(by, by + D):
+            for xx in range(bx, bx + D):
+                if img.getpixel((xx % BG_W, yy))[3]:
+                    _over(img, xx, yy, rim, row["body"])
+                    _over(img, xx, yy, name, alpha)
+    if glint and cut and rng.random() < NEAR_GLINT_SHARE:
+        lit = [k for k in cut if k[2] < -k[3] * 0.3]
+        if lit:
+            bx, by, _, _ = lit[rng.randrange(len(lit))]
+            for yy in range(by, by + 2 * D):
+                for xx in range(bx, bx + D):
+                    _over(img, xx, yy, glint, 200)
+    return len(cut)
+
+
+def _near_crystal(img, near_tops, near_base, rim, seam, glint, rng):
+    """Two rows of great crystal masses through the crystal halls' near plane (12.124).
+    Returns each mass: its foot, lean, reach and how many blocks it laid."""
+    masses = []
+    for row in NEAR_MASS_ROWS:
+        x = rng.randint(0, 20) * D
+        while x < BG_W:
+            fy = near_base + row["foot"] + rng.randint(-6, 6) * D
+            lean = rng.uniform(-0.18, 0.18)
+            # Its tip stays under the near crest rather than being cut off by it.
+            room = (fy - near_tops[x % BG_W] - 2 * NEAR_MASS_CLEAR) / math.cos(lean)
+            reach = min(rng.randint(*row["tall"]), int(room))
+            half = rng.randint(*row["half"]) * D
+            mass = {"x": x, "foot": fy, "lean": lean, "reach": reach, "blocks": 0}
+            # The lesser shards first, fanned beside the leader, so it lies over them.
+            for _ in range(rng.randint(1, 3)):
+                f = lean + rng.choice((-1, 1)) * rng.uniform(0.2, 0.45)
+                at = x + rng.randint(-half // D, half // D) * D
+                mass["blocks"] += _near_shard(img, at, fy, half * rng.uniform(0.5, 0.75), reach * rng.uniform(0.45, 0.75),
+                                              f, row, rim, seam, None, near_tops, rng)
+            mass["blocks"] += _near_shard(img, x, fy, half, reach, lean, row, rim, seam, glint, near_tops, rng)
+            masses.append(mass)
+            x += rng.randint(*row["step"]) * D
+    return masses
+
+
 def ridge(zone):
     """The distant ridgeline silhouette for `zone` (design bible 12.12): the
     zone's far crest filled from the horizon down, over a transparent sky, so
@@ -4702,7 +4787,14 @@ def ridge(zone):
                 if under[3]:
                     img.putpixel((x, yy), blend(under, c(rim), alpha))
             y -= band
-    _ridge_plane(img, near, near_base, _ridge_shade(body), body, 255, faces, RIDGE_SKY_A[1] if formed else 0)
+    # A body at the bottom of its ramp has no darker step, so the near plane's light is
+    # the far plane's rim (12.124): until pass 648 the crystal halls' near plane was lit
+    # in its own fill and showed nothing.
+    near_body = _ridge_shade(body)
+    near_rim = rim if near_body == body else body
+    _ridge_plane(img, near, near_base, near_body, near_rim, 255, faces, RIDGE_SKY_A[1] if formed else 0)
+    if RIDGE_KIND[zone] == "shard":
+        _near_crystal(img, near_tops, near_base, near_rim, "night-0", RIDGE_LIGHT.get(zone), near_rng)
     if spires:
         # A near spire's west wall catches the light down to the ground it stands on.
         for x in range(BG_W):

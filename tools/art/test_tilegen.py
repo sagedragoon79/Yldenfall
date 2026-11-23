@@ -2393,5 +2393,59 @@ def test_vorrhallows_near_glass_grows_through_its_stone():
         assert far_seam >= 3, f"the growth at {rx},{ry} has no seam past its crust ({far_seam} px)"
 
 
+def _near_band(zone):
+    """The crystal hall's near plane below its crest: the ridge, the near crest's tops
+    and the band's rows (from the lowest crest top's clearance to the layer's foot)."""
+    import random
+    img = tg.ridge(zone)
+    rng = random.Random(sum(ord(ch) for ch in zone) + 2600)
+    near = [v * tg.RIDGE_NEAR_SCALE for v in tg._ridge_profile(tg.RIDGE_KIND[zone], rng)]
+    near_base = tg.RIDGE_BASE + tg.RIDGE_NEAR_DROP
+    tops = [near_base - int(round(v)) for v in near]
+    return img, tops, range(max(tops) + 20 * tg.D, tg.BG_H)
+
+
+def test_the_crystal_halls_near_plane_holds_crystal_masses():
+    # The pass 645 grade read the Evercrown's backdrop as a dead void of flat purple:
+    # its ridge's near plane was one fill from under its crest to the layer's foot, and
+    # its light was its own fill. Now it is lit a step up the ramp and great crystal
+    # masses grow up through it (bible 12.124, pass 648), each lit on its west facet and
+    # dark on its east. (No masses fails the first check; masses with no facets the
+    # third; the near plane lit in its own fill, the last.)
+    for zone in ("evercrown", "vorrhallow"):
+        img, tops, rows = _near_band(zone)
+        px = img.load()
+        fill = tg.c(tg._ridge_shade(tg.RIDGE_COLOR[zone][0]))[:3]
+        cells = [(x, y) for y in rows for x in range(0, tg.BG_W, tg.D)]
+        off = [p for p in cells if px[p][:3] != fill]
+        share = len(off) / len(cells)
+        assert 0.25 <= share <= 0.9, f"{zone}: {share:.2f} of the near plane's band differs from its fill"
+        # The forms reach into the band's top half, not only the layer's foot.
+        upper = [p for p in off if p[1] < rows.start + (rows.stop - rows.start) // 2]
+        assert len(upper) > len(off) * 0.15, f"{zone}: the masses keep to the foot ({len(upper)} of {len(off)})"
+        # Lit facets and dark ones: some of the forms well over the fill, and some (the
+        # east facets, laid in the night's darkest step) no lighter than it.
+        lum = lambda col: col[0] * 3 + col[1] * 6 + col[2]
+        lighter = sum(1 for p in off if lum(px[p]) > lum(fill) + 60)
+        darker = sum(1 for p in off if lum(px[p]) < lum(fill) + 20)
+        assert lighter > len(cells) * 0.05 and darker > len(cells) * 0.05, \
+            f"{zone}: lit {lighter}, dark {darker} of {len(cells)}"
+        # The near crest catches the light: just under it the plane is lighter than its fill.
+        lit = sum(1 for x in range(0, tg.BG_W, tg.D) if lum(px[x, tops[x] + 2 * tg.D]) > lum(fill) + 20)
+        assert lit > tg.BG_W // tg.D // 3, f"{zone}: the near crest is lit in only {lit} columns"
+    # Every mass's tip stays under the near crest: no mass is cut off by it.
+    import random
+    rng = random.Random(7)
+    from PIL import Image
+    img = Image.new("RGBA", (tg.BG_W, tg.BG_H), tg.c("crystal-0"))
+    tops = [tg.RIDGE_BASE + tg.RIDGE_NEAR_DROP + 60 * tg.D] * tg.BG_W  # a low crest, under the tallest reach
+    masses = tg._near_crystal(img, tops, tg.RIDGE_BASE + tg.RIDGE_NEAR_DROP, "crystal-1", "night-0", "crystal-2", rng)
+    assert len(masses) >= 20, f"only {len(masses)} masses"
+    for m in masses:
+        tip = m["foot"] - m["reach"] * math.cos(m["lean"])
+        assert tip >= tops[0] + tg.NEAR_MASS_CLEAR, f"a mass's tip ({tip:.0f}) rises into the crest ({tops[0]})"
+        assert m["blocks"] > 0
+
+
 if __name__ == "__main__":
     main()
