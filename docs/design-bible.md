@@ -3170,6 +3170,15 @@ Every form is drawn in 2-pixel blocks, only where the shade's field is at least 
 
 Judged by eye at 1x and 2x in `heartwood/grub_burrows` (roots hanging into the dark over the tunnel), `evercrown/proving_scar` (violet cracks), `tower/old_flue` and `vorrhallow/waterfall_stair`. `tests/test_deep_shade.gd` holds it: `test_the_deepest_mass_holds_its_zones_forms` and `test_the_deep_forms_are_the_rooms_own_and_only_where_meant`.
 
+### 12.124 Crystal grows through the halls' near plane (pass 648)
+
+The grade of pass 645 named the Evercrown's "flat purple" a dead void. In a tall room such as `evercrown/veins` a band of the backdrop between the hanging tendrils and the floor was one value: the ridge's near plane (12.83), filled from under its crest to the layer's foot. Its lights did not show either. The two crystal halls' ridge body is the darkest step of its ramp (12.48), and the near plane takes its fill one step darker than that body and its light from the body itself, so in these two zones the fill and the light were the same color.
+
+- **The near plane's light.** Where the body has no darker step, the near plane is lit by the far plane's rim instead (`tilegen.py`, `ridge`), so its crest, its sky light and its lit west faces show.
+- **Crystal masses** (`_near_crystal`, `NEAR_MASS_ROWS`). Two rows of great crystal masses grow up through the near plane from below the layer's foot, each a leader and one to three lesser shards fanned beside it. Each shard is lit on its west facet and laid in the night's darkest step on its east, with a lit west edge, in 2-pixel blocks. The nearer row is darker and broader. A mass's tip stays under the near crest (`NEAR_MASS_CLEAR`) rather than being cut off by it, and half of the leaders carry a glint of the zone's crystal on the lit facet. Only the two crystal halls ("shard" ridges) have them; the other zones' near planes are unchanged.
+
+Judged by eye at 1x and 2x in `evercrown/veins`, `evercrown/threshold` and `vorrhallow/flooded_hall`. The first try drew narrow shards that read as a field of grass blades; the masses are now about twice as broad, with less lean. `test_the_crystal_halls_near_plane_holds_crystal_masses` in `tools/art/test_tilegen.py` holds it.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
