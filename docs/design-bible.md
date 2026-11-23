@@ -3059,6 +3059,20 @@ The fall is still scenery and its sound is unchanged. Judged by eye at 1x and 3x
 
 - **Not done here.** The deep water below the surface row is still the dithered depth (12.39) with caustics and bubbles; light shafts through it are left for a later pass.
 
+### 12.117 The piers sink into the deep water, and what is under it wavers (pass 641)
+
+The pass 640 grade: "the deep water still a flat teal slab (strengthen the mirror and let the submerged pillars waver under the surface)". The stone in the water was drawn at full light over the body, with only the 20% front tint and a dark band at each face (12.97), so the aqueduct's piers and stubs stood on the water as cut-outs, and the bed under the pool read as dry ground. The mirror (12.116) reached one row and was faint.
+
+`SwimWater`, in three parts:
+
+- **Drowned stone** (`find_drowned`). A solid cell that fills a gap in a row of water (water on both sides along the row, through more stone if need be) stands in the water; so does the first course of a wall beside the water. Each takes the body's tone (`SUNK_TONE`) by its depth under the pool's top, from `DROWN_MIN` 0.22 just under the surface to `DROWN_MAX` 0.62 at `DEPTH_FULL`, in `DROWN_STEP` (4) px bands, on the same square-root falloff as the body. The bed's course (the stone under the water and under stone standing in it, `bed`) takes it too and fades out down its tile, so it meets the dry stone under it without a seam. Stone over the surface is left alone.
+- **The waver** (`WAVER_SHADER`, `waver_runs`). Every row of water and drowned stone gets a rect that reads the screen and slides each pixel row sideways by up to `WAVER` (1) whole pixel on a slow wave (`WAVER_PACE` 1.1 rad/s, `WAVER_FREQ` 0.32 rad a row), so the piers, the bed, the backdrop's columns and anything swimming waver under the surface. Neighbouring rows differ by a pixel at most, so nothing tears, and the top `WAVER_STILL` (3) px under the pool's top hold still under the mirror. The drowned tone and the stone's face bands are drawn before it reads the screen, so they waver with the stone.
+- **A stronger, deeper mirror.** `REFLECT_ALPHA` is 0.6 (it was 0.45), and the mirror reaches `REFLECT_ROWS` (2) rows down wherever the water goes on under every cell of a run (`mirror_rows`), one row over a shallow pool. It is laid over the waver.
+
+The swimmer wavers with the water by a pixel at most; the eels' tells are unchanged and read as before. Judged by eye at 1x and 3x in all four rooms of the Sunken Spring, before and after. `test_stone_in_the_water_takes_its_tone`, `test_everything_under_the_surface_wavers`, `test_a_shallow_pool_mirrors_one_row` and `test_the_deep_water_mirrors_what_stands_over_it` (`tests/test_water_edge.gd`) hold it.
+
+- **Not done here.** Light shafts through the deep water are still left for a later pass (12.116).
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
