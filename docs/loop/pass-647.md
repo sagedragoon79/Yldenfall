@@ -70,7 +70,7 @@ blocks in the Trials), once per load.
 
 ## Full suite
 
-Pending.
+Full suite after the cap (`TEST_TIMEOUT=7200`): 37,116 checks, all passed. CI green (test and mix).
 
 ## Rubric (design bible 15.3)
 
