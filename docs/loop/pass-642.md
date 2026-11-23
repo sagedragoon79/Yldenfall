@@ -63,7 +63,12 @@ roots under the hall's roof of roots, and the High Boughs keep their firs.
 
 ## Full suite
 
-FULLSUITE
+Full suite (`TEST_TIMEOUT=7200`): 36,986 checks, 36,984 passed. The two failures were frame
+budgets in rooms this pass does not touch (`tower/kettleforge` at 8.26 ms against 8 ms, and
+`evercrown/proving_scar` at 10.55 ms), while `tools/art/test_tilegen.py` (109 checks, all
+passed) ran beside the suite for its first eight minutes. Rerun alone, both tests pass
+(`test_every_room_loads_and_settles_inside_the_budget` and `test_every_foes_spoils_rest_in_its_room`,
+3 checks each).
 
 ## Rubric (design bible 15.3)
 
