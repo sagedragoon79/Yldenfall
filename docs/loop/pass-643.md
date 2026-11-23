@@ -71,7 +71,7 @@ more than a quarter of the width at 0.55 of the height (so an empty sky does not
 
 ## Full suite
 
-FULL_SUITE_RESULT
+Full suite (`TEST_TIMEOUT=7200`): 36,986 checks, all passed. `tools/art/test_tilegen.py` ran alone first: 110 checks, all passed.
 
 ## Rubric (design bible 15.3)
 
