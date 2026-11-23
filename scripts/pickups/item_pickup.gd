@@ -58,6 +58,8 @@ var _t := 0.0
 
 func _ready() -> void:
 	z_index = 1
+	# The near layers thin in front of a pickup (Backdrop.REVEAL_GROUPS, design bible 12.121).
+	add_to_group("pickup")
 	if kind in ABILITIES or kind in ["severance", "elven_helm"]:
 		add_to_group("light")
 

@@ -250,11 +250,11 @@ func test_fore_ground_band_stays_off_screen_at_any_camera_height() -> void:
 	var backdrop := Backdrop.new()
 	arena.add_child(backdrop)
 	backdrop.set_zone("haar")
-	var fore: Parallax2D = null
-	for layer: Parallax2D in backdrop.get_children():
-		if layer.z_index == Backdrop.FORE_Z and not layer.z_as_relative:
-			fore = layer
+	# The fringe, not the hanging frame that shares its z since pass 645 (12.121).
+	var fore: Parallax2D = backdrop._fore
+	var hang: Parallax2D = backdrop._hang
 	check(fore != null, "the haar backdrop has a foreground layer")
+	check(hang != null, "and a hanging frame")
 	if fore != null:
 		var sprite := fore.get_child(0) as Sprite2D
 		# The normal framing (zoom 2) and a wide room's (zoom 1.6), at the top of a
@@ -267,6 +267,10 @@ func test_fore_ground_band_stays_off_screen_at_any_camera_height() -> void:
 				var band_top := fore.global_position.y + sprite.position.y + Backdrop.FORE_GROUND
 				check_near(band_top - cam_top, view_height, 0.01,
 					"zoom %.1f, camera top %d: the ground band starts at the view's bottom edge" % [zoom, cam_top])
+				if hang != null:
+					var hang_top := hang.global_position.y + (hang.get_child(0) as Sprite2D).position.y
+					check_near(hang_top, cam_top, 0.01,
+						"zoom %.1f, camera top %d: the hanging frame starts at the view's top edge" % [zoom, cam_top])
 	vp.canvas_transform = before
 	backdrop.queue_free()
 
@@ -553,3 +557,95 @@ func test_a_sunlit_zones_woods_recede_into_light() -> void:
 		check(absf(behind - mid) > 0.08 or mid_sat - behind_sat > 0.15,
 			"%s: its body (value %.2f, saturation %.2f) is a step off the woods behind it (%.2f, %.2f)" % [id, mid, mid_sat, behind, behind_sat])
 		check(behind - body[0] > 0.25, "%s: and its outline is dark against them (%.2f)" % [id, body[0]])
+
+
+func _hang_rows(zone: String) -> Vector2i:
+	## The first and last rows (in world pixels) the zone's hanging art covers, or (-1, -1).
+	var img := (load(Backdrop.DIR + "%s_hang.png" % zone) as Texture2D).get_image()
+	var per_world := float(img.get_height()) / Backdrop.SIZE.y
+	var first := -1
+	var last := -1
+	for y in img.get_height():
+		for x in range(0, img.get_width(), 1):
+			if img.get_pixel(x, y).a > 0.05:
+				if first < 0:
+					first = y
+				last = y
+				break
+	if first < 0:
+		return Vector2i(-1, -1)
+	return Vector2i(int(first / per_world), int(ceil((last + 1) / per_world)))
+
+
+func test_the_hanging_frame_hangs_into_the_top_of_the_view() -> void:
+	# The grade of pass 640: no foreground layer frames the rooms. Every zone with a
+	# low fringe (12.11) also has a frame hanging from the view's top edge (12.121):
+	# it starts at the very top and drops no deeper than HANG_MAX_DROP.
+	for zone: String in Backdrop.ZONE_HAZE:
+		if not ResourceLoader.exists(Backdrop.DIR + "%s_fore.png" % zone):
+			continue
+		check(ResourceLoader.exists(Backdrop.DIR + "%s_hang.png" % zone), "%s: has a hanging frame" % zone)
+		if not ResourceLoader.exists(Backdrop.DIR + "%s_hang.png" % zone):
+			continue
+		var rows := _hang_rows(zone)
+		check(rows.x == 0, "%s: the frame hangs from the very top edge (first row %d)" % [zone, rows.x])
+		check(rows.y > 20 and rows.y <= int(Backdrop.HANG_MAX_DROP),
+			"%s: it drops %d px, more than a sliver and no more than HANG_MAX_DROP" % [zone, rows.y])
+
+
+func test_the_hanging_frame_is_locked_to_the_top_and_near() -> void:
+	# Seated on the view's top edge at any camera height (scroll y 0), sliding past
+	# faster than the camera but not with the fringe, in front of everything, and
+	# darker than the fringe (a frame washed into the fog read as pale ghosts).
+	var hl := Backdrop.hang_layer("boughs")
+	check(hl != null, "the boughs build a hanging frame")
+	if hl == null:
+		return
+	check(hl.scroll_scale.is_equal_approx(Backdrop.HANG_SCROLL), "it carries the frame's scroll")
+	check(Backdrop.HANG_SCROLL.y == 0.0, "locked to the camera vertically")
+	check(Backdrop.HANG_SCROLL.x > 1.0 and not is_equal_approx(Backdrop.HANG_SCROLL.x, Backdrop.FORE_SCROLL.x),
+		"near, and shearing against the fringe")
+	check(not hl.z_as_relative and hl.z_index == Backdrop.FORE_Z, "drawn in front at the foreground z")
+	var sprite := hl.get_child(0) as Sprite2D
+	check(sprite.position == Vector2.ZERO and not sprite.centered, "its top row is the view's top edge")
+	var mat := sprite.material as ShaderMaterial
+	check(mat != null and mat.shader == Backdrop.FORE_SHADER, "it thins in front of actors like the fringe")
+	check_near(float(mat.get_shader_parameter("tint")), Backdrop.HANG_TINT, 0.0001, "it leans toward the fog by HANG_TINT")
+	check(Backdrop.HANG_TINT < Backdrop.FORE_TINT, "less than the fringe, so it stays dark")
+	hl.free()
+	check(Backdrop.hang_layer("gym") == null, "a zone with no art gets no frame")
+
+
+func test_the_hanging_frame_thins_over_a_hazard_in_view() -> void:
+	# The frame covers the top of the view, where ceiling spikes and pickups sit; a
+	# hazard in view opens a hole in it as a foe does (REVEAL_GROUPS).
+	var vp := arena.get_viewport()
+	var before := vp.canvas_transform
+	var backdrop := Backdrop.new()
+	arena.add_child(backdrop)
+	backdrop.set_zone("tower")
+	check(backdrop._hang != null, "the tower's backdrop has its frame")
+	var spike := Node2D.new()
+	spike.add_to_group("hazard")
+	arena.add_child(spike)
+	spike.position = Vector2(200.0, 230.0)
+	vp.canvas_transform = Transform2D(0.0, Vector2(2, 2), 0.0, Vector2(0.0, -200.0) * 2.0)  # view y 200..380
+	var sprite := backdrop._hang.get_child(0) as Sprite2D
+	var mat := sprite.material as ShaderMaterial
+	spike.visible = false
+	backdrop._process(0.0)
+	var baseline := int(mat.get_shader_parameter("hole_count"))
+	spike.visible = true
+	backdrop._process(0.0)
+	check(int(mat.get_shader_parameter("hole_count")) == mini(baseline + 1, Backdrop.MAX_HOLES), "the spike opens a hole")
+	var holes: Array[Vector4] = []
+	for h: Vector4 in mat.get_shader_parameter("holes"):
+		holes.append(h)
+	holes.resize(int(mat.get_shader_parameter("hole_count")))
+	var uv := (spike.global_position + Vector2(0, -24) - sprite.global_position) / Backdrop.SIZE
+	check_near(Backdrop.reveal_mask(uv, holes), 1.0, 0.001, "the frame is thinned over it")
+	for g: String in ["hazard", "enemy_projectile", "interactable", "pickup"]:
+		check(g in Backdrop.REVEAL_GROUPS, "%s joins the groups the near layers thin for" % g)
+	vp.canvas_transform = before
+	backdrop.queue_free()
+	spike.queue_free()

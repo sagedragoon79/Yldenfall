@@ -3113,7 +3113,32 @@ No mid column now runs more than `MID_RUN_MAX` (0.7 of the layer's height, in `t
 
 Judged by eye at 1x and 2x in `tower/foot` and `vorrhallow/alpha_den`. `test_no_mid_column_runs_the_height_of_the_room` (`tools/art/test_tilegen.py`) holds it.
 
-- **Not done here.** No foreground layer frames the rooms.
+- **Not done here.** No foreground layer frames the rooms (done in pass 645, 12.121).
+
+### 12.121 A frame hangs into the top of the view (pass 645)
+
+The independent grade of pass 640: no foreground layer frames the rooms. The low fringe (12.11, 12.29) only edges the bottom of the view, and in a dark zone it fades into the ground. Hollow Knight and Blasphemous frame their play fields from above as well: near, dark shapes hanging into the top of the screen.
+
+`tools/art/tilegen.py` (`hanging`, `HANG_KIND`) paints one `<zone>_hang.png` per zone that has a fringe: the zone's own material hanging from the view's top edge, in clusters with air between them.
+
+- **Heartwood:** root tangles, thick roots hanging out of a knotted clump, some forked.
+- **The High Boughs:** leaf clumps with vines, the leaves alternating down each vine.
+- **The Haar and the Sunken Spring:** moss beards, many thin ragged strands, longest in the middle.
+- **The Evercrown and Vorrhallow:** a rock lip with crystal stalactites.
+- **The Tower and the Trials:** a broken stone lintel, chipped at both ends, with a chain or two and a hook.
+- **Hearthroot and the Spires:** a rafter's end slanting out of the top edge, with frayed ropes.
+
+Every clump's underside is ragged (a smoothed random walk with short tips hanging off it), not a clean scallop.
+
+`Backdrop.hang_layer(zone)` builds it as a `Parallax2D` like the fringe, with these differences:
+
+- **Seated on the top edge.** Locked to the camera vertically (`HANG_SCROLL.y` = 0), its top row on the view's top edge at any camera height and framing.
+- **Shearing against the fringe.** It slides at `HANG_SCROLL.x` = 1.3, a little slower than the fringe's 1.5, so the two near layers move against each other.
+- **Darker than the fringe.** It leans toward the zone's fog by `HANG_TINT` (0.2), not `FORE_TINT` (0.55), and is more solid (mass alpha 224, strands 200). At the fringe's tint the Haar's blue-grey fog turned the frame into pale ghosts over the darker room.
+- **No band.** Nothing reaches deeper than `HANG_MAX_DROP` (60 world px, a sixth of the view), at most `HANG_MAX_COVER` (half) of the top row is covered, and somewhere a run of 80 px is clear. Nothing runs the width, so Sean's note on the dark band across the top of the screen (12.25) stays answered.
+- **It gives way.** It carries the reveal shader (12.26) and thins in front of actors. Because it covers the top of the view, where ceiling spikes, enemy shots, chests and pickups sit, `REVEAL_GROUPS` now also holds `hazard`, `enemy_projectile`, `interactable` and `pickup` (an `ItemPickup` joins `pickup`), for both near layers.
+
+Judged by eye at 1x and 2x in `haar/marsh_road`, `boughs/canopy_bridge`, `heartwood/grub_burrows`, `evercrown/veins`, `tower/foot`, `spires/sky_steps` and `hearthroot/plaza`. It reads most in the lit zones (the Boughs' leaf clumps, the Haar's moss); in the darkest rooms (the Tower, the Spires at night) it is a quiet dark edge. `test_the_hanging_frame_frames_the_top_without_a_band` (`tools/art/test_tilegen.py`) holds the art; `test_the_hanging_frame_hangs_into_the_top_of_the_view`, `test_the_hanging_frame_is_locked_to_the_top_and_near`, `test_the_hanging_frame_thins_over_a_hazard_in_view` and the top-edge checks in `test_fore_ground_band_stays_off_screen_at_any_camera_height` (`tests/test_backdrop.gd`) hold the layer.
 
 ## 13. Asset Production Plan
 
