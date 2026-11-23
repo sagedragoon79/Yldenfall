@@ -37,14 +37,38 @@ enum Tone { EDGE, BODY, CORE }
 ## falling drops.
 const TEAR := 26.0
 ## The mist where it lands: stepped bands (half width, height), each one a flat
-## tint, never a gradient.
-const MIST: Array[Vector2] = [Vector2(24, 5), Vector2(17, 10), Vector2(11, 16)]
-const MIST_ALPHA := 0.1
+## tint, never a gradient. Pass 640 (bible 12.116): it climbs a third of the way
+## up the fall and spreads wider than the foam, so it reads at 1x.
+const MIST: Array[Vector2] = [Vector2(34, 6), Vector2(27, 13), Vector2(21, 22), Vector2(15, 33), Vector2(10, 46)]
+const MIST_ALPHA := 0.07
+## Puffs of spray that break off the mist and drift up and out: how many, how
+## high they rise before they are gone, and the alpha they start at.
+const PUFFS := 6
+const PUFF_RISE := 54.0
+const PUFF_ALPHA := 0.16
 ## Rings run out along the surface from the foot: how far, and how many a side.
 const RING_REACH := 44.0
 const RINGS := 3
 ## The plunge under the surface: how deep the bubbles are driven.
-const PLUNGE := 30.0
+const PLUNGE := 40.0
+## The aerated water the fall drives under the surface (pass 640): rounded bands
+## (half width, depth), each a flat tint of PLUME_ALPHA laid over the last, so
+## the cone is palest at its heart and steps out and down to nothing.
+const PLUME: Array[Vector2] = [Vector2(16, 7), Vector2(12, 16), Vector2(8, 27), Vector2(5, 38)]
+const PLUME_ALPHA := 0.13
+const BUBBLES := 18
+## The boil where it lands: lumps of white water across CROWN_HALF px either
+## side of the middle, the tallest CROWN_HIGH px over the surface.
+const CROWN_LUMPS := 9
+const CROWN_HALF := 21.0
+const CROWN_HIGH := 12.0
+## Spray thrown up out of the boil in arcs: how many drops, how high and how far.
+const SPRAY := 14
+const SPRAY_HIGH := 24.0
+const SPRAY_OUT := 30.0
+## Foam lace drifting off the boil along the surface: flecks a side, and how far.
+const LACE := 9
+const LACE_REACH := 64.0
 
 ## The pour's loop and how far it carries: LOUD dB over the sound volume where
 ## the water lands, falling FADE dB across HEAR pixels, and silent past it.
@@ -256,24 +280,83 @@ func _draw_sheet() -> void:
 				sy += s.x
 
 
-## Where it lands: the plunge under the surface, mist, foam, spray and rings.
+## Lump `i` of the boil at time `at`: x is its left edge (px from the middle),
+## y its width and z its height over the surface. The middle lumps stand
+## tallest; every lump heaves on its own beat.
+static func crown(i: int, at: float) -> Vector3:
+	var span := CROWN_HALF * 2.0 / float(CROWN_LUMPS)
+	var w := ceilf(span) + 2.0
+	var x := -CROWN_HALF + float(i) * span - 1.0 + roundf(sin(at * 5.0 + i * 1.3))
+	var mid := 1.0 - absf((float(i) + 0.5) / float(CROWN_LUMPS) * 2.0 - 1.0)
+	var heave := 0.7 + 0.3 * sin(at * (7.0 + float(i % 3)) + _hash(i, 97) * TAU)
+	return Vector3(roundf(x), w, maxf(2.0, roundf(CROWN_HIGH * (0.25 + 0.75 * mid) * heave)))
+
+
+## Drop `i` of the spray at time `at`: x and y from the foot (y up is negative),
+## z its alpha. Each is thrown out of the boil, rises and falls back on an arc.
+static func spray_drop(i: int, at: float) -> Vector3:
+	var rate := 1.1 + 0.25 * float(i % 4)
+	var phase := fmod(at * rate + _hash(i, 98), 1.0)
+	var side := -1.0 if i % 2 == 0 else 1.0
+	var out := SPRAY_OUT * (0.35 + 0.65 * _hash(i, 99))
+	var high := SPRAY_HIGH * (0.4 + 0.6 * _hash(i, 100))
+	var x := side * (4.0 + phase * out)
+	var y := -2.0 - 4.0 * high * phase * (1.0 - phase)
+	return Vector3(roundf(x), roundf(y), 1.0 - phase * phase)
+
+
+## Fleck `i` of the lace on one side at time `at`: x is how far out it has
+## drifted (px), y its width, z its alpha. It drifts out, breaks up and fades.
+static func lace(i: int, at: float) -> Vector3:
+	var phase := fmod(at * 0.22 + float(i) / float(LACE), 1.0)
+	var x := CROWN_HALF * 0.6 + phase * (LACE_REACH - CROWN_HALF * 0.6)
+	var w := maxf(1.0, roundf(5.0 - phase * 4.0 + _hash(i, 101) * 2.0))
+	return Vector3(roundf(x), w, 0.9 * (1.0 - phase))
+
+
+## Puff `i` of the mist at time `at`: x, y from the foot (y up is negative), z its
+## size and w its alpha. It breaks off the mist, drifts up and out and thins.
+static func puff(i: int, at: float) -> Vector4:
+	var phase := fmod(at * 0.35 + float(i) / float(PUFFS), 1.0)
+	var side := -1.0 if i % 2 == 0 else 1.0
+	var x := side * (6.0 + phase * (14.0 + 8.0 * _hash(i, 102))) + sin(at * 1.1 + i) * 2.0
+	var y := -6.0 - phase * PUFF_RISE
+	return Vector4(roundf(x), roundf(y), roundf(5.0 + phase * 7.0), PUFF_ALPHA * (1.0 - phase))
+
+
+## A rounded block of one flat tint: a rect with its four corners cut.
+func _blob(x: float, y: float, w: float, h: float, c: Color) -> void:
+	if w < 3.0 or h < 3.0:
+		_px(x, y, w, h, c)
+		return
+	_px(x + 1.0, y, w - 2.0, 1.0, c)
+	_px(x, y + 1.0, w, h - 2.0, c)
+	_px(x + 1.0, y + h - 1.0, w - 2.0, 1.0, c)
+
+
+## Where it lands: the plunge under the surface, the mist and its puffs, the
+## boil, spray, foam lace and rings (design bible 12.55 and 12.116).
 func _draw_foot() -> void:
-	# The plunge: a pale shaft driven under the surface, and bubbles in it.
-	_px(-6, FALL, 12, 6, Color(FOAM, 0.35))
-	_px(-4, FALL + 6, 8, 8, Color(FOAM, 0.2))
-	_px(-2, FALL + 14, 4, 8, Color(FOAM, 0.1))
-	for i in 9:
-		var phase := fmod(t * (0.7 + 0.1 * (i % 3)) + _hash(i, 94), 1.0)
+	# The plunge: aerated water driven under the surface in flat steps, and
+	# bubbles carried down in it and out of it.
+	for band: Vector2 in PLUME:
+		_blob(-band.x, FALL, band.x * 2.0, band.y, Color(FOAM, PLUME_ALPHA))
+	for i in BUBBLES:
+		var phase := fmod(t * (0.6 + 0.1 * (i % 4)) + _hash(i, 94), 1.0)
 		# Driven down fast, then wandering back up and out.
-		var depth := sin(phase * PI) * PLUNGE * (0.5 + 0.5 * _hash(i, 95))
-		var bx := (_hash(i, 96) - 0.5) * 12.0 + (phase - 0.5) * (18.0 if i % 2 == 0 else -18.0)
+		var depth := sin(phase * PI) * PLUNGE * (0.45 + 0.55 * _hash(i, 95))
+		var bx := (_hash(i, 96) - 0.5) * 16.0 + (phase - 0.5) * (26.0 if i % 2 == 0 else -26.0)
 		var size := 2.0 if i % 3 == 0 else 1.0
-		_px(bx, FALL + 2.0 + depth, size, size, Color(FOAM, 0.75 - 0.4 * phase))
-	# Mist: stepped bands of one flat tint, swaying a little.
+		_px(bx, FALL + 2.0 + depth, size, size, Color(FOAM, 0.8 - 0.45 * phase))
+	# Mist: stepped bands of one flat tint, rounded, swaying a little.
 	for i in MIST.size():
 		var m := MIST[i]
 		var sway := roundf(sin(t * 1.3 + i * 1.7) * 2.0)
-		_px(-m.x + sway, FALL - m.y, m.x * 2.0, m.y, Color(FOAM, MIST_ALPHA))
+		_blob(-m.x + sway, FALL - m.y, m.x * 2.0, m.y + 1.0, Color(FOAM, MIST_ALPHA))
+	# Puffs breaking off it.
+	for i in PUFFS:
+		var p := puff(i, t)
+		_blob(p.x - p.z * 0.5, FALL + p.y - p.z * 0.5, p.z, p.z * 0.75, Color(FOAM, p.w))
 	# Rings running out along the surface on both sides.
 	for i in RINGS:
 		var r := ring(i, t)
@@ -281,17 +364,25 @@ func _draw_foot() -> void:
 			var rx := side * r.x - (r.y if side < 0.0 else 0.0)
 			_px(rx, FALL, r.y, 1, Color(WATER_LIGHT, r.z))
 			_px(rx + side, FALL + 1.0, r.y * 0.5, 1, Color(WATER_DEEP, r.z * 0.6))
-	# Foam where it lands, churning.
-	for i in 7:
-		var fx := -17.0 + i * 5.0 + sin(t * 6.0 + i) * 1.5
-		var fh := 2.0 + 3.0 * (0.5 + 0.5 * sin(t * 9.0 + i * 1.9)) * (1.0 - absf(i - 3.0) / 5.0)
-		_px(fx, FALL - fh, 5, fh + 1, FOAM)
-		_px(fx + 1, FALL - fh + 1, 2, 1, WATER_LIGHT)
-	# Spray thrown off either side.
-	for i in 6:
-		var phase := fmod(t * 1.6 + i * 0.17, 1.0)
-		var side := -1.0 if i % 2 == 0 else 1.0
-		var px := side * (7.0 + phase * (12.0 + 3.0 * (i % 3)))
-		var py := FALL - 4.0 - sin(phase * PI) * (9.0 + 3.0 * (i % 3))
-		var size := 2.0 if i < 2 else 1.0
-		_px(px, py, size, size, Color(FOAM, 1.0 - phase))
+	# Foam lace drifting off the boil, breaking up as it goes.
+	for i in LACE:
+		var l := lace(i, t)
+		for side: float in [-1.0, 1.0]:
+			var lx := side * l.x - (l.y if side < 0.0 else 0.0)
+			_px(lx, FALL - 1.0, l.y, 1, Color(FOAM, l.z))
+			_px(lx + side, FALL, maxf(1.0, l.y - 1.0), 1, Color(WATER_LIGHT, l.z * 0.7))
+	# The boil: heaving lumps of white water, shaded under, lit on top.
+	_px(-CROWN_HALF - 2.0, FALL - 1.0, CROWN_HALF * 2.0 + 4.0, 3, Color(WATER_LIGHT, 0.9))
+	for i in CROWN_LUMPS:
+		var c := crown(i, t)
+		var y := FALL - c.z
+		_blob(c.x, y, c.y, c.z + 2.0, WATER_LIGHT)
+		_blob(c.x, y, c.y - 1.0, c.z, FOAM)
+		_px(c.x + 1.0, y + c.z, c.y - 2.0, 1, WATER_DARK.lerp(WATER_LIGHT, 0.5))
+	# Spray thrown up out of it on arcs, a few drops trailing a pixel.
+	for i in SPRAY:
+		var d := spray_drop(i, t)
+		var size := 2.0 if i < 4 else 1.0
+		_px(d.x, FALL + d.y - size, size, size, Color(FOAM, d.z))
+		if i < 4:
+			_px(d.x, FALL + d.y - size - 1.0, 1, 1, Color(WATER_LIGHT, d.z * 0.6))

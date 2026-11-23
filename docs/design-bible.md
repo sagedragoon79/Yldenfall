@@ -3041,6 +3041,24 @@ Judged by eye at 1x and 3x in the flooded hall, the hero and a Crystal Dwarf wad
 
 - **Not done here.** The deep swim water (the Sunken Spring, the aqueduct) has no mirror yet; the aqueduct's flat water and its waterfall are next.
 
+### 12.116 The fall breaks where it lands, and the deep water mirrors the room (pass 640)
+
+The pass 635 grade: "the aqueduct's water is a flat teal gradient; the waterfall has no splash or mist". The fall's foot (12.55) had all its parts, and none of them read at 1x: a foam strip two or three pixels high, three mist bands at 0.1 that stopped 16 px up, six specks of spray, and a plunge of three pale boxes. The deep water (`SwimWater`, 12.39 and 12.97) showed nothing of what stood over it.
+
+**The foot of the fall** (`AqueductSpill`), every part still a flat tint in whole pixels:
+
+- **A boil.** `CROWN_LUMPS` (9) rounded lumps of white water across `CROWN_HALF` (21) px either side, over a pale band on the surface, each shaded at its foot and heaving on its own beat (`crown`). The middle lumps stand tallest, up to `CROWN_HIGH` (12) px; the outer ones a quarter of that.
+- **Spray thrown on arcs.** `SPRAY` (14) drops leap out of the boil, up to `SPRAY_HIGH` (24) px and `SPRAY_OUT` (30) px out on both sides, and fall back to it (`spray_drop`); the four big drops trail a pixel.
+- **Mist that climbs the fall.** Five rounded bands (`MIST`) at `MIST_ALPHA` 0.07, from 68 px wide and 6 px high to 20 px wide and 46 px high, so it stands a third of the way up the sheet and is thickest at the foot. Puffs break off it (`PUFFS`, `puff`), swell, drift up and out for `PUFF_RISE` (54) px and thin to nothing.
+- **Foam lace** (`lace`) drifts off the boil along the surface on both sides to `LACE_REACH` (64) px, past the rings, breaking up and fading as it goes.
+- **A cone of white water under the surface.** Four rounded bands (`PLUME`) of `PLUME_ALPHA` 0.13 laid over each other, each narrower and deeper than the last, to 38 px down, palest at the heart; 18 bubbles are driven to its tip (`PLUNGE` 40) and wander back up and out.
+
+**A mirror in the deep water.** `SwimWater` lays the still tide's mirror (`Tide.REFLECT_SHADER`, 12.115) over each run of its surface cells (`surface_runs`), from 2 px under the line to the floor of the surface row, at `REFLECT_ALPHA` 0.45 and tinted to the water. A run is lit or under a roof all along (12.97's `shaded`), and under a roof the mirror is half as strong (`REFLECT_SHADE`). It is drawn behind the water's own front, so the crest, its sheen and the caustics stay on top. The fall, the hero and the arches stand in the water now as well as over it.
+
+The fall is still scenery and its sound is unchanged. Judged by eye at 1x and 3x in `sunken/drowned_aqueduct`, before and after. `tests/test_aqueduct_fall.gd` (the boil, the spray, the lace and mist, the plunge) and `test_the_deep_water_mirrors_what_stands_over_it` (`tests/test_water_edge.gd`) hold it.
+
+- **Not done here.** The deep water below the surface row is still the dithered depth (12.39) with caustics and bubbles; light shafts through it are left for a later pass.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

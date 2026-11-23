@@ -181,3 +181,42 @@ func test_standing_water_meets_the_stone_too() -> void:
 	check(ok, "each is a surface cell with square stone beside it")
 	check(tide.sunk.size() >= tide.banks.size() * WaterEdge.SUNK_STEPS.size(), "and the stone in it is darkened (%d bands)" % tide.sunk.size())
 	check(Tide.LAP_PACE < 1.0 and Tide.LAP_ALPHA < 1.0, "still water laps slower and fainter than deep water")
+
+
+## Pass 640 (design bible 12.116): the deep water mirrors what stands over it.
+func test_the_deep_water_mirrors_what_stands_over_it() -> void:
+	var room := make_room(ROWS)
+	var water := _water(room)
+	if not check(water != null, "the room has its water"):
+		return
+	await frames(2)
+	var runs := water.surface_runs()
+	check(runs.size() == 4, "four runs: west of the pier, east of it, under the slab and past it (%d)" % runs.size())
+	check(water.reflections.size() == runs.size(), "one mirror to each run (%d of %d)" % [water.reflections.size(), runs.size()])
+	var covered := 0
+	var lit_alpha := -1.0
+	var dim_alpha := -1.0
+	for i in mini(runs.size(), water.reflections.size()):
+		var run: Array = runs[i]
+		var r: ColorRect = water.reflections[i]
+		var y := int(run[0]) * Room.TILE
+		check(r.position.x == int(run[1]) * Room.TILE and r.size.x == (int(run[2]) - int(run[1]) + 1) * Room.TILE, "a mirror spans its run exactly")
+		check(r.position.y == y + Tide.REFLECT_FROM and r.position.y + r.size.y == y + Room.TILE, "under the surface line, down to the row's floor")
+		check(r.show_behind_parent, "drawn under the crest, its sheen and the caustics")
+		covered += int(run[2]) - int(run[1]) + 1
+		var mat := r.material as ShaderMaterial
+		check(mat != null and mat.shader.code == Tide.REFLECT_SHADER, "the still tide's mirror")
+		var a := float(mat.get_shader_parameter("alpha"))
+		if bool(run[3]):
+			dim_alpha = a
+		else:
+			lit_alpha = a
+		for c in range(int(run[1]), int(run[2]) + 1):
+			check(water.shaded.has(Vector2i(c, int(run[0]))) == bool(run[3]), "a run is lit or shaded all along")
+	check(covered == water.surface_cells().size(), "the mirrors cover every surface cell once (%d of %d)" % [covered, water.surface_cells().size()])
+	check(is_equal_approx(lit_alpha, SwimWater.REFLECT_ALPHA) and lit_alpha < 0.75, "under open air at the mirror's strength, and dim enough to stay water")
+	check(dim_alpha > 0.0 and dim_alpha < lit_alpha, "dimmer under a roof (%.2f, %.2f)" % [dim_alpha, lit_alpha])
+	var t0 := float((water.reflections[0].material as ShaderMaterial).get_shader_parameter("time"))
+	await frames(4)
+	var t1 := float((water.reflections[0].material as ShaderMaterial).get_shader_parameter("time"))
+	check(t1 > t0, "its sway runs on the water's clock")

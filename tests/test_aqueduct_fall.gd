@@ -166,3 +166,91 @@ func test_the_sunken_ashlar_is_mossed_where_it_has_variants() -> void:
 			faces[at] = true
 	check(faces.size() == 2, "the room lays both mossed face variants (%d)" % faces.size())
 	w.free()
+
+
+## Pass 640 (design bible 12.116): the pass 635 grade said "the waterfall has no
+## splash or mist". The foot now boils, throws spray, sheds lace and puffs, and
+## drives a cone of white water under the surface.
+func test_the_fall_boils_where_it_lands() -> void:
+	var tallest := 0.0
+	var mid_taller := true
+	var heaves := false
+	var covers := true
+	for at: float in [0.0, 0.3, 0.7, 1.1, 1.6]:
+		var hs: Array[float] = []
+		var left := INF
+		var right := -INF
+		for i in AqueductSpill.CROWN_LUMPS:
+			var c := AqueductSpill.crown(i, at)
+			hs.append(c.z)
+			left = minf(left, c.x)
+			right = maxf(right, c.x + c.y)
+			tallest = maxf(tallest, c.z)
+			if absf(c.z - AqueductSpill.crown(i, at + 0.2).z) >= 2.0:
+				heaves = true
+		@warning_ignore("integer_division")
+		var m := AqueductSpill.CROWN_LUMPS / 2
+		mid_taller = mid_taller and hs[m] >= hs[0] and hs[m] >= hs[-1]
+		covers = covers and left <= -AqueductSpill.CROWN_HALF and right >= AqueductSpill.CROWN_HALF - 1.0
+	check(covers, "the boil spans the foot from side to side, unbroken")
+	check(AqueductSpill.CROWN_HALF >= AqueductSpill.half_width(AqueductSpill.FALL) * 3.0, "and is far wider than the sheet")
+	check(mid_taller, "it stands tallest in the middle")
+	check(tallest >= 8.0 and tallest <= AqueductSpill.CROWN_HIGH, "a mound you see at 1x (%.0f px)" % tallest)
+	check(heaves, "every lump heaves")
+
+
+func test_spray_is_thrown_up_and_falls_back() -> void:
+	var high := 0.0
+	var wide := 0.0
+	var sides := {}
+	var back := true
+	for i in AqueductSpill.SPRAY:
+		var at := 0.0
+		var lowest := INF
+		while at < 3.0:
+			var d := AqueductSpill.spray_drop(i, at)
+			high = maxf(high, -d.y)
+			wide = maxf(wide, absf(d.x))
+			sides[signf(d.x)] = true
+			check(d.y <= 0.0 and d.z >= 0.0 and d.z <= 1.0, "a drop never sinks under the surface (%d at %.2f)" % [i, at])
+			lowest = minf(lowest, -d.y)
+			at += 0.04
+		back = back and lowest <= 3.0
+	check(high >= 18.0 and high <= AqueductSpill.SPRAY_HIGH + 2.0, "spray leaps well above the boil (%.0f px)" % high)
+	check(wide >= 20.0, "and lands well out from it (%.0f px)" % wide)
+	check(sides.has(-1.0) and sides.has(1.0), "on both sides")
+	check(back, "every drop comes back down to the boil")
+
+
+func test_lace_drifts_off_and_mist_climbs_the_fall() -> void:
+	var a := AqueductSpill.lace(0, 0.1)
+	var b := AqueductSpill.lace(0, 3.5)
+	check(b.x > a.x and b.z < a.z, "lace drifts out along the surface and fades (%.0f to %.0f)" % [a.x, b.x])
+	var far := 0.0
+	var at := 0.0
+	while at < 6.0:
+		far = maxf(far, AqueductSpill.lace(0, at).x)
+		at += 0.1
+	check(far >= AqueductSpill.RING_REACH, "past the rings (%.0f px)" % far)
+	check(AqueductSpill.lace(0, 0.0).x >= AqueductSpill.half_width(AqueductSpill.FALL), "and starts outside the sheet")
+	# The mist climbs a third of the way up the fall and spreads wider than the boil.
+	check(AqueductSpill.MIST[-1].y >= AqueductSpill.FALL / 3.0, "the mist climbs a third of the fall (%.0f px)" % AqueductSpill.MIST[-1].y)
+	check(AqueductSpill.MIST[0].x > AqueductSpill.CROWN_HALF, "and spreads wider than the boil")
+	# Puffs break off it, rise and thin.
+	var p0 := AqueductSpill.puff(1, 0.0)
+	var p1 := AqueductSpill.puff(1, 1.5)
+	check(p1.y < p0.y - 20.0 and p1.w < p0.w and p1.z > p0.z, "a puff drifts up, swells and thins")
+	check(AqueductSpill.PUFF_ALPHA <= 0.2, "a puff never hides what is behind it")
+
+
+func test_the_plunge_is_a_cone_of_white_water() -> void:
+	var p := AqueductSpill.PLUME
+	check(p.size() >= 3, "the plunge has three bands or more")
+	var cone := true
+	for i in range(1, p.size()):
+		cone = cone and p[i].x < p[i - 1].x and p[i].y > p[i - 1].y
+	check(cone, "each band is narrower and deeper than the last: a cone, palest at its heart")
+	check(p[-1].y >= 30.0, "driven well under the surface (%.0f px)" % p[-1].y)
+	check(p[0].x > AqueductSpill.half_width(AqueductSpill.FALL), "wider than the sheet where it goes in")
+	check(AqueductSpill.PLUME_ALPHA * p.size() <= 0.6, "the water behind it still shows")
+	check(AqueductSpill.PLUNGE >= p[-1].y, "the bubbles are driven to the cone's tip")

@@ -53,6 +53,12 @@ const ROOF_REACH := 3
 const SUNK_TONE := Color(0.05, 0.2, 0.27)
 ## Speed (px/s) a body must hit the surface at to throw spray.
 const SPLASH_SPEED := 140.0
+## The deep water mirrors what stands over it, as the still tide does (pass 640,
+## design bible 12.116; `Tide.REFLECT_SHADER`). Its alpha just under the line;
+## it fades to nothing at the floor of the surface row. Under a roof the mirror
+## is dimmer (there is less light above to show), by REFLECT_SHADE.
+const REFLECT_ALPHA := 0.45
+const REFLECT_SHADE := 0.5
 
 ## The water's cells (tiles) -> true.
 var cells := {}
@@ -85,6 +91,8 @@ var _body: Node2D
 var _surface: Array[Rect2] = []
 var _was_in := false
 var _splashes: Array[Vector3] = []   # x, y, age
+## The mirror laid over each run of surface cells (see `Tide.REFLECT_SHADER`).
+var reflections: Array[ColorRect] = []
 
 
 func _ready() -> void:
@@ -102,6 +110,51 @@ func _ready() -> void:
 	edge.name = "Stone"
 	edge.draw.connect(_draw_stone.bind(edge))
 	add_child(edge)
+	_lay_reflections()
+
+
+## The runs of surface cells, row by row: each [row, first column, last column,
+## shaded] (tiles). A run breaks where the cells stop or where the roof starts
+## or ends, so a run is lit or shaded all along.
+func surface_runs() -> Array:
+	var top: Array = surface_cells()
+	top.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y or (a.y == b.y and a.x < b.x))
+	var out: Array = []
+	for c: Vector2i in top:
+		var dim := shaded.has(c)
+		if out.is_empty() or int(out[-1][0]) != c.y or int(out[-1][2]) != c.x - 1 or bool(out[-1][3]) != dim:
+			out.append([c.y, c.x, c.x, dim])
+		else:
+			out[-1][2] = c.x
+	return out
+
+
+func _lay_reflections() -> void:
+	for r in reflections:
+		r.queue_free()
+	reflections.clear()
+	var shader := Shader.new()
+	shader.code = Tide.REFLECT_SHADER
+	for run: Array in surface_runs():
+		var rect := ColorRect.new()
+		rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# Drawn before this node's own front: the crest, its sheen and the caustics stay on top.
+		rect.show_behind_parent = true
+		rect.position = Vector2(int(run[1]) * Room.TILE, int(run[0]) * Room.TILE + Tide.REFLECT_FROM)
+		rect.size = Vector2((int(run[2]) - int(run[1]) + 1) * Room.TILE, Room.TILE - Tide.REFLECT_FROM)
+		var mat := ShaderMaterial.new()
+		mat.shader = shader
+		mat.set_shader_parameter("top", float(Tide.REFLECT_FROM))
+		mat.set_shader_parameter("depth", rect.size.y)
+		mat.set_shader_parameter("alpha", REFLECT_ALPHA * (REFLECT_SHADE if bool(run[3]) else 1.0))
+		mat.set_shader_parameter("tint", WATER)
+		mat.set_shader_parameter("tint_mix", Tide.REFLECT_MIX)
+		mat.set_shader_parameter("still", float(Tide.REFLECT_STILL))
+		mat.set_shader_parameter("sway", Tide.REFLECT_SWAY)
+		mat.set_shader_parameter("pace", Tide.REFLECT_PACE)
+		rect.material = mat
+		add_child(rect)
+		reflections.append(rect)
 
 
 ## The crest's lift (px, negative is up) at `x` (px) and time `t`: two swells
@@ -272,6 +325,8 @@ func _physics_process(delta: float) -> void:
 		_splashes[i].z += delta
 		if _splashes[i].z > 0.6:
 			_splashes.remove_at(i)
+	for r in reflections:
+		(r.material as ShaderMaterial).set_shader_parameter("time", _t)
 	queue_redraw()
 
 
