@@ -2256,29 +2256,99 @@ def tower_far():
     return img
 
 
+# The mid columns break (design bible 12.120, pass 644). After the far columns broke
+# (12.119), the mid layers' columns still ran the room's height: the Tower's five
+# girders from roof to floor, and Vorrhallow's colonnade from high in the hall to the
+# water. Now the Tower's trusses hang to their own depths and its posts rise to beams,
+# and Vorrhallow's columns are broken off lower, each across its own fracture.
+MID_RUN_MAX = 0.7  # the longest a mid column may run, as a share of the layer's height
+
+
+def _hanging_truss(img, cx, length, seed):
+    """A lattice truss hanging from the roof at `cx`: two chords with a zigzag web
+    between them, `length` rows long, ending in a bracket plate, a pulley block and
+    a short hook."""
+    w = 14 * D
+    x0 = cx - w // 2
+    panel = w + 2 * D
+    for y in range(length):
+        for dx in (0, 1, 2, 3):
+            put(img, x0 + dx, y, c("night-0" if dx == 0 else ("stone-1" if dx < 3 else "night-1")))
+            put(img, x0 + w - 1 - dx, y, c("night-0" if dx == 0 else "night-1"))
+        # The web: one diagonal a panel, alternating its lean, and a strut at each joint.
+        k, t = divmod(y + int(hash2(seed, 5, 9) * panel), panel)
+        u = t / panel if k % 2 == 0 else 1 - t / panel
+        wx = x0 + 4 + int(u * (w - 10))
+        for dx in range(2 * D):
+            put(img, wx + dx, y, c("night-1" if dx else "stone-1"))
+        if t < D:
+            for dx in range(4, w - 4):
+                put(img, x0 + dx, y, c("night-1"))
+    # The bracket plate, the pulley block's wheel and a hook.
+    for y in range(length, length + 4 * D):
+        for dx in range(-2 * D, w + 2 * D):
+            put(img, x0 + dx, y, c("stone-2" if y == length else ("night-0" if y >= length + 3 * D else "night-1")))
+    wy = length + 10 * D
+    for y in range(wy - 6 * D, wy + 6 * D):
+        for x in range(cx - 6 * D, cx + 6 * D):
+            r = math.hypot(x - cx + 0.5, y - wy + 0.5)
+            if r < 6 * D:
+                col = "night-0" if r > 5 * D or r < 1.5 * D else ("stone-1" if x < cx and y < wy else "night-1")
+                put(img, x, y, c(col))
+    for y in range(wy + 6 * D, wy + 10 * D):
+        put(img, cx, y, c("stone-2"))
+        put(img, cx + 1, y, c("stone-1"))
+    for dx in range(-2 * D, D):
+        put(img, cx + dx, wy + 10 * D, c("stone-2"))
+    put(img, cx - 2 * D, wy + 10 * D - 1, c("stone-2"))
+
+
+def _rising_post(img, cx, height, reach, cs):
+    """A bolted post rising `height` rows from the floor at `cx`, with a cap plate
+    and a beam `reach` either side carried on two knee braces; `cs` are its bolt
+    courses."""
+    w = 10 * D
+    x0, top = cx - w // 2, BG_H - height
+    for y in range(top, BG_H):
+        for dx in range(w):
+            edge = dx in (0, w - 1)
+            col = "night-0" if edge else ("stone-1" if dx < 3 else "night-1")
+            if (not edge) and y in cs:
+                col = "stone-2"  # a bolt course, weathered off the fixed period
+            put(img, x0 + dx, y, c(col))
+    # The beam on the cap plate, lit on its top, riveted, dark beneath.
+    by = top - 6 * D
+    for y in range(by, top):
+        for x in range(cx - reach, cx + reach):
+            col = "stone-2" if y == by else ("night-0" if y >= top - D else "night-1")
+            if by + 2 * D <= y < top - 2 * D and (x - cx) % (8 * D) == 0:
+                col = "stone-1"
+            put(img, x, y, c(col))
+    # Knee braces from the post's sides up to the beam's underside.
+    run = int(reach * 0.6)
+    for side in (-1, 1):
+        for t in range(run - w // 2):
+            x = cx + side * (w // 2 + t)
+            y = top + run - w // 2 - t
+            for th in range(3 * D):
+                put(img, x, y - th, c("night-0" if th in (0, 3 * D - 1) else "night-1"))
+
+
 def tower_mid():
     img = Image.new("RGBA", (BG_W, BG_H), CLEAR)
     rng = random.Random(22)
-    # Cross-braced girders bolted between the walls.
+    # The mid girders break (bible 12.120): none runs the room's height. Lattice
+    # trusses hang from the roof, each to its own depth, and end in a pulley block;
+    # between them, bolted posts rise from the floor and carry a beam on knee braces.
+    bay = BG_W // 5
     for i in range(5):
-        x0 = i * BG_W // 5 + rng.randrange(-40, 40)
-        w = 10 * D
-        cs = masonry_courses(0, BG_H, 500 + i, 24 * D)
-        for y in range(BG_H):
-            for dx in range(w):
-                edge = dx in (0, w - 1)
-                col = "night-0" if edge else ("stone-1" if dx < 3 else "night-1")
-                if (not edge) and y in cs:
-                    col = "stone-2"  # a bolt course, weathered off the fixed period
-                put(img, x0 + dx, y, c(col))
-        # A diagonal brace to the next girder.
-        x1 = x0 + BG_W // 5
-        for k in range(0, BG_H, 160 * D):
-            y0 = k + rng.randrange(0, 40) * D
-            for t in range(x1 - x0):
-                yy = y0 + t * 60 * D // max(1, (x1 - x0))
-                for th in range(4 * D):
-                    put(img, x0 + t, yy + th, c("night-1" if 0 < th < 4 * D - 1 else "night-0"))
+        _hanging_truss(img, i * bay + rng.randrange(-10, 11) * D, int(BG_H * rng.uniform(0.32, MID_RUN_MAX - 0.05)), i)
+    for i in range(5):
+        if i == 2:
+            continue  # one bay stands open to the far wall
+        h = int(BG_H * rng.uniform(0.26, 0.44))
+        _rising_post(img, i * bay + bay // 2 + rng.randrange(-10, 11) * D, h, rng.randrange(18, 28) * D,
+                     masonry_courses(BG_H - h, BG_H, 500 + i, 24 * D))
     # Chains and hanging lamps.
     for i in range(7):
         x = rng.randrange(BG_W)
@@ -3083,21 +3153,26 @@ def vorrhallow_far():
 def vorrhallow_mid():
     img = Image.new("RGBA", (BG_W, BG_H), CLEAR)
     rng = random.Random(62)
-    # Broken colonnades and toppled statues of dwarf kings, nearer and darker,
-    # with stillglass grown out of them.
+    # A broken colonnade, nearer and darker, with stillglass grown out of it. The
+    # columns are broken off well below the vault (bible 12.120), none within
+    # MID_RUN_MAX of the hall's height, each across a fracture of its own: a slant
+    # one way or the other, chipped, its broken face lit.
     columns = []
     for i in range(6):
         x0 = int((i + rng.uniform(0.1, 0.7)) * BG_W / 6)
         w = rng.randrange(14, 24) * D
-        top = rng.randrange(120, 300) * D
+        top = rng.randrange(int(BG_H * (1 - MID_RUN_MAX)) // D + 46, 310) * D
+        slant = rng.choice([-1, 1]) * rng.uniform(0.4, 1.0)
         cs = masonry_courses(top, BG_H, 620 + i, 24 * D)
-        for y in range(top, BG_H):
-            for dx in range(w):
-                if y < top + 8 * D and (dx // (4 * D)) % 2 and rng.random() > 0.3:
-                    continue  # a broken top
+        for dx in range(w):
+            u = dx / w if slant > 0 else 1 - dx / w
+            brk = top + int(abs(slant) * u * 18 * D + hash2(dx // D, 3, 620 + i) * 6 * D)
+            for y in range(brk, BG_H):
                 col = "stone-1" if dx < w * 0.25 else masonry_shade(x0 + dx, y, 620 + i, "night-0", "night-1", "stone-2")
                 if y in cs:
                     col = "night-0"  # a weathered mortar course
+                if y < brk + D:
+                    col = "stone-2"  # the broken face, catching the light
                 put(img, x0 + dx, y, c(col))
         columns.append((x0, w, top))
     # Stillglass bursting from the columns' faces: a broad-based cluster seated on
@@ -3108,7 +3183,7 @@ def vorrhallow_mid():
     deal = stillglass_habits(rng, 2 * len(columns))
     for x0, w, top in columns:
         side = rng.choice([-1, 1])
-        ry = top // D + rng.randrange(24, 80)
+        ry = top // D + rng.randrange(34, 70)
         for n, s_ in enumerate((side, -side)):
             if n and rng.random() < 0.45:
                 continue
@@ -3119,12 +3194,12 @@ def vorrhallow_mid():
                               rng.randrange(12, 18) if n else rng.randrange(22, 33),
                               rng.randrange(7, 10) if n else rng.randrange(12, 17),
                               MID_STILLGLASS, glow=MID_STILLGLASS_GLOW, habit=habits[-1], veins=MID_STILLGLASS_VEIN)
-            ry += rng.randrange(50, 110)
+            ry += rng.randrange(40, 80)
     STILLGLASS_SEATS["vorrhallow_mid"] = {"pillars": [(x // D, w // D) for x, w, _ in columns], "seats": seats, "habits": habits}
-    # Hanging chains from the vault.
+    # Hanging chains from the vault, ending well above the broken columns.
     for _ in range(8):
         x = rng.randrange(BG_W)
-        for y in range(0, rng.randrange(60, 180) * D):
+        for y in range(0, rng.randrange(40, 130) * D):
             if (y // (3 * D)) % 2 == 0:
                 put(img, x, y, c("night-1"))
     return img
