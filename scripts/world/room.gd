@@ -335,12 +335,12 @@ func build(text: String) -> void:
 	_deep_shade = DeepShade.new()
 	_deep_shade.name = "DeepShade"
 	add_child(_deep_shade)
-	_deep_shade.setup(_deep_solids(), size_tiles, {}, _secret_cells)
+	_deep_shade.setup(_deep_solids(), size_tiles, {}, _secret_cells, zone, hash(id))
 	if secrets != null and not _secret_cells.is_empty():
 		var hidden := DeepShade.new()
 		hidden.name = "DeepShade"
 		secrets.add_child(hidden)
-		hidden.setup(_deep_solids(), size_tiles, _secret_cells)
+		hidden.setup(_deep_solids(), size_tiles, _secret_cells, {}, zone, hash(id))
 
 	# What holds each plank run up: a brace, a post or hangers (design bible 12.30).
 	if not _planks.is_empty():
@@ -555,7 +555,7 @@ func tear_floor(col_from: int, col_to: int, row_from: int, row_to: int) -> void:
 		if tiles.get_cell_source_id(below) != -1:
 			_spawn(Spikes.new(), Vector2((x + 0.5) * TILE, below.y * TILE))
 	if _deep_shade != null:
-		_deep_shade.setup(_deep_solids(), size_tiles, {}, _secret_cells)
+		_deep_shade.setup(_deep_solids(), size_tiles, {}, _secret_cells, zone, hash(id))
 	if _soffit_shade != null:
 		_shade_soffits()
 	if _top_lip != null:

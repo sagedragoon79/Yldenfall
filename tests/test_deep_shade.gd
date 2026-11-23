@@ -116,3 +116,76 @@ func test_a_room_sinks_its_deep_mass_and_the_secret_layer_fades_its_own() -> voi
 	check(shade.level_at_pixel(Vector2(3.5, 4.5) * Room.TILE) == 0, "the floor's lit edge is bare")
 	check(shade.level_at_pixel(Vector2(12.5, 2.5) * Room.TILE) == 0, "the hidden room under its cover is not darkened by the main shade")
 	check(room.secrets != null and room.secrets.get_node_or_null("DeepShade") != null, "the secret layer carries its own shade, so it fades with the cover")
+	check(not shade.motif_blocks().is_empty(), "the room's deep mass holds its zone's forms")
+
+
+## A shade over a 40 x 24 mass under a 4-row open band, for `zone`.
+func _deep_mass(zone: String, motif_seed := 7, skip := {}) -> DeepShade:
+	var size := Vector2i(40, 24)
+	var shade := DeepShade.new()
+	arena.add_child(shade)
+	shade.setup(_mass(size, Rect2i(0, 0, 40, 4)), size, {}, skip, zone, motif_seed)
+	return shade
+
+
+func _extent(shade: DeepShade) -> Vector2:
+	var sum := Vector2.ZERO
+	for r: Rect2 in shade.motif_strokes():
+		sum += r.size
+	return sum
+
+
+func test_the_deepest_mass_holds_its_zones_forms() -> void:
+	# The pass 645 grade read the grub burrows' upper mass as a "dead void": the
+	# deepest mass was one flat near-black (design bible 12.123, pass 647).
+	var deep_area := 0.0
+	for y in 24:
+		deep_area += 40.0 if DeepShade.darkness_for(y - 3) >= 1.0 else 0.0
+	deep_area *= DeepShade.TILE * DeepShade.TILE
+	for zone in ["heartwood", "evercrown", "tower"]:
+		var shade := _deep_mass(zone)
+		var blocks := shade.motif_blocks()
+		check(not blocks.is_empty(), "%s: the deep mass holds forms" % zone)
+		var area := 0.0
+		var outside := 0
+		for b: Array in blocks:
+			var r := b[0] as Rect2
+			area += r.get_area()
+			if shade.level_at_pixel(r.get_center()) < DeepShade.LEVELS - 1:
+				outside += 1
+		check(outside == 0, "%s: every form lies where the shade is at or near full (%d outside)" % [zone, outside])
+		check(area / deep_area > 0.015 and area / deep_area < 0.3,
+				"%s: the forms are faint and sparse, not a fill (%.3f of the deep mass)" % [zone, area / deep_area])
+		var long := 0
+		for r: Rect2 in shade.motif_strokes():
+			if maxf(r.size.x, r.size.y) >= 2 * DeepShade.TILE:
+				long += 1
+		check(long * 4 >= shade.motif_strokes().size() * 3, "%s: forms are strokes tiles long, not specks" % zone)
+	var roots := _extent(_deep_mass("heartwood"))
+	check(roots.y > roots.x * 1.5, "roots hang downward (%s)" % roots)
+	var seams := _extent(_deep_mass("tower"))
+	check(seams.x > seams.y * 1.5, "bedding seams run level (%s)" % seams)
+	var warm := (_deep_mass("heartwood").motif_blocks()[0][1]) as Color
+	check(warm.r > warm.b, "a root is warm bark")
+	var violet := (_deep_mass("evercrown").motif_blocks()[0][1]) as Color
+	check(violet.b > violet.g and violet.r > violet.g, "an Evercrown vein is its crystal violet")
+
+
+func test_the_deep_forms_are_the_rooms_own_and_only_where_meant() -> void:
+	check(_deep_mass("").motif_blocks().is_empty(), "no zone, no forms")
+	check(_deep_mass("gym").motif_blocks().is_empty(), "a zone with no forms of its own draws none")
+	var a := _deep_mass("heartwood", 3).motif_blocks()
+	var b := _deep_mass("heartwood", 3).motif_blocks()
+	check(a.size() == b.size() and a[0][0] == b[0][0], "the same room draws the same forms each load")
+	var c := _deep_mass("heartwood", 4).motif_blocks()
+	check(a.size() != c.size() or a[0][0] != c[0][0], "another room draws its own")
+	var skip := {}
+	for y in range(10, 24):
+		for x in range(0, 20):
+			skip[Vector2i(x, y)] = true
+	var drawn := _deep_mass("heartwood", 3, skip)
+	var leaked := 0
+	for blk: Array in drawn.motif_blocks():
+		if skip.has(Vector2i((blk[0] as Rect2).position / DeepShade.TILE)):
+			leaked += 1
+	check(leaked == 0, "a secret's cells carry no forms of the main shade (%d leaked)" % leaked)
