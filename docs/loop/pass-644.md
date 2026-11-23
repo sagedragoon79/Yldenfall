@@ -64,7 +64,7 @@ the floor in a share of the width (so an empty layer does not pass).
 
 ## Full suite
 
-Pending.
+Full suite (`TEST_TIMEOUT=7200`): 36,986 checks; 36,942 passed and 44 failed in five tests that read tables from the bible (guardians' numbers, shop prices, secrets, zone sounds, the gold sheet). The cause was local: a Python edit had written the working copy of `docs/design-bible.md` with CRLF line endings, so a row ended in a stray carriage return ("the bible says 200 |"). The committed file was LF all along, and CI passed. With the working copy back to LF, the five tests ran alone: 342 checks, all passed. `tools/art/test_tilegen.py` ran alone first: 111 checks, all passed.
 
 ## Rubric (design bible 15.3)
 
