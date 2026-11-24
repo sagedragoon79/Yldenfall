@@ -19,6 +19,15 @@ extends Node2D
 ## are tied by a rail and cross-braced, bay by bay, so the run reads as a built
 ## trestle rather than a table on legs.
 ##
+## A hung run is a deck, not a board (design bible 12.128, pass 652): the pass
+## 650 grade read hanging and chain platforms as "debug geometry, thin and the
+## backdrop's value". A run that hangs gets a girder under its board, as deep
+## as the plank's cell: a dark web behind the plank's trestle, a bottom chord
+## bolted under each trestle foot, an end plate at each end and a cast shadow
+## beneath, so it reads as one heavy dark mass with a lit top edge. Its hangers
+## are heavier (`CHAIN_W`, `ROPE_W`) and take the chord in a stirrup. The
+## Evercrown's grown shelves swell into a grown underside instead (`DECK_SWELL`).
+##
 ## Drawn once per room load behind the tiles (z -1, like the ladders), so the
 ## plank sits over the hanger's foot and actors pass in front. Collision is
 ## untouched; it is dressing only.
@@ -39,6 +48,18 @@ const BOARD := 3.0
 const BOARD_UNDER := 5.0
 ## A post's width, world px (pass 596: it was 2.5, and read as a stick).
 const POST_W := 4.0
+## A hung deck's girder, world px below the top of its cell: the dark web runs
+## from under the board to the chord, and the chord fills the cell's foot.
+const DECK_WEB := 5.0
+const DECK_CHORD := 12.0
+const DECK_FOOT := 16.0
+## The shadow a hung deck casts on the air under it, world px deep.
+const DECK_SHADOW := 4.0
+## How far a grown shelf's underside swells below its cell at its middle, world px.
+const DECK_SWELL := 5.0
+## A chain link's width and a rope's, world px (pass 652: 3 and 1.5 read as hairs).
+const CHAIN_W := 4.0
+const ROPE_W := 2.5
 ## A frame's widest bay, world px; a longer span is split into bays.
 const BAY_MAX := 48.0
 ## A frame needs this much height between board and footing, world px (a post
@@ -107,6 +128,8 @@ const SET_IN_CELLS := 3
 
 ## The plan, one Dictionary per support: {kind: "brace", "post" or "hang", ...}.
 var supports: Array[Dictionary] = []
+## The hung decks, one {left, right, y} per run that hangs (pass 652).
+var decks: Array[Dictionary] = []
 var _look: Dictionary = LOOKS["gym"]
 
 
@@ -118,7 +141,74 @@ func _ready() -> void:
 func setup(zone: String, planks: Dictionary, solid: Dictionary, size: Vector2i) -> void:
 	_look = LOOKS.get(zone, LOOKS["gym"])
 	supports = PlankSupports.place(PlankSupports.plan(planks, solid, size), _look)
+	decks = PlankSupports.hung_decks(planks, supports)
+	for s: Dictionary in supports:
+		if s.kind != "hang":
+			continue
+		for d: Dictionary in decks:
+			if s.x >= d.left and s.x <= d.right and is_equal_approx(s.bottom, d.y + BOARD):
+				s["stirrup"] = d.y + DECK_FOOT
 	queue_redraw()
+
+
+## The runs that hang (pass 652): a run with a hanger under its board is a deck,
+## spanning the run's cells, at its cell's top (`y`).
+static func hung_decks(planks: Dictionary, held: Array[Dictionary]) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for run: Vector3i in runs(planks):
+		var left := float(run.y * TILE)
+		var right := float((run.z + 1) * TILE)
+		var y := float(run.x * TILE)
+		for s: Dictionary in held:
+			if s.kind == "hang" and s.x >= left and s.x <= right and is_equal_approx(s.bottom, y + BOARD):
+				out.append({"left": left, "right": right, "y": y})
+				break
+	return out
+
+
+## The rects of a hung deck's girder, each [Rect2, hex tone] or [Rect2, hex, alpha],
+## back to front (pass 652): the dark web, the chord with its bolts, the end
+## plates, and the shadow cast under it. A grown look (`web` frame) swells into
+## a rounded underside instead of a chord.
+static func deck_parts(left: float, right: float, y: float, look: Dictionary) -> Array:
+	var out: Array = []
+	var w: Array = look.wood
+	var width := right - left
+	if look.get("frame", "") == "web":
+		# A grown underside, deepest at the middle, its rim a shade darker, a pore here and there.
+		var n := int(width)
+		for i in n:
+			var t := (i + 0.5) / maxf(width, 1.0)
+			var depth := DECK_FOOT - DECK_WEB + DECK_SWELL * sin(PI * t)
+			var x := left + i
+			# It faces down, away from the light: a band of the mid tone under the
+			# board, then the dark tone, so it is a shaded mass and not a flat slab.
+			var lit_h := floorf(depth * 0.3)
+			out.append([Rect2(x, y + DECK_WEB, 1.0, depth), w[2]])
+			out.append([Rect2(x, y + DECK_WEB, 1.0, lit_h + (1.0 if i % 3 == 0 else 0.0)), w[1]])
+			out.append([Rect2(x, y + DECK_WEB + depth, 1.0, DECK_SHADOW), w[2], 0.35])
+		for i in range(5, n - 4, 11):
+			out.append([Rect2(left + i, y + DECK_CHORD, 1.0, 1.0), look.bolt])
+		return out
+	# The web behind the plank's trestle, so the girder reads as one mass.
+	out.append([Rect2(left, y + DECK_WEB, width, DECK_CHORD - DECK_WEB), w[2]])
+	# The chord: lit top, body, dark underside.
+	out.append([Rect2(left, y + DECK_CHORD, width, DECK_FOOT - DECK_CHORD), w[1]])
+	out.append([Rect2(left, y + DECK_CHORD, width, 1.0), w[0]])
+	out.append([Rect2(left, y + DECK_FOOT - 1.0, width, 1.0), w[2]])
+	# A bolt under each trestle foot (one every 8 px, as the plank's grooves fall).
+	var x := left + 4.0
+	while x < right - 2.0:
+		out.append([Rect2(x, y + DECK_CHORD + 1.5, 1.0, 1.0), look.bolt])
+		x += 8.0
+	# End plates.
+	for e: float in [left, right - 2.0]:
+		out.append([Rect2(e, y + DECK_WEB, 2.0, DECK_FOOT - DECK_WEB), w[1]])
+		out.append([Rect2(e, y + DECK_WEB, 0.5, DECK_FOOT - DECK_WEB), w[0]])
+	# The shadow it casts on the air under it, falling off.
+	out.append([Rect2(left + 1.0, y + DECK_FOOT, width - 2.0, DECK_SHADOW * 0.5), w[2], 0.45])
+	out.append([Rect2(left + 2.0, y + DECK_FOOT + DECK_SHADOW * 0.5, width - 4.0, DECK_SHADOW * 0.5), w[2], 0.2])
+	return out
 
 
 ## Horizontal runs of plank cells, each [row, first column, last column], in reading order.
@@ -232,10 +322,17 @@ func _draw() -> void:
 			"frame":
 				_draw_parts(PlankSupports.frame_parts(s.left, s.right, s.top, s.bottom, _look))
 			"hang":
+				var bottom: float = s.get("stirrup", s.bottom)
 				if _look.hang == "chain":
-					_draw_chain(s.x, s.top, s.bottom, s.anchored)
+					_draw_chain(s.x, s.top, bottom, s.anchored)
 				else:
-					_draw_rope(s.x, s.top, s.bottom, s.anchored)
+					_draw_rope(s.x, s.top, bottom, s.anchored)
+	# Decks over their hangers' feet, then the stirrups that take each chord.
+	for d: Dictionary in decks:
+		_draw_parts(PlankSupports.deck_parts(d.left, d.right, d.y, _look))
+	for s: Dictionary in supports:
+		if s.kind == "hang" and s.has("stirrup"):
+			_draw_stirrup(s.x, s.stirrup)
 
 
 func _c(hex: String, a := 1.0) -> Color:
@@ -252,58 +349,66 @@ func _fade(y: float, top: float, bottom: float, anchored: bool) -> float:
 
 
 func _draw_rope(x: float, top: float, bottom: float, anchored: bool) -> void:
-	# A 1.5 px strand with a twist: lit and shaded half-pixels alternating every
-	# 1.5 px, and a dark core line down its right side.
+	# A `ROPE_W` strand with a twist: a lit lay crossing it every 2 px, and a dark
+	# core line down its right side (pass 652: it was 1.5 px, a hair).
 	var y := top
 	var k := 0
+	var hw := ROPE_W * 0.5
 	while y < bottom:
 		var a := _fade(y, top, bottom, anchored)
-		draw_rect(Rect2(x - 0.5, y, 1.5, 1.5), _c(_look.mid, a))
-		draw_rect(Rect2(x + (-0.5 if k % 2 == 0 else 0.5), y, 0.5, 1.0), _c(_look.lit, a))
-		draw_rect(Rect2(x + 0.5, y + (0.5 if k % 2 == 0 else 1.0), 0.5, 0.5), _c(_look.dark, a))
-		y += 1.5
+		var h := minf(2.0, bottom - y)
+		draw_rect(Rect2(x - hw, y, ROPE_W, h), _c(_look.mid, a))
+		draw_rect(Rect2(x - hw + (0.0 if k % 2 == 0 else 1.0), y, 1.0, minf(1.0, h)), _c(_look.lit, a))
+		draw_rect(Rect2(x + hw - 0.5, y, 0.5, h), _c(_look.dark, a))
+		y += 2.0
 		k += 1
 	if anchored:
 		_draw_cleat(x, top)
-	# A knot where it takes the plank.
-	draw_rect(Rect2(x - 1.0, bottom - 1.5, 2.5, 1.5), _c(_look.mid))
-	draw_rect(Rect2(x - 1.0, bottom - 1.5, 2.5, 0.5), _c(_look.lit))
 
 
 func _draw_chain(x: float, top: float, bottom: float, anchored: bool) -> void:
-	# Links 3 px long, alternating face-on (an open oval) and edge-on (a bar).
+	# Links `CHAIN_W` wide and 4 px long, alternating face-on (an open oval with a
+	# dark eye) and edge-on (a bar), each lit on its left (pass 652: 3 px read as a hair).
 	var y := top
 	var k := 0
+	var hw := CHAIN_W * 0.5
 	while y < bottom:
 		var a := _fade(y, top, bottom, anchored)
-		var h := minf(3.0, bottom - y)
+		var h := minf(4.0, bottom - y)
 		if k % 2 == 0:
-			draw_rect(Rect2(x - 1.5, y, 0.5, h), _c(_look.lit, a))
-			draw_rect(Rect2(x - 1.0, y, 0.5, h), _c(_look.mid, a))
-			draw_rect(Rect2(x + 1.0, y, 0.5, h), _c(_look.dark, a))
-			draw_rect(Rect2(x - 1.0, y, 2.0, 0.5), _c(_look.lit, a))
-			draw_rect(Rect2(x - 1.0, y + h - 0.5, 2.0, 0.5), _c(_look.dark, a))
+			draw_rect(Rect2(x - hw, y, CHAIN_W, h), _c(_look.mid, a))
+			draw_rect(Rect2(x - hw, y, 1.0, h), _c(_look.lit, a))
+			draw_rect(Rect2(x + hw - 1.0, y, 1.0, h), _c(_look.dark, a))
+			if h > 2.0:
+				draw_rect(Rect2(x - 0.5, y + 1.0, 1.0, h - 2.0), _c(_look.dark, a))
 		else:
-			draw_rect(Rect2(x - 0.25, y - 0.5, 0.5, h + 1.0), _c(_look.lit, a))
-			draw_rect(Rect2(x + 0.25, y - 0.5, 0.5, h + 1.0), _c(_look.dark, a))
-		y += 2.5
+			draw_rect(Rect2(x - 0.5, y - 0.5, 1.0, h + 1.0), _c(_look.lit, a))
+			draw_rect(Rect2(x + 0.5, y - 0.5, 0.5, h + 1.0), _c(_look.dark, a))
+		y += 3.5
 		k += 1
 	if anchored:
 		_draw_cleat(x, top)
-	# A ring bolted through the board.
-	draw_rect(Rect2(x - 1.5, bottom - 1.0, 3.0, 1.0), _c(_look.dark))
-	draw_rect(Rect2(x - 1.0, bottom - 1.0, 2.0, 0.5), _c(_look.lit))
+
+
+## The strap a hanger takes a deck's chord in: up both faces and under the chord.
+func _draw_stirrup(x: float, foot: float) -> void:
+	var hw := maxf(CHAIN_W, ROPE_W) * 0.5 + 1.0
+	var h := DECK_FOOT - DECK_CHORD + 2.0
+	draw_rect(Rect2(x - hw, foot - h + 1.0, 1.0, h), _c(_look.dark))
+	draw_rect(Rect2(x + hw - 1.0, foot - h + 1.0, 1.0, h), _c(_look.dark))
+	draw_rect(Rect2(x - hw, foot, hw * 2.0, 1.0), _c(_look.dark))
+	draw_rect(Rect2(x - hw, foot - h + 1.0, 1.0, 1.0), _c(_look.lit))
 
 
 ## The iron plate a hanger is fixed to where it meets a ceiling or plank above.
 func _draw_cleat(x: float, top: float) -> void:
-	draw_rect(Rect2(x - 2.0, top, 4.5, 1.5), _c(_look.dark))
-	draw_rect(Rect2(x - 1.5, top, 3.5, 0.5), _c(_look.lit))
+	draw_rect(Rect2(x - 3.0, top, 6.0, 2.0), _c(_look.dark))
+	draw_rect(Rect2(x - 2.5, top, 5.0, 0.5), _c(_look.lit))
 
 
 func _draw_parts(parts: Array) -> void:
 	for p: Array in parts:
-		draw_rect(p[0], _c(p[1]))
+		draw_rect(p[0], _c(p[1], p[2] if p.size() > 2 else 1.0))
 
 
 ## The rects of a post, each [Rect2, hex tone], back to front (pass 596): a

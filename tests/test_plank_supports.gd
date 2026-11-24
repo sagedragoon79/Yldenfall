@@ -529,3 +529,91 @@ func test_plank_the_heartwood_builds_in_old_grey_timber_with_moss() -> void:
 	town_parts.append_array(PlankSupports.post_parts(100.0, top, bottom, town_look))
 	check(town_parts.filter(is_moss).is_empty(), "the town's trestle grows no moss")
 	check(PlankSupports.post_parts(100.0, top, bottom, town_look).all(func(q: Array) -> bool: return not (q[1] in wood)), "and is not built of the Heartwood's timber")
+
+
+## Pass 652 (bible 12.128): a run that hangs is a deck, a girder as deep as its cell
+## with a shadow under it, not a 3 px board on hairs.
+func test_plank_a_hung_run_is_a_deck() -> void:
+	var size := Vector2i(16, 20)
+	var planks := _planks(8, 5, 9)
+	var plan := PlankSupports.plan(planks, _box(size), size)
+	var decks := PlankSupports.hung_decks(planks, plan)
+	check(decks.size() == 1, "the hung run is one deck: %s" % [decks])
+	if decks.is_empty():
+		return
+	var d: Dictionary = decks[0]
+	check(is_equal_approx(d.left, 5.0 * T) and is_equal_approx(d.right, 10.0 * T) and is_equal_approx(d.y, 8.0 * T), "it spans the run's cells: %s" % [d])
+	for zone: String in ["tower", "spires", "haar", "sunken"]:
+		var look: Dictionary = PlankSupports.LOOKS[zone]
+		var parts := PlankSupports.deck_parts(d.left, d.right, d.y, look)
+		var opaque := parts.filter(func(p: Array) -> bool: return p.size() == 2)
+		var box := _bounds(opaque)
+		check(box.position.y <= d.y + PlankSupports.DECK_WEB and box.end.y >= d.y + PlankSupports.DECK_FOOT, "%s: the girder runs from under the board to the cell's foot: %s" % [zone, box])
+		check(box.position.x <= d.left and box.end.x >= d.right, "%s: and the whole run across" % zone)
+		# One mass: every column between the board and the chord is covered.
+		var x: float = d.left + 0.5
+		while x < d.right:
+			var covered := 0.0
+			for p: Array in opaque:
+				var r: Rect2 = p[0]
+				if x >= r.position.x and x < r.end.x and r.position.y <= d.y + PlankSupports.DECK_WEB + covered:
+					covered = maxf(covered, r.end.y - d.y - PlankSupports.DECK_WEB)
+			check(covered >= PlankSupports.DECK_FOOT - PlankSupports.DECK_WEB, "%s: solid at x %s (%s px deep)" % [zone, x, covered])
+			x += 8.0
+		var webs := opaque.filter(func(p: Array) -> bool: return p[1] == look.wood[2] and p[0].size.x >= d.right - d.left - 0.5)
+		check(not webs.is_empty(), "%s: a dark web across the run, so the deck stands off the backdrop" % zone)
+		var bolts := opaque.filter(func(p: Array) -> bool: return p[1] == look.bolt)
+		check(bolts.size() >= 8, "%s: bolted under each trestle foot: %d" % [zone, bolts.size()])
+		var shadow := parts.filter(func(p: Array) -> bool: return p.size() > 2 and p[0].position.y >= d.y + PlankSupports.DECK_FOOT)
+		check(not shadow.is_empty() and shadow.all(func(p: Array) -> bool: return p[2] < 1.0), "%s: a soft shadow under it" % zone)
+
+
+func test_plank_a_grown_shelf_swells_underneath() -> void:
+	var look: Dictionary = PlankSupports.LOOKS["evercrown"]
+	var parts := PlankSupports.deck_parts(0.0, 80.0, 0.0, look)
+	var foot := func(x0: float, x1: float) -> float:
+		var y := 0.0
+		for p: Array in parts:
+			var r: Rect2 = p[0]
+			if p.size() == 2 and r.position.x >= x0 and r.end.x <= x1:
+				y = maxf(y, r.end.y)
+		return y
+	var ends: float = foot.call(0.0, 4.0)
+	var mid: float = foot.call(38.0, 42.0)
+	check(ends >= PlankSupports.DECK_FOOT - 0.5, "its ends reach the cell's foot: %s" % ends)
+	check(mid >= ends + PlankSupports.DECK_SWELL - 1.0, "it is deepest at the middle: %s against %s" % [mid, ends])
+	var lit := parts.filter(func(p: Array) -> bool: return p.size() == 2 and p[1] == look.wood[1])
+	var dark := parts.filter(func(p: Array) -> bool: return p.size() == 2 and p[1] == look.wood[2])
+	var area := func(a: Array) -> float: return a.reduce(func(s: float, p: Array) -> float: return s + p[0].get_area(), 0.0)
+	check(area.call(dark) > area.call(lit), "it faces down: more of it in shadow than lit")
+
+
+func test_plank_a_held_run_is_no_deck_and_hangers_are_heavy() -> void:
+	var size := Vector2i(16, 12)
+	var planks := _planks(8, 5, 9)
+	var plan := PlankSupports.plan(planks, _box(size), size)
+	check(PlankSupports.hung_decks(planks, plan).is_empty(), "a run on posts needs no girder")
+	check(PlankSupports.CHAIN_W >= 4.0 and PlankSupports.ROPE_W >= 2.5, "chains and ropes are not hairs: %s, %s" % [PlankSupports.CHAIN_W, PlankSupports.ROPE_W])
+
+
+func test_plank_a_room_takes_its_decks_chord_in_stirrups() -> void:
+	var room := Room.from_text("zone: tower
+---
+##########
+#........#
+#........#
+#..----..#
+#........#
+#........#
+#........#
+#........#
+#........#
+#........#
+##########")
+	arena.add_child(room)
+	var holds := room.get_node_or_null("PlankSupports") as PlankSupports
+	check(holds != null and holds.decks.size() == 1, "the room builds one deck")
+	if holds:
+		for s: Dictionary in holds.supports:
+			if s.kind == "hang":
+				check(s.has("stirrup") and is_equal_approx(s.stirrup, 3.0 * T + PlankSupports.DECK_FOOT), "each hanger takes the chord at the cell's foot: %s" % [s])
