@@ -114,9 +114,16 @@ const FORE_GROUND := 344.0
 ## tools/art/tilegen.py FORE_MAX_RISE; design bible 12.29). Kept to a low fringe
 ## so the layer never stands over the play layer as a column of black bars.
 const FORE_MAX_RISE := 36.0
+## The tallest one of the broad near masses rises (design bible 12.127; mirrors
+## tools/art/tilegen.py MOUND_RISE): a few per zone stand past the floor's top
+## line, so the foot of the view is framed as the top is (12.121). Only those
+## masses reach above FORE_MAX_RISE, and nothing of them there is a thin bar.
+const FORE_MASS_RISE := 68.0
 ## How far the silhouettes lean toward the zone's fog colour (haze_for), so the
 ## nearest layer reads as near air in the zone's own tint, not flat black (12.29).
-const FORE_TINT := 0.55
+## 0.55 until pass 651, when the grade found no occluders at the screen's foot:
+## at that tint the fringe sank into the dark rooms' ground (12.127).
+const FORE_TINT := 0.35
 ## The hanging frame (design bible 12.121): the zone's material hanging into the
 ## top of the view (tools/art/tilegen.py paints <zone>_hang.png), the low fringe's
 ## partner, so the play field is framed above and below. Locked to the view's top

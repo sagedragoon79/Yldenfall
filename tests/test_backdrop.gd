@@ -315,8 +315,41 @@ func test_fore_silhouettes_stay_a_low_fringe() -> void:
 				break
 		check(top >= 0, "%s: the foreground art is not empty" % zone)
 		var rise := Backdrop.FORE_GROUND - top / per_world
-		check(rise <= Backdrop.FORE_MAX_RISE + 0.5,
-			"%s: the silhouettes rise %.1f px, no more than FORE_MAX_RISE" % [zone, rise])
+		check(rise <= Backdrop.FORE_MASS_RISE + 0.5,
+			"%s: the silhouettes rise %.1f px, no more than FORE_MASS_RISE" % [zone, rise])
+		# Only the broad masses of 12.127 reach over the fringe, and they cover
+		# at most 40% of the width there, never a run of bars across it.
+		var over := 0
+		var fringe_top := int((Backdrop.FORE_GROUND - Backdrop.FORE_MAX_RISE) * per_world) - 1
+		for x in img.get_width():
+			for y in range(top, fringe_top):
+				if img.get_pixel(x, y).a > 0.05:
+					over += 1
+					break
+		check(float(over) / img.get_width() <= 0.4,
+			"%s: %d of %d columns rise over the fringe, at most 40%%" % [zone, over, img.get_width()])
+
+
+func test_the_foot_of_the_view_holds_near_masses() -> void:
+	# The grade of pass 650: no foreground occluders at the screen's foot, the
+	# ground's top line straight across the frame (design bible 12.127). Every
+	# shipped zone's foreground carries masses that rise well past the low fringe,
+	# so they stand over the floor's top line when the camera rests on a floor.
+	for zone: String in Backdrop.ZONE_HAZE:
+		var path := Backdrop.DIR + "%s_fore.png" % zone
+		if not ResourceLoader.exists(path):
+			continue
+		var img := (load(path) as Texture2D).get_image()
+		var per_world := float(img.get_height()) / Backdrop.SIZE.y
+		var top := img.get_height()
+		for x in range(0, img.get_width(), 2):
+			for y in img.get_height():
+				if img.get_pixel(x, y).a > 0.8:
+					top = mini(top, y)
+					break
+		var rise := Backdrop.FORE_GROUND - top / per_world
+		check(rise >= Backdrop.FORE_MAX_RISE + 8.0,
+			"%s: the near masses rise %.1f px, past the fringe's %d" % [zone, rise, int(Backdrop.FORE_MAX_RISE)])
 
 
 func test_fore_leans_toward_the_zone_fog() -> void:
