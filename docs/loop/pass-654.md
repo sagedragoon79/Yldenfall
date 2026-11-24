@@ -50,7 +50,19 @@ the old sizes (10 and 20), the numbers test fails 2 checks.
 
 ## Full suite
 
-FULL_SUITE_RESULT
+Run on a busy PC (audio, launcher and Unity apps were running). One full run
+(`TEST_TIMEOUT=7200`): 37,655 checks passed, 8 failed, all frame-time or load-time budgets in six
+tests: the Spires' rain, the two long journeys, every boss fight's frame budget (the throne's 99th
+percentile 49 ms), every room's load and settled frame, and the spoils soak. The worst frames
+showed the main thread 0 ms on the CPU, so the process was waiting for the machine.
+
+Run alone, four of the six passed (the rain, the journey after the end, the boss frame budget and
+the spoils). The other two were then run back to back with main's `hit_spark.gd` and
+`damage_number.gd` and with this pass's: with main's code, every room's load failed and the long
+journey passed; with this pass's, the same (seven rooms loaded in 546 to 779 ms against 500, three
+settled rooms at 8.4 to 8.5 ms against 8). The burst draws only for 0.1 s after a hit, which no
+room load or idle room does. The tests for this pass (`--filter=test_a_spark_bursts`,
+`--filter=test_damage_numbers`) passed every check.
 
 ## Rubric (design bible 15.3)
 
