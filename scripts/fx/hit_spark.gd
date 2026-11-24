@@ -51,6 +51,18 @@ const STREAK_GLOW := Color("ffe9a8")
 ## struck body covers the cut where they cross and the streak shows only where it
 ## passes beyond the silhouette. The spark itself stays on top, at the contact.
 const STREAK_Z := -1
+## The impact burst (pass 654, bible 6.7): the pass 650 grade still called the spark
+## small. The star stays small so the foe reads through it; round it, for the first
+## BURST_LIFE, BURST_RAYS thin spikes stand off the contact from BURST_INNER to
+## BURST_REACH world px (every other one shorter, BURST_SHORT of it), BURST_WIDTH at
+## the root and pointed at the tip, white in a hot rim, and pull outward as they go. They are lines with gaps between, so the struck
+## foe still shows through the burst. Scaled with the spark (the heavy one is 1.6x).
+const BURST_LIFE := 0.1
+const BURST_RAYS := 8
+const BURST_INNER := 10.0
+const BURST_REACH := 28.0
+const BURST_SHORT := 0.62
+const BURST_WIDTH := 3.0
 
 var dir := Vector2.RIGHT
 var size := 1.0
@@ -62,6 +74,8 @@ var _sheet := {}
 var life := LIFE
 ## How strong the streak was in the last drawing (0 when none was drawn).
 var streak_drawn := 0.0
+## How strong the burst was in the last drawing (0 when none was drawn).
+var burst_drawn := 0.0
 ## The node the streak is drawn on, at STREAK_Z.
 var streak_layer: Node2D
 
@@ -146,6 +160,53 @@ func streak() -> float:
 	return 1.0 if t <= STREAK_HOLD else 1.0 - (t - STREAK_HOLD) / (1.0 - STREAK_HOLD)
 
 
+## How much of the impact burst shows now, 1 to 0: full for its first half, then fading.
+func burst() -> float:
+	var t := (life - _life) / BURST_LIFE
+	if t >= 1.0:
+		return 0.0
+	return 1.0 if t <= 0.5 else 1.0 - (t - 0.5) / 0.5
+
+
+## The burst's rays now, relative to the spark: [from, to, width] for each, rounded to
+## whole pixels. They open outward a little as the burst fades.
+func burst_rays() -> Array:
+	var k := burst()
+	var out := []
+	if k <= 0.0:
+		return out
+	var push := (1.0 - k) * 4.0
+	var base := dir.angle() + PI / BURST_RAYS
+	for i in BURST_RAYS:
+		var v := Vector2.from_angle(base + TAU * i / BURST_RAYS)
+		var reach := BURST_REACH * (1.0 if i % 2 == 0 else BURST_SHORT)
+		var from := v * (BURST_INNER + push) * size
+		var to := v * (reach + push) * size
+		out.append([from.round(), to.round(), BURST_WIDTH if i % 2 == 0 else BURST_WIDTH - 1.0])
+	return out
+
+
+## The burst: each ray a spike, broad at its root by the contact and pointed at its
+## tip, white inside a hot rim one pixel wider.
+func _draw_burst() -> void:
+	var k := burst()
+	burst_drawn = k
+	if k <= 0.0:
+		return
+	var rays := burst_rays()
+	for r: Array in rays:
+		colored_spike(r[0], r[1], float(r[2]) * 0.5 + 1.0, 2.0, Color(RIM, k))
+	for r: Array in rays:
+		colored_spike(r[0], r[1], float(r[2]) * 0.5, 0.0, Color(CORE, k))
+
+
+## A spike from `from` to `to`, `half` wide each side at its root, its tip `over` past `to`.
+func colored_spike(from: Vector2, to: Vector2, half: float, over: float, c: Color) -> void:
+	var v := (to - from).normalized()
+	var n := Vector2(-v.y, v.x) * half
+	draw_colored_polygon(PackedVector2Array([from - v * over * 0.5 + n, to + v * over, from - v * over * 0.5 - n]), c)
+
+
 ## The streak's axis: across the swing, tilted so its far end leans forward.
 func streak_axis() -> Vector2:
 	var side := -1.0 if dir.x < 0.0 else 1.0
@@ -176,6 +237,7 @@ func _draw_streak() -> void:
 
 
 func _draw() -> void:
+	_draw_burst()
 	if not _sheet.is_empty():
 		_draw_sheet()
 		return

@@ -58,6 +58,42 @@ func test_a_spark_lays_a_streak_across_the_foe() -> void:
 	HitSpark.trial = ""
 
 
+## Pass 654: the pass 650 grade still called the spark small. Round the small star,
+## a burst of thin spikes stands off the contact for the first BURST_LIFE.
+func test_a_spark_bursts_wide_round_an_open_middle() -> void:
+	var s := HitSpark.spawn(arena, Vector2(100, 100), Vector2.RIGHT)
+	await frames(1)
+	var rays := s.burst_rays()
+	check(s.burst() == 1.0 and s.burst_drawn == 1.0, "the burst is drawn at full the moment the blade bites")
+	check(rays.size() == HitSpark.BURST_RAYS and rays.size() >= 6, "it throws %d spikes" % rays.size())
+	var reach := 0.0
+	var inner := INF
+	var angles: Array[float] = []
+	for r: Array in rays:
+		reach = maxf(reach, (r[1] as Vector2).length())
+		inner = minf(inner, (r[0] as Vector2).length())
+		angles.append((r[1] as Vector2).angle())
+	check(reach >= 26.0, "it reaches %.0f px out, well past the 16 px star" % reach)
+	check(inner >= 9.0, "and leaves the middle open (%.0f px), so the star and the foe show" % inner)
+	var right := angles.filter(func(a: float) -> bool: return absf(a) < PI / 2.0).size()
+	check(right == rays.size() / 2, "it bursts all round, as many spikes ahead as behind (%d of %d)" % [right, rays.size()])
+	var lengths := rays.map(func(r: Array) -> float: return ((r[1] as Vector2) - (r[0] as Vector2)).length())
+	check(lengths.max() > lengths.min() * 1.4, "long and short spikes alternate")
+	var heavy := HitSpark.spawn(arena, Vector2(100, 100), Vector2.RIGHT, 1.6)
+	await frames(1)
+	var hr: Array = heavy.burst_rays()
+	check((hr[0][1] as Vector2).length() > reach * 1.4, "the heavy finisher's burst is bigger")
+	await frames(int(ceil(HitSpark.BURST_LIFE * 0.5 * 60.0)) - 3)
+	check(s.burst() == 1.0, "it holds at full for the first half of its life")
+	await frames(int(ceil(HitSpark.BURST_LIFE * 60.0)) + 1)
+	check(s.burst() == 0.0 and s.burst_drawn == 0.0 and s.burst_rays().is_empty(), "and is gone by %s s" % HitSpark.BURST_LIFE)
+	HitSpark.trial = "code"
+	var c := HitSpark.spawn(arena, Vector2(100, 100), Vector2.RIGHT)
+	await frames(1)
+	check(c.burst_drawn == 1.0, "the code look draws it too")
+	HitSpark.trial = ""
+
+
 func test_a_struck_foe_leans_away_from_the_blow() -> void:
 	var h := _hornet()
 	await frames(2)

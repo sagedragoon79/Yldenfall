@@ -5,13 +5,17 @@ extends Node2D
 ## A foe's number is white, a heavy blow's (the finisher, a thrust, a Riposte)
 ## gold and twice the size, and the player's own losses are red (a poison
 ## tick's green, like the poisoned masks).
+##
+## Big enough to read in play (pass 654, bible 14): the pass 650 grade called the
+## numbers small. A number draws at twice the font's size (a heavy blow's at three
+## times), so its outline is two pixels thick too.
 
 const LIFE := 0.7
 const RISE := 18.0
 const FADE := 0.25
 const OUTLINE := Color(0.05, 0.04, 0.06)
 const COLORS := {"hit": Color("ffffff"), "heavy": Color("ffd25a"), "hurt": Color("ff5a4a"), "poison": GameHud.POISONED}
-const SIZES := {"hit": 10, "heavy": 20, "hurt": 10, "poison": 10}
+const SIZES := {"hit": 22, "heavy": 33, "hurt": 22, "poison": 22}
 
 var amount := 0
 var kind := "hit"
@@ -64,9 +68,14 @@ func offset() -> Vector2:
 	return Vector2(_drift * k, -RISE * k)
 
 
+## The size it draws at: twice the font, a heavy blow's three times (SIZES).
+func draw_size() -> int:
+	return SIZES.get(kind, 22)
+
+
 func _draw() -> void:
 	var text := str(amount)
-	var size: int = SIZES.get(kind, 10)
+	var size := draw_size()
 	var alpha := clampf(_life / FADE, 0.0, 1.0)
 	var c: Color = tint if tint.a > 0.0 else COLORS.get(kind, Color.WHITE)
 	c.a = alpha

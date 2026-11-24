@@ -1732,6 +1732,11 @@ func test_damage_numbers_show_what_each_blow_dealt() -> void:
 	nums = _numbers(w.room)
 	check(nums.size() == 2 and nums[1].kind == "heavy" and nums[1].amount == 14, "a heavy blow's number is gold")
 	check(DamageNumber.SIZES.heavy > DamageNumber.SIZES.hit, "and larger")
+	# Big enough to read in play (pass 654): a cut's number at twice the font, a heavy
+	# blow's at three times, so the struck foe's number is not a speck.
+	check(PixelFont.scale_for(nums[0].draw_size()) == 2, "a cut's number draws at twice the font (%dx)" % PixelFont.scale_for(nums[0].draw_size()))
+	check(PixelFont.scale_for(nums[1].draw_size()) == 3, "a heavy blow's at three times (%dx)" % PixelFont.scale_for(nums[1].draw_size()))
+	check(PixelFont.scale_for(DamageNumber.SIZES.hurt) == 2 and PixelFont.scale_for(DamageNumber.SIZES.poison) == 2, "and the hero's own losses at twice")
 	# A blow the shield turns deals nothing, and shows nothing.
 	dwarf.facing = -1
 	var hp_before := dwarf.hp
