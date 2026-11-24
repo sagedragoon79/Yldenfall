@@ -29,6 +29,10 @@ var from := Vector2.ZERO
 var to := Vector2.ZERO
 ## The geyser's aim, locked late in its tell (a unit vector).
 var aim := Vector2.DOWN
+## Seconds into its reaction to its pipe filling (-1 when not reacting), and the way to
+## that pipe (`HaarWyrm._on_pipe_filled`).
+var react := -1.0
+var react_dir := Vector2.DOWN
 
 
 func _ready() -> void:

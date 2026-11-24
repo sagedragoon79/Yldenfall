@@ -363,6 +363,7 @@ func pose(boss: HaarWyrm, delta: float) -> void:
 			"mode": h.mode, "time": h.mode_time, "face": boss._face(h), "aim": h.aim, "breath": h.breath,
 			"weak": h.weak, "dead": h.dead, "white": 1.0 if h.flash > 0.0 else (0.6 if blink else 0.0),
 			"tell": boss.tell(boss._tell_of(h)), "fade": fade,
+			"react": h.react, "react_dir": h.react_dir,
 			"intro": boss._intro_t if boss.state == "intro" else -1.0,
 		}
 		if p != null:
@@ -552,6 +553,10 @@ func pose_head(i: int, centre: Vector2, s: Dictionary, delta: float) -> void:
 func _want_look(n: Neck, mode: String, breath: String, s: Dictionary) -> int:
 	var face: float = s.get("face", 1.0)
 	var watch: Vector2 = s.get("watch", Vector2(face, 0.0))
+	if _reacting(s, mode):
+		# It snaps round to its pipe.
+		n.look_want = roundi(view_toward(s.get("react_dir", Vector2.DOWN)))
+		return n.look_want
 	match mode:
 		"limp":
 			# It hangs as it died.
@@ -583,6 +588,13 @@ func _want_look(n: Neck, mode: String, breath: String, s: Dictionary) -> int:
 	if absf(toward - n.look_want) > TURN_SLACK:
 		n.look_want = roundi(toward)
 	return n.look_want
+
+
+## True while the head reacts to its pipe filling, in a move it may break off for it
+## (never a breath's wind-up or the breath, which must read as they are).
+static func _reacting(s: Dictionary, mode: String) -> bool:
+	var r: float = s.get("react", -1.0)
+	return r >= 0.0 and r < HaarWyrm.REACT_TIME and mode in ["idle", "sag", "rage"]
 
 
 ## How far the head is tilted, nose down (in radians, already mirrored).
@@ -673,6 +685,14 @@ func _head_frame(n: Neck, mode: String, breath: String, time: float, tell: float
 			"limp":
 				clip = "roar"
 				f = 5
+	if _reacting(n.told, mode):
+		# Its jaws gape at the pipe: Sean's `react` clip once the art has one (the slot,
+		# packed like any head clip), the roar until then.
+		var k := clampf(float(n.told.get("react", 0.0)) / HaarWyrm.REACT_TIME, 0.0, 0.999)
+		clip = "react" if clips.has("react") else "roar"
+		f = int(k * int(clips[clip]["count"]))
+		if clip == "roar":
+			f = _roar_frame(turned, int(k * (ROAR_THREE_QUARTER.size() if turned == 1 else int(clips[clip]["count"]))), int(clips[clip]["count"]))
 	n.clip = clip
 	n.frame = mini(f, int(clips[clip]["count"]) - 1)
 	_set_cell(n.head_skin, n.head_layout, int(clips[clip]["start"]) + n.frame)
@@ -723,6 +743,19 @@ func _draw_fx() -> void:
 		if s.get("dead", false):
 			continue
 		var jaws := n.centre + head_joint(n, "mouth")
+		var react: float = s.get("react", -1.0)
+		if react >= 0.0 and react < HaarWyrm.REACT_TIME and n.joints.size() > 1:
+			# Light runs up its neck from the dark to the head, and a hiss of steam at the jaws.
+			var along := clampf(react / (HaarWyrm.REACT_TIME * 0.6), 0.0, 1.0) * (n.joints.size() - 1)
+			var fadeout := 1.0 - smoothstep(HaarWyrm.REACT_TIME * 0.6, HaarWyrm.REACT_TIME, react)
+			for k in n.joints.size():
+				var near := 1.0 - clampf(absf(float(k) - along) / 2.5, 0.0, 1.0)
+				if near > 0.0:
+					_fx.draw_circle(n.joints[k], 5.0 + near * 5.0, Color(STEAM_HOT, 0.22 * near * fadeout * fade))
+					_fx.draw_circle(n.joints[k], 2.0 + near * 2.0, Color(EYE, 0.6 * near * fadeout * fade))
+			for k in 4:
+				var ph := clampf(react / HaarWyrm.REACT_TIME + k * 0.12, 0.0, 1.0)
+				_fx.draw_circle(jaws + s.get("react_dir", Vector2.DOWN) * ph * 18.0 + Vector2(0, -ph * 10.0), 2.0 + ph * 4.0, Color(STEAM, (1.0 - ph) * 0.6 * fade))
 		if s.get("weak", false):
 			# Water runs off it.
 			for k in 3:

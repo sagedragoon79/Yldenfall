@@ -321,7 +321,7 @@ func test_hydra_fight_soak_stays_lean() -> void:
 	for f in FIGHT_FRAMES:
 		_mash(w.player, rng, hold)
 		# From halfway in, the cistern is kept filling until a head is doused and
-		# the hydra rages (the fog may boil a third away first).
+		# the hydra rages (the fog may boil it dry first).
 		if f >= FIGHT_FRAMES / 2 and not steps.has("rage"):
 			for c in w.room.get_children():
 				if c is HydraIntake and not c.flowing:

@@ -9,8 +9,9 @@ extends StaticBody2D
 ## on which one is filled last, determines which head becomes vulnerable"): a side head's
 ## pipe stands on its own pillar of the arch, the middle head's hangs from the ceiling
 ## over the cistern, and a plate by the mouth bears its head's breath. The pipe filled
-## last picks the head a full cistern douses (`HaarWyrm._fight`). A dead head's pipe is
-## capped (`sealed`), and the cistern is full without it.
+## last picks the head a full cistern douses (`HaarWyrm._fight`), and its head reacts as it
+## fills. A dead head's pipe still runs (it was capped until 2026-11-24), its plate dark:
+## filled last, it douses nothing.
 ##
 ## The mouth is a brass bell under a water mark (Sean, 2026-11-20: "I didn't notice a
 ## place to shoot deluge into"): the mark pulses while the intake wants water, burns
@@ -28,8 +29,8 @@ var gush := 0.0
 ## The head it feeds (an index into `HaarWyrm.heads`, -1 for none) and that head's breath.
 var head := -1
 var breath := ""
-## Its head is dead: the bell is capped and takes no water.
-var sealed := false
+## Its head is dead: the pipe still runs, but its plate goes dark.
+var head_dead := false
 ## Hung from the ceiling (the middle head's): the pipe comes down from `ceiling_y` (world)
 ## to the mouth, and its spout pours straight down into the cistern under it.
 var hung := false
@@ -90,7 +91,7 @@ func _ready() -> void:
 
 ## True while a bolt into the mouth would fill a share.
 func wants() -> bool:
-	return not flowing and not sealed and cistern != null and cistern.accepts()
+	return not flowing and cistern != null and cistern.accepts()
 
 
 ## A Deluge bolt struck the intake (TorrentBolt): only one flying into the mouth counts.
@@ -103,7 +104,7 @@ func take_water(bolt: Node2D) -> bool:
 
 
 func douse() -> void:
-	if flowing or sealed or cistern == null or not cistern.accepts():
+	if flowing or cistern == null or not cistern.accepts():
 		Sfx.play("splash", 0.1, -6.0)
 		return
 	flowing = true
@@ -112,12 +113,6 @@ func douse() -> void:
 
 
 func reset() -> void:
-	flowing = false
-
-
-## Its head died: the bell is capped, and whatever it was running stops.
-func seal() -> void:
-	sealed = true
 	flowing = false
 
 
@@ -170,8 +165,6 @@ func _draw() -> void:
 	draw_rect(Rect2(minf(mx, mx + 2.0 * f), -15, 2, 30), PIPE_DARK)
 	draw_rect(Rect2(minf(mx, mx + 2.0 * f), -14, 2, 28), RIM_LIGHT)
 	draw_rect(Rect2(minf(mx - 2.0 * f, mx), -11, 2, 22), Color.BLACK if not flowing else Color("1d3a52"))
-	if sealed:
-		_draw_cap(f, mx)
 	# The water mark over it: a drop cut in a brass-bound plate.
 	var want := wants()
 	var mark := MARK_DARK
@@ -260,16 +253,6 @@ func _draw_hung_pipe(f: float) -> void:
 	draw_rect(Rect2(drop_x - 5.0, 11, 10, 1), RIM_LIGHT)
 
 
-## A dead head's pipe: an iron cap bolted over the bell's mouth.
-func _draw_cap(f: float, mx: float) -> void:
-	var x := minf(mx - 1.0 * f, mx + 3.0 * f)
-	draw_rect(Rect2(x - 1.0, -14, 5, 28), IRON_DARK)
-	draw_rect(Rect2(x, -13, 3, 26), IRON)
-	draw_rect(Rect2(x, -13, 1, 26), IRON_LIGHT)
-	for ry: float in [-10.0, 0.0, 10.0]:
-		draw_rect(Rect2(x + 1.0, ry - 1.0, 1, 2), IRON_DARK)
-
-
 ## Its head's breath on a small brass plate beside the water mark.
 func _draw_sigil(at: Vector2) -> void:
 	if not SIGILS.has(breath):
@@ -277,7 +260,7 @@ func _draw_sigil(at: Vector2) -> void:
 	draw_rect(Rect2(at, Vector2(9, 9)), RIM_DARK)
 	draw_rect(Rect2(at, Vector2(9, 1)), RIM)
 	draw_rect(Rect2(at + Vector2(1, 1), Vector2(7, 7)), PLATE)
-	var col := SIGIL_DARK if sealed else SIGIL
+	var col := SIGIL_DARK if head_dead else SIGIL
 	var rows: Array = SIGILS[breath]
 	for r in rows.size():
 		var line: String = rows[r]

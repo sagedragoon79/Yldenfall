@@ -1597,6 +1597,19 @@ def main():
     d = 0.09
     save("crouch", lowpass(noise(d), slide(1800, 500, d)) * env(int(RATE * d), 0.004, 2.2), 0.35)
 
+    # A Haar Wyrm head rearing as its pipe fills (bible 8.4, Sean 2026-11-24: "a reptilian
+    # roar/hiss/sqwawk"): a sharp hiss that breaks into a short, rising squawk over a
+    # throaty growl. Its own seed, so every sound above stays as it was.
+    wr = np.random.default_rng(824)
+    d = 0.75
+    n = int(RATE * d)
+    t = t_axis(d)
+    hiss = highpass(lowpass(wr.uniform(-1, 1, n), 7500), 2600) * slide(0.7, 0.2, d, 0.4)
+    caw = osc(slide(420, 760, d, 0.35) * (1 + 0.04 * np.sin(2 * np.pi * 31 * t)), "saw", 0.5)
+    caw = lowpass(caw, 2600) * np.clip((t - 0.12) / 0.06, 0, 1) * np.exp(-np.clip(t - 0.18, 0, None) * 5.0) * 0.35
+    growl = lowpass(osc(slide(110, 80, d), "square", 0.4), 500) * (1 + 0.5 * np.sin(2 * np.pi * 23 * t)) * 0.3
+    save("hydra_hiss", mix(hiss, caw, growl) * env(n, 0.01, 1.4), 0.6)
+
 
 if __name__ == "__main__":
     main()
