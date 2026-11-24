@@ -54,7 +54,18 @@ Mutation check: with the underside measured against `UP_REACH`,
 
 ## Full suite
 
-FULL_SUITE_RESULT
+Run on a busy PC (a Unity editor, audio and launcher apps were running). One full run
+(`TEST_TIMEOUT=7200`): 37,266 checks passed, 4 failed, all frame-time or load-time budgets:
+the Carillon's rain (13.65 ms), every room's load behind the fade (eight rooms over 500 ms) and
+settled frame (`evercrown/proving_scar` 9.16 ms), and the spoils soak's frame budget. A second full
+run was cut off by a termination signal after an hour, with only the same timing checks failed.
+
+Those checks were then run alone twice, with the shade and with `AirShade.setup` switched off
+(the code of main), back to back. Both fail all three under the same load: with the shade off, the
+rain averaged 10.63 ms, six rooms loaded over 500 ms (`gym/gym` 804 ms, `proving_scar` 775 ms)
+and five settled rooms ran over 8 ms. Timed inside `Room`, the shade costs at most 18 ms of a load
+(`gym/gym`, 170 x 46 tiles) and is one draw call a frame. The tests for this pass
+(`--filter=test_air_`): 54 checks passed.
 
 ## Rubric (design bible 15.3)
 
