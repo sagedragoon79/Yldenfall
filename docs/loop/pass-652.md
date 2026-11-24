@@ -50,7 +50,10 @@ Mutation check: with `hung_decks` returning no decks, `test_plank_a_hung_run_is_
 
 ## Full suite
 
-RESULT_SUITE
+One run (`TEST_TIMEOUT=7200`): 37,223 checks passed, 1 failed, a frame-time budget in a room the
+decks do not touch per frame (`test_spires_rain_stays_cheap`: the Carillon's rain averaged 8.40 ms
+in the full run). Run alone it passed every check (6.82 ms). The decks are drawn once per room
+load in the same `PlankSupports` layer, so they cost no frame time. The tests for this pass (`--filter=test_plank`): 1,063 checks passed.
 
 ## Rubric (design bible 15.3)
 
