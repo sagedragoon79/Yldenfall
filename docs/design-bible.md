@@ -3223,6 +3223,16 @@ The grade of pass 650 read hanging and chain platforms as "debug geometry, thin 
 
 Judged by eye at 1x and 2x in `tower/foot`, `evercrown/veins`, `spires/sky_steps` and `haar/marsh_road`. The first grown underside was one flat mid tone and read as a bright slab; it now faces down, into shadow. `test_plank_a_hung_run_is_a_deck`, `test_plank_a_grown_shelf_swells_underneath`, `test_plank_a_held_run_is_no_deck_and_hangers_are_heavy` and `test_plank_a_room_takes_its_decks_chord_in_stirrups` (`tests/test_plank_supports.gd`) hold it.
 
+### 12.129 The play plane stands off the backdrop (pass 653)
+
+The grade of pass 650 saw "no value split between the play plane and the backdrop" (`evercrown/veins`, `tower/foot`, the Spires fight). The parallax layers behind a room sat at the value of its walls and decks, so an edge was told from the air behind it only by its lit top.
+
+- **The air darkens toward every edge** (`scripts/world/air_shade.gd`, `AirShade`). On the backdrop's side of each solid edge, plank board and hung deck, the air darkens to `MAX_ALPHA` (0.6) of a near-black at the edge and falls off with the key light from the top left (12.3): `DOWN_REACH` (18 px) under an underside, `SIDE_REACH` (10 px) beside a wall, `UP_REACH` (4 px) over a walking surface, whose lit top stays the brightest thing at the edge. A plank board casts from its top `BOARD_DEPTH` (5 px); a hung deck (12.128) casts from its whole cell. Slopes cast none, and the room's outside casts none.
+- **Clean steps, no dither.** The falloff is `LEVELS` (4) steps in 2-pixel blocks. A first try used `DeepShade`'s 4 x 4 ordered dither; against the Boughs' pale day air (12.112) the checker read as grime, and the clean steps read as a cast shadow in every zone.
+- **Behind everything.** It draws at `z_index` -3, behind the tiles, the set pieces, the light shafts and every actor, once per room load as one texture (a pattern per neighbourhood, cached), so it costs nothing per frame.
+
+Judged by eye at 1x and 2x in `tower/foot`, `evercrown/veins`, `boughs/canopy_bridge`, `spires/sky_steps` and `hearthroot/plaza`. `tests/test_air_shade.gd` holds it.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
