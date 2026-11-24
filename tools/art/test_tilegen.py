@@ -424,12 +424,55 @@ def test_foreground_is_a_dark_silhouette():
 def test_foreground_stays_a_low_fringe():
     # The grade of pass 535: posts and reeds up to 128 px tall stood over the play
     # layer as black bars. No silhouette rises more than FORE_MAX_RISE world pixels
-    # above the band (bible 12.29; Backdrop.FORE_MAX_RISE mirrors it).
+    # above the band (bible 12.29; Backdrop.FORE_MAX_RISE mirrors it), except the
+    # broad near masses of 12.127, which stay under MOUND_RISE and inside their spans.
     base = tg.FORE_FLOOR - tg.FORE_BAND
     for z in tg.FORE_KIND:
-        bbox = tg.foreground(z).getchannel("A").getbbox()
+        img = tg.foreground(z)
+        bbox = img.getchannel("A").getbbox()
         rise = (base - bbox[1]) / tg.D
-        assert rise <= tg.FORE_MAX_RISE, f"{z}: silhouettes rise {rise:.1f} px, over {tg.FORE_MAX_RISE}"
+        assert rise <= tg.MOUND_RISE, f"{z}: silhouettes rise {rise:.1f} px, over {tg.MOUND_RISE}"
+        spans = tg.mound_spans(z)
+        a = img.getchannel("A").load()
+        for y in range(base - tg.MOUND_RISE * tg.D, base - tg.FORE_MAX_RISE * tg.D):
+            for x in range(tg.BG_W):
+                if a[x, y] and not any(sx <= x < sx + sw for sx, sw in spans):
+                    raise AssertionError(f"{z}: a fringe shape rises over FORE_MAX_RISE at x {x}")
+
+
+def test_the_foot_of_the_view_holds_broad_masses():
+    # The grade of pass 650: no foreground occluders at the screen's foot, and the
+    # ground's top line straight across the frame (bible 12.127). Every zone sets
+    # two or more broad masses of its matter that rise well past the low fringe;
+    # each is a mound, solid across MOUND_MIN_SPAN * 3 at least at half the fringe's
+    # height (never a post), at most MOUND_MAX_COVER of the width carries anything
+    # above the fringe, and a clear run of MOUND_CLEAR_RUN stays there.
+    base = tg.FORE_FLOOR - tg.FORE_BAND
+    for z in tg.FORE_KIND:
+        img = tg.foreground(z)
+        a = img.getchannel("A").load()
+        spans = tg.mound_spans(z)
+        assert len(spans) >= 2, f"{z}: {len(spans)} masses at the foot, want two or more"
+        for sx, sw in spans:
+            peak = min((y for x in range(sx, sx + sw) for y in range(base - tg.MOUND_RISE * tg.D, base)
+                        if a[x % tg.BG_W, y] >= tg.MOUND_RIM_A - 1), default=base)
+            assert (base - peak) / tg.D >= tg.FORE_MAX_RISE + 8,                 f"{z}: the mass at {sx} rises {(base - peak) / tg.D:.0f} px, not past the fringe"
+            row = base - (tg.FORE_MAX_RISE // 2) * tg.D
+            run = best = 0
+            for x in range(sx, sx + sw):
+                run = run + 1 if a[x % tg.BG_W, row] >= tg.MOUND_RIM_A - 1 else 0
+                best = max(best, run)
+            assert best >= 3 * tg.MOUND_MIN_SPAN * tg.D, f"{z}: the mass at {sx} is no mound ({best} px solid)"
+        over = [any(a[x, y] for y in range(base - tg.MOUND_RISE * tg.D, base - tg.FORE_MAX_RISE * tg.D))
+                for x in range(tg.BG_W)]
+        cover = sum(over) / tg.BG_W
+        assert cover <= tg.MOUND_MAX_COVER, f"{z}: {cover:.2f} of the width rises over the fringe"
+        doubled = over + over
+        run = best = 0
+        for o in doubled:
+            run = 0 if o else run + 1
+            best = max(best, run)
+        assert min(best, tg.BG_W) >= tg.MOUND_CLEAR_RUN * tg.D, f"{z}: the clearest run is {best // tg.D} px"
 
 
 def test_the_hanging_frame_frames_the_top_without_a_band():

@@ -1982,7 +1982,7 @@ The independent grade of pass 535: the black posts, reeds and thorn stalks in fr
 - **Not bars.** Hearthroot and the Spires drew tall timber posts, the worst offenders. They now draw a broken fence: two to four short stubs joined by a sagging rail.
 - **In the zone's air.** The foreground shader leans the near-black art toward the zone's fog colour (`Backdrop.haze_for`, 12.5) by `FORE_TINT` (0.55), and the protrusions are more see-through (alpha 176, rim 196). The nearest layer reads as near air in the zone's tint, the way the back layers recede into it, instead of flat black. The band keeps its own rim alpha (224), so its top still marks `FORE_GROUND`.
 
-Held by `test_fore_silhouettes_stay_a_low_fringe` and `test_fore_leans_toward_the_zone_fog` in `tests/test_backdrop.gd` (the shipped art and the shader's colour maths, mirrored by `Backdrop.fore_color`) and `test_foreground_stays_a_low_fringe` in `tools/art/test_tilegen.py`. Judged by eye at 1x and 2x in `hearthroot/plaza`, `spires/sky_steps`, `haar/marsh_road` and `evercrown/veins`.
+Since pass 651 (12.127) the tint is 0.35 and a few broad masses rise over the fringe to 68 px. Held by `test_fore_silhouettes_stay_a_low_fringe` and `test_fore_leans_toward_the_zone_fog` in `tests/test_backdrop.gd` (the shipped art and the shader's colour maths, mirrored by `Backdrop.fore_color`) and `test_foreground_stays_a_low_fringe` in `tools/art/test_tilegen.py`. Judged by eye at 1x and 2x in `hearthroot/plaza`, `spires/sky_steps`, `haar/marsh_road` and `evercrown/veins`.
 
 ---
 
@@ -3199,6 +3199,19 @@ The grade of pass 645 saw "barcode stripes in the dirt tiles". The Heartwood's w
 - **The blends between tiers** (12.99) part wood into blobs, not blocks: the grain is darker but is no joint, so `tile_blocks` reads a wood tile as one block and cuts it into soft blobs, and every blob is a block of its own (a cut block in any zone was two halves of noise before, too few for a blend to stand midway in every half). The blends of the Boughs, the Tower and Vorrhallow, which had big blocks, are cut finer for it.
 
 Judged by eye on a wall of 8 by 5 tiles at 3x and in `heartwood/grub_burrows` and `haar/marsh_road`. A first try let streaks grow three cells wide with a dark heart; they read as blotches and repeated eyes and were dropped. `test_wood_is_no_barcode` in `tools/art/test_tilegen.py` holds it.
+
+### 12.127 Near masses frame the foot of the view (pass 651)
+
+The grade of pass 650 saw "ground as one repeated slab with a straight top line and no foreground occluders at the screen's foot" (`heartwood/grub_burrows`, `spires/sky_steps`, `tower/foot`). The low fringe (12.11, 12.29) was there, but at most 36 px tall, see-through and leaning more than half way to the zone's fog: in the dark rooms it sank into the ground, and when the camera rests on a floor the floor's top line, about 46 px up, ran unbroken across the frame. The hanging frame (12.121) framed the top; nothing framed the foot.
+
+- **Broad masses** (`tools/art/tilegen.py`, `MOUND_SHAPE`, `mound_spans`). Over the fringe, each zone's `<zone>_fore.png` sets two masses of its own matter on the band, 70 to 110 px wide with 150 px or more of air between them: a fern bank with fronds arching from its top (the Heartwood, the High Boughs), a reed tussock (the Haar, the Sunken Spring), a rock mound with great crystal shards (the Evercrown, Vorrhallow), a heap of fallen blocks set askew with chipped corners (the Tower, the Trials), and a mound of earth with a broken post and a plank leaning on it (Hearthroot, the Spires). Each is a mound, its top a ragged smoothed walk and its ends sloping down to the band, never a box or a post. They rise to `MOUND_RISE` (68 world px, `Backdrop.FORE_MASS_RISE`), so they stand over the floor's top line, and they are more solid than the fringe (alpha 236, rim 216). A blade or shard is cut short to fit under the cap, so no tip is sheared off flat.
+- **Not bars.** The pass 535 fault stays answered: only these masses reach over `FORE_MAX_RISE`, each is solid across at least 36 px at half the fringe's height, at most 40% of the width carries anything over the fringe, and somewhere a run of 200 px is clear.
+- **Darker.** `FORE_TINT` drops from 0.55 to 0.35, so the near layer stays darker than the ground in front of which it stands (the hanging frame leans 0.2).
+- **It gives way.** The masses carry the reveal shader (12.26) like the rest of the fringe, so a hero, foe, hazard or pickup behind one shows through.
+
+Judged by eye at 1x and 2x in `heartwood/grub_burrows`, `tower/foot`, `spires/sky_steps`, `haar/marsh_road` and `evercrown/veins`. The first try clipped each mass to its span, which made boxes, and stopped near 40 px, under the floor's top line; the ends now slope and the cap is 68. `test_the_foot_of_the_view_holds_broad_masses` and `test_foreground_stays_a_low_fringe` (`tools/art/test_tilegen.py`), and `test_the_foot_of_the_view_holds_near_masses` and `test_fore_silhouettes_stay_a_low_fringe` (`tests/test_backdrop.gd`) hold it.
+
+- **Not done here.** The floor's top line is still level wherever a room's floor is level; the masses only cross it.
 
 ## 13. Asset Production Plan
 
