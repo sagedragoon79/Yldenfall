@@ -3179,6 +3179,16 @@ The grade of pass 645 named the Evercrown's "flat purple" a dead void. In a tall
 
 Judged by eye at 1x and 2x in `evercrown/veins`, `evercrown/threshold` and `vorrhallow/flooded_hall`. The first try drew narrow shards that read as a field of grass blades; the masses are now about twice as broad, with less lean. `test_the_crystal_halls_near_plane_holds_crystal_masses` in `tools/art/test_tilegen.py` holds it.
 
+### 12.125 A side exit is a passage mouth (pass 649)
+
+The grade of pass 645 saw "walls that end mid-air at the screen's edge". A door on a room's left or right edge is an opening with floor under it and, in most rooms, a wall above it only a tile or two thick (`haar/marsh_road`, `spires/sky_steps`, `boughs/canopy_bridge`). The backdrop showed through the opening at full light right to the frame, so the wall over it read as a slab hanging in air with nothing past it.
+
+- **The mouth** (`ExitMouth`, `scripts/world/exit_mouth.gd`). Each side exit with a wall over its edge column darkens toward the edge, as a passage does that runs on past the frame: from nothing `DEPTH` (56 world px) in to `MAX_ALPHA` (0.9) at the edge on a curve, darker in the `LINTEL_ROWS` under the wall, in `DeepShade`'s ordered dither and 2-pixel blocks. Where the wall above ends before the shade does, the shade's top fades in over `OPEN_FADE` px, so no hard edge is drawn across open air.
+- **Behind the tiles and the actors** (`z_index` -1, over the light shafts): the lintel, the threshold and the hero stay lit, and only the backdrop seen through the mouth is shaded.
+- An exit with open sky over it has no roof and no mouth. In the Haar the fog (z 4) lies over the mouth as over everything, so there it is faint.
+
+Judged by eye at 1x and 2x in `spires/sky_steps`, `boughs/canopy_bridge`, `hearthroot/plaza`, `heartwood/grub_burrows` and `haar/marsh_road`. The first try ran the dark band under the lintel past the wall's end, a hard-topped box in open air; the top now fades in there. `tests/test_exit_mouth.gd` holds it.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

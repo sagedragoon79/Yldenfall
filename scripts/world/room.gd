@@ -362,6 +362,11 @@ func build(text: String) -> void:
 		keel.setup(_solid_look, blocked, size_tiles, id.hash())
 
 	var found := Room.scan_doors(grid)
+	# A side exit is the mouth of a passage under the wall above it (design bible 12.125).
+	var mouth := ExitMouth.new()
+	mouth.name = "ExitMouth"
+	add_child(mouth)
+	mouth.setup(found, _solid_look, size_tiles)
 	for spec: String in lists.get("door", []):
 		var parts := spec.split(",")
 		if parts.size() < 3:
