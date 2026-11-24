@@ -1476,19 +1476,69 @@ def test_graded_play_fill_is_calm():
 
 
 def test_wood_strands_run_on_from_tile_to_tile():
-    # With the noise gone, a strand layout drawn per tile cut a hard seam across
-    # every tile row of the Heartwood walls. The strands now share one layout
-    # (WOOD_STRANDS), so the bottom row of one tile matches the top row of the
-    # next over most columns; only grain lines and knots break it. (Keying the
-    # layout on the tile's seed again drops the match to about half.)
+    # With the noise gone, a layout drawn per tile cut a hard seam across every
+    # tile row of the Heartwood walls. The shared grain (WOOD_GRAIN, 12.126) wraps
+    # over the tile and a tile's own streaks stay inside it, so any two tiles have
+    # the same pixels along all four edges: whatever lies next to a tile, the
+    # grain runs on across the seam. (Keying the shared layout on the seed again,
+    # or letting a tile's own streaks reach its edge, breaks the match.)
     T = tg.T
     for a, b in ((201, 202), (57, 203), (101, 211)):
-        top = tg.Image.new("RGBA", (T, T), tg.CLEAR)
-        low = tg.Image.new("RGBA", (T, T), tg.CLEAR)
-        tg.paint_wood(top, 0, 0, a, "bark")
-        tg.paint_wood(low, 0, 0, b, "bark")
-        same = sum(top.getpixel((x, T - 1)) == low.getpixel((x, 0)) for x in range(T))
-        assert same / T >= 0.75, f"wood strands break at the tile seam ({a}->{b}): {same}/{T}"
+        one = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+        two = tg.Image.new("RGBA", (T, T), tg.CLEAR)
+        tg.paint_wood(one, 0, 0, a, "bark")
+        tg.paint_wood(two, 0, 0, b, "bark")
+        edge = [(k, 0) for k in range(T)] + [(k, T - 1) for k in range(T)] + [(0, k) for k in range(T)] + [(T - 1, k) for k in range(T)]
+        same = sum(one.getpixel(p) == two.getpixel(p) for p in edge)
+        assert same == len(edge), f"wood grain breaks at the tile seam ({a}->{b}): {same}/{len(edge)}"
+        assert one.tobytes() != two.tobytes(), "the seed still varies the tile's own streaks"
+
+
+def _wood_wall(painter_zone="heartwood", cols=4, rows=4):
+    T = tg.T
+    img = tg.Image.new("RGBA", (cols * T, rows * T), tg.CLEAR)
+    for j in range(rows):
+        for i in range(cols):
+            tg.paint_tile(img, i * T, j * T, 255, painter_zone, 201 + (i * 7 + j * 13) % 40)
+    return img
+
+
+def test_wood_is_no_barcode():
+    # The grade of pass 645 read the Heartwood's wood as "barcode stripes":
+    # strands of two values running from the top of a wall to its foot on a fixed
+    # beat (bible 12.28). The face is now one body value cut by grain streaks that
+    # end (12.126). Over a wall of 4 x 4 fill tiles, no column keeps the grain's
+    # shade for two tiles running, every column carries some grain (a bare column
+    # at the tile's edge would draw a seam every tile), and none is all grain.
+    # (The old strands ran the whole wall: a run of 128, columns of all grain
+    # beside columns of none.)
+    T = tg.T
+    for zone, ramp in (("heartwood", "bark"), ("haar", "umber")):
+        img = _wood_wall(zone)
+        grain = tg.c(f"{ramp}-1")[:3]
+        W, H = img.size
+        longest, shares = 0, []
+        for x in range(W):
+            run = n = 0
+            for y in range(H):
+                if img.getpixel((x, y))[:3] == grain:
+                    run += 1
+                    n += 1
+                    longest = max(longest, run)
+                else:
+                    run = 0
+            shares.append(n / H)
+        assert longest < 2 * T, f"{zone}: a grain streak runs {longest} px down the wall"
+        assert min(shares) > 0 and max(shares) < 0.8, f"{zone}: grain columns beside bare ones ({min(shares):.2f} to {max(shares):.2f})"
+        body = sum(img.getpixel((x, y))[:3] == tg.c(f"{ramp}-2")[:3] for x in range(W) for y in range(H)) / (W * H)
+        assert 0.45 < body < 0.85, f"{zone}: one body value holds the face, got {body:.2f}"
+
+
+def test_wood_trim_is_notched_where_grain_meets_it():
+    # The rind under a wood floor's cap was notched where two strands met; it is
+    # notched where a shared grain streak reaches the row under it, and only there.
+    starts = tg.wood_strand_starts()
+    assert 1 <= len(starts) <= 5, f"a few notches a tile, got {starts}"
 
 
 def test_evercrown_cells_join_across_tile_edges():
@@ -2119,7 +2169,7 @@ def test_a_blend_holds_two_tiers_block_by_block():
             seed = tg.BLEND_SEED + v
             plain = tg.Image.new("RGBA", (T, T), tg.CLEAR)
             tg.paint_tile(plain, 0, 0, 255, zone, seed)
-            blocks = tg.tile_blocks(plain, 0, 0, seed)
+            blocks = tg.tile_blocks(plain, 0, 0, seed, tg.zone_has_joints(zone))
             assert len(blocks) == T * T, f"{zone}: every pixel belongs to a block"
             assert len(set(blocks.values())) >= 2, f"{zone}: a field tile is one block"
             img = tg.Image.new("RGBA", (T, T), tg.CLEAR)

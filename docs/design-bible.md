@@ -1967,7 +1967,7 @@ The independent grade of pass 529 read the interior fill of four zones' play til
 
 The rule: **a play tile's interior is drawn in long, flat marks of two or three values, and the lit cap carries the light.** No single-pixel flecks or pores; a detail is a run, a band or a shape.
 
-- **Wood** (`paint_wood`, the Heartwood; `paint_limb`, the Haar on top of it): vertical strands 4 to 9 render pixels wide, alternating two values with a dark seam between them, and a few long grain lines or highlights (6 to 20 pixels) laid down them. The strand layout is the same in every tile (`WOOD_STRANDS`), so a strand runs on unbroken into the tile below; the seed varies only the grain lines and the rare knot. The Haar's lichen patches are solid.
+- **Wood** (`paint_wood`, the Heartwood; `paint_limb`, the Haar on top of it): one body value cut by grain streaks a shade darker that taper at both ends and stop, with a lit west edge on the odd streak and the rare knot (12.126, pass 650; the vertical strands it had from pass 534 read as barcode stripes). The Haar's lichen patches are solid.
 - **Limestone** (`paint_spring`, the Sunken): two layers per tile, a flat body under a one-pixel lit top and over a one-pixel shadow, a wave of one world pixel, and the blue-green stain as long runs along a layer's foot. The layer values alternate by layer, not by tile, so the strata run across a whole wall.
 - **Grown cells** (`paint_meteor`, the Evercrown): two cells across and two down each tile, one flat body value, a lit rim along each cell's upper side and a seam one world pixel wide. The cells wrap over the tile and share one layout (`MEAT_CELLS`), so a run of one-tile ledges joins into one grown mass. The cyan pores are rare.
 
@@ -3188,6 +3188,17 @@ The grade of pass 645 saw "walls that end mid-air at the screen's edge". A door 
 - An exit with open sky over it has no roof and no mouth. In the Haar the fog (z 4) lies over the mouth as over everything, so there it is faint.
 
 Judged by eye at 1x and 2x in `spires/sky_steps`, `boughs/canopy_bridge`, `hearthroot/plaza`, `heartwood/grub_burrows` and `haar/marsh_road`. The first try ran the dark band under the lintel past the wall's end, a hard-topped box in open air; the top now fades in there. `tests/test_exit_mouth.gd` holds it.
+
+### 12.126 Wood grain ends (pass 650)
+
+The grade of pass 645 saw "barcode stripes in the dirt tiles". The Heartwood's walls and floors (`paint_wood`, and the Haar's limbs through `paint_limb`) were strands 4 to 9 render pixels wide in two values with a dark seam between them, the same layout in every tile, so each strand ran from a wall's top to its foot: stripes on a fixed beat, the same fault the Boughs had before 12.92.
+
+- **One body value and streaks that end.** The face is the ramp's `lo + 1` step. Grain streaks a step darker (`wood_lens_cells`) run 5 to 14 world pixels, one or two wide, tapering to a point at each end and leaning a pixel over their length; the odd streak of a tile's own has a lit west edge a step lighter (one a tile at least, so the face keeps three values; a shared streak never does, since the next tile's seed would cut its edge off at the seam). The rare knot stays.
+- **Joined at the seams.** The shared streaks (`WOOD_GRAIN`) wrap over the tile's edges, two of them across the side seams, so the grain runs on into the tiles beside and below and no column at a tile's edge is left bare. Each tile adds three streaks of its own from its seed (`wood_seed_lenses`), inside it, so they meet no seam and the walls do not repeat on a 32-pixel beat.
+- **The rind** under a wood floor's cap is notched where a shared streak reaches the row under it (`wood_strand_starts`).
+- **The blends between tiers** (12.99) part wood into blobs, not blocks: the grain is darker but is no joint, so `tile_blocks` reads a wood tile as one block and cuts it into soft blobs, and every blob is a block of its own (a cut block in any zone was two halves of noise before, too few for a blend to stand midway in every half). The blends of the Boughs, the Tower and Vorrhallow, which had big blocks, are cut finer for it.
+
+Judged by eye on a wall of 8 by 5 tiles at 3x and in `heartwood/grub_burrows` and `haar/marsh_road`. A first try let streaks grow three cells wide with a dark heart; they read as blotches and repeated eyes and were dropped. `test_wood_is_no_barcode` in `tools/art/test_tilegen.py` holds it.
 
 ## 13. Asset Production Plan
 

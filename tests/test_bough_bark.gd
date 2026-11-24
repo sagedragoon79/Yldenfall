@@ -54,9 +54,10 @@ func test_a_bough_is_one_body_value() -> void:
 	for tile in _tiles():
 		var body := _body(img, tile)
 		check(body[1] > 0.7, "tile %s: one value fills the plates, got %.2f" % [tile, body[1]])
-	# The Heartwood keeps its strands: two values, neither most of the tile.
+	# The Heartwood is its own wood (12.126): a body value under a dense grain,
+	# not the boughs' plates.
 	var wood := _body(_atlas("heartwood"), FIELD[0])
-	check(wood[1] < 0.7, "the Heartwood's wood is still strands (%.2f)" % wood[1])
+	check(wood[1] < 0.7, "the Heartwood's grain covers more of it than the boughs' furrows (%.2f)" % wood[1])
 
 
 func test_no_furrow_is_a_stripe() -> void:
@@ -65,9 +66,10 @@ func test_no_furrow_is_a_stripe() -> void:
 		var body: Color = _body(img, tile)[0]
 		var run := _longest_dark_run(img, tile, body)
 		check(run > 3 and run <= 2 * PX / 3, "tile %s: the longest straight furrow is %d px (a stripe is %d or more)" % [tile, run, PX])
-	# A strand's seam ran the height of every tile.
+	# The Heartwood's strands ran the height of every tile; since pass 650 its
+	# grain ends too (12.126).
 	var wood := _atlas("heartwood")
-	check(_longest_dark_run(wood, FIELD[0], _body(wood, FIELD[0])[0]) >= PX, "a strand's seam runs the whole tile")
+	check(_longest_dark_run(wood, FIELD[0], _body(wood, FIELD[0])[0]) < PX, "no grain streak runs the whole Heartwood tile")
 
 
 func test_the_plates_are_the_same_in_every_tile() -> void:

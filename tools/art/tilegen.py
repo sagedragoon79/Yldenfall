@@ -292,15 +292,6 @@ SOFFIT_BOTTOM = 2  # world px of outline and lip under it
 RIVET_STEP = 8     # world px between the rivets of the Tower's flange
 
 
-def wood_strand_starts():
-    """The columns where paint_wood starts a strand (the same in every tile)."""
-    starts, x = [], 0
-    while x < T:
-        starts.append(x)
-        x += 4 + int(hash2(WOOD_STRANDS, x, 18) * 6)
-    return starts
-
-
 def trim_band(img, ox, oy, seed, x0, x1, zone, y0, tones):
     """Three world-pixel rows from render row ``y0``: a lit line, a band and a
     shadow line, in the zone's material.
@@ -772,50 +763,87 @@ def crystal_vein(img, ox, oy, seed):
         x = max(1, min(T - 2, x))
 
 
-WOOD_STRANDS = 5
+# The Heartwood's shared grain (12.126): streaks as (x, y, length, widest, lean)
+# in world cells of the 16-cell tile. They wrap over the tile's edges, so the
+# grain runs on from a tile into the ones beside and below it. Uneven on purpose.
+WOOD_GRAIN = ((1, 3, 13, 2, 1), (6, 11, 10, 1, -1), (9, 0, 14, 2, 1), (13, 8, 11, 2, -1), (4, 14, 8, 1, 1),
+              (15, 6, 12, 2, 1), (0, 12, 9, 1, -1))
+WOOD_SEED_LENSES = 3   # streaks of a tile's own, inside it
+
+
+def wood_lens_cells(lens):
+    """The world cells of one grain streak: (x, y, w) for each row, where the
+    streak covers columns x .. x + w - 1. A streak tapers from a point at each
+    end to its widest at the middle and leans one cell over its length."""
+    x0, y0, length, widest, lean = lens
+    rows = []
+    for k in range(length):
+        t = (k + 0.5) / length
+        w = max(1, round(widest * math.sin(math.pi * t)))
+        x = x0 + round(lean * t) - (w - 1) // 2
+        rows.append((x, y0 + k, w))
+    return rows
+
+
+def wood_seed_lenses(seed):
+    """The tile's own streaks: they stay inside the tile, so they meet no seam."""
+    lenses = []
+    for i in range(WOOD_SEED_LENSES):
+        length = 5 + int(hash2(seed, i, 31) * 7)
+        widest = 1 + int(hash2(seed, i, 32) * 2)
+        x0 = 2 + int(hash2(seed, i, 33) * (T // D - 5))
+        y0 = 1 + int(hash2(seed, i, 34) * (T // D - length - 1))
+        lean = 1 if hash2(seed, i, 35) > 0.5 else -1
+        lenses.append((x0, y0, length, widest, lean))
+    return lenses
+
+
+def wood_strand_starts(row=None):
+    """The render columns where a grain streak of the shared layout reaches a
+    world row (a trim lip is notched there). ``row`` defaults to the row just
+    under the floor trim."""
+    row = (COURSE_TOP + 3) if row is None else row
+    out = []
+    for lens in WOOD_GRAIN:
+        for x, y, w in wood_lens_cells(lens):
+            if y % (T // D) == row:
+                out.append((x % (T // D)) * D)
+    return sorted(set(out))
 
 
 def paint_wood(img, ox, oy, seed, ramp, lo=1):
-    """Living wood: broad vertical strands of two values, long grain lines running
-    down them, a long highlight here and there, and the odd knot.
+    """Living wood: one body value cut by grain streaks a shade darker that
+    taper at both ends and stop, a lit west edge on the odd streak, and the
+    rare knot.
 
-    Calm fill (design bible 12.28, pass 534): every mark is long. A strand is 4 to
-    9 render pixels wide and one flat value; a grain line or a highlight runs
-    6 to 20 pixels down; there are no single-pixel flecks. The older face mixed a
-    fine sine grain, a 6-pixel patch grid and random flecks, and read as "static-
-    like dirt" in the Heartwood and the Haar (independent grade, pass 529). The
-    strands still give the face three values with none swamping it (pass 520)."""
-    # Strands: walk across the tile in runs of 4..9 columns, alternating value.
-    # The layout is the same in every tile (WOOD_STRANDS, not ``seed``), so a
-    # strand runs on unbroken from one tile to the one below it; the seed varies
-    # only the grain lines, highlights and knots laid over it. ``lo`` is the
-    # darker strand's step on the ramp (the High Boughs' sunlit wood sits at 3).
-    strand = []
-    k = 0
-    while len(strand) < T:
-        w = 4 + int(hash2(WOOD_STRANDS, len(strand), 18) * 6)
-        strand += [(k % 2, len(strand))] * w
-        k += 1
-    for x in range(T):
-        val, start = strand[x]
-        base = lo + 1 if val else lo
-        edge = x == start and x > 0              # a dark seam between strands
-        for y in range(T):
-            col = base
-            if edge:
-                col = base - 1
-            img.putpixel((ox + x, oy + y), c(f"{ramp}-{col}"))
-    # Long grain lines a shade darker, and the odd long highlight a shade lighter.
-    for i in range(6):
-        gx = int(hash2(seed, i, 19) * T)
-        y0 = int(hash2(seed, i, 20) * T)
-        length = 6 * D + int(hash2(seed, i, 21) * 7 * D)
-        lift = hash2(seed, i, 22) > 0.6
-        for y in range(y0, min(T, y0 + length)):
-            nm = img.getpixel((ox + gx, oy + y))
-            here = lo + 1 if nm[:3] == c(f"{ramp}-{lo + 1}")[:3] else lo
-            col = min(here + 1, lo + 2) if lift else max(here - 1, lo - 1)
-            img.putpixel((ox + gx, oy + y), c(f"{ramp}-{col}"))
+    Calm fill (design bible 12.28, pass 534) and no barcode (12.126, pass 650):
+    the face was strands of two values from the top of a wall to its foot, a
+    stripe on a fixed beat that the grade of pass 645 read as "barcode stripes".
+    A streak now runs 5 to 14 world pixels and ends; the shared streaks
+    (WOOD_GRAIN) wrap over the tile's edges so the grain runs on across every
+    seam, and the tile's own (wood_seed_lenses) stay inside it."""
+    W = T // D
+    body, grain, lit = lo + 1, lo, lo + 2
+
+    def put(wx, wy, step):
+        for dy in range(D):
+            for dx in range(D):
+                img.putpixel((ox + (wx % W) * D + dx, oy + (wy % W) * D + dy), c(f"{ramp}-{step}"))
+
+    for y in range(W):
+        for x in range(W):
+            put(x, y, body)
+    lenses = list(WOOD_GRAIN) + wood_seed_lenses(seed)
+    for i, lens in enumerate(lenses):
+        rows = wood_lens_cells(lens)
+        # Only a tile's own streaks catch the light: a shared one crosses a seam,
+        # where the next tile's seed would cut its lit edge off. One a tile at least.
+        shine = i >= len(WOOD_GRAIN) and (hash2(seed, i, 36) > 0.6 or i == len(WOOD_GRAIN))
+        for k, (x, y, w) in enumerate(rows):
+            for dx in range(w):
+                put(x + dx, y, grain)
+            if shine and 0 < k < len(rows) - 1 and w >= 2:
+                put(x - 1, y, lit)         # the light, from the upper left
     if hash2(seed, 7, 3) > 0.92:  # rare: the few interior tiles repeat a lot
         # A knot: a dark eye in a lighter ring of grain.
         kx, ky = 8 + int(hash2(seed, 1, 5) * 14), 8 + int(hash2(seed, 2, 5) * 14)
@@ -1622,18 +1650,20 @@ def _blend_blob(x, y, seed):
     return a + (b - a) * ty > 0.5
 
 
-def tile_blocks(img, ox, oy, seed):
+def tile_blocks(img, ox, oy, seed, joints=True):
     """Labels a painted tile's blocks: {(x, y): label} for every pixel. A block
     is a stretch of body joined edge to edge, bounded by the joints (pixels much
     darker than the tile's commonest color); a joint pixel takes the label of
     the block nearest it. A block bigger than BLEND_BIG of the tile is cut into
-    soft-edged blobs, so open grain and a plate with no seam break up too."""
+    soft-edged blobs, so open grain and a plate with no seam break up too.
+    ``joints`` False: the material has none (wood, 12.126: its grain is darker
+    but parts nothing), so the whole tile is one block, cut into blobs."""
     px = {(x, y): img.getpixel((ox + x, oy + y)) for y in range(T) for x in range(T)}
     counts = {}
     for v in px.values():
         counts[v] = counts.get(v, 0) + 1
     body = _lum3(max(counts, key=counts.get))
-    joint = {k for k, v in px.items() if _lum3(v) < BLEND_JOINT * body}
+    joint = {k for k, v in px.items() if joints and _lum3(v) < BLEND_JOINT * body}
     label, n = {}, 0
     for start in px:
         if start in joint or start in label:
@@ -1648,8 +1678,23 @@ def tile_blocks(img, ox, oy, seed):
                     label[q] = n
                     stack.append(q)
         if len(members) > BLEND_BIG * T * T:
-            for (x, y) in members:
-                label[(x, y)] = (n, _blend_blob(x, y, seed + n))
+            # Each blob is a block of its own (pass 650): wood with no joints at
+            # all (12.126) is one block, and two halves of noise were too few
+            # for a blend to balance its tiers in every half.
+            side = {q: _blend_blob(q[0], q[1], seed + n) for q in members}
+            blob = {}
+            for q0 in members:
+                if q0 in blob:
+                    continue
+                blob[q0] = len(blob)
+                k, stack = blob[q0], [q0]
+                while stack:
+                    x, y = stack.pop()
+                    label[(x, y)] = (n, k)
+                    for q in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                        if q in side and q not in blob and side[q] == side[q0]:
+                            blob[q] = k
+                            stack.append(q)
         n += 1
     if not label:
         return {k: 0 for k in px}
@@ -1670,12 +1715,17 @@ def tile_blocks(img, ox, oy, seed):
     return label
 
 
+def zone_has_joints(zone):
+    """False for wood (12.126): its grain is darker but parts no blocks."""
+    return ZONES[zone]["painter"] not in (paint_wood, paint_limb)
+
+
 def paint_blend(img, ox, oy, zone, seed, steps, taken=()):
     """A field tile whose blocks stand `steps` or `steps + 1` shades down, half
     the tile's area each, chosen block by block. Returns the dark pixels;
     ``taken``: those of the tier's other blends, which this one stands apart from."""
     paint_tile(img, ox, oy, 255, zone, seed)
-    blocks = tile_blocks(img, ox, oy, seed)
+    blocks = tile_blocks(img, ox, oy, seed, zone_has_joints(zone))
     # Each block's area in the whole tile and in its west, east, upper and lower
     # halves. Of up to BLEND_TRIES seeded draws, the first whose dark blocks come
     # within BLEND_SLACK of half of all five wins (or the nearest, if none
