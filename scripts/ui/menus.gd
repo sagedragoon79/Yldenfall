@@ -489,7 +489,8 @@ static func open_pause(tree: SceneTree, p: Player, on_quit: Callable) -> bool:
 			{"label": "Journey", "detail": "How much of the world you have seen, and the guardians you have found."},
 			{"label": "Quit game", "detail": "Anything since your last rest at a shrine is lost."},
 		] + ([{"label": "Leave the trial", "detail": "Stop the clock and return to the Ringreader."}] if Trials.active() else []) \
-			+ ([{"label": "Leave the rush", "detail": "Stop the clock and return to the Ringreader."}] if BossRush.active() else [])
+			+ ([{"label": "Leave practice", "detail": "End the fight and see its report."}] if BossPractice.active()
+				else [{"label": "Leave the rush", "detail": "Stop the clock and return to the Ringreader."}] if BossRush.active() else [])
 	# Backing out of a page lands on the row that opened it (pass 467), so the
 	# next Jump does not resume the game from Resume.
 	var back_to := func(row: int) -> Callable:
@@ -521,7 +522,9 @@ static func open_pause(tree: SceneTree, p: Player, on_quit: Callable) -> bool:
 				on_quit.call()
 			8:
 				menu.close()
-				if BossRush.active():
+				if BossPractice.active():
+					BossPractice.finish("left")
+				elif BossRush.active():
 					var world := tree.get_first_node_in_group("world") as World
 					if world != null:
 						BossRush.back(world, p)

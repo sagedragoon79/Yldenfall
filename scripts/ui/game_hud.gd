@@ -533,6 +533,11 @@ func _draw_rush() -> void:
 	var clock := Trials.format_time(float(BossRush.run.time))
 	var best := BossRush.best()
 	var sub := "BEST " + Trials.format_time(best) if best != INF else "FIRST RUSH"
+	if BossPractice.active() and not BossPractice.stats.is_empty():
+		# Boss practice (a rush of one): the fight's own clock.
+		title = "PRACTICE"
+		clock = Trials.format_time(float(BossPractice.stats.time))
+		sub = BossPractice.boss_name(String(BossPractice.stats.boss)).to_upper()
 	var w := maxf(PixelFont.width(title, 10), PixelFont.width(clock, 20)) + 20.0
 	var x := get_viewport_rect().size.x * 0.5
 	_draw_plate(Rect2(Vector2(x - w * 0.5, 6), Vector2(w, 46)))

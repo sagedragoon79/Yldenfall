@@ -145,6 +145,9 @@ static func _later(world: World, seconds: float, then: Callable) -> void:
 static func on_boss_down(world: World, p: Player) -> void:
 	if not active():
 		return
+	if BossPractice.active():
+		BossPractice.finish("won")
+		return
 	if advance():
 		var result := finish()
 		GameState.banner.emit("The Rush Is Won", "%s%s" % [Trials.format_time(result.time), "  A new best!" if result.record else "  Best " + Trials.format_time(result.best)])
@@ -163,6 +166,9 @@ static func on_boss_down(world: World, p: Player) -> void:
 ## A blow that would have killed you: the rush ends and you go back whole.
 static func fall(world: World, p: Player) -> void:
 	if not active() or run.get("over", false):
+		return
+	if BossPractice.active():
+		BossPractice.finish("lost")
 		return
 	run.over = true
 	GameState.banner.emit("The Rush Ends", "Fallen at %d of %d." % [int(run.index) + 1, ORDER.size()])

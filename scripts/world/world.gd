@@ -358,6 +358,7 @@ func _enter(room_id: String) -> void:
 
 func _physics_process(delta: float) -> void:
 	BossRush.tick(delta)
+	BossPractice.tick(get_tree(), delta)
 	if busy or player == null or room == null or player.dead or player.frozen:
 		return
 	player.in_sap = room.is_sap_at(player.global_position + Vector2(0, -6))
@@ -543,6 +544,17 @@ static func arrival_point(in_room: Room) -> Vector2:
 	if in_room.spawn_position != Vector2.ZERO or in_room.doors.is_empty():
 		return in_room.spawn_position
 	return door_arrival(in_room.doors[in_room.doors.keys().min()])
+
+
+## Puts the player at door `n` of the room, as if just through it (boss practice).
+func place_at_door(n: int) -> void:
+	if not room.doors.has(n):
+		return
+	_place_at_door(room.doors[n], Vector2.ZERO)
+	player.spawn_point = player.global_position
+	player.safe_position = player.global_position
+	_ignored_door = n
+	camera.snap_to_target()
 
 
 func _place_at_door(door: Dictionary, vel: Vector2) -> void:

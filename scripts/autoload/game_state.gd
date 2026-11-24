@@ -751,6 +751,9 @@ func grant_stat_item(kind: String, p: Player) -> String:
 # --- Save files --------------------------------------------------------------------
 
 func save_game(to_slot := -1) -> bool:
+	if BossPractice.running:
+		# Boss practice keeps nothing: no journey flask is touched.
+		return false
 	if to_slot >= 0:
 		slot = to_slot
 	data.play_time = float(data.get("play_time", 0.0)) + play_time
