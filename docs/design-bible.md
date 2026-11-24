@@ -3213,6 +3213,16 @@ Judged by eye at 1x and 2x in `heartwood/grub_burrows`, `tower/foot`, `spires/sk
 
 - **Not done here.** The floor's top line is still level wherever a room's floor is level; the masses only cross it.
 
+### 12.128 A hung run is a deck (pass 652)
+
+The grade of pass 650 read hanging and chain platforms as "debug geometry, thin and the backdrop's value" (`tower/foot`, `evercrown/veins`). A plank run with nothing under it hung on two hangers (12.30), but its board was 3 world px with the tile's light trestle under it, the chains were 3 px wide and the ropes 1.5 px: at 1x the run was a line on two hairs, about the value of the wall behind it.
+
+- **A girder under the board** (`scripts/world/plank_supports.gd`, `hung_decks`, `deck_parts`). Every run with a hanger is a deck as deep as its cell: a dark web (the timber's dark tone) from under the board (`DECK_WEB`, 5 px) to a bottom chord (`DECK_CHORD` to `DECK_FOOT`, 12 to 16 px) lit on top and dark below, a bolt in the zone's accent under each trestle foot, an end plate at each end, and a soft shadow on the air under it (`DECK_SHADOW`, alpha 0.45 then 0.2). The plank's own trestle stands over the web, so the deck reads as one dark mass with a lit top edge. Runs held by posts, frames or wall braces are unchanged.
+- **Heavier hangers.** Chain links are `CHAIN_W` (4 px) wide and 4 px long, face-on with a dark eye and edge-on in turn; rope and sinew are `ROPE_W` (2.5 px); the cleat above is 6 px. A hanger runs down past the board and takes the chord in a stirrup.
+- **The Evercrown's shelves are grown.** A `web` look swells into a rounded underside instead, deepest at its middle (`DECK_SWELL`, 5 px past the cell), lit along its top third and dark below, with a pore here and there.
+
+Judged by eye at 1x and 2x in `tower/foot`, `evercrown/veins`, `spires/sky_steps` and `haar/marsh_road`. The first grown underside was one flat mid tone and read as a bright slab; it now faces down, into shadow. `test_plank_a_hung_run_is_a_deck`, `test_plank_a_grown_shelf_swells_underneath`, `test_plank_a_held_run_is_no_deck_and_hangers_are_heavy` and `test_plank_a_room_takes_its_decks_chord_in_stirrups` (`tests/test_plank_supports.gd`) hold it.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
