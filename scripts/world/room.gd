@@ -349,6 +349,19 @@ func build(text: String) -> void:
 		add_child(holds)
 		holds.setup(zone, _planks, _solid_look, size_tiles)
 
+	# The play plane stands off the backdrop: the air at every edge darkens toward
+	# it (design bible 12.129).
+	var deck_cells := {}
+	var held := get_node_or_null("PlankSupports") as PlankSupports
+	if held != null:
+		for d: Dictionary in held.decks:
+			for x in range(int(d.left) / TILE, int(d.right) / TILE):
+				deck_cells[Vector2i(x, int(d.y) / TILE)] = true
+	var air_shade := AirShade.new()
+	air_shade.name = "AirShade"
+	add_child(air_shade)
+	air_shade.setup(_deep_solids(), _planks, deck_cells, size_tiles)
+
 	# A chest is set down on its floor with a few things beside it (design bible 12.114).
 	_seat_chests()
 
