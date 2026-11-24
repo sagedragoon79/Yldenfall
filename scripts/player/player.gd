@@ -1086,6 +1086,7 @@ func _try_dash(on_floor: bool) -> void:
 	_ground_dash = on_floor
 	_dash_timer = tuning.dash_time * dash_mult
 	_invuln_timer = maxf(_invuln_timer, dash_invuln())
+	BossPractice.note("dashes")
 	_jump_cut_available = false
 	_attack_timer = 0.0
 	is_wall_sliding = false
@@ -1634,6 +1635,7 @@ func _update_drink(delta: float, on_floor: bool) -> void:
 		if _drink_timer <= 0.0:
 			hp = mini(hp + roundi(combat.flask_heal * flask_mult), max_hp)
 			flask_charges -= 1
+			BossPractice.note("flasks")
 			_spawn_dust(Vector2(0, -20), "heal")
 			Sfx.play("heal")
 			health_changed.emit(hp, max_hp)
@@ -1777,6 +1779,8 @@ func _try_cast() -> void:
 		Sfx.play("fizzle")
 		return
 	mp -= cost
+	BossPractice.note("mp", cost)
+	BossPractice.note("spells")
 	_cast_cooldown = combat.cast_cooldown
 	for bolt in Spells.cast_all(equipped_spell, self):
 		get_parent().add_child(bolt)
@@ -1907,8 +1911,10 @@ func receive_attack(damage: int, source: Node2D, parryable := true) -> String:
 		elif catches:
 			ReflectedShot.spawn(self, source, source.get("tint") if source.get("tint") is Color else ReflectedShot.GOLD)
 			Sfx.play("zap", 0.1, 6.0)
+		BossPractice.note_attack(source, "parried", false)
 		return "parried"
 	if invulnerable:
+		BossPractice.note_attack(source, "ignored", is_dashing)
 		return "ignored"
 	if magic_ward > 0.0 and source.is_in_group(MAGIC):
 		damage = maxi(roundi(damage * (1.0 - magic_ward)), 1)
@@ -1926,6 +1932,7 @@ func receive_attack(damage: int, source: Node2D, parryable := true) -> String:
 		mp -= combat.guard_mp_cost
 		_spawn_dust(Vector2(facing * 10, -24), "guard")
 		Sfx.play("guard")
+		BossPractice.note_attack(source, "guarded", false)
 		take_damage(int(round(damage * (1.0 - guard_reduction))), false, knock)
 		_hurt_kind = DamageKind.PHYSICAL
 		return "guarded"
@@ -1938,6 +1945,7 @@ func receive_attack(damage: int, source: Node2D, parryable := true) -> String:
 		_spawn_dust(Vector2(facing * 10, -24), "guard")
 		Sfx.play(GUARD_BREAK_SOUND)
 		Feel.add_trauma(0.25)
+	BossPractice.note_attack(source, "hit", false)
 	take_damage(damage, false, knock)
 	_hurt_kind = DamageKind.PHYSICAL
 	afflict(Condition.of(source))
@@ -1997,12 +2005,17 @@ func take_damage(amount: int, from_hazard := false, knock_dir := 0, kind := "") 
 		GameState.toast.emit("Second Wind!")
 		Sfx.play("heal", 0.0)
 		_spawn_dust(Vector2(0, -16), "heal")
+	if BossPractice.active() and BossRush.run.get("over", false):
+		# Boss practice is over (won or fallen): the report is coming, and
+		# nothing left in the air can hurt you meanwhile.
+		return
 	if BossRush.active() and amount >= hp and not draught_ready():
 		# A boss rush (bible 11): the blow that would kill you ends the rush
 		# (an Amber Draught still saves you first).
 		var world := get_tree().get_first_node_in_group("world") as World
 		if world != null:
 			_invuln_timer = hurt_invuln()
+			BossPractice.note("taken", amount)
 			BossRush.fall(world, self)
 			return
 	hp -= amount

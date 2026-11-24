@@ -2172,20 +2172,12 @@ func test_the_rune_dagger_breaks_on_walls_and_at_the_end_of_its_reach() -> void:
 ## The damage balance sheet (design bible 5.5, pass 194): the kit the critical
 ## path has put in your hands by each zone, as [blade, tempers, armor, shield].
 ## The shield joined in pass 226: since pass 225 it wards a foe's sorcery.
-const PAR_KIT := {
-	"heartwood": ["long_sword", 0, "leather_armor", "small_shield"],
-	"tower": ["long_sword", 0, "leather_armor", "small_shield"],
-	"haar": ["long_sword", 1, "riveted_coat", "large_shield"],
-	"boughs": ["long_sword", 1, "riveted_coat", "large_shield"],
-	"spires": ["long_sword", 2, "riveted_coat", "large_shield"],
-	"vorrhallow": ["long_sword", 2, "full_plate", "magic_shield"],
-	"sunken": ["severance", 0, "full_plate", "magic_shield"],
-	"evercrown": ["severance", 0, "full_plate", "magic_shield"],
-}
+## Boss practice dresses you in it, so it lives there (2026-11-24).
+const PAR_KIT := BossPractice.PAR_KIT
 ## Pass 218: Thane Vorrund gives up the Severance (pass 217), so everything
 ## past his throne is fought with it: the Glass Rise, the Crown Gate and its
 ## mirror, and the Sunken Spring below the Rise.
-const PAST_VORRUND_KIT := ["severance", 0, "full_plate", "magic_shield"]
+const PAST_VORRUND_KIT := BossPractice.PAST_VORRUND_KIT
 const PAST_VORRUND_ROOMS := ["vorrhallow/meteor_rise", "vorrhallow/evercrown_gate"]
 const PAST_VORRUND_BOSSES := ["Likeness"]
 ## Each room legend's foe, and the shot it fires (null for none).

@@ -14,6 +14,7 @@ const SUITES := [
 	preload("res://tests/test_economy.gd"),
 	preload("res://tests/test_reachability.gd"),
 	preload("res://tests/test_boss.gd"),
+	preload("res://tests/test_boss_practice.gd"),
 	preload("res://tests/test_animation.gd"),
 	preload("res://tests/test_systems.gd"),
 	preload("res://tests/test_edge_shade.gd"),
@@ -218,6 +219,8 @@ func _clean_slate() -> void:
 	TimeStop.reset()
 	Trials.run = {}
 	BossRush.run = {}
+	BossPractice.stats = {}
+	BossPractice.running = false
 	PlayerVisual.forced = ""
 	PlayerVisual.body_sets = true
 	# A menu left open leaves the game paused, and the next test's world
@@ -254,6 +257,8 @@ func _leaks() -> Array[String]:
 		out.append("a trial running")
 	if BossRush.active():
 		out.append("a boss rush running")
+	if BossPractice.running or BossPractice.log_path != BossPractice.LOG_PATH or BossPractice.on_end.is_valid():
+		out.append("boss practice left running")
 	if PlayerVisual.forced != "":
 		out.append("a forced pose (%s)" % PlayerVisual.forced)
 	if not PlayerVisual.body_sets:

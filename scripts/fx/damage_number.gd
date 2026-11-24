@@ -26,6 +26,13 @@ static var _side := 1.0
 ## Adds a number for `amount` to `parent` at global `at`, when the option is on.
 ## Returns it, or null when numbers are off (or there is nothing to show).
 static func spawn(parent: Node, at: Vector2, amount_dealt: int, number_kind := "hit") -> DamageNumber:
+	# Every blow that lands passes here, so boss practice counts them here.
+	if amount_dealt > 0 and BossPractice.active():
+		if number_kind in ["hit", "heavy"]:
+			BossPractice.note("dealt", amount_dealt)
+			BossPractice.note("landed")
+		elif number_kind in ["hurt", "poison"]:
+			BossPractice.note("taken", amount_dealt)
 	if not Settings.damage_numbers or amount_dealt <= 0 or parent == null:
 		return null
 	var n := DamageNumber.new()

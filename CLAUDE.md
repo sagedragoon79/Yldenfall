@@ -28,6 +28,9 @@ same way (`ids` in that file; `GameState.migrate_ids` brings older saves over). 
 - Player sprite sheet: `python3 tools/art/spritegen.py`. Enemy and NPC sheets (NPCs from their
   `look` in `data/npcs.json`; rerun after adding a person): `python3 tools/art/castgen.py`. Room decor atlases:
   `python3 tools/art/decorgen.py`. Screenshot one player frame with `--shot-pose=slash1:1`.
+- Boss practice (a development tool, design bible 11): launch with `-- --practice` for the title's Boss practice row, or
+  `--practice=N` to start guardian N (the rush's order) at its door with its par kit. Reports go to `user://practice_log.csv`.
+  Rerun `tools/levels/practice_kits.tscn` (headless) after moving a Life Fruit, Mana Dew or Potion Shard, and update `BossPractice.KITS`.
 - The Haar Wyrm's rig (design bible 8.4 and 13.7): `python3 tools/art/wyrm_rig_pack.py` packs Sean's head, body and
   neck art into `assets/bosses/haar_wyrm/` (`--sheet OUT.png` to check the clips line up). Film it with the game's
   `--wyrm-seed=N --wyrm-reel`; `--wyrm-drawn` shows the old code-drawn one beside it.

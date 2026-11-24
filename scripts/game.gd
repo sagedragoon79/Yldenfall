@@ -59,6 +59,8 @@ extends Node2D
 ##   --flags=A,B                set world flags first, e.g. spring:heartwood
 ##   --trial=ID[,SECONDS]       run that Ringreader Trial's clock from here (SECONDS on it), e.g. walls,12.3
 ##   --rush=N[,SECONDS]         be on boss N (from 0) of a boss rush begun at the Ringreader (SECONDS on its clock)
+##   --practice[=N]             show the title's Boss practice row (development); =N starts guardian N's practice
+##                              (=list: the list, =report: a made-up report, for screenshots)
 ##   --title                    with --shot: capture the title screen
 ##   --boss-hp=F                set a boss's health to fraction F when it appears
 ##   --conduits=N               wake every conduit in the room at frame N (Skyrend's grounding)
@@ -77,6 +79,10 @@ const BASE_SIZE := Vector2i(640, 360)
 const MARGIN := 1
 ## The title menu sits under the logo.
 const TITLE_PANEL := Rect2(190, 140, 260, 212)
+## The title's boss practice row (with --practice).
+const PRACTICE_ROW := "Boss practice"
+## The practice list and its reports: taller than the shops' panel.
+const PRACTICE_PANEL := Rect2(130, 16, 380, 328)
 
 var view: SubViewport
 var display: Sprite2D
@@ -184,6 +190,22 @@ func _ready() -> void:
 		for flag: String in String(_args.get("flags", "")).split(",", false):
 			GameState.set_flag(flag)
 		_start(room_id, at)
+	elif String(_args.get("practice", "")).is_valid_int():
+		_practice_fight(clampi(int(_args["practice"]), 0, BossRush.ORDER.size() - 1))
+	elif _args.get("practice", "") == "list":
+		# Screenshots: the practice list.
+		_title()
+		_practice_list(int(_args.get("cursor", "0")))
+	elif _args.get("practice", "") == "report":
+		# Screenshots: a made-up report for the Haar Wyrm.
+		BossPractice.begin(4)
+		var s := BossPractice.stats.duplicate(true)
+		BossPractice.abandon()
+		s.merge({"result": "lost", "time": 151.4, "boss_left": 0.38, "dealt": 412, "landed": 37, "taken": 168, "hits_taken": 9,
+			"by_attack": {"HaarWyrm: geyser head lunge": 4, "HydraGeyser": 3, "HydraFog": 2}, "flasks": 2, "mp": 90.0, "spells": 6,
+			"parries": 3, "guards": 2, "dashes": 14, "dodged": 2}, true)
+		_title()
+		_practice_report(s)
 	elif _args.has("continue") and latest_slot() > 0 and GameState.load_game(latest_slot()):
 		_continue()
 	elif _args.has("shot") and not _args.has("title"):
@@ -219,26 +241,120 @@ func _title() -> void:
 	title_screen.visible = true
 	menu.panel = TITLE_PANEL
 	Music.play("title")
+	# Boss practice (Sean, 2026-11-24) is a development tool: its row shows
+	# only when the game is launched with --practice.
+	var practice := _args.has("practice")
 	var rows := func() -> Array:
-		return [
+		var out := [
 			{"label": "Journeys", "detail": "Three flasks, a journey in each. Take one up, or begin anew in an empty one." if any else "Three empty flasks. Choose one to begin a journey."},
 			{"label": "Options", "detail": Menus.OPTIONS_DETAIL},
 			{"label": "Controls", "detail": Menus.CONTROLS_DETAIL},
 			{"label": "Quit", "detail": ""},
 		]
+		if practice:
+			out.insert(1, {"label": PRACTICE_ROW, "detail": "Development: fight any guardian with the kit you would have then. Nothing is saved."})
+		return out
 	var pick := func(i: int) -> void:
-		match i:
-			0:
+		var label := String(menu.rows[i].label)
+		match label:
+			"Journeys":
 				menu.close()
 				_journeys()
-			1:
-				Menus.open_options(get_tree(), _title_on.bind(1))
-			2:
-				Menus.open_controls(get_tree(), _title_on.bind(2))
-			3:
+			PRACTICE_ROW:
+				_practice_list()
+			"Options":
+				Menus.open_options(get_tree(), _title_on.bind(i))
+			"Controls":
+				Menus.open_controls(get_tree(), _title_on.bind(i))
+			"Quit":
 				get_tree().quit()
 	menu.open("A wanderer returns", "The Ylden's springs have run dry.", rows, pick)
 	menu.cursor = 0
+
+
+## Boss practice (BossPractice; --practice): the guardians, in the rush's order.
+func _practice_list(at := 0) -> void:
+	title_screen.visible = true
+	menu.panel = ListMenu.PANEL
+	Music.play("title")
+	var count := BossRush.ORDER.size()
+	var rows := func() -> Array:
+		var out := []
+		for i in count:
+			out.append({"label": BossPractice.boss_name(BossPractice.boss_at(i)), "detail": BossPractice.kit_line(i)})
+		out.append({"label": "Back", "detail": "To the title."})
+		return out
+	var back := func() -> void:
+		_title()
+		menu.cursor = 1
+	var pick := func(i: int) -> void:
+		if i >= count:
+			back.call()
+			return
+		menu.close()
+		_practice_fight(i)
+	menu.open("Boss practice", "Any guardian, with the kit you would have then. Nothing is saved.", rows, pick)
+	menu.panel = PRACTICE_PANEL
+	menu.on_back = back
+	menu.cursor = at
+
+
+## Wakes at guardian `index`'s arena door with its kit, its practice begun.
+func _practice_fight(index: int) -> void:
+	_end_world()
+	title_screen.visible = false
+	menu.panel = ListMenu.PANEL
+	get_tree().paused = false
+	GameState.new_game()
+	BossPractice.running = true
+	BossPractice.dress(index)
+	_start(BossPractice.arena_at(index))
+	world.place_at_door(BossRush.ENTRY_DOOR)
+	BossPractice.begin(index)
+	BossPractice.on_end = _practice_over
+	GameState.banner.emit(BossPractice.boss_name(BossPractice.boss_at(index)), "Boss practice")
+
+
+## A practice fight is over: the report once its banner has shown.
+func _practice_over(s: Dictionary) -> void:
+	if player != null:
+		player.frozen = true
+		player.velocity = Vector2.ZERO
+	var delay := 0.0 if s.result == "left" else BossPractice.REPORT_DELAY
+	get_tree().create_timer(delay, true).timeout.connect(_practice_report.bind(s))
+
+
+func _practice_report(s: Dictionary) -> void:
+	BossPractice.abandon()
+	_end_world()
+	title_screen.visible = true
+	menu.panel = ListMenu.PANEL
+	var rows := func() -> Array:
+		return BossPractice.report_rows(s)
+	var pick := func(i: int) -> void:
+		var label := String(menu.rows[i].label)
+		if label == "Again":
+			menu.close()
+			_practice_fight(int(s.index))
+		elif label == "Back to the list":
+			_practice_list(int(s.index))
+	var title := "%s: %s" % [BossPractice.boss_name(String(s.boss)), {"won": "won", "lost": "fallen", "left": "left"}.get(s.result, s.result)]
+	menu.open(title, "Added to the practice log (its row says where).", rows, pick)
+	menu.panel = PRACTICE_PANEL
+	menu.on_back = _practice_list.bind(int(s.index))
+
+
+## Takes down the world (a practice fight's) and its HUD hooks.
+func _end_world() -> void:
+	BossPractice.running = false
+	if world != null:
+		world.queue_free()
+		world = null
+	if debug_hud != null:
+		debug_hud.queue_free()
+		debug_hud = null
+	hud.player = null
+	map_screen.world = null
 
 
 ## Back to the title from Options or Controls, on the row that opened it (pass 467).
