@@ -573,17 +573,16 @@ func _wyrm_reel() -> void:
 		# Each head answering its pipe as it fills; then, with the fog head dead, a third
 		# steaming away on its own (the clock moved on to its last seconds).
 		match _frames:
-			480, 580, 680, 900, 960:
-				var k: int = {480: 0, 580: 1, 680: 2, 900: 0, 960: 2}[_frames]
+			480, 600:
+				var k: int = {480: 1, 600: 0}[_frames]
 				var intake: HydraIntake = z.cistern.intakes[k]
 				var bolt := TorrentBolt.new()
 				bolt.velocity = Vector2(-intake.facing * 300.0, 0)
 				world.room.add_child(bolt)
 				bolt.global_position = intake.global_position + Vector2(intake.facing * 110.0, 0)
-			780:
+			720:
 				z._kill_head(z.heads[1])
-				z.cistern.boil()
-			1000:
+			740:
 				z.drain_time = HaarWyrm.DRAIN_EVERY - HaarWyrm.DRAIN_WARN - 0.5
 		return
 	if String(_args["wyrm-reel"]) == "fog":

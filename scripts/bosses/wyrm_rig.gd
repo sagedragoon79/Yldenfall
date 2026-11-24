@@ -751,8 +751,8 @@ func _draw_fx() -> void:
 			for k in n.joints.size():
 				var near := 1.0 - clampf(absf(float(k) - along) / 2.5, 0.0, 1.0)
 				if near > 0.0:
-					_fx.draw_circle(n.joints[k], 5.0 + near * 5.0, Color(STEAM_HOT, 0.22 * near * fadeout * fade))
-					_fx.draw_circle(n.joints[k], 2.0 + near * 2.0, Color(EYE, 0.6 * near * fadeout * fade))
+					_fx.draw_circle(n.joints[k], 6.0 + near * 7.0, Color(EYE, 0.3 * near * fadeout * fade))
+					_fx.draw_circle(n.joints[k], 3.0 + near * 3.0, Color(STEAM_HOT, 0.9 * near * fadeout * fade))
 			for k in 4:
 				var ph := clampf(react / HaarWyrm.REACT_TIME + k * 0.12, 0.0, 1.0)
 				_fx.draw_circle(jaws + s.get("react_dir", Vector2.DOWN) * ph * 18.0 + Vector2(0, -ph * 10.0), 2.0 + ph * 4.0, Color(STEAM, (1.0 - ph) * 0.6 * fade))
