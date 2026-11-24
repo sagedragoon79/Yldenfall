@@ -60,7 +60,9 @@ Full suite (`TEST_TIMEOUT=7200`): 37,134 checks passed, 17 failed, every one wit
 state changed: saves changed (save_2.json, save_2.json.bak)". Sean was playing the exported build
 (`Yldenfall.exe`, started 6:29 PM) through the run, and it saves to slot 2 in the same user folder
 the runner watches (its save_2.json was written at 8:05 PM, during the run). Nothing in this pass
-reads or writes a save. RERUN
+reads or writes a save. Run alone, all 17 passed every check of their own; nine of them
+again tripped only the save guard. With no Godot process running at all, save_2.json was written
+again (20:28:41, then 20:29:57), so the played build is the writer, not the suite.
 
 ## Rubric (design bible 15.3)
 
