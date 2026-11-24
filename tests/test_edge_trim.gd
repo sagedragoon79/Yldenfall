@@ -151,7 +151,7 @@ func test_a_ceiling_has_a_soffit_and_a_thin_ledge_has_none() -> void:
 
 
 func test_each_grown_zone_trims_in_its_own_material() -> void:
-	# The Tower's flange has rivets, the wood's rind has notches between strands,
+	# The Tower's flange has rivets, the wood's rind has notches where its grain meets it,
 	# the Evercrown's skin is pinched: the band between the two lines is not one
 	# flat colour, and no two materials share a lit line.
 	var lits := {}
