@@ -16,10 +16,11 @@ extends Enemy
 ## intakes fills it a third, and each intake feeds one head. A head can't be beaten
 ## below HEAD_FLOOR until a full cistern douses it: at the next pause between breaths,
 ## the head whose pipe was filled last is drenched by it and sags onto the lip, weak,
-## for WEAK_TIME. Then the hydra rages and boils the cistern dry, and the loop begins
-## again. A weakened head at 0 dies and its pipe is capped; the fight ends with the
-## third. The fog boils away the share of the pipe filled last, so the choice is undone
-## until that pipe is filled again.
+## for WEAK_TIME (a dead head's pipe filled last douses nothing). Then the hydra rages and
+## boils the cistern dry, and the loop begins again. A weakened head at 0 dies; the fight
+## ends with the third. Each fog breath boils the cistern dry as its burn ends; once the
+## fog head is dead, the cistern loses a third every DRAIN_EVERY instead (the pipe filled
+## last), so the pipes are still a race. A head reacts as its pipe fills (`_react`).
 ##
 ## Drawn on a skeleton from Sean's PixelLab art (`WyrmRig`, since 2026-11-19): the body
 ## crouches in the tunnel's dark and the three necks grow from its shoulders. The
@@ -85,6 +86,17 @@ const QUICKEN := 0.85
 ## and the fog came sooner with less time to fill the cistern (Sean, 2026-11-22: "not
 ## enough time to hit all 3 after killing the first head"; "the whisper comes faster").
 const REST := 3.0
+## Once the fog head is dead nothing boils the cistern, so it loses a third on its own this
+## often (Sean, 2026-11-24: "20 seconds feel right to make it a little of a challenge to get
+## to all the pipes"). The clock runs only while there is water in it, and stops while a
+## head is doused and while the cistern boils dry; it steams for the last DRAIN_WARN.
+const DRAIN_EVERY := 20.0
+const DRAIN_WARN := 3.0
+## A head's reaction as its pipe fills (Sean, 2026-11-24: "Players may not realize the
+## correlation"): it rears, snaps toward the pipe with its jaws open, and light runs up its
+## neck, with a hiss-roar. Drawn on the rig; a `react` clip in the head art, when Sean
+## adds one, plays instead of the placeholder jaws (`WyrmRig._head_frame`).
+const REACT_TIME := 0.9
 const EMERGE_TIME := 1.2
 ## The intro: darkness, three pairs of eyes, breathing, then the heads come out.
 const INTRO_TIME := 6.8
@@ -136,6 +148,8 @@ var attacker: HydraHead
 ## The head that breathed last (the douse once fell on it; now the pipes choose).
 var last_breather: HydraHead
 var weakened: HydraHead
+## How long the cistern has held water since it last lost a third (fog head dead only).
+var drain_time := 0.0
 
 var _intro_t := 0.0
 var _beat := 0
@@ -187,6 +201,7 @@ func _ready() -> void:
 		h.position = global_position + HIDDEN[i]
 		get_parent().add_child.call_deferred(h)
 	cistern = build_cistern(get_parent(), false)
+	cistern.pipe_filled.connect(_on_pipe_filled)
 
 
 ## The room's cells under the cistern's grate: the pit's top row, between its walls.
@@ -342,10 +357,10 @@ func _on_blocked(_dir: Vector2) -> void:
 
 func _kill_head(h: HydraHead) -> void:
 	h.kill()
-	# Its pipe is capped: the cistern fills from the others now.
+	# Its pipe still runs, but filled last it douses nothing; its plate goes dark.
 	var pipe := intake_of(h)
 	if pipe != null:
-		cistern.seal(pipe)
+		pipe.head_dead = true
 	phase = 1 + dead_heads()
 	order.erase(h.index)
 	if h == attacker:
@@ -375,6 +390,34 @@ func chosen_head() -> HydraHead:
 		return null
 	var h := heads[pipe.head]
 	return null if h.dead else h
+
+
+## A pipe began to run: its head, if it lives, rears and snaps toward it.
+func _on_pipe_filled(pipe: HydraIntake) -> void:
+	if state != "fight" or pipe.head < 0 or pipe.head >= heads.size():
+		return
+	var h := heads[pipe.head]
+	if h.dead:
+		return
+	h.react = 0.0
+	h.react_dir = (pipe.global_position - h.global_position).normalized()
+	h.set_meta("react_off", Vector2.ZERO)
+	Sfx.play("hydra_hiss", 0.1, -2.0)
+	_hint("react", "The %s head rears and hisses as its pipe fills. The pipe you fill last picks the head the water douses." % _head_name(h))
+
+
+## How far a reacting head is thrown off its place `t` seconds in: up and back from the
+## pipe, then a snap toward it, settling.
+static func react_offset(dir: Vector2, t: float) -> Vector2:
+	if t < 0.0 or t >= REACT_TIME:
+		return Vector2.ZERO
+	var back := -dir * 8.0 + Vector2(0, -12.0)
+	var snap := dir * 12.0 + Vector2(0, -4.0)
+	if t < 0.22:
+		return back * smoothstep(0.0, 0.22, t)
+	if t < 0.4:
+		return back.lerp(snap, smoothstep(0.22, 0.4, t))
+	return snap * (1.0 - smoothstep(0.4, REACT_TIME, t))
 
 
 func _head_name(h: HydraHead) -> String:
@@ -459,11 +502,15 @@ func _new_round() -> void:
 
 func _fight(delta: float) -> void:
 	step_time += delta
+	_drain(delta)
 	match step:
 		"gap":
 			if cistern.full() and chosen_head() != null:
 				_weaken(chosen_head())
-			elif step_time >= GAP * pow(QUICKEN, dead_heads()):
+				return
+			if cistern.full():
+				_hint("dead_pipe", "The water brims, but the pipe you filled last feeds a dead head. It douses nothing.")
+			if step_time >= GAP * pow(QUICKEN, dead_heads()):
 				_next_breath()
 		"attack":
 			if attacker == null or attacker.mode not in ["tell", "breathe"]:
@@ -481,6 +528,22 @@ func _fight(delta: float) -> void:
 						h.set_mode("idle")
 				_new_round()
 				_to("gap")
+
+
+## Once the fog head is dead, the cistern loses a third every DRAIN_EVERY it holds water.
+func _drain(delta: float) -> void:
+	var fog := head_for(HydraHead.FOG)
+	if fog == null or not fog.dead or step not in ["gap", "attack"] or cistern.boiling or cistern.level <= 0:
+		drain_time = 0.0
+		cistern.simmer = 0.0
+		return
+	drain_time += delta
+	cistern.simmer = clampf((drain_time - (DRAIN_EVERY - DRAIN_WARN)) / DRAIN_WARN, 0.0, 1.0)
+	if drain_time >= DRAIN_EVERY:
+		drain_time = 0.0
+		cistern.simmer = 0.0
+		cistern.lose_third()
+		_hint("drain", "With the fog head dead, the cistern's water steams away a third at a time. Keep the pipes running.")
 
 
 func _next_breath() -> void:
@@ -513,6 +576,8 @@ func _next_breath() -> void:
 func _weaken(h: HydraHead) -> void:
 	weakened = h
 	h.weak = true
+	drain_time = 0.0
+	cistern.simmer = 0.0
 	var pipe := intake_of(h)
 	if pipe != null:
 		var d := HydraDrench.new()
@@ -591,6 +656,24 @@ func _move_heads(delta: float) -> void:
 			"limp":
 				var hang: Vector2 = global_position + Vector2(HOMES[h.index].x * 0.8, HANG)
 				h.global_position = h.global_position.lerp(hang, 1.0 - exp(-2.0 * delta))
+		_react(h, delta)
+
+
+## A head reacting to its pipe filling is thrown off its place and back (`react_offset`),
+## over whatever it is doing.
+func _react(h: HydraHead, delta: float) -> void:
+	if h.react < 0.0:
+		return
+	h.react += delta
+	if h.dead or h.mode in ["hidden", "emerge", "rise", "limp"]:
+		h.react = -1.0
+		return
+	var was: Vector2 = h.get_meta("react_off", Vector2.ZERO)
+	var now := react_offset(h.react_dir, h.react)
+	h.global_position += now - was
+	h.set_meta("react_off", now)
+	if h.react >= REACT_TIME:
+		h.react = -1.0
 
 
 func _face(h: HydraHead) -> float:

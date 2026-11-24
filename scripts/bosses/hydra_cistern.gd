@@ -3,9 +3,12 @@ extends Node2D
 ## The great cistern in the middle of the Haar Spring (design bible 8.4). It fills
 ## a third at a time, one third through each of its three intakes, and Deluge is
 ## the only water there is. Standing in it with a third or more shelters you from
-## the hydra's thermal fog; full, it douses the head whose pipe filled it last. The fog
-## boils away the share of the pipe filled last, and the hydra's rage boils it dry. A
-## dead head's pipe is capped, and the open pipes fill it between them (`need`).
+## the hydra's thermal fog; full, it douses the head whose pipe filled it last (if that
+## head lives). The fog boils it dry as its burn ends, and so does the hydra's rage. Once
+## the fog head is dead, nothing boils it, so it loses a third on its own every
+## `HaarWyrm.DRAIN_EVERY` (`lose_third`), steaming as the moment comes (`simmer`).
+## Every pipe always runs: a dead head's pipe still fills a third (Sean, 2026-11-24: "Let's
+## not have the pipes cap"; capped, the late fight was "super simple").
 ##
 ## It is sunk in the floor (Sean, 2026-11-20): a pit cut into the room, brim-full at
 ## the floor's own level, with a low lip of coping round it. The lip is the far side
@@ -16,6 +19,8 @@ extends Node2D
 ## bed comes back up through it. Getting under the water is something you choose to do.
 
 signal filled(level: int)
+## A pipe began to run (its head reacts: `HaarWyrm._on_pipe_filled`).
+signal pipe_filled(intake: HydraIntake)
 
 const THIRDS := 3
 ## How long the water takes to rise or fall a third, and to boil dry.
@@ -39,12 +44,14 @@ const IRON_DARK := Color("1c1f24")
 ## The cistern's inside in world pixels: the pit, from the floor's level down to its bed.
 var inside := Rect2(368, 320, 224, 48)
 var intakes: Array[HydraIntake] = []
-## The pipes running into it, 0 to `need()`.
+## The pipes running into it, 0 to THIRDS.
 var level := 0
 ## The water as drawn, easing toward `level`.
 var shown := 0.0
 var boiling := false
 var _boil := 0.0
+## 0 to 1: how close the water is to losing a third on its own (it steams).
+var simmer := 0.0
 ## The intakes that are running, in the order they began.
 var _running: Array[HydraIntake] = []
 
@@ -72,25 +79,14 @@ func add_intake(i: HydraIntake) -> void:
 func fill_now() -> void:
 	_running.clear()
 	for i in intakes:
-		if i.sealed:
-			continue
 		i.flowing = true
 		_running.append(i)
-	level = need()
-	shown = _thirds()
-
-
-## How many pipes fill it: the open ones (a dead head's pipe is capped).
-func need() -> int:
-	var n := 0
-	for i in intakes:
-		if not i.sealed:
-			n += 1
-	return maxi(n, 1)
+	level = THIRDS
+	shown = level
 
 
 func full() -> bool:
-	return level >= need()
+	return level >= THIRDS
 
 
 ## The pipe that ran last (null if none): a full cistern douses its head.
@@ -98,33 +94,22 @@ func last_filled() -> HydraIntake:
 	return null if _running.is_empty() else _running.back()
 
 
-## Thirds of water the pipes running now make (so it brims whichever pipes are open).
-func _thirds() -> float:
-	return float(level) * THIRDS / need()
-
-
 ## Takes water unless the hydra is boiling it away.
 func accepts() -> bool:
-	return not boiling and level < need()
+	return not boiling and level < THIRDS
 
 
 func fill_from(intake: HydraIntake) -> void:
 	_running.append(intake)
-	level = mini(level + 1, need())
+	level = mini(level + 1, THIRDS)
 	Sfx.play("splash", 0.1, 0.0)
-	Sfx.play("flood", 0.1, -8.0 if level < need() else 0.0)
+	Sfx.play("flood", 0.1, -8.0 if level < THIRDS else 0.0)
 	filled.emit(level)
+	pipe_filled.emit(intake)
 
 
-## A head died: its pipe is capped, and the water it gave goes with it.
-func seal(intake: HydraIntake) -> void:
-	if _running.has(intake):
-		_running.erase(intake)
-		level = maxi(level - 1, 0)
-	intake.seal()
-
-
-## The fog's heat boils a share away; the pipe filled last runs dry and opens again.
+## A third evaporates (once the fog head is dead): the pipe filled last runs dry and
+## opens again, undoing the choice until it is filled again.
 func lose_third() -> void:
 	if level <= 0 or _running.is_empty():
 		return
@@ -134,7 +119,7 @@ func lose_third() -> void:
 	Sfx.play("steam_hiss", 0.1, -4.0)
 
 
-## The hydra rages and boils the cistern dry; every intake opens again.
+## Boiled dry, by the fog as its burn ends or by the hydra's rage: every intake opens again.
 func boil() -> void:
 	boiling = true
 	_boil = 0.0
@@ -183,7 +168,7 @@ func _physics_process(delta: float) -> void:
 			for i in intakes:
 				i.reset()
 			_running.clear()
-	shown = move_toward(shown, _thirds(), delta * (THIRDS / BOIL_TIME if boiling else 1.0 / RISE_TIME))
+	shown = move_toward(shown, float(level), delta * (THIRDS / BOIL_TIME if boiling else 1.0 / RISE_TIME))
 	queue_redraw()
 	_back.queue_redraw()
 
@@ -271,6 +256,12 @@ func _draw() -> void:
 			draw_rect(Rect2(x, y, w, 1), Color(WATER_TOP, 0.85))
 			x += 12.0
 	# The grate over the water is the room's (`Room.lay_grate`, a layer above this one).
+	if simmer > 0.0 and shown > 0.01 and not boiling:
+		# About to lose a third: wisps rise off the surface, thicker as the moment comes.
+		for i in 8:
+			var ph := fmod(t * 0.9 + i * 0.125, 1.0)
+			var bx := inside.position.x + 10.0 + fmod(i * 53.0, inside.size.x - 20.0)
+			draw_circle(Vector2(bx + sin(t * 2.0 + i) * 3.0, surface_y() - ph * 40.0), 2.0 + ph * 5.0, Color(STEAM, (1.0 - ph) * 0.4 * simmer))
 	if boiling:
 		# A rolling boil: bubbles and steam pouring off the surface.
 		var k := clampf(_boil / BOIL_TIME, 0.0, 1.0)

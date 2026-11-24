@@ -222,7 +222,9 @@ func _physics_process(delta: float) -> void:
 	if not _boiled and _time >= FILL + BURN:
 		_boiled = true
 		if cistern != null:
-			cistern.lose_third()
+			# Its heat boils the cistern dry (Sean, 2026-11-24: "have the fog evaporate all
+			# the water every time"; until then it took a third).
+			cistern.boil()
 	if _time >= FILL + BURN + FADE:
 		queue_free()
 	_lay_haze()

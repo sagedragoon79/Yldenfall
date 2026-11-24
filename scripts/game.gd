@@ -52,6 +52,8 @@ extends Node2D
 ##                              (the hero stands on the cistern's grate, and drops through it for each breath)
 ##   --wyrm-reel=fog            instead, a third of water and a whole round: he rides the fog out under the
 ##                              grate, then jumps out and strikes up at the middle head as it sags
+##   --wyrm-reel=pipes          instead, each head rearing as its pipe fills, then, with the fog head
+##                              dead, a third of the cistern steaming away on its own
 ##   --wyrm-reel=turn           instead, set the hero down across the floor from west to east and back, so
 ##                              the heads turn through their views to watch him
 ##   --damage-numbers           show damage numbers (the option) for this run
@@ -683,6 +685,22 @@ func _wyrm_reel() -> void:
 			player.teleport(Vector2(int(stops[_frames]) * Room.TILE + 8, 20 * Room.TILE))
 		return
 	_wyrm_reel_hand(z)
+	if String(_args["wyrm-reel"]) == "pipes":
+		# Each head answering its pipe as it fills; then, with the fog head dead, a third
+		# steaming away on its own (the clock moved on to its last seconds).
+		match _frames:
+			480, 600:
+				var k: int = {480: 1, 600: 0}[_frames]
+				var intake: HydraIntake = z.cistern.intakes[k]
+				var bolt := TorrentBolt.new()
+				bolt.velocity = Vector2(-intake.facing * 300.0, 0)
+				world.room.add_child(bolt)
+				bolt.global_position = intake.global_position + Vector2(intake.facing * 110.0, 0)
+			720:
+				z._kill_head(z.heads[1])
+			740:
+				z.drain_time = HaarWyrm.DRAIN_EVERY - HaarWyrm.DRAIN_WARN - 0.5
+		return
 	if String(_args["wyrm-reel"]) == "fog":
 		# One third of water and nothing else: the round plays out to the fog, he rides
 		# it out under the grate, and the middle head sags over it.

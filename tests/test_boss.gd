@@ -1365,8 +1365,9 @@ func test_the_douse_waits_for_the_pause() -> void:
 	check(not fog.weak and z.step == "attack", "a full cistern mid-breath douses nothing yet")
 
 
-## A dead head's pipe is capped, and the cistern fills from the others.
-func test_a_dead_heads_pipe_is_sealed() -> void:
+## A dead head's pipe still runs (Sean, 2026-11-24: "Let's not have the pipes cap"), and the
+## cistern still needs all three; filled last, it douses nothing.
+func test_a_dead_heads_pipe_still_runs_but_douses_nothing() -> void:
 	var setup := await _hydra_world()
 	var w: World = setup[0]
 	var z: HaarWyrm = setup[2]
@@ -1375,34 +1376,95 @@ func test_a_dead_heads_pipe_is_sealed() -> void:
 	pipe.douse()
 	check(z.cistern.level == 1, "its pipe ran")
 	z._kill_head(plume)
-	check(pipe.sealed and not pipe.flowing and not pipe.wants(), "his pipe is capped")
-	check(z.cistern.level == 0 and z.cistern.need() == 2, "and its water goes; two pipes fill it now (%d)" % z.cistern.need())
-	pipe.douse()
-	check(z.cistern.level == 0, "a bolt into a capped pipe only splashes")
+	check(pipe.head_dead and pipe.flowing and z.cistern.level == 1, "its pipe is not capped, and its water stays")
 	z.attacker = null
 	z.order.clear()
 	z._to("gap")
 	z.step_time = -999.0
-	for i: HydraIntake in _intakes(w):
-		i.douse()
-	check(z.cistern.full(), "the two open pipes fill it")
-	await _until(func() -> bool: return z.cistern.shown >= HydraCistern.THIRDS - 0.01, 120)
-	check(z.cistern.surface_y() <= z.cistern.inside.position.y + 0.5, "to the brim")
+	z.intake_of(z.head_for(HydraHead.FOG)).douse()
 	await frames(2)
-	check(z.step == "weak" and z.weakened != plume and z.weakened != null, "and douse a living head")
+	check(z.cistern.level == 2 and not z.cistern.full() and z.step == "gap", "two pipes fill only two thirds")
+	z.cistern.boil()
+	await _until(func() -> bool: return not z.cistern.boiling, 200)
+	for i: HydraIntake in _intakes(w):
+		if i != pipe:
+			i.douse()
+	pipe.douse()
+	check(z.cistern.full() and z.chosen_head() == null, "filled last, the dead head's pipe brims it and picks no one")
+	await frames(10)
+	check(z.step == "gap" and z.weakened == null, "and nothing is doused (%s)" % z.step)
+	z.cistern.lose_third()
+	z.cistern.lose_third()
+	pipe.douse()
+	z.intake_of(z.head_for(HydraHead.GEYSER)).douse()
+	await frames(2)
+	check(z.step == "weak" and z.weakened == z.head_for(HydraHead.GEYSER), "a living head's pipe filled last douses it (%s)" % z.step)
 
 
-## The fog boils away the pipe filled last, undoing the choice.
-func test_the_fog_undoes_the_last_pipe() -> void:
+## Once the fog head is dead nothing boils the cistern, so it loses a third every
+## DRAIN_EVERY that it holds water (Sean, 2026-11-24), steaming first: the pipe filled last.
+func test_with_the_fog_head_dead_a_third_steams_away_every_twenty_seconds() -> void:
 	var setup := await _hydra_world()
 	var w: World = setup[0]
 	var z: HaarWyrm = setup[2]
+	check(HaarWyrm.DRAIN_EVERY == 20.0, "every 20 seconds")
 	var pipes := _intakes(w)
+	z.attacker = null
+	z.order.clear()
+	z._to("gap")
+	z.step_time = -999.0
+	pipes[0].douse()
+	await frames(10)
+	check(z.drain_time == 0.0, "while the fog head lives, the water stays")
+	z._kill_head(z.head_for(HydraHead.FOG))
+	z.step_time = -999.0
+	z.cistern.boil()
+	await _until(func() -> bool: return not z.cistern.boiling, 200)
+	await frames(10)
+	check(z.drain_time == 0.0, "an empty cistern keeps no clock")
 	pipes[0].douse()
 	pipes[2].douse()
-	z.cistern.lose_third()
-	check(pipes[0].flowing and not pipes[2].flowing, "the last pipe filled runs dry")
-	check(z.cistern.last_filled() == pipes[0], "and the one before it chooses again")
+	await frames(10)
+	check(z.drain_time > 0.1, "with water in it, the clock runs (%.2f)" % z.drain_time)
+	z.drain_time = HaarWyrm.DRAIN_EVERY - HaarWyrm.DRAIN_WARN + 1.0
+	await frames(2)
+	check(z.cistern.simmer > 0.2 and z.cistern.level == 2, "it steams as the moment comes (%.2f)" % z.cistern.simmer)
+	z.drain_time = HaarWyrm.DRAIN_EVERY - 0.01
+	await frames(3)
+	check(z.cistern.level == 1 and not pipes[2].flowing and pipes[0].flowing, "a third steams away: the pipe filled last runs dry")
+	check(z.cistern.last_filled() == pipes[0] and z.drain_time < 0.2, "the one before it chooses again, and the clock starts over")
+
+
+## A head rears and snaps toward its pipe as it fills, with a hiss-roar (Sean, 2026-11-24:
+## "Players may not realize the correlation"). A dead head doesn't stir.
+func test_a_head_reacts_as_its_pipe_fills() -> void:
+	var setup := await _hydra_world()
+	var z: HaarWyrm = setup[2]
+	z.attacker = null
+	z.order.clear()
+	z._to("gap")
+	z.step_time = -999.0
+	await frames(30)
+	var geyser := z.head_for(HydraHead.GEYSER)
+	var pipe := z.intake_of(geyser)
+	var at := geyser.global_position
+	Sfx.recent.clear()
+	pipe.douse()
+	check(geyser.react == 0.0 and Sfx.recent.has("hydra_hiss"), "its head starts, with a hiss-roar")
+	check(geyser.react_dir.dot((pipe.global_position - geyser.global_position).normalized()) > 0.99, "toward its own pipe")
+	for o in z.heads:
+		check(o == geyser or o.react < 0.0, "the %s head doesn't stir" % o.breath)
+	await frames(10)
+	check(geyser.global_position.distance_to(at) > 4.0, "it rears off its place")
+	if z.rig != null:
+		var n: WyrmRig.Neck = z.rig.necks[geyser.index]
+		check(n.clip == ("react" if n.head_layout["clips"].has("react") else "roar"), "its jaws gape (%s)" % n.clip)
+	await frames(roundi(HaarWyrm.REACT_TIME * 60.0) + 4)
+	check(geyser.react < 0.0, "and settles")
+	var plume := z.head_for(HydraHead.PLUME)
+	z._kill_head(plume)
+	z.intake_of(plume).douse()
+	check(plume.react < 0.0, "a dead head doesn't react to its pipe")
 
 
 ## Every pipe can be filled from somewhere you can stand: a ledge or the floor on its
@@ -1702,6 +1764,7 @@ func test_the_thermal_fog_spares_only_the_water() -> void:
 	p.teleport(Vector2(z.cistern.inside.get_center().x, z.cistern.inside.end.y))
 	await frames(4)
 	check(z.cistern.shelters(p), "standing in a third of water shelters you")
+	_intakes(w)[2].douse()
 	var fog2 := HydraFog.new()
 	fog2.bounds = z.arena
 	fog2.cistern = z.cistern
@@ -1709,7 +1772,8 @@ func test_the_thermal_fog_spares_only_the_water() -> void:
 	var hp1 := p.hp
 	await frames(roundi((HydraFog.FILL + HydraFog.BURN) * 60.0) + 6)
 	check(p.hp == hp1, "and the heat never reaches you there")
-	check(z.cistern.level == 0, "but it boils that third away")
+	await _until(func() -> bool: return not z.cistern.boiling, 200)
+	check(z.cistern.level == 0, "but as it ends it boils all the water away (Sean, 2026-11-24)")
 
 
 func test_haar_wyrm_defeat_gives_the_fall_seed() -> void:
