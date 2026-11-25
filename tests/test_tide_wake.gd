@@ -206,3 +206,35 @@ func test_the_still_water_mirrors_what_stands_over_it() -> void:
 	await frames(3)
 	check(tide.reflections.is_empty(), "the drained hall mirrors nothing")
 	GameState.data.flags.erase(Tide.DRAIN_FLAG)
+
+
+## Pass 658 (bible 12.134): the pass 655 grade saw a foe half under the flooded hall's
+## cyan band. The water clears over whatever wades in it, body and mirror, so the legs
+## show through; a column either side is half way back, and the rest stays water.
+func test_the_water_clears_over_a_wader() -> void:
+	var s := Tide.clear_span(50.0, 6.0)
+	check(s.x <= 50.0 - 6.0 - Tide.CLEAR_PAD and s.y >= 50.0 + 6.0 + Tide.CLEAR_PAD, "the span covers the body and a little past it (%s)" % s)
+	check(int(s.x) % Tide.CHUNK == 0 and int(s.y) % Tide.CHUNK == 0, "in whole columns of the dither")
+	var spans: Array[Vector2] = [s]
+	check(is_equal_approx(Tide.clarity_at(50.0, spans), Tide.CLEAR), "over the body the water is cleared")
+	check(Tide.CLEAR <= 0.5, "to half its strength or less")
+	var edge := Tide.clarity_at(s.y + Tide.CHUNK * 0.5, spans)
+	check(edge > Tide.CLEAR and edge < 1.0, "a column beside it is half way back (%.2f)" % edge)
+	check(Tide.clarity_at(s.y + Tide.CHUNK * 1.5, spans) == 1.0, "and past that the water is whole")
+	check(Tide.clarity_at(50.0, [] as Array[Vector2]) == 1.0, "with nobody in it the water is whole")
+	var w := _hall()
+	await frames(10)
+	var tide: Tide = w.room.tide
+	var x := tide.to_local(w.player.global_position).x
+	var over := false
+	for c in tide.clear_spans:
+		over = over or (c.x < x and c.y > x)
+	check(over, "the water clears over the hero wading")
+	check(tide.clear_spans.size() == tide.wakes.size(), "one clearing to each wader")
+	var mat := tide.reflections[0].material as ShaderMaterial
+	check(int(mat.get_shader_parameter("clear_n")) == tide.clear_spans.size(), "and the mirror clears there too")
+	check("clear_k" in mat.shader.code and is_equal_approx(float(mat.get_shader_parameter("clear_k")), Tide.CLEAR), "by as much")
+	GameState.set_flag(Tide.DRAIN_FLAG)
+	await frames(3)
+	check(tide.clear_spans.is_empty(), "drained, there is nothing to clear")
+	GameState.data.flags.erase(Tide.DRAIN_FLAG)
