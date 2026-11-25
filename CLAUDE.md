@@ -84,6 +84,9 @@ http://localhost:8977.
   `python3 workbench/capture/capture_all.py --redo --only=rooms` (or `things`, `people`, `gear`,
   `dyes`, `arenas`, `shops`, `fights`: real hits and tells, for the grade), then `python3 workbench/capture/build_catalog.py`. Clips:
   `python3 workbench/capture/make_clips.py`. Look at what they captured before trusting it.
+- The workbench's Art direction group (zone art prompts, guardian briefs) reads `docs/art/zone-prompts.json` and
+  `docs/art/guardian-briefs.json`. They are written by hand from the bible and the boss scripts: update them when a
+  zone's look or a guardian's fight changes.
 - The workbench is local only. A hosted copy on Vercel (with `push.py` and `deploy.py`) was retired
   on 2026-11-18: its sync posted the whole live state every minute and spent most of the account's
   transfer allowance. Don't bring it back without asking Sean.

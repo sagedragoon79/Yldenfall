@@ -1,0 +1,1445 @@
+[
+  {
+    "id": "hearthroot",
+    "name": "Hearthroot",
+    "town": "Hearthroot",
+    "summary": "The hub town of the Ylden: a stone town carved into the Tree's roots, warm with lamplight and starving. No leaves have fallen for nine years, so its leaf-mould fields are dead and the Fountain of Hearthroot has stood dry. Each spring the hero restores fills the fountain by a third, and the town comes back to life around it.",
+    "look": "Grey, rough-cut stone bricks with a pale flagstone lip, laced with dark root fibres and creeping ivy where the Tree grows through the masonry. The town sits inside a vast root cavern whose air is a warm, dark plum-brown. Far back, a skyline of stone houses steps along a ridge: gables, hipped roofs, lean-tos, narrow towers and the odd battlement, each house lit on its west face and dark on its east, chimneys on some, small amber windows glowing. Nearer, great roots arch overhead with lanterns hanging from them, each in a faint ring of light. From the stone ceiling hang chains, red swallowtail banners with gold emblems, iron lamps and plank platforms slung on chains. Pale volumetric shafts of light slant down through the dark, and warm dust motes drift in them. Wall sconces throw soft pools of amber onto the stone. Shops are small root-wrapped huts and timber stalls: a smithy with a glowing forge, a dyer under hanging bolts of coloured cloth, a grocer under a striped awning, a map-maker with a brass telescope. A dark fringe of fence posts and rafter ends frames the bottom and top of the frame.",
+    "palette": [
+      "warm lamp amber",
+      "stone grey",
+      "dark plum-brown cavern",
+      "root umber",
+      "banner red",
+      "brass gold",
+      "ivy green",
+      "warm cream window light"
+    ],
+    "landmarks": [
+      {
+        "name": "Fountain Plaza",
+        "text": "The long town square, built on terraces: the Reeve's Hall stands highest, the Ringreader's temple a step lower, and the water lies lowest."
+      },
+      {
+        "name": "The Three Mouths",
+        "text": "A grey stone headwall behind the fountain with three arched niches, each holding a stone mouth with a bronze lip that once poured one spring (a leaf, water and a bolt cut in the keystones). Dry, the niches show white lime stains."
+      },
+      {
+        "name": "Fountain of Hearthroot",
+        "text": "A tiered stone fountain, dry for nine years, that fills by a third with each spring restored."
+      },
+      {
+        "name": "Market Row",
+        "text": "Four shops in a row under hanging chain platforms: arms, dyeworks, sundries and the cartographer."
+      },
+      {
+        "name": "Hall of Rings",
+        "text": "The Ringreader's temple, where the Tree's growth rings are read and the hero's mark is carved when he rests."
+      },
+      {
+        "name": "Reeve's Hall",
+        "text": "The hall of Reeve Aldous, who wants the stranger gone from his starving town."
+      },
+      {
+        "name": "East Gate",
+        "text": "The stair down to the Heartwood, with the iron cage of the Kettleforge lift beside it."
+      },
+      {
+        "name": "Old Hearthroot",
+        "text": "The town as it was drawn long ago: fewer colours, bigger stones, the same fountain."
+      }
+    ],
+    "props": [
+      "tiered stone fountain",
+      "spring headwall with three arched niches",
+      "red swallowtail banner with gold emblem",
+      "iron hanging lantern on a chain",
+      "wall sconce with candle",
+      "plank platform hung on two chains",
+      "root-wrapped shop hut with round door",
+      "smithy forge with glowing coals",
+      "dyer's stall with hanging cloth bolts",
+      "striped awning stall",
+      "brass telescope on a map-maker's hut",
+      "wooden crate and barrel",
+      "carved stone save shrine with glowing runes",
+      "ivy and root tendrils over stone",
+      "arched stone doorway"
+    ],
+    "foes": [],
+    "prompts": [
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "A wide establishing shot of Hearthroot's Fountain Plaza, a stone town carved inside the roots of a colossal tree. HD pixel art for a 2D side-scrolling platformer: strict orthographic side view, no perspective, a 1920x1080 16:9 frame on a 32-pixel tile grid, crisp hard pixels with no anti-aliasing or blur, about 96 colours in hue-shifted ramps (blue-violet shadows, warm highlights), no pure black or white, 1-pixel selective outlines, top-left key light. A lit, high-contrast play plane stands before darker, hazier parallax layers, with a low dark foreground fringe along the bottom. The play plane is a long terraced square of grey stone bricks with a pale flagstone lip, root fibres and ivy creeping through the joints. At the centre stands a grey stone headwall with a stepped crown and a leaf in a roundel; three arched niches hold stone mouths with bronze lips, dry and streaked with white lime, above a long empty trough and a tiered stone fountain. Behind, a warm dark plum-brown cavern holds a far skyline of stone houses on a ridge: gables, towers, chimneys and battlements, with small amber windows. Great roots arch overhead with hanging lanterns, red banners and chains. Pale shafts of light slant down; amber dust motes drift. Warm lamp amber and stone grey dominate. No people, or one tiny cloaked figure at the left edge for scale. Quiet, melancholy, a warm pocket of light in the dark."
+      },
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "HD pixel art, 2D side-scroller, strict orthographic side view, 32px tiles, crisp pixels, limited palette, stone root town square, dry tiered fountain before a stone wall with three arched spout niches, far skyline of stone houses with amber windows, arching roots, hanging lanterns and red banners, light shafts, warm amber and grey"
+      },
+      {
+        "view": "vista",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Key art of Hearthroot's Fountain Plaza, a starving stone town carved into the roots of a vast tree. Loose painted concept art with visible brushwork and soft edges, but still a flat side-on composition read like a 2D platformer level: orthographic side view, no perspective, no vanishing point. A dry tiered fountain stands before a grey headwall with three arched niches and bronze-lipped stone mouths, white lime where water once ran. Terraces of stone step up on either side to a hall and a small temple. Behind, a warm plum-brown cavern dark with roots, a ridge of stone houses with tiny amber windows, chimneys and towers. Lanterns hang from arching roots; faded red banners hang from chains; shafts of dusty light fall across the square. Palette of lamp amber, stone grey, root umber and banner red. Quiet and a little sad, but warm."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "A playable screen in Hearthroot's Market Row. HD pixel art for a 2D side-scrolling platformer: strict orthographic side view, no perspective, a 1920x1080 16:9 frame on a 32-pixel tile grid, crisp hard pixels with no anti-aliasing or blur, about 96 colours in hue-shifted ramps (blue-violet shadows, warm highlights), no pure black or white, 1-pixel selective outlines, top-left key light. A lit, high-contrast play plane stands before darker, hazier parallax layers, with a low dark foreground fringe along the bottom. The hero is small against the world: a slender elf with violet hair under a dark hood, a scarf, brown leather armour and a long dark green cloak, sword in his near hand, round wooden buckler on his far arm. He is mid-jump from the stone floor up toward a plank platform hung on two iron chains. The floor is grey stone bricks with a flagstone lip and root fibres in the joints. Along it stand four small shops: a smithy hut wrapped in roots with a glowing forge, a dyer's stall hung with bolts of red, green and orange cloth, a grocer under a red and white striped awning, and a map-maker's hut with a brass telescope. Robed townsfolk stand by each shop. This is a town, so there are no foes. Behind, a dark plum-brown cavern with a far skyline of stone houses and amber windows, chains and hanging lanterns from the stone ceiling, a red banner, slanting light shafts and drifting motes."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "HD pixel art, 2D side-scroller, strict orthographic side view, 32px tiles, crisp pixels, limited palette, elf hero in green cloak jumping to a plank platform hung on chains, stone market street with root-wrapped shop huts, forge glow, striped awning, robed townsfolk, dark cavern with house skyline, hanging lanterns"
+      },
+      {
+        "view": "gameplay",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Painted concept of a gameplay moment in Hearthroot's market. Loose painted concept art with visible brushwork and soft edges, but still a flat side-on composition read like a 2D platformer level: orthographic side view, no perspective, no vanishing point. A small elf wanderer in a dark green cloak and hood leaps from a stone street toward a plank platform swinging on chains. Below him, root-wrapped shop huts: a forge glowing orange, a dyer's stall hung with coloured cloth, a striped awning, a hut with a brass telescope, robed townsfolk watching. Behind, a dark cavern of roots and a ridge of stone houses with lit windows; shafts of light and drifting dust. Warm amber, stone grey and root brown."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "A prop and tile sheet for Hearthroot, a stone town carved into giant tree roots. HD pixel art for a 2D side-scrolling platformer: strict orthographic side view, no perspective, a 1920x1080 16:9 frame on a 32-pixel tile grid, crisp hard pixels with no anti-aliasing or blur, about 96 colours in hue-shifted ramps (blue-violet shadows, warm highlights), no pure black or white, 1-pixel selective outlines, top-left key light. An asset sheet on a flat neutral mid-grey background, items evenly spaced in a grid with clear gaps, each drawn in strict orthographic side view, no shadows cast on the background, no labels. Include: a tiered stone fountain, dry; a grey stone headwall with three arched niches and bronze-lipped stone spouts; a red swallowtail banner with a gold emblem; an iron hanging lantern on a chain; a candle wall sconce; a plank platform hung on two chains; a root-wrapped shop hut with a round wooden door; a stone smithy forge with glowing coals; a dyer's stall hung with cloth bolts; a red and white striped awning stall; a small hut with a brass telescope; a wooden crate and a barrel; a carved stone save shrine with glowing runes; an arched stone doorway; a 3x3 block of grey stone brick tiles with a pale flagstone top lip and root fibres in the joints; ivy and root tendril overlays. Warm amber, stone grey, root umber, banner red and brass."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "HD pixel art, 2D side-scroller, strict orthographic side view, 32px tiles, crisp pixels, limited palette, asset sheet on flat grey background, dry stone fountain, red banner, iron hanging lantern, wall sconce, chain-hung plank platform, root-wrapped shop hut, forge, crate, barrel, stone brick tiles with root fibres"
+      },
+      {
+        "view": "props",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "A painted concept sheet of props for Hearthroot, a stone town in the roots of a vast tree. Loose brushwork on a flat neutral background, each object shown in flat side view and evenly spaced: a dry tiered fountain, a stone headwall with three spout niches, red banners, iron lanterns, candle sconces, a chain-hung plank platform, root-wrapped shop huts, a forge, a dyer's stall, a striped awning, a telescope hut, crates and barrels, swatches of root-laced stone brick. Warm amber, stone grey, root brown, banner red."
+      }
+    ],
+    "avoid": "perspective, isometric, top-down, three-quarter camera, vanishing points, blur, soft gradients on sprites, anti-aliasing, pure black, pure white, text, captions, logos, watermarks, UI or HUD, photo realism, foes or monsters (the town has none), bright daylight sky",
+    "sources": [
+      "design bible 2",
+      "design bible 3.2",
+      "design bible 12.2",
+      "design bible 12.58",
+      "design bible 12.67",
+      "design bible 12.94",
+      "levels/hearthroot/",
+      "tools/art/tilegen.py (hearthroot_far, hearthroot_mid)",
+      "tools/art/decorgen.py",
+      "workbench/catalog/rooms/hearthroot__plaza.jpg",
+      "workbench/catalog/rooms/hearthroot__market.jpg",
+      "workbench/catalog/rooms/hearthroot__ringreader_temple.jpg"
+    ],
+    "notes": "Hearthroot has no foes, so the gameplay prompts show townsfolk instead. The hero's look follows bible 13.5 and the current screenshots (violet hair, green cloak); bible 12.2 still describes a charcoal hood over brown hair."
+  },
+  {
+    "id": "heartwood",
+    "name": "Heartwood",
+    "town": "Amberlee",
+    "summary": "Tunnels through the living wood under Hearthroot, lit by glowing fungus and running with amber sap. Rot Dwarves, Amberlee miners the stillglass held and let go, walk its halls, and the grub Gnarlmaw gnaws the taproot dry. It is damp, dim and alive, with the hollow town of Amberlee in its middle.",
+    "look": "The walls are red-brown living wood with long vertical strands of grain, its top edges capped with a sculpted fringe of dark moss and grass, and its undersides trailing orange rootlets and clumps of moss. The tunnels open into tall hollows whose far wall is a braid of great wood fibres, some hanging from the roof, some rising from the floor, each leaning its own way, sunk in a deep green-teal gloom. Nearer, hanging roots and rooted columns carry glowing fungus caps at their tips. Faint cyan spores float everywhere, a few larger and haloed. On the floor grow clusters of glowing cyan mushrooms, small orange toadstools and tufts of fern; amber shelf fungus glows on the walls. Pools of golden sap lie in the floor and slow the feet, and at Amber Falls a sheet of sap pours from a split in the heartwood. Mossy green timber trestles and plank platforms hung on ropes cross the open air. Pale green light shafts fall from above. A dark fringe of fern and root silhouettes sits along the bottom of the frame.",
+    "palette": [
+      "bark red-brown",
+      "amber sap gold",
+      "fungus cyan",
+      "deep moss green",
+      "green-teal gloom",
+      "rootlet orange",
+      "pale spore white"
+    ],
+    "landmarks": [
+      {
+        "name": "Amberlee",
+        "text": "The hollow town carved by elves and dwarves together: round-roofed timber houses, a Ringreader and a trestle walkway under a hanging plank platform."
+      },
+      {
+        "name": "Amber Falls",
+        "text": "A tall shaft where sap pours from a split in the heartwood; once the spring runs, the falls set like glass."
+      },
+      {
+        "name": "Rot Dwarf Hall",
+        "text": "The Amberlee dwarves' hall, with a high seat of carved timber pillars, a zigzag lintel and round shields; the root has heaved its floor and past it the floor has fallen in."
+      },
+      {
+        "name": "Hornet Gallery",
+        "text": "A great paper nest nine tiles long hangs over thorns, built in sagging layers of grey paper and chewed bark, its comb showing through a tear."
+      },
+      {
+        "name": "Taproot Vault",
+        "text": "The taproot of the Ylden, bitten through to the heartwood."
+      },
+      {
+        "name": "Lantern Grotto",
+        "text": "Fungus lamps left burning by the dwarves, over a pool of sap."
+      },
+      {
+        "name": "Root Chamber",
+        "text": "Gnarlmaw's arena: a cylindrical root chamber with wooden ledges on both walls."
+      },
+      {
+        "name": "Heartwood Spring",
+        "text": "The stopped spout that once ran water up to Hearthroot."
+      }
+    ],
+    "props": [
+      "cluster of glowing cyan mushrooms",
+      "amber glowing shelf fungus",
+      "small orange toadstool",
+      "hanging orange rootlets",
+      "moss beard clump",
+      "golden sap pool",
+      "sap falls pouring from a split",
+      "mossy green timber trestle",
+      "plank platform hung on ropes",
+      "round-roofed timber house",
+      "great paper hornet nest",
+      "dwarf high seat with round shields",
+      "stacked sap casks",
+      "fern tuft",
+      "glowing spore motes"
+    ],
+    "foes": [
+      "Blinkhop: a round violet one-eyed hopper with a yellow horn; it crouches, then hops at you.",
+      "Hornet: a yellow and black striped hornet that buzzes in place, then swoops.",
+      "Rot Dwarf: a rotted Amberlee dwarf in a grey helm behind a round shield, swinging an axe.",
+      "Grub Lump: a fat orange-brown segmented grub with cyan spots that crawls floors, walls and ceilings and drops on you.",
+      "Sap Spitter: a knobbly bark turret rooted in the floor with an amber sac that swells and lobs slowing sap."
+    ],
+    "prompts": [
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "A wide establishing shot of Amber Falls in the Heartwood, a tall hollow inside the living wood of a colossal tree. HD pixel art for a 2D side-scrolling platformer: strict orthographic side view, no perspective, a 1920x1080 16:9 frame on a 32-pixel tile grid, crisp hard pixels with no anti-aliasing or blur, about 96 colours in hue-shifted ramps (blue-violet shadows, warm highlights), no pure black or white, 1-pixel selective outlines, top-left key light. A lit, high-contrast play plane stands before darker, hazier parallax layers, with a low dark foreground fringe along the bottom. Red-brown wood walls with long vertical grain strands frame the hollow, their tops capped with dark sculpted moss and their undersides trailing orange rootlets. High in the middle, a thick sheet of golden amber sap pours from a split in the heartwood into a sap basin. Mossy green timber trestles and plank platforms hung on ropes step across the open air. Behind, a deep green-teal gloom holds a braid of great wood fibres hanging from the roof and rising from the floor, each leaning its own way. Hanging roots end in glowing fungus caps; faint cyan spores float, a few haloed. Clusters of glowing cyan mushrooms and amber shelf fungus light the ledges. Pale green light shafts fall from above. A tiny cloaked figure stands at the bottom left for scale. Damp, quiet, alive."
+      },
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "HD pixel art, 2D side-scroller, strict orthographic side view, 32px tiles, crisp pixels, limited palette, hollow inside living tree wood, golden sap waterfall pouring from a split, red-brown grain walls with moss caps, hanging roots with glowing fungus, cyan spores, rope-hung plank platforms, green-teal gloom"
+      },
+      {
+        "view": "vista",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Key art of Amber Falls deep in the Heartwood, a hollow inside a vast living tree. Loose painted concept art with visible brushwork and soft edges, but still a flat side-on composition read like a 2D platformer level: orthographic side view, no perspective, no vanishing point. A glowing sheet of amber sap pours down the middle from a split in red-brown heartwood. Walls of grained wood rise on either side, crowned with moss and dripping orange rootlets. Behind, a green-teal dark full of great twisting wood fibres. Glowing cyan mushrooms, amber shelf fungus and floating spores give the only light, with soft shafts from above. Rope-hung plank platforms and mossy trestles cross the gloom. Palette of bark brown, sap gold, fungus cyan and moss green."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "A playable screen in the Heartwood's Lantern Grotto. HD pixel art for a 2D side-scrolling platformer: strict orthographic side view, no perspective, a 1920x1080 16:9 frame on a 32-pixel tile grid, crisp hard pixels with no anti-aliasing or blur, about 96 colours in hue-shifted ramps (blue-violet shadows, warm highlights), no pure black or white, 1-pixel selective outlines, top-left key light. A lit, high-contrast play plane stands before darker, hazier parallax layers, with a low dark foreground fringe along the bottom. The hero is small against the world: a slender elf with violet hair under a dark hood, a scarf, brown leather armour and a long dark green cloak, sword in his near hand, round wooden buckler on his far arm. He is mid-swing in the air above a pool of golden sap, slashing at a striped yellow and black hornet that hovers ahead. On the ceiling a fat orange-brown segmented grub with cyan spots clings upside down, shivering before it drops. The floor is red-brown wood with long grain and a dark moss and grass fringe; a mossy green timber trestle and a plank hung on ropes offer footing. Clusters of glowing cyan mushrooms and small orange toadstools light the floor; amber shelf fungus glows on the wall; orange rootlets hang from the ceiling edge. Behind, a green-teal hollow with a braid of great wood fibres, hanging roots tipped with glowing fungus, and floating cyan spores. A dark fringe of fern silhouettes at the bottom."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "HD pixel art, 2D side-scroller, strict orthographic side view, 32px tiles, crisp pixels, limited palette, elf hero in green cloak slashing mid-jump over a golden sap pool, striped hornet ahead, segmented grub on the ceiling, red-brown wood floor with moss fringe, glowing cyan mushrooms, rope-hung plank"
+      },
+      {
+        "view": "gameplay",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Painted concept of a fight in the Heartwood. Loose painted concept art with visible brushwork and soft edges, but still a flat side-on composition read like a 2D platformer level: orthographic side view, no perspective, no vanishing point. A small elf wanderer in a dark green cloak swings his sword in mid-air over a pool of glowing amber sap. A yellow-striped hornet dives at him; a fat spotted grub clings to the ceiling above, about to drop; a squat dwarf in a grey helm waits behind a round shield on a wooden ledge. Red-brown grained wood, moss fringes, orange rootlets, cyan glowing mushrooms and floating spores in a green-teal gloom."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "A prop and tile sheet for the Heartwood, tunnels inside the living wood of a colossal tree. HD pixel art for a 2D side-scrolling platformer: strict orthographic side view, no perspective, a 1920x1080 16:9 frame on a 32-pixel tile grid, crisp hard pixels with no anti-aliasing or blur, about 96 colours in hue-shifted ramps (blue-violet shadows, warm highlights), no pure black or white, 1-pixel selective outlines, top-left key light. An asset sheet on a flat neutral mid-grey background, items evenly spaced in a grid with clear gaps, each drawn in strict orthographic side view, no shadows cast on the background, no labels. Include: a cluster of glowing cyan mushrooms; amber glowing shelf fungus on a wood stub; small orange toadstools; hanging orange rootlets; a moss beard clump; a golden sap pool tile set; a sap waterfall segment; a mossy green timber trestle with cross braces; a plank platform hung on two ropes; a round-roofed timber house with a plank front; a great paper hornet nest in grey and bark-brown layers with comb showing; a dwarf high seat with carved timber pillars, a zigzag lintel and round shields; a stack of sap casks; fern tufts; a 3x3 block of red-brown wood tiles with long grain and a dark moss cap, with edge and corner pieces. Bark brown, sap gold, fungus cyan, moss green."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "HD pixel art, 2D side-scroller, strict orthographic side view, 32px tiles, crisp pixels, limited palette, asset sheet on flat grey background, glowing cyan mushrooms, amber shelf fungus, orange toadstools, hanging rootlets, sap pool, mossy timber trestle, rope-hung plank, sap casks, red-brown wood tiles with moss cap"
+      },
+      {
+        "view": "props",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "A painted concept sheet of props for the Heartwood, tunnels in a living tree. Loose brushwork on a flat neutral background, each object in flat side view and evenly spaced: glowing cyan mushroom clusters, amber shelf fungus, orange toadstools, hanging rootlets, moss clumps, a sap pool and sap falls, a mossy trestle, a rope-hung plank, a timber house, a layered paper hornet nest, a dwarf high seat with round shields, sap casks and swatches of grained red-brown wood."
+      }
+    ],
+    "avoid": "perspective, isometric, top-down, three-quarter camera, vanishing points, blur, soft gradients on sprites, anti-aliasing, pure black, pure white, text, captions, logos, watermarks, UI or HUD, photo realism, bright daylight, open sky",
+    "sources": [
+      "design bible 2",
+      "design bible 3.2",
+      "design bible 6.12",
+      "design bible 7",
+      "design bible 8.1",
+      "design bible 12.2",
+      "design bible 12.62",
+      "design bible 12.63",
+      "design bible 12.66",
+      "levels/heartwood/",
+      "tools/art/tilegen.py (heartwood_far, heartwood_mid)",
+      "tools/art/decorgen.py",
+      "workbench/catalog/catalog.json (Foes)",
+      "workbench/catalog/rooms/heartwood__amberlee.jpg",
+      "workbench/catalog/rooms/heartwood__amber_falls.jpg",
+      "workbench/catalog/rooms/heartwood__lantern_grotto.jpg",
+      "workbench/catalog/foes/"
+    ],
+    "notes": "Bible 3.2 names root-gates as a mechanic, but no room header names one, so they are left out. The hero's look follows bible 13.5 and the screenshots (violet hair, green cloak), not 12.2's charcoal hood over brown hair."
+  },
+  {
+    "id": "tower",
+    "name": "Hollin Tower",
+    "town": "Kettleforge",
+    "summary": "The Hollin dwarves' mining tower, bolted into the trunk of the Ylden, and their city Kettleforge inside it. Its gears, winches and ore roads have stood still since the dwarves went quiet, and the Iron Dwarves still guard the works on their king's last order. A long vertical climb of iron, stone and cold forges.",
+    "look": "Cut stone plates a tile wide in cool blue-violet grey, some pitted, framed by riveted iron girders. The halls are tall and dark. Far back, the tower's shafts stand in three storeys, each on a gallery floor with a lit lip and a railing, and great gears turn slowly in the dark between them, with sparks and lamp glints. Nearer, lattice trusses hang from the roof to their own depths, each ending in a pulley block and hook, and bolted posts rise from the floor to carry beams on knee braces. Chains hang everywhere. Small hanging lamps and wall lamps burn lamp orange, each throwing a soft pool on the stone, and pale light shafts slant through the dust. Rust streaks the iron. Platforms are iron-framed trestles with grey ash planks, and plank ledges hang on chains. The Smelter's great crucible pours a white-hot stream into a glowing trough; the Gear Pit's rusted gears with brass hubs stand in its back wall. A dark fringe of rubble and crag silhouettes runs along the bottom.",
+    "palette": [
+      "blue-violet stone grey",
+      "iron dark",
+      "rust orange-brown",
+      "lamp orange",
+      "molten gold-white",
+      "brass",
+      "cold night shadow"
+    ],
+    "landmarks": [
+      {
+        "name": "Kettleforge",
+        "text": "The dwarf city bolted into the heart of the Tree: round-roofed houses, a brick forge with an iron hood, and the lift down to the Tower Foot."
+      },
+      {
+        "name": "Smelter",
+        "text": "The great iron crucible hangs on chains and pours a white-hot stream of metal into a stone trough; the rails run on into a wall of fog."
+      },
+      {
+        "name": "Gear Pit",
+        "text": "Great rusted gears with brass hubs stand in the back wall over a bed of spikes; their teeth still bite."
+      },
+      {
+        "name": "Bell Loft",
+        "text": "The shift bell of Kettleforge lies where it fell, split from lip to crown."
+      },
+      {
+        "name": "Ore Bin 3",
+        "text": "A plank bin on heavy posts, half full of ore, with an iron hopper, a slide gate and a chute from the ceiling."
+      },
+      {
+        "name": "Rail Gallery",
+        "text": "The ore road: one rail on sleepers carried the length of the gallery on eight timber bents, just under the ceiling."
+      },
+      {
+        "name": "Kettleforge Lift",
+        "text": "Durgan's arena: a lift platform in an elevator shaft that rises as the fight goes on."
+      },
+      {
+        "name": "Old Flue",
+        "text": "A smoke-black chimney with no ledges, climbed wall to wall."
+      }
+    ],
+    "props": [
+      "hanging iron lamp",
+      "wall lamp",
+      "great rusted gear with brass hub",
+      "iron crucible on chains",
+      "split fallen bell",
+      "ore bin with hopper",
+      "minecart on rails",
+      "lattice truss with pulley block",
+      "iron chain",
+      "riveted girder",
+      "iron-framed trestle platform",
+      "steam pipe",
+      "miner's pick",
+      "rubble pile",
+      "brick forge with iron hood"
+    ],
+    "foes": [
+      "Iron Dwarf: a big dwarf in bronze-iron plate with a two-handed hammer that sends a shockwave along the floor.",
+      "Minecart Rider: a helmeted dwarf hunched in an iron ore cart who brakes, then charges the length of the floor.",
+      "Gear Bat: a violet clockwork bat with a brass gear on its back that it flings and catches.",
+      "Silt Adder: a sea-green hooded serpent that floats up and down over the ladders and strikes level.",
+      "Grub Lump: a segmented grub that crawls walls and ceilings and drops on you.",
+      "Blinkhop: a one-eyed violet hopper.",
+      "Hornet: a striped swooping hornet."
+    ],
+    "prompts": [
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "A wide establishing shot of the Smelter in the Hollin Tower, a dwarven mining tower bolted inside a colossal tree. HD pixel art for a 2D side-scrolling platformer: strict orthographic side view, no perspective, a 1920x1080 16:9 frame on a 32-pixel tile grid, crisp hard pixels with no anti-aliasing or blur, about 96 colours in hue-shifted ramps (blue-violet shadows, warm highlights), no pure black or white, 1-pixel selective outlines, top-left key light. A lit, high-contrast play plane stands before darker, hazier parallax layers, with a low dark foreground fringe along the bottom. The floor and ceiling are cut stone plates a tile wide in cool blue-violet grey, some pitted, edged with riveted iron. On the right a great iron crucible hangs from two chains, tipped, pouring a wavering white-hot stream of molten metal into a glowing stone trough; its heat lights the nearby stone orange. On the left a plank ledge hangs on chains and an iron-framed trestle stands on the floor. Behind, three storeys of stone shafts on railed gallery floors, great gears turning in the dark, lattice trusses hanging from the roof to pulley blocks, bolted posts carrying beams, many chains and small hanging lamps glowing lamp orange. Pale light shafts and sparks in the dusty air. A tiny cloaked figure at the bottom left for scale. Iron, rust and lamp orange."
+      },
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "HD pixel art, 2D side-scroller, strict orthographic side view, 32px tiles, crisp pixels, limited palette, dwarven smelter hall, iron crucible on chains pouring white-hot metal into a glowing trough, blue-grey stone plates, riveted girders, hanging trusses, great gears in the dark, chains, orange hanging lamps"
+      },
+      {
+        "view": "vista",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Key art of the Smelter inside the Hollin Tower, a dwarven tower bolted into a vast tree. Loose painted concept art with visible brushwork and soft edges, but still a flat side-on composition read like a 2D platformer level: orthographic side view, no perspective, no vanishing point. A huge iron crucible hangs on chains and pours a glowing white-gold stream into a stone trough, lighting the hall orange. Around it, cold blue-violet stone and riveted iron, galleries stacked in the dark, enormous gears half seen behind, lattice trusses and chains hanging from the roof, small lamps burning. Dust and sparks in slanting light. Iron, rust, lamp orange."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "A playable screen in the Hollin Tower's Gear Pit. HD pixel art for a 2D side-scrolling platformer: strict orthographic side view, no perspective, a 1920x1080 16:9 frame on a 32-pixel tile grid, crisp hard pixels with no anti-aliasing or blur, about 96 colours in hue-shifted ramps (blue-violet shadows, warm highlights), no pure black or white, 1-pixel selective outlines, top-left key light. A lit, high-contrast play plane stands before darker, hazier parallax layers, with a low dark foreground fringe along the bottom. The hero is small against the world: a slender elf with violet hair under a dark hood, a scarf, brown leather armour and a long dark green cloak, sword in his near hand, round wooden buckler on his far arm. He is mid-jump over a bed of iron floor spikes toward an iron-framed trestle platform with grey ash planks. A violet clockwork bat with a brass gear on its back hangs to one side of him, whirring the gear before it throws. Further right a dwarf in bronze-iron plate walks the stone floor with a two-handed hammer on his shoulder. In the back wall stand three great rusted gears with brass hubs, the largest reaching the floor. The floor and walls are blue-violet stone plates a tile wide, edged with riveted iron. Behind, galleries, hanging lattice trusses, chains, posts and beams, and small hanging lamps glowing lamp orange. Pale light shafts, dust motes, a dark rubble fringe at the bottom."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "HD pixel art, 2D side-scroller, strict orthographic side view, 32px tiles, crisp pixels, limited palette, elf hero in green cloak jumping over floor spikes to an iron trestle, clockwork bat with brass gear, armoured dwarf with hammer, great rusted gears in the back wall, blue-grey stone plates, orange lamps"
+      },
+      {
+        "view": "gameplay",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Painted concept of a fight in the Hollin Tower. Loose painted concept art with visible brushwork and soft edges, but still a flat side-on composition read like a 2D platformer level: orthographic side view, no perspective, no vanishing point. A small elf wanderer in a dark green cloak leaps over a row of iron spikes; a clockwork bat flings a spinning brass gear at him; a heavy dwarf in iron plate raises a two-handed hammer on the stone floor ahead. Huge rusted gears fill the back wall; chains, trusses and small orange lamps hang in the dark above. Cold stone, iron, rust and lamp light."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "A prop and tile sheet for the Hollin Tower, a dwarven mining tower inside a giant tree. HD pixel art for a 2D side-scrolling platformer: strict orthographic side view, no perspective, a 1920x1080 16:9 frame on a 32-pixel tile grid, crisp hard pixels with no anti-aliasing or blur, about 96 colours in hue-shifted ramps (blue-violet shadows, warm highlights), no pure black or white, 1-pixel selective outlines, top-left key light. An asset sheet on a flat neutral mid-grey background, items evenly spaced in a grid with clear gaps, each drawn in strict orthographic side view, no shadows cast on the background, no labels. Include: a hanging iron lamp; a wall lamp; three great rusted gears of different sizes with brass hubs; an iron crucible hanging on chains with a pouring lip; a great bronze bell lying on its side, split from lip to crown; an ore bin of planks with an iron hopper and slide gate; an iron minecart on a short length of rail; a lattice truss ending in a pulley block and hook; lengths of iron chain; a riveted girder; an iron-framed trestle platform with ash planks; a steam pipe with a valve; a miner's pick; a rubble pile; a brick forge with an iron hood and glowing fire; a 3x3 block of blue-violet stone plate tiles with riveted iron edges. Iron, rust, lamp orange, brass."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "HD pixel art, 2D side-scroller, strict orthographic side view, 32px tiles, crisp pixels, limited palette, asset sheet on flat grey background, rusted gears with brass hubs, hanging iron lamp, crucible on chains, split bronze bell, minecart on rail, ore bin, iron trestle, chains, stone plate tiles with rivets"
+      },
+      {
+        "view": "props",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "A painted concept sheet of props for the Hollin Tower, a dwarven mining tower. Loose brushwork on a flat neutral background, each object in flat side view and evenly spaced: great rusted gears, hanging iron lamps, a crucible on chains, a split shift bell, an ore bin with hopper, a minecart, lattice trusses with pulleys, chains, girders, trestles, a forge with an iron hood, picks and rubble, and swatches of blue-grey stone plate. Iron, rust, brass and lamp orange."
+      }
+    ],
+    "avoid": "perspective, isometric, top-down, three-quarter camera, vanishing points, blur, soft gradients on sprites, anti-aliasing, pure black, pure white, text, captions, logos, watermarks, UI or HUD, photo realism, sunlight, foliage, sci-fi machinery",
+    "sources": [
+      "design bible 2",
+      "design bible 3.2",
+      "design bible 7",
+      "design bible 8.2",
+      "design bible 12.2",
+      "design bible 12.35",
+      "design bible 12.54",
+      "design bible 12.56",
+      "design bible 12.57",
+      "design bible 12.60",
+      "design bible 12.61",
+      "levels/tower/",
+      "tools/art/tilegen.py (tower_far, tower_mid)",
+      "tools/art/decorgen.py",
+      "workbench/catalog/catalog.json (Foes)",
+      "workbench/catalog/rooms/tower__kettleforge.jpg",
+      "workbench/catalog/rooms/tower__smelter.jpg",
+      "workbench/catalog/rooms/tower__gear_pit.jpg",
+      "workbench/catalog/foes/"
+    ],
+    "notes": "The catalogue counts seven foe kinds in the Tower, which takes in the Blinkhop and Hornet from the Heartwood; the Foreman (a golem with the foreman's lamp and Delver's Pick) is the zone's mini-boss and is left out of foes. Bible 12.2 says iron, rust and lamp orange, but the as-built stone reads cool blue-violet grey in the screenshots, so both are used."
+  },
+  {
+    "id": "haar",
+    "name": "The Haar",
+    "town": "Lampwick, Polesend",
+    "summary": "A marsh on the Tree's lower limbs, drowned in a grey-green fog that is the Haar Wyrm's steam cooled over the water. Rotting boardwalks run between lamp-lit pockets, and the lamp town of Lampwick and the stilt town of Polesend keep their lights burning for the miners who came back as Drowned Dwarves. Fog limits what you can see; lanterns part it.",
+    "look": "Everything sinks into a thick grey-green fog. The footing is old, bone-pale umber limb wood with a cool moss and grass fringe, and boardwalks of grey reed planks on posts. The fog hides most of the room, and every light clears a wavering, uneven pocket around it: lamp posts with a lantern on an iron arm, lanterns hung on cords, a shrine, a hag's green wisp. Far back, the drowned limbs of the Tree reach across a green murk, paler the lower they sit, with will-o'-lanterns glimmering far off. Nearer, bare crooked limbs reach in from the sides, hung with long ragged moss beards that drip. Bands of fog drift slowly across the scene in layers. Black water lies in the low places, with iron spikes under it. Boardwalk houses have reed-grey plank walls, damp dark frames and warm yellow windows. Lantern yellow is the only warm colour. A dark fringe of reeds and mud mounds sits along the bottom of the frame.",
+    "palette": [
+      "grey-green fog",
+      "slate blue mist",
+      "bone-pale umber wood",
+      "lantern yellow",
+      "black water",
+      "moss green",
+      "reed grey"
+    ],
+    "landmarks": [
+      {
+        "name": "Lampwick",
+        "text": "The lamp town on the boardwalks: reed-grey plank houses with lit windows and a string of lamp posts, each a warm pocket in the fog."
+      },
+      {
+        "name": "Polesend",
+        "text": "The stilt town on the black water at the end of the drowned barge road, with its tavern, The Black Water."
+      },
+      {
+        "name": "Fog Cut",
+        "text": "Where the ore rails end and the Tree's lower limbs drown in fog; rope-hung boardwalks over spikes."
+      },
+      {
+        "name": "Sunken Chapel",
+        "text": "The dwarves' drowned chapel under the thickest fog, lanterns on its altar; Gloamweaver's arena."
+      },
+      {
+        "name": "Haar Spring",
+        "text": "The dwarves' great cistern, sunk into the floor under an iron grate before a dark tunnel arch, fed by three brass intake pipes; the Haar Wyrm's arena."
+      },
+      {
+        "name": "Lampwick Causeway",
+        "text": "A causeway drowned under black water whose boardwalks rise when the spring flows."
+      },
+      {
+        "name": "Lantern Landing",
+        "text": "A resting place by the lanterns under a shaft of bound fog that only a lantern's light can part."
+      },
+      {
+        "name": "The Matriarch's Mire",
+        "text": "The mire of the Marsh Hag Matriarch, mother of every hag in the fog."
+      }
+    ],
+    "props": [
+      "lamp post with lantern on an iron arm",
+      "lantern hung on a cord",
+      "wall lantern on a bracket",
+      "reed-grey boardwalk house",
+      "boardwalk on posts",
+      "rope-hung plank platform",
+      "moss beard",
+      "reed clump",
+      "pale marsh toadstools",
+      "mooring stake",
+      "black water with spikes",
+      "drowned dwarf helm",
+      "dripping water",
+      "iron grate over a cistern",
+      "brass intake pipe"
+    ],
+    "foes": [
+      "Lantern Ghost: a pale hooded wisp of a drowned dwarf that drifts through wood and stone; its eyes flare before it lunges.",
+      "Bog Puffcap: a squat pale spotted marsh mushroom whose gills glow as it swells, then bursts in a spore cloud.",
+      "Drowned Dwarf: a blue-white Lampwick miner with weed in his beard who rises from the mire and slams his anchor.",
+      "Marsh Hag: a bent crone in a shawl of dry reeds with moss for hair and a willow staff holding a green wisp; she hexes the mire under your feet."
+    ],
+    "prompts": [
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "A wide establishing shot of Lampwick, a lamp town on boardwalks in a fog-drowned marsh on the lower limbs of a colossal tree. HD pixel art for a 2D side-scrolling platformer: strict orthographic side view, no perspective, a 1920x1080 16:9 frame on a 32-pixel tile grid, crisp hard pixels with no anti-aliasing or blur, about 96 colours in hue-shifted ramps (blue-violet shadows, warm highlights), no pure black or white, 1-pixel selective outlines, top-left key light. A lit, high-contrast play plane stands before darker, hazier parallax layers, with a low dark foreground fringe along the bottom. A thick grey-green fog fills the frame. The footing is pale bone-coloured umber limb wood with a cool moss fringe, and boardwalks of grey reed planks on posts. Along them stand reed-grey plank houses with damp dark frames and warm yellow windows, and lamp posts with lanterns on iron arms; each light clears a wavering, uneven pocket in the fog, warm pockets with dark between. Behind, drowned tree limbs reach across a green murk, paler the lower they are, with far will-o'-lanterns. Nearer, bare crooked limbs hung with long dripping moss beards, lanterns on cords, and slow bands of fog drifting across. Black water lies below. A tiny cloaked figure on the boardwalk for scale. Grey-green, bone and lantern yellow. Cold, still, lonely."
+      },
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "HD pixel art, 2D side-scroller, strict orthographic side view, 32px tiles, crisp pixels, limited palette, fog-drowned marsh town on boardwalks, reed-grey plank houses with warm windows, lamp posts clearing pockets in thick grey-green fog, bare limbs with moss beards, black water, lantern yellow"
+      },
+      {
+        "view": "vista",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Key art of Lampwick in the Haar, a fog-drowned marsh on the lower limbs of a vast tree. Loose painted concept art with visible brushwork and soft edges, but still a flat side-on composition read like a 2D platformer level: orthographic side view, no perspective, no vanishing point. Thick grey-green fog swallows everything but a row of warm lamp posts and the yellow windows of plank houses on stilted boardwalks. Bare crooked limbs hung with moss beards reach out of the murk; far lanterns glimmer like will-o'-wisps; black water below. Grey-green, bone, slate and a single warm lantern yellow. Cold, quiet and mournful."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "A playable screen in the Haar's Fog Cut. HD pixel art for a 2D side-scrolling platformer: strict orthographic side view, no perspective, a 1920x1080 16:9 frame on a 32-pixel tile grid, crisp hard pixels with no anti-aliasing or blur, about 96 colours in hue-shifted ramps (blue-violet shadows, warm highlights), no pure black or white, 1-pixel selective outlines, top-left key light. A lit, high-contrast play plane stands before darker, hazier parallax layers, with a low dark foreground fringe along the bottom. The hero is small against the world: a slender elf with violet hair under a dark hood, a scarf, brown leather armour and a long dark green cloak, sword in his near hand, round wooden buckler on his far arm. He is mid-jump between rope-hung plank boardwalks over black water with iron spikes under it. A thick grey-green fog covers most of the screen; his own small pocket of sight and each hanging lantern clear wavering patches of it. On the far boardwalk a bent crone in a shawl of dry reeds raises a willow staff with a green wisp glowing in its crook, and a ring of green bog light marks the planks under him. On the left bank a squat pale spotted marsh mushroom swells, its gills glowing through the fog. The ground is bone-pale umber limb wood with a moss fringe. Behind, bare limbs with dripping moss beards and drifting fog bands. A dark reed fringe along the bottom."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "HD pixel art, 2D side-scroller, strict orthographic side view, 32px tiles, crisp pixels, limited palette, elf hero in green cloak jumping between rope-hung boardwalks over black water, marsh hag with green wisp staff, glowing marsh mushroom, thick grey-green fog with lantern-lit pockets, moss beards"
+      },
+      {
+        "view": "gameplay",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Painted concept of a fight in the Haar. Loose painted concept art with visible brushwork and soft edges, but still a flat side-on composition read like a 2D platformer level: orthographic side view, no perspective, no vanishing point. A small elf wanderer in a dark green cloak leaps between hanging boardwalks above black water. Out of the grey-green fog a reed-shawled hag lifts a staff with a green wisp, and a ring of green bog light opens under him; a pale hooded ghost with flaring eyes drifts out of a limb; a spotted mushroom glows on the bank. Only lanterns break the fog. Grey-green, bone and lantern yellow."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "A prop and tile sheet for the Haar, a fog-drowned marsh on a giant tree's lower limbs. HD pixel art for a 2D side-scrolling platformer: strict orthographic side view, no perspective, a 1920x1080 16:9 frame on a 32-pixel tile grid, crisp hard pixels with no anti-aliasing or blur, about 96 colours in hue-shifted ramps (blue-violet shadows, warm highlights), no pure black or white, 1-pixel selective outlines, top-left key light. An asset sheet on a flat neutral mid-grey background, items evenly spaced in a grid with clear gaps, each drawn in strict orthographic side view, no shadows cast on the background, no labels. Include: a lamp post with a lantern on an iron arm; a lantern hung on a cord; a wall lantern on a bracket; a reed-grey plank boardwalk house with a lit yellow window; a boardwalk on posts; a plank platform hung on ropes; long ragged moss beards; reed clumps; pale marsh toadstools; a mooring stake; a tile of black water over iron spikes; a drowned dwarf helm; a dripping water strand; an iron grate; a brass intake pipe flaring to a bell mouth with a water drop cut in its plate; a 3x3 block of bone-pale umber limb wood tiles with a cool moss fringe. Grey-green, bone, reed grey, lantern yellow."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "HD pixel art, 2D side-scroller, strict orthographic side view, 32px tiles, crisp pixels, limited palette, asset sheet on flat grey background, marsh lamp post, hanging lantern, reed-grey boardwalk house, rope-hung plank, moss beards, reeds, pale toadstools, mooring stake, bone-pale wood tiles with moss fringe"
+      },
+      {
+        "view": "props",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "A painted concept sheet of props for the Haar, a fog marsh of boardwalks and lanterns. Loose brushwork on a flat neutral background, each object in flat side view and evenly spaced: lamp posts, hanging lanterns, a stilted plank house with a lit window, boardwalks, rope-hung planks, moss beards, reeds, marsh toadstools, mooring stakes, a drowned dwarf helm, an iron grate, a brass pipe mouth, and swatches of pale limb wood with moss. Grey-green, bone and lantern yellow."
+      }
+    ],
+    "avoid": "perspective, isometric, top-down, three-quarter camera, vanishing points, blur, soft gradients on sprites, anti-aliasing, pure black, pure white, text, captions, logos, watermarks, UI or HUD, photo realism, clear air, bright sun, saturated colours other than lantern yellow and the hag's green wisp",
+    "sources": [
+      "design bible 2",
+      "design bible 3.2 (Lampwick, Polesend)",
+      "design bible 7",
+      "design bible 8.3",
+      "design bible 8.4",
+      "design bible 12.2",
+      "design bible 12.5",
+      "design bible 12.40",
+      "levels/haar/",
+      "tools/art/tilegen.py (haar_far, haar_mid, ZONES haar)",
+      "tools/art/decorgen.py",
+      "scripts/enemies/lantern_ghost.gd",
+      "scripts/enemies/bog_puffcap.gd",
+      "workbench/catalog/catalog.json (Foes)",
+      "workbench/catalog/rooms/haar__polesend.jpg",
+      "workbench/catalog/rooms/haar__fog_cut.jpg",
+      "workbench/catalog/rooms/haar__lampwick.jpg",
+      "workbench/catalog/rooms/haar__spring_of_haar.jpg",
+      "workbench/catalog/foes/"
+    ],
+    "notes": "Bible 3.2 says rotting boardwalks; the as-built play tiles are warmed to bone-pale umber limb wood (pass 524), so both appear. The fog lifts by half once the Haar Wyrm falls; the prompts show the fog before that."
+  },
+  {
+    "id": "boughs",
+    "name": "High Boughs",
+    "town": "Sylvarre",
+    "summary": "The sunlit canopy of the Ylden, above the fog: boughs as wide as roads, leaves taller than houses, and wind. The elves of Sylvarre live where the boughs meet, many of them glad of the endless summer. Wind currents carry you across open sky, and ripe seed-pods throw you high.",
+    "look": "The only zone in daylight. The footing is bough bark cut into plates of one warm tan-brown, parted by thin dark furrows that slant, fork and join, capped with bright moss and grass. Behind, the air is a pale green-blue haze: far boughs with leaves bunched along them, a ridge of pointed fir-like crowns fading into valley mist, and flat-bottomed clouds lit on top. Nearer, great boughs cross in from the sides hung with enormous pointed leaves with pale midribs. Vines with leaf clumps hang from the bark ceiling. Bands of wind show as a faint wash of sky with gusts racing downwind and torn leaves tumbling in them. Ripe seed-pods sit on the ground like plump pale-gold ribbed gourds held by green sepals. Planks of reddish wood hang on ropes and stand on built trestles. Thorny brambles hold red-tipped thorn bulbs. Soft sun shafts fall through, and the colours are leaf green, sky blue and cloud white. A dark fringe of fern and leaf silhouettes runs along the bottom.",
+    "palette": [
+      "leaf green",
+      "sky blue haze",
+      "cloud white",
+      "warm tan bark",
+      "pale gold seed-pod",
+      "deep bough shadow green",
+      "plank red-brown"
+    ],
+    "landmarks": [
+      {
+        "name": "Sylvarre",
+        "text": "The town of the elves where the boughs meet: leaf-silk lanterns, round-roofed timber houses, and doors that open only from inside."
+      },
+      {
+        "name": "Crown-Leaf",
+        "text": "A giant leaf over open sky with bounce-pods at both ends; Snapcrown, the Devouring Bloom, is rooted in its middle."
+      },
+      {
+        "name": "Canopy Bridge",
+        "text": "A bridge over a hollow in the crown under knots of wood that hang from the ceiling, with a wind band over it, at Sylvarre's shut gate."
+      },
+      {
+        "name": "Windward Climb",
+        "text": "Where the fog ends and the boughs rise into the sun, climbed by landing on seed-pods."
+      },
+      {
+        "name": "Windloft",
+        "text": "Where the wardens learned to stride the gaps between the boughs, behind an elven veil."
+      },
+      {
+        "name": "The Thorn Yard",
+        "text": "The Bark Captain's yard, where the Tree's first knight still keeps his watch."
+      },
+      {
+        "name": "Thicket Road",
+        "text": "The elves' road through leaves taller than houses; some of the leaves have eyes."
+      },
+      {
+        "name": "Leaf Landing",
+        "text": "A shrine on the leaf road, swept clean by the wind."
+      }
+    ],
+    "props": [
+      "enormous pointed leaf",
+      "hanging vine with leaf clumps",
+      "pale-gold ribbed seed-pod (bounce-pod)",
+      "thorn bramble with thorn bulbs",
+      "plank hung on ropes",
+      "reddish plank on a built trestle",
+      "leaf-silk lantern",
+      "round-roofed elf house",
+      "flower tufts",
+      "young sprout",
+      "fallen leaf litter",
+      "wall shelf fungus",
+      "flat-bottomed cloud",
+      "wind band with torn leaves",
+      "violet crystal pickup"
+    ],
+    "foes": [
+      "Leaf Mantis: a leaf-green mantis that hides folded on a bough like a leaf cluster, then rears and slashes with its scythes.",
+      "Bark Knight: a knight grown in living bark plates with a green bough lance he thrusts and roots as a ledge.",
+      "Seed Bomber: a pod-bellied canopy bird with leaf wings and a brown seed husk that drops seeds bursting in thorns.",
+      "Hornet: a yellow and black striped hornet that swoops."
+    ],
+    "prompts": [
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "A wide establishing shot of the Windward Climb in the High Boughs, the sunlit canopy of a colossal tree above a sea of fog. HD pixel art for a 2D side-scrolling platformer: strict orthographic side view, no perspective, a 1920x1080 16:9 frame on a 32-pixel tile grid, crisp hard pixels with no anti-aliasing or blur, about 96 colours in hue-shifted ramps (blue-violet shadows, warm highlights), no pure black or white, 1-pixel selective outlines, top-left key light. A lit, high-contrast play plane stands before darker, hazier parallax layers, with a low dark foreground fringe along the bottom. The walls and floor are bough bark cut into plates of warm tan-brown with thin dark slanting furrows, capped with bright moss and grass. Plank platforms of reddish wood hang on ropes at different heights across the open air, one capped with grass and a pale-gold ribbed seed-pod. Behind, a pale green-blue haze: far boughs with bunched leaves, a ridge of pointed fir-like crowns fading into mist, flat-bottomed clouds lit on top. Nearer, great boughs cross in from the sides hung with enormous pointed leaves with pale midribs; vines and leaf clumps hang from the bark ceiling. A faint band of wind with tumbling torn leaves crosses the sky. Soft sun shafts. A tiny cloaked figure at the bottom left for scale. Leaf green, sky blue, cloud white. Bright, airy, high up."
+      },
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "HD pixel art, 2D side-scroller, strict orthographic side view, 32px tiles, crisp pixels, limited palette, sunlit tree canopy, tan bark plate walls with moss caps, rope-hung reddish plank platforms over open air, enormous pointed leaves, hanging vines, pale green-blue haze with clouds and fir ridge, wind with torn leaves"
+      },
+      {
+        "view": "vista",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Key art of the High Boughs, the sunlit canopy of a vast tree above a sea of fog. Loose painted concept art with visible brushwork and soft edges, but still a flat side-on composition read like a 2D platformer level: orthographic side view, no perspective, no vanishing point. Boughs as wide as roads, their bark in warm tan plates crowned with moss, cross a pale green-blue sky. Leaves taller than houses hang from them; vines trail down; flat white clouds drift behind a ridge of pointed crowns in the haze. Planks hang on ropes over the drop, gusts of wind carry torn leaves across, and plump pale-gold seed-pods sit on the boughs. Leaf green, sky blue, cloud white, warm bark. Airy and bright."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "A playable screen on the High Boughs' Thicket Road. HD pixel art for a 2D side-scrolling platformer: strict orthographic side view, no perspective, a 1920x1080 16:9 frame on a 32-pixel tile grid, crisp hard pixels with no anti-aliasing or blur, about 96 colours in hue-shifted ramps (blue-violet shadows, warm highlights), no pure black or white, 1-pixel selective outlines, top-left key light. A lit, high-contrast play plane stands before darker, hazier parallax layers, with a low dark foreground fringe along the bottom. The hero is small against the world: a slender elf with violet hair under a dark hood, a scarf, brown leather armour and a long dark green cloak, sword in his near hand, round wooden buckler on his far arm. He has just bounced high off a plump pale-gold ribbed seed-pod held by green sepals and swings his sword in mid-air. Above him a pod-bellied bird with leaf wings and a hard brown seed husk for a belly hovers, squeezing the husk as it glows. Ahead on the bough a knight grown in plates of living bark braces with a long green bough lance drawn back, eyes lit. A leaf-green mantis sits folded on a ledge like a leaf cluster. The footing is tan bark plates with dark slanting furrows and a bright moss cap. Behind, a pale green-blue haze, far boughs, a fir ridge, enormous pointed leaves and a wind band with torn leaves. Dark fern fringe at the bottom."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "HD pixel art, 2D side-scroller, strict orthographic side view, 32px tiles, crisp pixels, limited palette, elf hero in green cloak bouncing off a pale-gold seed-pod mid-swing, leaf-winged seed bird above, bark-armoured knight with green lance, tan bark plates with moss cap, enormous leaves, pale green sky haze"
+      },
+      {
+        "view": "gameplay",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Painted concept of a fight in the High Boughs. Loose painted concept art with visible brushwork and soft edges, but still a flat side-on composition read like a 2D platformer level: orthographic side view, no perspective, no vanishing point. A small elf wanderer in a dark green cloak springs high off a ripe gourd-like seed-pod, sword swinging, while a leaf-winged bird with a swollen seed belly hovers above him; a knight of living bark thrusts a long green lance along the bough; a green mantis unfolds its scythes on a ledge. Enormous leaves, vines, wind with torn leaves and a pale sunlit haze behind."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "A prop and tile sheet for the High Boughs, the sunlit canopy of a giant tree. HD pixel art for a 2D side-scrolling platformer: strict orthographic side view, no perspective, a 1920x1080 16:9 frame on a 32-pixel tile grid, crisp hard pixels with no anti-aliasing or blur, about 96 colours in hue-shifted ramps (blue-violet shadows, warm highlights), no pure black or white, 1-pixel selective outlines, top-left key light. An asset sheet on a flat neutral mid-grey background, items evenly spaced in a grid with clear gaps, each drawn in strict orthographic side view, no shadows cast on the background, no labels. Include: three enormous pointed leaves with pale midribs at different angles; a hanging vine with leaf clumps alternating down it; a plump pale-gold ribbed seed-pod held by three green sepals; a thorn bramble with red-tipped thorn bulbs; a reddish plank hung on two ropes; a reddish plank on a built wooden trestle; a leaf-silk lantern; a round-roofed elf house of timber; flower tufts; a young sprout; fallen leaf litter; a flat-bottomed cumulus cloud; a strip of wind gust streaks with torn leaves; a violet crystal on a small stand; a 3x3 block of tan bark plate tiles with thin slanting dark furrows and a bright moss cap, with edge pieces. Leaf green, sky blue, cloud white, warm bark."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "HD pixel art, 2D side-scroller, strict orthographic side view, 32px tiles, crisp pixels, limited palette, asset sheet on flat grey background, enormous pointed leaves, hanging vine, pale-gold ribbed seed-pod with green sepals, thorn bramble, rope-hung plank, leaf-silk lantern, tan bark plate tiles with moss cap"
+      },
+      {
+        "view": "props",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "A painted concept sheet of props for the High Boughs, a sunlit tree canopy. Loose brushwork on a flat neutral background, each object in flat side view and evenly spaced: enormous leaves, hanging vines, ribbed pale-gold seed-pods, thorn brambles with bulbs, rope-hung planks, trestles, leaf-silk lanterns, a timber elf house, flowers and sprouts, clouds, wind gusts with torn leaves, and swatches of plated tan bark with moss. Leaf green, sky blue, cloud white."
+      }
+    ],
+    "avoid": "perspective, isometric, top-down, three-quarter camera, vanishing points, blur, soft gradients on sprites, anti-aliasing, pure black, pure white, text, captions, logos, watermarks, UI or HUD, photo realism, night, fog, gloom, autumn colours",
+    "sources": [
+      "design bible 2",
+      "design bible 3.2",
+      "design bible 6.9",
+      "design bible 7",
+      "design bible 8.5",
+      "design bible 12.2",
+      "design bible 12.5 (day air)",
+      "design bible 12.77",
+      "design bible 12.87",
+      "design bible 12.92",
+      "levels/boughs/",
+      "tools/art/tilegen.py (boughs_far, boughs_mid)",
+      "tools/art/decorgen.py",
+      "workbench/catalog/catalog.json (Foes)",
+      "workbench/catalog/rooms/boughs__sylvarre.jpg",
+      "workbench/catalog/rooms/boughs__sunlit_bough.jpg",
+      "workbench/catalog/rooms/boughs__windward_climb.jpg",
+      "workbench/catalog/foes/"
+    ],
+    "notes": "The Bark Captain (Thorn Yard) is a mini-boss and left out of foes. Bible 12.45 (pass 555) still says the boughs' wood is the Heartwood's strands, but 12.92 (pass 615) replaced them with bark plates; the prompts follow 12.92 and the screenshots."
+  },
+  {
+    "id": "spires",
+    "name": "Storm Spires",
+    "town": "Carillon",
+    "summary": "Above the leaves the Ylden's crown breaks into islands of stone adrift in a violet storm, where the elves built lightning shrines and a great bridge before the storm came. Carillon, the bell town, stands on the last great island, warm and rain-soaked, its bells ringing only when the wind remembers. Past it the Spires climb by dead copper conduits to the Roost, where Skyrend nests on the Sky Spring. The mood is wind, rain and old elven grandeur gone to ruin.",
+    "look": "The play plane is pale grey-lavender ashlar shrine stone, laid in courses with gold inlay and capped with a ragged lip of storm-wet green grass: causeways, broken pillars, shrine floors and floating spans of masonry, each span hanging a jagged cone of violet-magenta rock with roots trailing from it. The sky is a dark storm ramp from deep blue-violet down to a bruised wine, with heavy mauve cloud banks. Far back, a ruined elven city stands on a terraced hill: needle spires under cones, notched crowns, towers sheared off at a slant, broad keeps, some joined by pointed-arch bridges, a few slit windows lit ember orange. Nearer, sky islands drift: rounded bellies of chunky lit stone under grass lips, some carrying a ruined tower with one warm window. Dim threads of violet lightning flicker in the far layer; only lightning on the play plane is bright. Wind-slanted rain falls in two depths, splashes in small crowns on open tops and leaves a broken pale sheen on wet stone, while ground under an overhang stays dry. Elven lamps hang from the ceilings in warm pools of light, and storm crystals bristle on the cliffs. The foreground fringe is a low, dark broken fence of timber stubs and a sagging rail. The whole frame carries a warm hearth haze and grade.",
+    "palette": [
+      "storm night blue-violet",
+      "bruised wine sky",
+      "mauve cloud bank",
+      "grey-lavender shrine ashlar",
+      "elven gold inlay",
+      "rain-wet moss green",
+      "island rock magenta-violet",
+      "lamp ember orange"
+    ],
+    "landmarks": [
+      {
+        "name": "Storm Ledge",
+        "text": "The first room: the hollow under a broken island of stone, its overhang open to the storm in the middle, a fallen causeway span over a thorn pit and a chest on a sheer crag."
+      },
+      {
+        "name": "Sky Steps",
+        "text": "A tall room of one-way island shelves stacked up the air, cliffs bristling with storm crystals, and an elven veil before the exit ledge that only an air dash crosses."
+      },
+      {
+        "name": "Broken Shrine",
+        "text": "An elf shrine whose roof the wind tore away. Its lamps still burn, a cold lightning rod stands on the stair, and the bridge to Carillon begins here."
+      },
+      {
+        "name": "Fallen Bridge",
+        "text": "The great elf bridge of Carillon broken into floating spans a stride apart, with hornets in the wind, a harpy overhead and a beetle on the old footing below."
+      },
+      {
+        "name": "Carillon",
+        "text": "The bell town on the last great island: wooden houses under rounded roofs, a Ringreader, shopkeepers, a bell-loft gallery and a bramble-choked bell cellar, all under the rain."
+      },
+      {
+        "name": "Spire Foot and Spire Stair",
+        "text": "The old lift-house, with the Tempest Lance scroll on a conductor's lectern and a dead copper conduit beside a conduit gate; above it, old landings climb to a silver hatch that opens only when both its conduits wake."
+      },
+      {
+        "name": "The Roost",
+        "text": "Skyrend's arena: three stone islands, each with a dead conduit on top, floating over a cloud-stone floor with wooden landings stepping up to them and open sky above."
+      },
+      {
+        "name": "Sky Spring",
+        "text": "The storm's eye: the spring on a stone dais, and past it Vorrhallow's upper gate, shrine stone cut with a gold lightning glyph."
+      }
+    ],
+    "props": [
+      "copper lightning conduit, dead and cold",
+      "copper conduit awake with crackling violet arcs",
+      "conduit gate of shrine stone",
+      "silver floor hatch",
+      "broken elven pillar stump",
+      "floating ashlar span with a hanging rock cone",
+      "sky island carrying a ruined tower",
+      "storm crystal cluster on a cliff",
+      "hanging elven ceiling lamp",
+      "carved shrine rune on a wall",
+      "lightning rod on a stair",
+      "bell-town house with a rounded wooden roof",
+      "great bronze bell in a loft",
+      "rain-lit meditation shrine stele",
+      "upper gate slab with a gold lightning glyph"
+    ],
+    "foes": [
+      "Storm Harpy: a winged hunter, storm-grey and violet with white hair and gold talons, who hangs above you and flings fans of three feathers",
+      "Thunder Beetle: a dog-sized storm-violet beetle with a gold stripe whose wing cases lift and crackle before it discharges a ring of lightning",
+      "Spire Sentinel: a helmed, crested knight of pale shrine stone with a halberd and a gold lightning glyph on its breastplate, moving only while your back is turned",
+      "Hornet: a large amber-and-black striped wasp that buzzes in place, then swoops at where you were"
+    ],
+    "prompts": [
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art for a 2D side-scrolling platformer, strict orthographic side view, no perspective, 1920x1080 16:9, 32 px tiles, crisp hard pixels, no anti-aliasing or blur, limited palette of about 96 colours in hue-shifted ramps, no pure black or white, 1 px selective outlines a shade darker than the local colour, key light top left. A wide establishing shot of the Fallen Bridge of Carillon in a night storm. In the foreground play plane, the broken elven bridge: a pier of pale grey-lavender ashlar with gold inlay on the left, then a row of floating masonry spans a stride apart, each capped with wet green grass and hanging a jagged cone of violet-magenta rock with roots trailing under it. Far right, on the last great island, the bell town of Carillon: rounded wooden roofs, a bell tower, warm lamp light. Behind, sky islands drift with ruined towers, each with one lit window. Far back, a ruined elven city on a terraced hill: needle spires, notched crowns, sheared towers and arched bridges, a few slit windows glowing ember orange. Sky in a dark ramp from blue-violet to bruised wine with mauve cloud banks and thin dim threads of violet lightning. Wind-slanted rain in two depths, small splashes on the tops of the spans. A low dark foreground fringe of broken timber fence stubs and a sagging rail. Back layers hazed, the play plane bright. A tiny elf wanderer in a green cloak stands on the near pier for scale."
+      },
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Side-view pixel art, strict orthographic. Broken elven stone bridge as floating masonry spans in a violet night storm, grass tops, hanging magenta rock cones, bell town on a far island, ruined spire city behind, slanted rain, dim lightning, crisp pixels, limited palette."
+      },
+      {
+        "view": "vista",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept art with visible brushwork, a side-on orthographic composition like a 2D platformer screen, no perspective or vanishing point, 16:9. A night storm over the broken crown of a colossal tree, where islands of stone float in the wind. A great elven bridge of pale lavender stone with gold inlay has broken into floating spans, each trailing a jagged cone of violet rock and roots. On the last great island at the right, a small bell town glows warm through the rain: rounded wooden roofs, a bell tower, lamp light. Behind it, ruined elven spires on a terraced hill fade into a bruised wine and blue-violet sky with heavy mauve clouds and faint violet lightning. Rain slants hard across everything. A tiny cloaked figure stands on the near pier. Mood: lonely grandeur, wind and old ruin, a warm pocket of light in a cold storm. Palette: storm blue-violet, wine, mauve, lavender stone, muted gold, wet moss green, ember orange windows."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art for a 2D side-scrolling platformer, strict orthographic side view, no perspective, 1920x1080 16:9, 32 px tiles, crisp hard pixels, no anti-aliasing or blur, limited palette of about 96 colours in hue-shifted ramps, no pure black or white, 1 px selective outlines a shade darker than the local colour, key light top left. A playable screen on the Fallen Bridge. The play plane: floating spans of grey-lavender ashlar with gold inlay and wet grass tops, each hanging a violet-magenta rock cone, at varied heights a jump apart, over a long stone footing. Mid-jump between two spans is the hero, a small slender elf wanderer about four tiles tall: violet hair, pointed ears, green hooded cloak with gold trim and a trailing scarf, brown leather armour with brass buckles, short sword in the near hand, round wooden buckler on the far arm. Above him a Storm Harpy, storm-grey and violet with white hair and gold talons, rears with wings up to fling three feathers. On the footing below, a dog-sized storm-violet Thunder Beetle with a gold stripe lifts its wing cases, crackling with bright static before its ring of lightning. Elven lamps hang from the stone ceiling in warm pools of light. Behind, hazed: sky islands with ruined towers, a ruined spire city, a violet-to-wine storm sky with dim lightning. Wind-slanted rain at low opacity, splashes on the open tops. Low dark foreground fringe of broken timber stubs. No HUD."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Side-view platformer screen, strict orthographic pixel art. Elf wanderer in green hooded cloak mid-jump between floating stone bridge spans with grass tops, storm harpy above throwing feathers, violet beetle crackling below, hanging lamps, rainy violet storm sky, ruined spires behind, crisp pixels."
+      },
+      {
+        "view": "gameplay",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept art with visible brushwork, a side-on orthographic composition like a 2D platformer screen, no perspective or vanishing point, 16:9. A moment of play on a broken bridge of floating stone spans in a violet storm. A small slender elf wanderer with violet hair, green hooded cloak and scarf, brown leather armour, sword and round buckler leaps between two spans of pale lavender stone with wet grass tops. Above him a storm harpy, grey and violet with white hair and gold talons, throws her wings up to hurl a fan of feathers. On the stone footing below, a violet beetle with a gold stripe crackles with gathering static. Warm lamps hang from the stone above; behind, sky islands and ruined spires fade into a wine-dark sky with faint lightning, rain slanting across the scene. Palette: storm blue-violet, wine, mauve, lavender stone, gold, moss green, ember lamp light. Mood: tense, windy, fierce."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art asset sheet for a 2D side-scrolling platformer, strict orthographic side view of every item, no perspective, crisp hard pixels with no anti-aliasing or blur, a limited palette of about 96 colours in hue-shifted ramps, 1 px selective outlines a shade darker than the local colour, key light from the top left, 32 px tile grid. Items laid out evenly spaced in a loose grid on a flat neutral mid-grey background, each standing on its own ground line, no labels, no text. The Storm Spires set: a dead copper lightning conduit on a stone foot; the same conduit awake with crackling violet arcs; a conduit gate of pale shrine stone with gold inlay; a silver floor hatch; a broken elven pillar stump with grass; a floating ashlar span with a jagged violet-magenta rock cone and trailing roots beneath; a small sky island of chunky lit stone with a ruined tower and one warm window; a cluster of storm crystals; a hanging elven ceiling lamp with a warm glow; a carved shrine rune panel; a lightning rod on a short stair; a bell-town house with a rounded wooden roof; a great bronze bell; a small meditation shrine stele with a cyan rune; a tall gate slab of shrine stone cut with a gold lightning glyph; three tiles of grey-lavender ashlar with gold inlay and a wet grass cap."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Pixel art asset sheet, strict side view, neutral grey background, evenly spaced: copper lightning conduit dead and sparking, elven pillar stump, floating stone span with hanging violet rock, hanging lamp, storm crystals, bronze bell, gold-glyph gate slab, lavender ashlar tiles with grass caps."
+      },
+      {
+        "view": "props",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept sheet with visible brushwork, every item drawn in flat side view with no perspective, evenly spaced on a plain warm-grey paper background, no labels or text. Concept sheet for a stormy sky-island ruin of the elves: copper lightning conduits, one dead and one crackling with violet arcs; a conduit gate of pale lavender stone with gold inlay; a silver hatch; broken elven pillars; a floating bridge span with a hanging cone of violet rock and roots; a small sky island with a ruined tower and one lit window; storm crystals; a hanging elven lamp; a bronze bell; a rounded wooden house of a bell town; a gate slab cut with a gold lightning glyph. Palette: lavender stone, muted gold, copper, violet, wet moss green, ember orange."
+      }
+    ],
+    "avoid": "perspective, isometric, top-down, three-quarter view, tilted camera, blur, soft anti-aliasing, smooth gradients on figures, photoreal rendering, pure black, pure white, text, labels, logos, watermarks, UI or HUD, bright white lightning filling the sky, sunny daylight, rain as a thick screen over the figures",
+    "sources": [
+      "design bible 2",
+      "design bible 3.2 (Carillon as built, Carillon town, The Spires begin)",
+      "design bible 7 (Storm Spires)",
+      "design bible 8.6",
+      "design bible 12.2, 12.33, 12.71, 12.76, 12.84, 12.98, 12.107",
+      "design bible 13.5",
+      "levels/spires/",
+      "tools/art/decorgen.py (spires decor)",
+      "workbench/catalog (Zones of the Tree, Every room)",
+      "workbench/catalog/rooms/spires__spires.jpg, spires__fallen_bridge.jpg, spires__sky_spring.jpg, fights/spires-hit.png"
+    ],
+    "notes": "The bible's zone table calls the zone the Storm Spires, its 3.1 diagram 'Carillon and the Canopy Spires'. Bible 7 draws the Thunder Beetle storm-violet with a gold stripe; the in-game sprite in the screenshots reads amber-brown. The prompts follow the bible."
+  },
+  {
+    "id": "vorrhallow",
+    "name": "Vorrhallow",
+    "town": "Vorrhallow",
+    "summary": "The drowned capital of the Hollin dwarves, held still in the moment of its flooding while magenta stillglass forces through its masonry. Colonnades, a market, kennels and a throne hall stand in still teal water, with a tide line on every stone at the height of a dwarf's beard. It is the quietest, saddest place in the Tree: a dirge, falling drops and the hum of crystal. Once Thane Vorrund weeps, the Drowned Market wakes as the last town before the Evercrown.",
+    "look": "Squat, heavy dwarf masonry in a cool grey-lavender, laid in large courses on a footing with a string course, every block marked by a teal tide line where the flood stood and capped with teal waterweed. Clusters of magenta stillglass break out of joints and pillar faces: prism shards broad at the root with a lit facet and a shaded one, a crust of wine-dark glass over their roots, and lit seams of glass running back into the stone. Vaults spring from pillars with wide capitals; some have fallen in and lie as heaps in the water. Behind the play plane a sunken great hall recedes into a drowned-blue haze: colossal pillars and round arches, crystal clusters glowing on the far walls, and a dark ridge of great crystal masses rising from below. Still, shallow teal water lies across the hall floors, mirroring pillars, foes and the hero upside down, with spiked pits under it. Falls of time-locked water pour in sheets. Light comes in faint shafts from above, from the glass's own magenta glow pooling on the stone, and from the cyan rune of a shrine. Crystal dust hangs in the air and drops fall from crystal stalactites. The foreground fringe is a low row of dark crystal shards.",
+    "palette": [
+      "drowned blue haze",
+      "grey-lavender dwarf stone",
+      "tide-line teal",
+      "still-water teal",
+      "stillglass magenta",
+      "wine glass crust",
+      "shrine rune cyan",
+      "clockwork brass"
+    ],
+    "landmarks": [
+      {
+        "name": "Upper Stair",
+        "text": "The dwarf kings' old trade stair: nine landings switching back down a drowned colonnade to the Upper Gate-Hall."
+      },
+      {
+        "name": "Flooded Hall",
+        "text": "The hall of audience: two vaulted bays on broken pillars, the east vault fallen in as a heap in the water with a chest on top, and a crystal-spiked pit."
+      },
+      {
+        "name": "Drowned Nave",
+        "text": "Where the king's guard knelt: broken hanging pillars, two galleries, a spiked pit, and the stopped water-clock with the Stillstone on its plinth at the west end."
+      },
+      {
+        "name": "Waterfall Stair",
+        "text": "Two shafts of falling water that only a frozen moment lets you climb, to a gallery with a Life Fruit and a chest."
+      },
+      {
+        "name": "Drowned Market",
+        "text": "Where the lower city sold its ore: stall planks, glass slugs on the floor, a fall of time-locked water into a spiked pit; after the king falls, a town again with a Ringreader and Keymaster Sigrun."
+      },
+      {
+        "name": "Thane's Kennels and Alpha's Den",
+        "text": "Stalls of the king's brass hounds over a spiked drain, a kennel-master's loft, and a plank-lidded shaft down to the den of the Clockwork Alpha."
+      },
+      {
+        "name": "Hall of Still Water",
+        "text": "The bare throne hall with the king's dais six tiles high at the east end and a bronze-framed water-clock by the west wall that drains with his life."
+      },
+      {
+        "name": "Glass Rise and Crown Gate",
+        "text": "A crystal-choked shaft of eleven switchback shelves up to a symmetrical hall with a seam of light down its middle and the gate of the Evercrown: black stillglass-iron with four glowing ring sockets."
+      }
+    ],
+    "props": [
+      "magenta stillglass cluster rooted in a pillar",
+      "crystal stalactite",
+      "drowned dwarf helm",
+      "fallen masonry block",
+      "dead iron wall brazier",
+      "teal waterweed tuft",
+      "broken colonnade pillar with a tide line",
+      "bronze-framed water-clock",
+      "the Stillstone on a stone plinth",
+      "spiked pit under still water",
+      "time-locked waterfall frozen into footholds",
+      "market stall plank on posts",
+      "hound stall with a chain",
+      "Evercrown gate with four ring sockets",
+      "hanging chain"
+    ],
+    "foes": [
+      "Crystal Dwarf: a dwarf with a shell of magenta crystal grown out of his back and his right arm swallowed into a blazing crystal fist that sends a chain of spikes along the floor",
+      "Shade Knight: the drowned ghost of a king's guard in a dwarf great helm with a tower shield, mist where his knees should be, and a blade whose point gathers cold light",
+      "Clockwork Hound: one of the king's brass hunting dogs, plated, with a winding key in its back and blazing eyes",
+      "Glass Slug: a great grey slug under a lumpy shell of stillglass rock, molten orange in its cracks, that lobs gobbets of molten rock"
+    ],
+    "prompts": [
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art for a 2D side-scrolling platformer, strict orthographic side view, no perspective, 1920x1080 16:9, 32 px tiles, crisp hard pixels, no anti-aliasing or blur, limited palette of about 96 colours in hue-shifted ramps, no pure black or white, 1 px selective outlines a shade darker than the local colour, key light top left. A wide establishing shot of the Flooded Hall of Vorrhallow, the drowned hall of audience of a dwarf capital. The play plane: squat grey-lavender dwarf masonry in large courses, every block marked by a teal tide line and capped with teal waterweed. Two vaulted bays spring from heavy pillars with wide capitals; the east vault has fallen in, open to the dark above, its rubble lying as a heap in the water with a small chest on top. Still, shallow teal water lies across the floor, mirroring the pillars upside down, with a spiked pit showing under it. Clusters of magenta stillglass break out of the pillars as prism shards, broad at the root, with a wine-dark crust over their roots and lit seams running into the stone. Behind, a sunken great hall of colossal pillars and round arches recedes into a deep drowned-blue haze, faint crystal clusters glowing on far walls, and a dark ridge of great crystal masses rising from below. Faint light shafts fall from above; crystal dust hangs in the air. A low dark foreground fringe of crystal shards. A tiny elf wanderer wades at the right for scale."
+      },
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Side-view pixel art, strict orthographic. Drowned dwarf hall: lavender stone vaults and pillars with teal tide lines, fallen vault heap in still teal water, magenta crystal clusters growing from pillars, colossal arches fading into drowned blue haze, light shafts, crisp pixels, limited palette."
+      },
+      {
+        "view": "vista",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept art with visible brushwork, a side-on orthographic composition like a 2D platformer screen, no perspective or vanishing point, 16:9. The drowned hall of audience of a dwarf capital, held still in the moment of its flooding. Heavy lavender-grey stone vaults on broad pillars, one vault fallen in and heaped in the water; still teal water across the floor, mirroring the pillars; a teal tide line on every stone at the height of a dwarf's beard. Magenta crystal breaks out of the masonry in clusters of sharp prisms that glow on the stone around them. Behind, colossal arches and pillars fade into a deep drowned blue, faint crystal glowing on far walls. Thin shafts of pale light, drifting dust, falling drops. A tiny cloaked figure wades at one side. Mood: silent, sorrowful, frozen time. Palette: drowned blue, lavender stone, teal, magenta, wine, a touch of cyan."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art for a 2D side-scrolling platformer, strict orthographic side view, no perspective, 1920x1080 16:9, 32 px tiles, crisp hard pixels, no anti-aliasing or blur, limited palette of about 96 colours in hue-shifted ramps, no pure black or white, 1 px selective outlines a shade darker than the local colour, key light top left. A playable screen in the Drowned Nave of Vorrhallow. The play plane: squat grey-lavender dwarf masonry with teal tide lines, under shallow still teal water that mirrors the figures, a spiked pit under the water, a raised stone pier and a broken hanging pillar above. Mid-jump over the spiked pit is the hero, a small slender elf wanderer about four tiles tall: violet hair, pointed ears, green hooded cloak with gold trim and a trailing scarf, brown leather armour with brass buckles, short sword in the near hand, round wooden buckler on the far arm. Ahead, a Crystal Dwarf, his back a shell of magenta crystal and his right arm a blazing crystal fist, has driven the fist into the floor, and a chain of crystal spikes stabs up along it toward the hero. Farther off, a Shade Knight, the drowned ghost of a king's guard in a dwarf great helm, mist for knees, advances behind a tower shield. Magenta stillglass on the pillars pools its glow on the stone; faint light shafts fall from the vault. Behind: colossal arches in a drowned-blue haze. Low dark foreground fringe of crystal shards. No HUD."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Side-view platformer screen, strict orthographic pixel art. Elf wanderer in green cloak jumping a spiked pit in shallow teal water, crystal-backed dwarf sending a line of magenta spikes along the floor, ghost knight with tower shield, lavender dwarf stone, drowned blue arches, crisp pixels."
+      },
+      {
+        "view": "gameplay",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept art with visible brushwork, a side-on orthographic composition like a 2D platformer screen, no perspective or vanishing point, 16:9. A fight in a drowned dwarf nave. A small slender elf wanderer with violet hair, green hooded cloak and scarf, brown leather armour, sword and round buckler leaps over a spiked pit under shallow, mirror-still teal water. A dwarf whose back has grown into a shell of magenta crystal drives his crystal fist into the floor, and a row of crystal spikes bursts up toward the hero. Farther back, the ghost of a dwarf guard in a great helm advances behind a tower shield, mist where his legs should be. Lavender stone pillars with teal tide lines and magenta crystal growths; colossal arches fade into deep drowned blue behind. Palette: drowned blue, lavender stone, teal, magenta, wine. Mood: cold, quiet, sudden danger."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art asset sheet for a 2D side-scrolling platformer, strict orthographic side view of every item, no perspective, crisp hard pixels with no anti-aliasing or blur, a limited palette of about 96 colours in hue-shifted ramps, 1 px selective outlines a shade darker than the local colour, key light from the top left, 32 px tile grid. Items laid out evenly spaced in a loose grid on a flat neutral mid-grey background, each standing on its own ground line, no labels, no text. The Vorrhallow set: a cluster of magenta stillglass prisms rooted in a pillar face with a wine-dark crust and lit seams; a crystal stalactite; a drowned dwarf helm; a fallen masonry block; a dead iron wall brazier; a tuft of teal waterweed; a broken colonnade pillar with a teal tide line; a tall bronze-framed water-clock of glass full of flood-water; the Stillstone on a stone plinth; a strip of steel floor spikes; a time-locked waterfall frozen into footholds; a market stall plank on posts; a hound stall with a hanging chain; the gate of the Evercrown, black stillglass-iron with four glowing ring sockets; three tiles of squat grey-lavender dwarf masonry with a teal tide line and a waterweed cap."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Pixel art asset sheet, strict side view, neutral grey background, evenly spaced: magenta crystal cluster on stone, crystal stalactite, drowned dwarf helm, bronze water-clock, dead brazier, broken pillar with teal tide line, dark iron gate with four ring sockets, lavender dwarf stone tiles."
+      },
+      {
+        "view": "props",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept sheet with visible brushwork, every item drawn in flat side view with no perspective, evenly spaced on a plain warm-grey paper background, no labels or text. Concept sheet for a drowned dwarf capital: clusters of magenta crystal breaking out of stone, crystal stalactites, a drowned dwarf helm, fallen masonry, a dead iron brazier, teal waterweed, a broken pillar with a tide line, a tall bronze-framed water-clock of glass, a stone plinth holding a small stone of time, frozen falls of water, a market stall, a hound stall with a chain, and a great gate of black glass-iron with four ring sockets. Palette: lavender stone, teal, magenta, wine, bronze, drowned blue."
+      }
+    ],
+    "avoid": "perspective, isometric, top-down, three-quarter view, tilted camera, blur, soft anti-aliasing, smooth gradients on figures, photoreal rendering, pure black, pure white, text, labels, logos, watermarks, UI or HUD, crystals floating loose in the air, warm sunlight, red or orange decor (red is kept for hazards), murky low-contrast mud",
+    "sources": [
+      "design bible 2",
+      "design bible 3.2 (Vorrhallow begins, Vorrhallow wakes)",
+      "design bible 7 (Vorrhallow)",
+      "design bible 8.7, 8.8, Clockwork Alpha",
+      "design bible 12.2, 12.48, 12.51, 12.74, 12.115, 12.124",
+      "design bible 13.5",
+      "levels/vorrhallow/",
+      "tools/art/decorgen.py (vorrhallow decor)",
+      "workbench/catalog (Zones of the Tree, Every room)",
+      "workbench/catalog/rooms/vorrhallow__flooded_hall.jpg, vorrhallow__drowned_market.jpg, fights/vorrhallow-tell.png"
+    ],
+    "notes": "Room signs disagree with room names: the Glass Rise's sign still carries its name from before the rename (pass 461), and the Thane's Kennels and Thane's Stair signs say 'King's'. The catalog still lists the Glass Slug under its old name. The prompts use Glass Rise and Glass Slug."
+  },
+  {
+    "id": "sunken",
+    "name": "Sunken Spring",
+    "town": null,
+    "summary": "An optional zone under Vorrhallow and the first source of every spring in the Tree: a drowned cistern, the dwarves' old aqueduct and the deep pool where the Drowned Warden keeps the Source. Most of it is swum. It is cold, deep and hushed, lit by the spring's own pale light rising through the water.",
+    "look": "Warm umber travertine ashlar, laid by dwarf masons in courses of broken bond, each block lit on its top and left edge, with chipped corners, clumps of moss in the bed joints and blue-green mineral drips hanging from the joints. Vaults spring low from hanging piers broken off unevenly at the foot; snapped arch tops stand as stepped wedges at the waterline over pier stumps on the bed. Most of each room is deep water: a teal that darkens in steps toward an abyss blue-black, with an ordered dither in its depth, wavering caustic light just under the surface, a mirrored band of the room above it, and drowned stone that dims and wavers below the line. Specks of light and bubbles rise through it. Behind, a flooded cavern of stepped rimstone pools under slanting shafts of light recedes into a pale slate haze, with a row of aqueduct arches on piers and weed swaying up from the bottom. In the aqueduct a broken channel pours a fall of threaded water from the vault, breaking into a boil of white water, spray, foam lace and climbing mist. Domes of trapped air hold dry stone shelves. The foreground fringe is a low dark row of reeds.",
+    "palette": [
+      "travertine umber",
+      "deep spring teal",
+      "abyss blue-black",
+      "surface sky cyan",
+      "mineral blue-green stain",
+      "bed-joint moss green",
+      "pale slate haze",
+      "spring-light cream"
+    ],
+    "landmarks": [
+      {
+        "name": "Spring Gate",
+        "text": "A drowned cistern entered down a flooded shaft from the Glass Rise: two Spring Eels, a chest and a potion shard on the bottom, a drowned statue, and a dome of trapped air whose dry shelf holds a shrine."
+      },
+      {
+        "name": "Drowned Aqueduct",
+        "text": "The dwarves' culvert up to their city, 80 tiles long: three vaulted bays, broken arch tops at the waterline, two walls hanging into the water to swim under, and a dry gallery on a corbel with a chest at the east end."
+      },
+      {
+        "name": "The broken channel",
+        "text": "In the aqueduct's middle bay a broken channel hangs from the crown of the vault and pours a sheet of threaded water into the pool, with a boil of white water, spray and mist where it lands."
+      },
+      {
+        "name": "Source Hall",
+        "text": "A black pool beside a dry shore, a Shade Knight on the stone, a Life Fruit on a shelf, and a sign warning of the deep water beyond."
+      },
+      {
+        "name": "The Wellspring",
+        "text": "The Drowned Warden's arena, the Source itself: a deep pool, an entry ledge, a far ledge with steps down to the water, two islands level with the surface and a plank hung on chains over the middle."
+      }
+    ],
+    "props": [
+      "rimstone dam",
+      "spring pearl",
+      "limestone straw stalactite",
+      "flowstone curtain on a wall",
+      "seep of spring light from a wall",
+      "teal waterweed",
+      "drowned dwarf statue",
+      "broken aqueduct channel spout",
+      "snapped arch wedge",
+      "pier stump on the bed",
+      "plank hung on chains",
+      "meditation shrine on a dry shelf",
+      "chest on a corbelled gallery",
+      "rising bubble cluster"
+    ],
+    "foes": [
+      "Spring Eel: a long pale eel gone blind in the dark water, with a lamp of the spring's light on a lure arching from its brow over its snout",
+      "Shade Knight: the drowned ghost of a dwarf king's guard in a great helm with a tower shield and mist for knees, keeping the dry shore of the Source Hall"
+    ],
+    "prompts": [
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art for a 2D side-scrolling platformer, strict orthographic side view, no perspective, 1920x1080 16:9, 32 px tiles, crisp hard pixels, no anti-aliasing or blur, limited palette of about 96 colours in hue-shifted ramps, no pure black or white, 1 px selective outlines a shade darker than the local colour, key light top left. A wide establishing shot of the Drowned Aqueduct in the Sunken Spring, a dwarf culvert half drowned under a vast cavern. The play plane: warm umber travertine ashlar in courses of broken bond, chipped corners, moss in the bed joints, blue-green mineral drips. Three bays vault low from hanging piers broken off unevenly; at the waterline, snapped arch tops stand as stepped wedges over pier stumps on the bed. Deep water fills the lower two thirds: teal darkening in steps toward abyss blue-black with an ordered dither, wavering caustic light under the surface, a faint mirror of the arches in the top band, drowned stone dimmer and wavering below the line, rising specks of light and bubbles. From the crown of the middle vault a broken stone channel pours a sheet of threaded water, landing in a boil of white water with spray arcs, foam lace and rising mist. Behind, stepped rimstone pools and a row of aqueduct arches recede into a pale slate haze under slanting light shafts, weed swaying up from the bottom. A low dark reed fringe at the bottom. A tiny elf wanderer stands on a dry gallery for scale."
+      },
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Side-view pixel art, strict orthographic. Half-drowned dwarf aqueduct: umber travertine arches and broken piers, deep teal water darkening downward, caustic light, waterfall from a broken channel with white spray, rimstone pools in slate haze behind, crisp pixels, limited palette."
+      },
+      {
+        "view": "vista",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept art with visible brushwork, a side-on orthographic composition like a 2D platformer screen, no perspective or vanishing point, 16:9. A drowned dwarf aqueduct deep under a mountain-sized tree, where every spring once rose. Warm umber stone arches on broken piers stand half under deep teal water that darkens to blue-black below; snapped arch tops and pier stumps break the surface. From a broken channel in the vault a thin waterfall pours into the pool, raising a soft boil of white water and mist. Behind, terraces of stepped mineral pools fade into a pale slate haze under slanting shafts of light, with weed swaying up from the bottom and specks of light rising through the water. A tiny cloaked figure stands on a dry stone ledge. Mood: hushed, cold, ancient, the source of something. Palette: umber stone, teal, abyss blue, pale cyan light, moss green, slate."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art for a 2D side-scrolling platformer, strict orthographic side view, no perspective, 1920x1080 16:9, 32 px tiles, crisp hard pixels, no anti-aliasing or blur, limited palette of about 96 colours in hue-shifted ramps, no pure black or white, 1 px selective outlines a shade darker than the local colour, key light top left. A playable underwater screen in the Drowned Aqueduct. The play plane: warm umber travertine ashlar with mossy joints; broken arch wedges at the waterline, ragged pier stumps on the bed, a wall hanging down into the water. Deep teal water fills the screen below the surface line, darkening to blue-black, with wavering caustics near the surface, dimmed drowned stone and rising bubbles. Swimming between the arch wedges and the stumps, cloak and scarf drifting in the water, is the hero, a small slender elf wanderer about four tiles tall: violet hair, pointed ears, green hooded cloak with gold trim and a trailing scarf, brown leather armour with brass buckles, short sword in the near hand, round wooden buckler on the far arm. Ahead of him a Spring Eel, long, pale and blind, draws back into an S with the lamp on its brow lure blazing, about to dart. A second eel weaves near the bed in the dark. Above the waterline, a dry corbelled gallery holds a chest; a broken channel pours threaded water at the frame's edge. Behind, faint arches in a pale slate haze. Low dark reed fringe at the bottom. No HUD."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Side-view platformer screen, strict orthographic pixel art. Elf wanderer in green cloak swimming in deep teal water between broken umber stone arches, pale blind eel with glowing lure coiling to strike, caustic light, bubbles, waterfall at the edge, crisp pixels."
+      },
+      {
+        "view": "gameplay",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept art with visible brushwork, a side-on orthographic composition like a 2D platformer screen, no perspective or vanishing point, 16:9. A swim through a drowned dwarf aqueduct. A small slender elf wanderer with violet hair, green hooded cloak and scarf, brown leather armour, sword and round buckler swims between broken umber stone arches and pier stumps, cloak drifting. Ahead, a long pale blind eel coils into an S, a lamp of spring light glowing on the lure over its snout, about to strike. The water is deep teal fading to blue-black, rippled with caustic light near the surface; bubbles and specks of light rise. Above the surface a dry stone gallery and a thin waterfall from a broken channel. Palette: umber stone, teal, abyss blue, pale cyan light, moss. Mood: hushed, cold, tense."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art asset sheet for a 2D side-scrolling platformer, strict orthographic side view of every item, no perspective, crisp hard pixels with no anti-aliasing or blur, a limited palette of about 96 colours in hue-shifted ramps, 1 px selective outlines a shade darker than the local colour, key light from the top left, 32 px tile grid. Items laid out evenly spaced in a loose grid on a flat neutral mid-grey background, each standing on its own ground line, no labels, no text. The Sunken Spring set: a rimstone dam; a few spring pearls; a cluster of limestone straw stalactites; a flowstone curtain on a wall; a seep of pale spring light from a wall crack; a tuft of teal waterweed; a drowned dwarf statue; a broken stone aqueduct channel spout with a short sheet of water; a snapped arch wedge stepping down like voussoirs; a pier stump with a ragged top; a plank hung on two chains; a small meditation shrine stele with a cyan rune; a chest on a corbelled stone gallery; a cluster of rising bubbles; three tiles of umber travertine ashlar with moss in the bed joint and a blue-green mineral drip, and one tile of deep teal water with caustic bands."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Pixel art asset sheet, strict side view, neutral grey background, evenly spaced: rimstone dam, spring pearls, limestone straws, flowstone, drowned dwarf statue, broken aqueduct spout, snapped arch wedge, chained plank, umber travertine tiles with moss, teal water tile."
+      },
+      {
+        "view": "props",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept sheet with visible brushwork, every item drawn in flat side view with no perspective, evenly spaced on a plain warm-grey paper background, no labels or text. Concept sheet for a drowned spring cavern under a dwarf city: rimstone dams and terraced pools, spring pearls, limestone straws, flowstone, a glowing seep of spring light, waterweed, a drowned dwarf statue, a broken aqueduct channel with a sheet of falling water, snapped arch stones, pier stumps, a plank hung on chains, worn umber travertine blocks with moss and mineral stains. Palette: umber, teal, abyss blue, pale cyan light, moss green, slate."
+      }
+    ],
+    "avoid": "perspective, isometric, top-down, three-quarter view, tilted camera, blur, soft anti-aliasing, smooth gradients on figures, photoreal rendering, pure black, pure white, text, labels, logos, watermarks, UI or HUD, tropical clear blue water, sandy beaches, fish schools, coral, bright sunlight",
+    "sources": [
+      "design bible 2",
+      "design bible 3.2 (The Sunken Spring begins)",
+      "design bible 6.8",
+      "design bible 7 (Sunken Spring)",
+      "design bible 8.10",
+      "design bible 12.39, 12.55, 12.75, 12.116, 12.117",
+      "design bible 13.5",
+      "levels/sunken/",
+      "tools/art/decorgen.py (sunken decor)",
+      "workbench/catalog (Zones of the Tree, Every room)",
+      "workbench/catalog/rooms/sunken__drowned_aqueduct.jpg, sunken__spring_gate.jpg, sunken__wellspring.jpg"
+    ],
+    "notes": "Bible 3.2 first describes the stone as pale limestone in wavy strata; 12.39 (pass 548) replaced that with umber travertine ashlar, which is what the screenshots show. The prompts follow 12.39. The gameplay view shows the hero swimming rather than mid-jump, since most of the zone is swum."
+  },
+  {
+    "id": "evercrown",
+    "name": "The Evercrown",
+    "town": null,
+    "summary": "The inside of the Everbloom at the Tree's crown, and the last climb: warm living stillglass that breathes. Corrupted foes from every zone guard its shelves, pockets of wrong gravity lift you up its shafts, and the Proving Scar asks for every ability before the throne, the veins and the heart. It feels alien and bodily, a heartbeat under everything and cyan light in black-violet flesh.",
+    "look": "The play plane is a mass of rounded cells of black-violet scar tissue, laid like cobbles of flesh, seamed with wine-dark sinew and cooler blue seams, each cell rimmed with cyan light from a small glowing pore. Ledges are grown shelves: a lit top band over rounded lobes, a fleshy root hanging under each with a bead of cyan sap, slung on strands of sinew. Behind, a ribbed far wall of dark wine flesh recedes into a deep wine haze, with great crystal masses rising from below and long magenta stillglass tendrils hanging and curling down, each tipped with a cyan bulb. Columns of wrong gravity rise as violet light with cyan motes drifting upward through them. In the Veins a braided stalk climbs the back of the shaft, carrying beads of light up channels to a crystal eye-flower at the vault. Polyps, wall eyes and short crystal floor stubs crowd the edges, and cyan spore motes float everywhere. Red appears only on what hurts: fire seals of tall licking flame, thorn bulbs and a foe's tell. Deep solid mass sinks to near-black, crossed by faint zigzag crystal veins. The foreground fringe is a low row of dark crystal shards.",
+    "palette": [
+      "black-violet scar tissue",
+      "indigo cell body",
+      "pore cyan",
+      "wine sinew",
+      "deep wine haze",
+      "stillglass magenta tendril",
+      "drift violet",
+      "hazard ember red"
+    ],
+    "landmarks": [
+      {
+        "name": "Threshold",
+        "text": "A landing and a shrine inside the Everbloom, flesh pillars grown up from the floor and down from the vault, a spiked trench, and a hidden pocket that holds the Elven Helm."
+      },
+      {
+        "name": "Heart Stair",
+        "text": "Switchback shelves of stillglass flesh crowded with corrupted foes from every zone."
+      },
+      {
+        "name": "Drift Well",
+        "text": "A tall shaft where three columns of wrong gravity carry you up nine-tile ledges a jump could never reach, to a shrine at the top."
+      },
+      {
+        "name": "Heart Gate",
+        "text": "A hall with a drift pocket up to an empty altar cut to hold a blade, and a heart seal: a wall of living flesh with a seam of cyan light and a watching eye that only the Severance cuts open."
+      },
+      {
+        "name": "The Proving Scar",
+        "text": "A scar through the stillglass with eight gates in a row: a fire seal, a 23-tile chimney, thorn-faced steps, a nine-tile gap over a pit, a conduit gate, a plug of cracked stone, a shaft of time-locked water and an illusory wall."
+      },
+      {
+        "name": "Throne of the Evercrown",
+        "text": "A long hall with two hanging shelves and the throne's dais at the east end, where the Everbloom's avatar waits."
+      },
+      {
+        "name": "The Veins",
+        "text": "A shaft 68 tiles tall of zigzag shelves, six crystal light veins, and the Everbloom's braided stalk climbing to the core at the vault; its floor is heaved by the stalk's roots."
+      },
+      {
+        "name": "The Heart of the Bloom",
+        "text": "A long chamber with two low ledges and three sockets in the vault for the springs' stolen lights, where the Tree's root breaks up through the floor."
+      }
+    ],
+    "props": [
+      "grown flesh shelf with a hanging root",
+      "sinew hanger strand",
+      "polyp cluster",
+      "wall eye",
+      "stillglass tendril with a cyan bulb",
+      "light vein crystal knot",
+      "heart seal of living flesh",
+      "empty blade altar",
+      "fire seal of tall licking flame",
+      "thorn bulb on a bramble",
+      "drift pocket column",
+      "Stillglass Seed",
+      "light socket in the vault",
+      "short crystal floor stub",
+      "braided stalk of flesh"
+    ],
+    "foes": [
+      "Corrupted foes: every family from the earlier zones, remixed with stillglass: a violet cast, stillglass shards grown out of the back casting their cyan light on the body, red veins and a cyan eye that beat with the heart",
+      "Corrupted Shade Knight: the drowned guard ghost with great helm and tower shield, violet-cast, glass growing from his back",
+      "Corrupted Crystal Dwarf: the crystal-shelled dwarf with a blazing crystal fist, deeper violet, with cyan-lit shards",
+      "Corrupted Glass Slug and Clockwork Hound: Vorrhallow's slug and brass hound, violet-cast and crowned with glass",
+      "Corrupted Gear Bat, Rot Dwarf, Iron Dwarf and Hornet: the Heartwood's and the Tower's foes, violet-cast with shards on their backs",
+      "Corrupted Storm Harpy and Thunder Beetle: Carillon's harpy and beetle, violet-cast, glass on their backs",
+      "Corrupted Leaf Mantis, Seed Bomber, Lantern Ghost and Bog Puffcap: foes of the Boughs and the Haar, remixed the same way",
+      "Stillglass Seed: the crystal a corrupted foe leaves where it dies; it swells and bursts in a ring unless cracked"
+    ],
+    "prompts": [
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art for a 2D side-scrolling platformer, strict orthographic side view, no perspective, 1920x1080 16:9, 32 px tiles, crisp hard pixels, no anti-aliasing or blur, limited palette of about 96 colours in hue-shifted ramps, no pure black or white, 1 px selective outlines a shade darker than the local colour, key light top left. A wide establishing shot of the Veins inside the Everbloom, a tall shaft of living stillglass flesh. The play plane: rounded cells of black-violet scar tissue like cobbles of flesh, seamed with wine-dark sinew and cool blue seams, each cell rimmed with cyan light from a small glowing pore; the floor heaved into banks by roots. Up the shaft hang grown shelves on sinew strands: a lit top band over rounded lobes, a fleshy root under each with a bead of cyan sap. Small faceted cyan crystal knots, the light veins, grow above the shelves. Up the back of the shaft climbs a great braided stalk of flesh, beads of pale light running up its channels toward a crystal eye-flower hanging at the keystone of the vault. Behind, a ribbed far wall of dark wine flesh in a deep wine haze, long magenta stillglass tendrils with cyan bulbs curling down, great crystal masses rising from below. Cyan spore motes drift. No red anywhere. A low dark fringe of crystal shards along the bottom edge. A tiny elf wanderer stands at the foot for scale."
+      },
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Side-view pixel art, strict orthographic. Tall shaft inside a giant crystal flower: black-violet flesh cells with cyan pores, hanging fleshy shelves, braided stalk climbing to a glowing crystal eye-flower, magenta tendrils, wine haze, cyan motes, crisp pixels, limited palette."
+      },
+      {
+        "view": "vista",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept art with visible brushwork, a side-on orthographic composition like a 2D platformer screen, no perspective or vanishing point, 16:9. The inside of a vast flower of living crystal at the crown of a colossal tree. A tall shaft of black-violet flesh made of rounded cells, each rimmed with cyan light from a glowing pore, seamed with wine-dark sinew. Grown shelves hang on strands of sinew up the shaft. A braided stalk of flesh climbs the back wall, beads of light running up it to a crystal eye-flower that watches from the top of the vault. Magenta crystal tendrils curl down through a deep wine haze, and cyan spores drift upward. A tiny cloaked figure stands at the foot. Mood: alien, bodily, quiet, the heartbeat of something that will not die. Palette: black-violet, indigo, cyan, wine, magenta."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art for a 2D side-scrolling platformer, strict orthographic side view, no perspective, 1920x1080 16:9, 32 px tiles, crisp hard pixels, no anti-aliasing or blur, limited palette of about 96 colours in hue-shifted ramps, no pure black or white, 1 px selective outlines a shade darker than the local colour, key light top left. A playable screen in the Drift Well of the Evercrown. The play plane: floors and ledges of rounded black-violet flesh cells rimmed with cyan pore light and seamed with wine sinew, two long shelves at different heights nine tiles apart, a short strip of floor spikes. A tall column of wrong gravity rises from the floor: violet light in soft vertical strips with cyan motes drifting upward. Floating up inside it, cloak and scarf lifting, is the hero, a small slender elf wanderer about four tiles tall: violet hair, pointed ears, green hooded cloak with gold trim and a trailing scarf, brown leather armour with brass buckles, short sword in the near hand, round wooden buckler on the far arm. On the shelf above, a corrupted Crystal Dwarf, violet-cast, with cyan-lit stillglass shards grown out of his back, raises a blazing crystal fist. Beside the column, a corrupted Storm Harpy, violet-cast with glass on her back, rears with wings up to throw feathers. A Stillglass Seed hangs where a foe died, swelling. Behind: ribbed wine flesh, magenta tendrils, deep wine haze. Red only on the tell and spikes. Low dark crystal fringe. No HUD."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Side-view platformer screen, strict orthographic pixel art. Elf wanderer in green cloak floating up a violet gravity column with cyan motes, corrupted crystal dwarf with cyan shards on a flesh ledge, harpy with glass on her back, black-violet flesh cells with cyan pores, wine haze, crisp pixels."
+      },
+      {
+        "view": "gameplay",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept art with visible brushwork, a side-on orthographic composition like a 2D platformer screen, no perspective or vanishing point, 16:9. A climb inside a living crystal flower. A small slender elf wanderer with violet hair, green hooded cloak and scarf, brown leather armour, sword and round buckler floats upward through a column of violet light where gravity is wrong, cyan motes rising around him. On a ledge of black-violet flesh above, a dwarf with shards of glowing glass grown from his back raises a blazing crystal fist; beside the column a harpy with glass on her back throws her wings up. A crystal seed hangs swelling in the air. Walls of rounded flesh cells rimmed with cyan light, magenta tendrils curling through wine-dark haze. Palette: black-violet, indigo, cyan, wine, magenta, a single hot red tell. Mood: alien, oppressive, final."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art asset sheet for a 2D side-scrolling platformer, strict orthographic side view of every item, no perspective, crisp hard pixels with no anti-aliasing or blur, a limited palette of about 96 colours in hue-shifted ramps, 1 px selective outlines a shade darker than the local colour, key light from the top left, 32 px tile grid. Items laid out evenly spaced in a loose grid on a flat neutral mid-grey background, each standing on its own ground line, no labels, no text. The Evercrown set: a grown flesh shelf with a lit top band over rounded lobes and a hanging root with a cyan sap bead; a sinew hanger strand; a polyp cluster; a wall eye; a long magenta stillglass tendril with a cyan bulb; a light vein: three faceted cyan crystal shards on a fleshy node; the same vein cut and dead; a heart seal, a wall of living flesh with a seam of cyan light and a watching eye; an empty altar cut to hold a blade; a fire seal of tall licking flame on a bed of coals; a thorn bulb on a dark bramble; a column of wrong gravity in violet strips with cyan motes; a Stillglass Seed crystal; a light socket in the vault filled with blue light; three tiles of rounded black-violet flesh cells rimmed with cyan pores and seamed with wine sinew."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Pixel art asset sheet, strict side view, neutral grey background, evenly spaced: fleshy grown shelf with hanging root, polyps, wall eye, magenta tendril with cyan bulb, cyan crystal vein knot, flesh wall with glowing seam and eye, empty altar, flame seal, black-violet flesh cell tiles."
+      },
+      {
+        "view": "props",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept sheet with visible brushwork, every item drawn in flat side view with no perspective, evenly spaced on a plain warm-grey paper background, no labels or text. Concept sheet for the inside of a living crystal flower: grown shelves of black-violet flesh with hanging roots, sinew strands, polyps, a wall eye, curling magenta crystal tendrils with cyan bulbs, knots of faceted cyan crystal on fleshy nodes, a wall of living flesh with a glowing seam and a watching eye, an empty altar for a blade, a seal of tall flame, a thorn bulb on a bramble, a column of drifting violet light, a hanging crystal seed. Palette: black-violet, indigo, cyan, wine, magenta, one ember red for danger."
+      }
+    ],
+    "avoid": "perspective, isometric, top-down, three-quarter view, tilted camera, blur, soft anti-aliasing, smooth gradients on figures, photoreal rendering, pure black, pure white, text, labels, logos, watermarks, UI or HUD, red or orange decor (red is kept for hazards and tells), gore, blood, intestines, bright saturated magenta floors",
+    "sources": [
+      "design bible 2",
+      "design bible 3.2",
+      "design bible 7 (The Evercrown)",
+      "design bible 8.9 (the way in, Proving Scar, phases)",
+      "design bible 12.2, 12.21, 12.34, 12.37, 12.48, 12.50, 12.59, 12.68, 12.123, 12.124",
+      "design bible 13.5",
+      "levels/evercrown/",
+      "tools/art/decorgen.py (evercrown decor)",
+      "workbench/catalog (Zones of the Tree, Every room)",
+      "workbench/catalog/rooms/evercrown__drift_well.jpg, evercrown__veins.jpg, evercrown__proving_scar.jpg, fights/evercrown-hit.png"
+    ],
+    "notes": "Bible 12.2 gives the Evercrown's mood as black-violet, alien cyan and blood red, but 12.48 (pass 558) keeps red only for what hurts (fire seals, thorn bulbs, tells); the prompts follow 12.48. Bible 7 lists the remix foes per room; the catalog also shows a Hornet in the Drift Well (bible 8.9 names it too). The fire seal is a hazard in the Proving Scar only."
+  },
+  {
+    "id": "trials",
+    "name": "Inner Rings",
+    "town": null,
+    "summary": "An abstract trial space off the map, inside the Tree's oldest growth rings, reached through a Ringreader's menu. Six timed courses of pure platforming over spikes, each ending at a bronze bell; a hazard costs time, never health. It is pale, quiet and nearly monochrome, a place outside the world's weather.",
+    "look": "Pale grey masonry with a faint lavender cast and no moss or warmth: clean ashlar ledges and slim pillars standing over beds of steel floor spikes with a double rim. Behind the play plane is a dark slate void with nothing alive in it: great faint broken rings drawn as dotted arcs, pale stone slabs hanging motionless at different depths, a jagged ridge of broken grey stone low in the distance, and soft slanting shafts of pale light. Pale flecks drift in the air and ride the wind currents in place of leaves. Chains hang from the ceiling and a few sconces glow on the walls. Thorn bulbs grow from dark brambles in the gaps. In the Ring of Stillness, curtains and falls of teal time-locked water pour down out of the void. The bell at each course's end hangs in a stone frame with a slow warm glow, the only warm light in the space. Deep solid mass falls off into near-black with faint level bedding seams. The foreground fringe is a low row of dark rock rubble. The whole frame carries a bare grey-stone haze and grade.",
+    "palette": [
+      "slate void",
+      "pale grey masonry",
+      "lavender shadow",
+      "fleck cream",
+      "spike steel",
+      "bell bronze glow",
+      "time-locked teal",
+      "bramble dark green"
+    ],
+    "landmarks": [
+      {
+        "name": "Ring of Walls",
+        "text": "Three pillars over spikes, thorned on their far sides with thorn bulbs in the gaps, each climbed with the Climbing Glove from a nub at its foot."
+      },
+      {
+        "name": "Ring of Edges",
+        "text": "Pillars one and two tiles wide over a spiked floor at changing heights, then four slats under a low ceiling that allows only short hops, then rising pillars to the bell."
+      },
+      {
+        "name": "Ring of Thorns",
+        "text": "A pogo course 96 tiles long: a corridor of spikes, a chain of five thorn bulbs over a pit, and a slab hung from the east wall with the bell on it."
+      },
+      {
+        "name": "Ring of Winds",
+        "text": "Wind currents marked by pale flecks carry you over a 25-tile spike pit to pillars, a climbing wall and a hanging plank, then over the bell's slab."
+      },
+      {
+        "name": "Ring of Stillness",
+        "text": "Time-locked water is the whole course: a fall and a curtain over a spiked pit to still and climb, and a long fall with a dry niche halfway."
+      },
+      {
+        "name": "Ring of Falling",
+        "text": "A descent 90 tiles deep: five ledges falling away over a spike floor, a well crossed by three planks, and a needle shaft of thorn bulbs down to the bell."
+      }
+    ],
+    "props": [
+      "trial bell in a stone frame with a warm glow",
+      "slim masonry pillar over spikes",
+      "steel floor spike strip",
+      "thorn bulb on a dark bramble",
+      "hanging pale stone slab",
+      "faint broken ring arc",
+      "hanging chain",
+      "wall sconce",
+      "one-way plank",
+      "wind current ribbon with pale flecks",
+      "time-locked waterfall",
+      "flowstone on a wall",
+      "grey rubble stones"
+    ],
+    "foes": [],
+    "prompts": [
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art for a 2D side-scrolling platformer, strict orthographic side view, no perspective, 1920x1080 16:9, 32 px tiles, crisp hard pixels, no anti-aliasing or blur, limited palette of about 96 colours in hue-shifted ramps, no pure black or white, 1 px selective outlines a shade darker than the local colour, key light top left. A wide establishing shot of the Ring of Edges in the Inner Rings, an abstract trial space inside the oldest growth rings of a colossal tree. The play plane: pale grey masonry with a faint lavender cast, no moss, no warmth. A start ledge on the left, then a row of slim ashlar pillars one and two tiles wide at changing heights over a long bed of steel floor spikes with a bright double rim, and far right a pillar with a bronze bell hanging in a small stone frame, glowing a slow warm gold, the only warm light in the scene. Behind: a dark slate void with great faint broken rings drawn as dotted arcs, pale stone slabs hanging motionless at different depths, a low jagged ridge of broken grey stone, and soft slanting shafts of pale light. Pale flecks drift in the air. Chains hang from the stone ceiling. A low dark fringe of rock rubble along the bottom edge. Nearly monochrome, quiet and still. A tiny elf wanderer in a green cloak stands on the start ledge for scale."
+      },
+      {
+        "view": "vista",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Side-view pixel art, strict orthographic. Abstract trial space: pale grey stone pillars over steel spikes, dark slate void with faint broken ring arcs and hanging pale slabs, light shafts, drifting pale flecks, a glowing bronze bell in a stone frame, nearly monochrome, crisp pixels."
+      },
+      {
+        "view": "vista",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept art with visible brushwork, a side-on orthographic composition like a 2D platformer screen, no perspective or vanishing point, 16:9. A quiet abstract trial space inside the oldest rings of a colossal tree. Slim pillars of pale grey stone stand over a bed of steel spikes, stepping at changing heights toward a small bronze bell hanging in a stone frame, glowing warm gold, the only warm colour in the picture. Behind, a dark slate void: great faint broken rings like the rings of a cut trunk, pale stone slabs hanging still at different depths, soft shafts of pale light, pale flecks drifting. A tiny cloaked figure stands on the first ledge. Mood: still, focused, meditative, timeless. Palette: slate, pale grey, lavender shadow, cream flecks, steel, one warm bronze."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art for a 2D side-scrolling platformer, strict orthographic side view, no perspective, 1920x1080 16:9, 32 px tiles, crisp hard pixels, no anti-aliasing or blur, limited palette of about 96 colours in hue-shifted ramps, no pure black or white, 1 px selective outlines a shade darker than the local colour, key light top left. A playable screen in the Ring of Thorns, a timed trial in an abstract space. The play plane: pale lavender-grey masonry; a start ledge, a corridor floored with double-rimmed steel spikes, then a pit under a chain of five thorn bulbs four tiles apart, each growing from a dark bramble. Mid-air above a thorn bulb, striking straight down onto it with a dwarven iron pick to bounce off, is the hero, a small slender elf wanderer about four tiles tall: violet hair, pointed ears, green hooded cloak with gold trim and a trailing scarf, brown leather armour with brass buckles, short sword in the near hand, round wooden buckler on the far arm. Past the bulbs a slab of stone hangs from the right wall over more spikes, with a bronze bell in a stone frame glowing warm gold. No foes: the hazards are the spikes and the thorn bulbs. Behind: a dark slate void with great faint broken rings as dotted arcs, pale hanging slabs, soft shafts of pale light, drifting pale flecks. Chains hang from the ceiling. Low dark rubble fringe at the bottom. No HUD."
+      },
+      {
+        "view": "gameplay",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Side-view platformer screen, strict orthographic pixel art. Elf wanderer in green cloak pogoing down onto a chain of thorn bulbs over a spike pit, pale grey stone ledges, dark slate void with faint ring arcs, glowing bronze bell on a hanging slab, crisp pixels."
+      },
+      {
+        "view": "gameplay",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept art with visible brushwork, a side-on orthographic composition like a 2D platformer screen, no perspective or vanishing point, 16:9. A timed trial run in a pale abstract space. A small slender elf wanderer with violet hair, green hooded cloak and scarf, brown leather armour, sword and round buckler strikes down with an iron pick onto a thorn bulb, bouncing over a chain of spiked bulbs that grow from dark brambles above a pit of steel spikes. Ahead, a stone slab hangs from the wall with a small bronze bell glowing warm gold. Pale grey stone, a dark slate void with faint broken rings and hanging slabs, shafts of pale light, drifting pale flecks. Palette: slate, pale grey, lavender shadow, steel, dark bramble green, one warm bronze. Mood: focused, precise, quiet."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art asset sheet for a 2D side-scrolling platformer, strict orthographic side view of every item, no perspective, crisp hard pixels with no anti-aliasing or blur, a limited palette of about 96 colours in hue-shifted ramps, 1 px selective outlines a shade darker than the local colour, key light from the top left, 32 px tile grid. Items laid out evenly spaced in a loose grid on a flat neutral mid-grey background, each standing on its own ground line, no labels, no text. The Inner Rings set: a bronze trial bell hanging in a small stone frame with a warm glow; a slim pale grey masonry pillar one tile wide and one two tiles wide; a strip of steel floor spikes with a double rim; a round thorn bulb growing from a dark bramble; a pale stone slab hanging in the air; a faint broken ring arc drawn in dotted pale lines; a hanging chain; a wall sconce with a small flame; a one-way plank on a stone trestle; a ribbon of wind current marked by pale flecks; a column of teal time-locked water frozen into footholds; a flowstone patch on a wall; a few grey rubble stones; three tiles of pale grey ashlar with a lavender cast and no moss."
+      },
+      {
+        "view": "props",
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Pixel art asset sheet, strict side view, neutral grey background, evenly spaced: bronze bell in stone frame, pale grey stone pillars, steel spike strip, thorn bulb on bramble, hanging stone slab, hanging chain, wall sconce, frozen teal waterfall, pale grey ashlar tiles."
+      },
+      {
+        "view": "props",
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept sheet with visible brushwork, every item drawn in flat side view with no perspective, evenly spaced on a plain warm-grey paper background, no labels or text. Concept sheet for an abstract trial space inside a tree's oldest rings: a bronze bell in a stone frame glowing warm, slim pale stone pillars, a strip of steel spikes, a thorn bulb on a dark bramble, pale slabs hanging in the air, faint broken ring arcs, chains, a sconce, a one-way plank, a ribbon of wind with pale flecks, a fall of teal water frozen still, plain pale grey ashlar blocks. Palette: slate, pale grey, lavender shadow, steel, teal, one warm bronze."
+      }
+    ],
+    "avoid": "perspective, isometric, top-down, three-quarter view, tilted camera, blur, soft anti-aliasing, smooth gradients on figures, photoreal rendering, pure black, pure white, text, labels, logos, watermarks, UI or HUD, moss, plants other than bramble, warm colours except the bell, foes or creatures, clutter",
+    "sources": [
+      "design bible 2 (Ringreaders)",
+      "design bible 3.2 (Inner Rings, Ring of Thorns, Winds, Stillness, Falling)",
+      "design bible 12.5, 12.9, 12.11, 12.24, 12.32, 12.123",
+      "design bible 13.5",
+      "levels/trials/",
+      "tools/art/decorgen.py (trials decor)",
+      "workbench/catalog (Zones of the Tree, Every room)",
+      "workbench/catalog/rooms/trials__edges.jpg, trials__stillness.jpg"
+    ],
+    "notes": "The bible's zone table gives the Inner Rings the town Hearthroot (its Ringreader is the way in); the zone is off the map and has no town of its own, so town is null here. The zone has no foes, so the gameplay views show spikes and thorn bulbs instead. The bible says the masonry is pale grey; the screenshots show a light lavender-grey, and a few pillar tops carry a little green."
+  }
+]
