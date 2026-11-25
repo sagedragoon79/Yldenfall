@@ -88,9 +88,9 @@ const QUICKEN := 0.85
 const REST := 3.0
 ## Once the fog head is dead nothing boils the cistern, so it loses a third on its own this
 ## often (Sean, 2026-11-24: "20 seconds feel right to make it a little of a challenge to get
-## to all the pipes"). The clock runs only while there is water in it, and stops while a
+## to all the pipes"; after playing it, he raised it to 25 s the same day). The clock runs only while there is water in it, and stops while a
 ## head is doused and while the cistern boils dry; it steams for the last DRAIN_WARN.
-const DRAIN_EVERY := 20.0
+const DRAIN_EVERY := 25.0
 const DRAIN_WARN := 3.0
 ## A head's reaction as its pipe fills (Sean, 2026-11-24: "Players may not realize the
 ## correlation"): it rears, snaps toward the pipe with its jaws open, and light runs up its

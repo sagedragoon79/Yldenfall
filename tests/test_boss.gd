@@ -1403,11 +1403,11 @@ func test_a_dead_heads_pipe_still_runs_but_douses_nothing() -> void:
 
 ## Once the fog head is dead nothing boils the cistern, so it loses a third every
 ## DRAIN_EVERY that it holds water (Sean, 2026-11-24), steaming first: the pipe filled last.
-func test_with_the_fog_head_dead_a_third_steams_away_every_twenty_seconds() -> void:
+func test_with_the_fog_head_dead_a_third_steams_away_every_twenty_five_seconds() -> void:
 	var setup := await _hydra_world()
 	var w: World = setup[0]
 	var z: HaarWyrm = setup[2]
-	check(HaarWyrm.DRAIN_EVERY == 20.0, "every 20 seconds")
+	check(HaarWyrm.DRAIN_EVERY == 25.0, "every 25 seconds")
 	var pipes := _intakes(w)
 	z.attacker = null
 	z.order.clear()
