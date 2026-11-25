@@ -65,7 +65,7 @@ func test_a_spark_bursts_wide_round_an_open_middle() -> void:
 	await frames(1)
 	var rays := s.burst_rays()
 	check(s.burst() == 1.0 and s.burst_drawn == 1.0, "the burst is drawn at full the moment the blade bites")
-	check(rays.size() == HitSpark.BURST_RAYS and rays.size() >= 6, "it throws %d spikes" % rays.size())
+	check(rays.size() == HitSpark.BURST_RAYS - 2 and rays.size() >= 6, "it throws %d spikes" % rays.size())
 	var reach := 0.0
 	var inner := INF
 	var angles: Array[float] = []
@@ -75,14 +75,18 @@ func test_a_spark_bursts_wide_round_an_open_middle() -> void:
 		angles.append((r[1] as Vector2).angle())
 	check(reach >= 26.0, "it reaches %.0f px out, well past the 16 px star" % reach)
 	check(inner >= 9.0, "and leaves the middle open (%.0f px), so the star and the foe show" % inner)
-	var right := angles.filter(func(a: float) -> bool: return absf(a) < PI / 2.0).size()
-	check(right == rays.size() / 2, "it bursts all round, as many spikes ahead as behind (%d of %d)" % [right, rays.size()])
+	var into := angles.filter(func(a: float) -> bool: return cos(a) > HitSpark.BURST_INTO).size()
+	var flank := angles.filter(func(a: float) -> bool: return cos(a) > 0.0).size()
+	var back := angles.filter(func(a: float) -> bool: return cos(a) < 0.0).size()
+	check(into == 0, "no spike is thrown into the struck foe (%d)" % into)
+	check(flank == 2 and back == 4, "it opens round the foe: %d spikes flank it, %d stand back toward the hero" % [flank, back])
 	var lengths := rays.map(func(r: Array) -> float: return ((r[1] as Vector2) - (r[0] as Vector2)).length())
 	check(lengths.max() > lengths.min() * 1.4, "long and short spikes alternate")
 	var heavy := HitSpark.spawn(arena, Vector2(100, 100), Vector2.RIGHT, 1.6)
 	await frames(1)
 	var hr: Array = heavy.burst_rays()
-	check((hr[0][1] as Vector2).length() > reach * 1.4, "the heavy finisher's burst is bigger")
+	var heavy_reach: float = hr.map(func(r: Array) -> float: return (r[1] as Vector2).length()).max()
+	check(heavy_reach > reach * 1.4, "the heavy finisher's burst is bigger (%.0f px)" % heavy_reach)
 	await frames(int(ceil(HitSpark.BURST_LIFE * 0.5 * 60.0)) - 3)
 	check(s.burst() == 1.0, "it holds at full for the first half of its life")
 	await frames(int(ceil(HitSpark.BURST_LIFE * 60.0)) + 1)
@@ -117,6 +121,30 @@ func test_a_struck_foe_leans_away_from_the_blow() -> void:
 	h.stagger()
 	await frames(2)
 	check(h.lean_drawn() == 0.0, "a stagger with no blow behind it does not lean")
+
+
+## Pass 657 (bible 12.133): the pass 655 grade found the burst covered a small foe.
+## A small foe's burst reaches less far, in proportion, and a full-sized one's is the same.
+func test_a_small_foes_burst_leaves_it_in_sight() -> void:
+	var full := HitSpark.spawn(arena, Vector2(100, 100), Vector2.RIGHT, 1.0, 40.0)
+	var none := HitSpark.spawn(arena, Vector2(100, 100), Vector2.RIGHT)
+	var grub := HitSpark.spawn(arena, Vector2(100, 100), Vector2.RIGHT, 1.0, 10.0)
+	var mid := HitSpark.spawn(arena, Vector2(100, 100), Vector2.RIGHT, 1.0, 25.0)
+	await frames(1)
+	var reach := func(s: HitSpark) -> float:
+		return s.burst_rays().map(func(r: Array) -> float: return (r[1] as Vector2).length()).max()
+	var inner := func(s: HitSpark) -> float:
+		return s.burst_rays().map(func(r: Array) -> float: return (r[0] as Vector2).length()).min()
+	check(reach.call(full) == reach.call(none), "a foe 40 px tall gets the full burst (%.0f px)" % reach.call(full))
+	check(reach.call(grub) <= reach.call(full) * 0.72, "a 10 px grub's reaches %.0f px, not %.0f" % [reach.call(grub), reach.call(full)])
+	check(reach.call(grub) < reach.call(mid) and reach.call(mid) < reach.call(full), "and a foe between gets a burst between (%.0f px)" % reach.call(mid))
+	check(reach.call(grub) >= HitSpark.BURST_REACH * HitSpark.BURST_FIT_MIN - 1.0, "but never so small it is lost (%.0f px)" % reach.call(grub))
+	check(inner.call(grub) == inner.call(full), "the middle stays as open for a small foe")
+	for r: Array in grub.burst_rays():
+		check(((r[1] as Vector2) - (r[0] as Vector2)).length() >= 3.0, "every spike still has length")
+	var h := _hornet()
+	await frames(2)
+	check(is_equal_approx(Player._half_extent(h, Vector2.DOWN) * 2.0, h.body_size.y), "a blow measures the foe it lands on by its box (%s)" % h.body_size.y)
 
 
 ## Pass 599 (bible 6.7): the pass 595 grade read the slash and spark as covering

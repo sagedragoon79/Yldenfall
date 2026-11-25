@@ -848,6 +848,28 @@ func test_a_hit_sparks_where_the_blade_meets_the_foe() -> void:
 	check(absf(spark.global_position.x - edge) <= 1.5, "on the foe's near edge (%s, edge %s)" % [spark.global_position.x, edge])
 	await frames(int(spark.life * 60.0) + 4)
 	check(_find(room, HitSpark) == null, "and is gone in a blink")
+
+
+## Pass 657 (bible 12.133): a blow measures the foe it lands on, and a small one's
+## burst reaches less far, so the burst does not cover it.
+func test_a_small_foe_gets_a_smaller_burst() -> void:
+	var room := _arena_with("E", Vector2i(5, 6))
+	var p := make_player(room, Vector2i(3, 6))
+	await frames(6)
+	var dummy: TrainingDummy = _find(room, TrainingDummy)
+	for c in dummy.get_children():
+		if c is CollisionShape2D and c.shape is RectangleShape2D:
+			var r := (c.shape as RectangleShape2D).duplicate() as RectangleShape2D
+			r.size.y = 12.0
+			c.shape = r
+			c.position.y = -6.0
+	p.input.attack_pressed = true
+	await frames(2)
+	var spark: HitSpark = _find(room, HitSpark)
+	if not check(spark != null, "a hit on a 12 px foe throws a spark"):
+		return
+	check(is_equal_approx(spark.fit, HitSpark.fit_for(12.0)) and spark.fit < 1.0,
+			"its burst is fitted to the small foe (%s)" % spark.fit)
 	# The third hit of the combo is the heavy one: a bigger spark.
 	await frames(30)
 	for i in 3:
