@@ -566,3 +566,57 @@ func test_the_rot_dwarf_hall_is_not_a_level_box() -> void:
 	check_near(p.global_position.y, from_y, 2.0, "back on the doors' floor")
 	w.queue_free()
 	await frames(2)
+
+
+## Pass 659 (bible 12.135): the grade of pass 655 saw the hero lost on the
+## root. A haze lies over the trunk, inside its outline, behind whoever stands
+## in front of it, and fades out round them.
+func test_the_root_hazes_behind_whoever_stands_before_it() -> void:
+	var body := Rect2(-30, -40, 12, 36)
+	var boxes: Array[Rect2] = [body]
+	var mid := body.get_center()
+	check(is_equal_approx(HighSeat.haze_at(mid, boxes), HighSeat.HAZE_ALPHA), "behind the body the haze is whole")
+	check(HighSeat.HAZE_ALPHA >= 0.4 and HighSeat.HAZE_ALPHA <= 0.7, "strong enough to part them, the bark still showing (%.2f)" % HighSeat.HAZE_ALPHA)
+	var top := body.position.y - HighSeat.HAZE_PAD
+	var near := HighSeat.haze_at(Vector2(mid.x, top - HighSeat.CHUNK * 0.5), boxes)
+	var far := HighSeat.haze_at(Vector2(mid.x, top - HighSeat.CHUNK * 1.5), boxes)
+	check(near < HighSeat.HAZE_ALPHA and far < near and far > 0.0, "it fades out over its head, cell by cell (%.2f, %.2f)" % [near, far])
+	check(HighSeat.haze_at(Vector2(mid.x, top - HighSeat.CHUNK * 2.5), boxes) == 0.0, "and is gone past that")
+	check(HighSeat.haze_at(mid, [] as Array[Rect2]) == 0.0, "with nobody there, nothing")
+	for c in HighSeat.haze_cells(boxes):
+		check(int(c.x) % HighSeat.CHUNK == 0 and int(c.y) % HighSeat.CHUNK == 0 and c.z > 0.0, "in whole cells of the haze (%s)" % c)
+	# Over the trunk only, and never over its outline.
+	var mask := HighSeat.build_trunk_mask()
+	var on := 0
+	var stray := 0
+	for y in mask.get_height():
+		for x in mask.get_width():
+			var c := Vector2i(x, y) + HighSeat.IMG.position
+			var hazy := mask.get_pixel(x, y).a > 0.0
+			on += 1 if hazy else 0
+			if hazy != HighSeat.on_trunk(c):
+				stray += 1
+	check(on > 3000 and stray == 0, "the haze lies on the trunk and nowhere else (%d px, %d stray)" % [on, stray])
+	var y0 := -60
+	var cx := HighSeat.root_x(y0)
+	var hw := HighSeat.root_half(y0)
+	check(not HighSeat.on_trunk(Vector2i(cx - hw - 1, y0)) and not HighSeat.on_trunk(Vector2i(cx + hw, y0)), "its outline stays")
+	check(HighSeat.on_trunk(Vector2i(cx, y0)), "its bark is hazed")
+	# In the hall: the hero in front of the root gets a haze, away from it none.
+	var w := make_world({}, "heartwood/dwarf_hall")
+	for n in w.room.get_children():
+		if n is Enemy:
+			n.queue_free()
+	await frames(2)
+	var seat := _seat(w.room)
+	w.player.global_position = seat.to_global(Vector2(HighSeat.root_x(-40), -20))
+	await frames(3)
+	check(seat.hazed.size() == 1, "the hero before the root is hazed behind (%d)" % seat.hazed.size())
+	var cells := HighSeat.haze_cells(seat.hazed)
+	var over := false
+	for c in cells:
+		over = over or HighSeat.on_trunk(Vector2i(int(c.x) + 2, int(c.y) + 2))
+	check(over, "over the trunk")
+	w.player.global_position = seat.to_global(Vector2(HighSeat.IMG.end.x + 200, -20))
+	await frames(3)
+	check(seat.hazed.is_empty(), "and away from it the root is as painted")
