@@ -104,6 +104,9 @@ const OFFSET := Vector2(0, -60)
 ## near-opaque black band 136 px tall across every taller room (Sean's note, and
 ## the grade's "letterbox"), in front of its platforms and foes.
 const FORE_SCROLL := Vector2(1.5, 0.0)
+## The names room_shift slides the two near layers by (design bible 12.132).
+const NEAR_FORE := "foot"
+const NEAR_HANG := "hang"
 ## An absolute z above the atmosphere overlays (fog/motes/rain sit at 4) and every
 ## actor and projectile (<= 3), so the foreground is the nearest thing on screen.
 const FORE_Z := 5
@@ -204,6 +207,7 @@ func set_zone(next: String) -> void:
 	_hang = hang_layer(zone)
 	if _hang != null:
 		add_child(_hang)
+	_slide_near()
 
 
 ## Slides each layer sideways for the room (design bible 12.101, pass 625). A zone
@@ -212,12 +216,23 @@ func set_zone(next: String) -> void:
 ## sky islands in the same places and named them copies. Each room now starts
 ## each layer at its own place along the repeating art, so two rooms of a zone
 ## show different stretches of it, with the layers set against each other
-## differently. The foreground is left alone: it slides fast and is thinned
-## round the actors (12.26).
+## differently. Since pass 656 (12.132) the two near layers slide too: the pass
+## 655 grade saw the foot's masses "stamped in the same spots" in every frame,
+## because a room opens with its camera near its west wall and the foreground
+## was never slid, so the same two masses stood at the same two places.
 func set_room(next: String) -> void:
 	room_id = next
 	for suffix: String in _layers:
 		(_layers[suffix] as Parallax2D).scroll_offset = Vector2(Backdrop.room_shift(room_id, suffix), 0.0)
+	_slide_near()
+
+
+## Slides the foreground (NEAR_FORE) and the hanging frame (NEAR_HANG) for the room.
+func _slide_near() -> void:
+	if _fore != null and is_instance_valid(_fore):
+		_fore.scroll_offset = Vector2(Backdrop.room_shift(room_id, NEAR_FORE), 0.0)
+	if _hang != null and is_instance_valid(_hang):
+		_hang.scroll_offset = Vector2(Backdrop.room_shift(room_id, NEAR_HANG), 0.0)
 
 
 ## How far a room slides a layer along its repeating art, world px (0 to SIZE.x),

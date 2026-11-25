@@ -418,7 +418,40 @@ def test_foreground_is_a_dark_silhouette():
     # shades it is drawn in. (Painting it in a lit colour fails here.)
     for z in tg.FORE_KIND:
         m = _fore(z)
-        assert m["maxch"] < 70, f"{z}: brightest channel {m['maxch']} is too light for a silhouette"
+        # Under 76: the lit edge is step 1 of the zone's ramp (12.132), 72 at most.
+        assert m["maxch"] < 76, f"{z}: brightest channel {m['maxch']} is too light for a silhouette"
+
+
+def test_near_layers_wear_their_zones_hue():
+    # Design bible 12.132 (pass 656): the pass 655 grade saw the foot's masses as
+    # grey shapes that "belong to no zone"; every zone drew them in night-0. Each
+    # zone's foreground and hanging frame are now the darkest step of its own ramp
+    # with a lit edge one step up: the woods lean green, the Haar blue, the
+    # Evercrown wine, the hearth zones warm. The mass's opaque pixels lean the
+    # zone's way on average, and its lit edge is brighter than its body.
+    lean = {
+        "leaf": lambda r, g, b: g > r + 4 and g > b + 4,
+        "sky": lambda r, g, b: b > r + 4,
+        "crystal": lambda r, g, b: r > g + 4 and b > g + 4,
+        "bark": lambda r, g, b: r > b + 4 and r > g + 4,
+        "stone": lambda r, g, b: b >= r,
+    }
+    want = {"heartwood": "leaf", "boughs": "leaf", "haar": "sky", "sunken": "sky",
+            "vorrhallow": "sky", "evercrown": "crystal", "tower": "stone", "trials": "stone",
+            "hearthroot": "bark", "spires": "bark"}
+    for z, (body, rim) in tg.FORE_TONES.items():
+        ramp = want[z]
+        for name, img in (("foreground", tg.foreground(z)), ("frame", tg.hanging(z))):
+            px = [p for p in img.getdata() if p[3] >= 150]
+            assert px, f"{z} {name}: nothing opaque"
+            r = sum(p[0] for p in px) / len(px)
+            g = sum(p[1] for p in px) / len(px)
+            b = sum(p[2] for p in px) / len(px)
+            assert lean[ramp](r, g, b), f"{z} {name}: mean ({r:.0f}, {g:.0f}, {b:.0f}) does not lean {ramp}"
+            bright = max(max(p[:3]) for p in px)
+            body_max = max(tg.c(body)[:3])
+            assert bright > body_max + 20, f"{z} {name}: no lit edge over the body ({bright} vs {body_max})"
+    assert set(tg.FORE_TONES) == set(tg.FORE_KIND), "every fringe zone has its tones"
 
 
 def test_foreground_stays_a_low_fringe():
@@ -499,7 +532,7 @@ def test_the_hanging_frame_frames_the_top_without_a_band():
             best = max(best, run)
         assert best >= 80 * tg.D, f"{z}: the widest clear run is {best / tg.D:.0f} px"
         maxch = max(ch[1] for ch in img.convert("RGB").getextrema())
-        assert maxch < 70, f"{z}: brightest channel {maxch} is too light for a silhouette"
+        assert maxch < 76, f"{z}: brightest channel {maxch} is too light for a silhouette"
 
 
 def _ridge(zone):

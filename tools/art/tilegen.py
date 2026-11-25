@@ -3464,6 +3464,36 @@ FORE_KIND = {
 }
 FORE_BODY = "night-0"  # the darkest night shade: an unlit near-black silhouette
 FORE_RIM = "night-1"   # one step up, a faint top/leading edge so a shape reads
+# Each zone's near layers in its own hue (bible 12.132, pass 656). The pass 655
+# grade saw the foot's masses as grey shapes that "belong to no zone": every
+# zone drew them in the same night-0 and night-1. Now the body is the darkest
+# step of the zone's own ramp, still near-black, and the lit edge one step up,
+# so a fern bank reads green-black with a moss-green lip, a block heap stone,
+# a timber pile warm. FORE_BODY and FORE_RIM are swapped to these while a
+# zone's foreground or hanging frame is painted (`_zone_tones`).
+FORE_TONES = {
+    "heartwood": ("leaf-0", "leaf-1"), "boughs": ("leaf-0", "leaf-1"),
+    "haar": ("sky-0", "sky-1"), "sunken": ("sky-0", "sky-1"),
+    "evercrown": ("crystal-0", "crystal-1"), "vorrhallow": ("sky-0", "sky-1"),
+    "tower": ("stone-0", "stone-1"), "trials": ("stone-0", "stone-1"),
+    "hearthroot": ("bark-0", "bark-1"), "spires": ("bark-0", "bark-1"),
+}
+
+
+class _zone_tones:
+    """Paint the near layers of `zone` in its own body and rim (FORE_TONES)."""
+
+    def __init__(self, zone):
+        self.tones = FORE_TONES.get(zone, ("night-0", "night-1"))
+
+    def __enter__(self):
+        global FORE_BODY, FORE_RIM
+        self.saved = (FORE_BODY, FORE_RIM)
+        FORE_BODY, FORE_RIM = self.tones
+
+    def __exit__(self, *exc):
+        global FORE_BODY, FORE_RIM
+        FORE_BODY, FORE_RIM = self.saved
 FORE_FLOOR = 360 * D   # the view bottom in canvas pixels (bible: BASE_SIZE.y)
 FORE_BAND = 16 * D     # solid ground strip above the floor line
 BAND_A, PART_A, RIM_A = 242, 176, 196  # band / protrusion / rim alphas (see-through foreground)
@@ -3767,6 +3797,11 @@ def foreground(zone):
     material rising from a solid ground band at the view bottom, over a mostly
     transparent canvas (bible 12.11), and a few broad masses of the same matter
     rising higher (12.127)."""
+    with _zone_tones(zone):
+        return _foreground(zone)
+
+
+def _foreground(zone):
     img = Image.new("RGBA", (BG_W, BG_H), CLEAR)
     shape = FORE_SHAPE[FORE_KIND[zone]]
     rng = random.Random(sum(ord(ch) for ch in zone) + 700)
@@ -3998,6 +4033,11 @@ def hanging(zone):
     """The near frame hanging into the top of the view for `zone` (bible
     12.121): clusters of the zone's material over a transparent canvas the size
     of the other layers, wrapping sideways."""
+    with _zone_tones(zone):
+        return _hanging(zone)
+
+
+def _hanging(zone):
     img = Image.new("RGBA", (BG_W, BG_H), CLEAR)
     shape = HANG_SHAPE[HANG_KIND[zone]]
     rng = random.Random(sum(ord(ch) for ch in zone) + 1211)
