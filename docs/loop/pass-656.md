@@ -56,7 +56,12 @@ painted in `night-0` and `night-1`, the hue test fails (the Heartwood's mean is 
 
 ## Full suite
 
-FULL_SUITE_RESULT
+One full run (`TEST_TIMEOUT=7200`): 37,707 checks passed, 1 failed:
+`test_every_room_loads_and_settles_inside_the_budget`, two rooms loading over the 500 ms budget
+(the Evercrown's proving scar 548 ms, the gym 505 ms). Run alone it failed again on the proving scar
+alone (513 ms). With main's `backdrop.gd` and near art put back, the same test failed the same way,
+as passes 654 and 655 found on this PC; the gym has no near layers, and the slide is one assignment
+per room. Every backdrop and art test passed.
 
 ## Rubric (design bible 15.3)
 
