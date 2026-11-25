@@ -21,6 +21,9 @@ const WOOD: Array[Color] = [Color("3c2c2a"), Color("634a41"), Color("8a6e56")]
 ## The root, shade to lit (bark-0 to bark-2): darker than the timber, so the
 ## hall's frame stays the brighter thing and the root reads as what broke it.
 const ROOT: Array[Color] = [Color("1c0d0f"), Color("48201e"), Color("783c2b")]
+## The lit lips of the root's bark plates where the light finds them (bark-3),
+## only on the side toward the light: still darker than the timber's lit edge.
+const BARK_LIT := Color("aa6336")
 ## Stone and iron, dark to lit (stone-1 to stone-4).
 const STONE: Array[Color] = [Color("2f2c3a"), Color("4a465d"), Color("645e82"), Color("867ba2")]
 ## Sap, shade to glint (gold-2 to gold-4). Nothing but sap is gold.
@@ -29,7 +32,7 @@ const SAP: Array[Color] = [Color("8d4e16"), Color("cb8d16"), Color("f0c02e")]
 const ROT: Array[Color] = [Color("2f392d"), Color("4f5c47")]
 ## Every tone above, for the palette test.
 const TONES := [
-	OUTLINE, WOOD[0], WOOD[1], WOOD[2], ROOT[0], ROOT[1], ROOT[2],
+	OUTLINE, WOOD[0], WOOD[1], WOOD[2], ROOT[0], ROOT[1], ROOT[2], BARK_LIT,
 	STONE[0], STONE[1], STONE[2], STONE[3], SAP[0], SAP[1], SAP[2], ROT[0], ROT[1],
 ]
 
@@ -65,6 +68,17 @@ const SHIELD_NAIL := Vector2i(46, -126)
 const SHIELD_FALLEN := Vector2i(52, -DAIS_HIGH - SHIELD_RADIUS)
 ## How far from the root the timber rots.
 const ROT_REACH := 14
+## The root's own shadow on the timber behind it, east of it (light from the upper left).
+const CAST := 5
+## The root is round (pass 655, bible 12.131): the light from the upper left
+## and toward the viewer, which the shading reads off a cylinder's normal.
+const LIGHT := Vector3(-0.62, 0.0, 0.78)
+## Its bark: furrows every `FURROW_STEP` radians round it, twisting
+## `TWIST` radians a row as it climbs; the plates between them are 14 to 24 rows tall.
+const FURROW_STEP := 0.72
+const TWIST := 0.012
+## Two knots where limbs once grew: (row, side round the root -1 to 1, radius).
+const KNOTS: Array[Vector3i] = [Vector3i(-104, -5, 4), Vector3i(-226, 3, 3)]
 ## The east side root, from the main root to the east pillar.
 const SIDE_EAST_FROM := Vector2i(0, -164)
 const SIDE_EAST_TO := Vector2i(PILLAR_X - PILLAR_WIDE / 2, -140)
@@ -381,6 +395,79 @@ static func _limb(img: Image, pts: Array[Vector2i], wide: int) -> void:
 					_fill(img, x + wide - 1, y + wide - 1, 1, 1, ROOT[0])
 
 
+## How lit the root's surface is at column `x` of row `y`, from 0 to 1: the
+## normal of a round trunk, leaning with the root where it wanders.
+static func root_light(x: int, y: int) -> float:
+	var cx := root_x(y)
+	var hw := root_half(y)
+	var u := clampf((float(x - cx) + 0.5) / float(hw), -1.0, 1.0)
+	var lean := float(root_x(y - 3) - root_x(y + 3)) / 6.0
+	var n := Vector3(u, -lean * 0.4, sqrt(maxf(0.0, 1.0 - u * u))).normalized()
+	return clampf(n.dot(LIGHT.normalized()), 0.0, 1.0)
+
+
+## Where the bark furrow `k` crosses row `y`, round the root in radians
+## (0 faces the viewer). The furrows go all the way round, `FURROW_STEP`
+## apart, and twist as the root climbs.
+static func furrow_angle(k: int, y: int) -> float:
+	return furrow_offset(y) + FURROW_STEP * k
+
+
+## The twist of the furrows at row `y`.
+static func furrow_offset(y: int) -> float:
+	return TWIST * float(y) + 0.12 * sin(float(y) * 0.05)
+
+
+## The root's shade at a pixel: the tone from its roundness, its bark's
+## furrows and plates on top.
+static func root_tone(x: int, y: int) -> Color:
+	var cx := root_x(y)
+	var hw := root_half(y)
+	if x == cx - hw:
+		return ROOT[2]
+	if x == cx + hw - 1:
+		return ROOT[0]
+	var l := root_light(x, y)
+	# A lit band left of the middle, the mid tone, and the shaded east third,
+	# the edge between mid and shade broken in a checker.
+	var col := ROOT[0]
+	if l > 0.88:
+		col = ROOT[2]
+	elif l > 0.5 or (l > 0.4 and posmod(x + y, 2) == 0):
+		col = ROOT[1]
+	# The furrows: lines round the trunk, closer together toward its edges,
+	# each broken here and there so they read as bark, not stripes.
+	var u := clampf((float(x - cx) + 0.5) / float(hw), -1.0, 1.0)
+	var round_a := asin(u) - furrow_offset(y)
+	var k := roundi(round_a / FURROW_STEP)
+	if absf(round_a - k * FURROW_STEP) * float(hw) < 0.55 and speckle(k * 5 + 1, (y + k * 7) / 9) < 0.78:
+		if l > 0.88:
+			return ROOT[1]
+		return ROOT[0] if l > 0.4 else OUTLINE
+	# The plates between the furrows: each breaks off every 14 to 24 rows; its
+	# foot is in shadow and its top lip catches the light on the lit side.
+	var band := floori(round_a / FURROW_STEP)
+	var tall := 14 + roundi(speckle(band + 40, 3) * 10.0)
+	var row := posmod(y + roundi(speckle(band + 40, 9) * 23.0), tall)
+	if row == tall - 1 and l > 0.4:
+		return ROOT[0]
+	if row == 0 and l > 0.88:
+		return BARK_LIT
+	return col
+
+
+## The root's shadow falls east on the timber it stands in front of.
+static func _cast(img: Image) -> void:
+	for y in range(CEILING, -DAIS_HIGH):
+		var e := root_x(y) + root_half(y) + 1
+		for x in range(e, e + CAST):
+			var c := _px(img, x, y)
+			if c == WOOD[1] or c == WOOD[2]:
+				_fill(img, x, y, 1, 1, WOOD[0])
+			elif c == ROT[1]:
+				_fill(img, x, y, 1, 1, ROT[0])
+
+
 static func _root(img: Image) -> void:
 	# The east side root reaches the east pillar; the west one comes up
 	# through the dais beside the seat and grips its arm.
@@ -393,13 +480,28 @@ static func _root(img: Image) -> void:
 		var cx := root_x(y)
 		var hw := root_half(y)
 		_fill(img, cx - hw - 1, y, hw * 2 + 2, 1, OUTLINE)
-		_fill(img, cx - hw, y, hw * 2, 1, ROOT[1])
-		_fill(img, cx - hw, y, maxi(2, hw / 3), 1, ROOT[2])
-		_fill(img, cx + hw - maxi(2, hw / 3), y, maxi(2, hw / 3), 1, ROOT[0])
-		# The bark's furrows run up it.
-		for x in range(cx - hw + 3, cx + hw - 3):
-			if speckle((x - cx) / 2 + 31, y / 7) > 0.86:
-				_fill(img, x, y, 1, 1, ROOT[0])
+		for x in range(cx - hw, cx + hw):
+			_fill(img, x, y, 1, 1, root_tone(x, y))
+	# The knots: a ring of bark round a dark hollow, its upper left lip lit.
+	for knot: Vector3i in KNOTS:
+		var ky := knot.x
+		var kx := root_x(ky) + roundi(float(knot.y) / 10.0 * root_half(ky))
+		var r := float(knot.z)
+		for dy in range(-knot.z - 1, knot.z + 2):
+			for dx in range(-knot.z - 1, knot.z + 2):
+				var d := Vector2(dx, dy * 1.3).length()
+				if d > r + 0.6:
+					continue
+				var col := ROOT[1]
+				if d < r * 0.45:
+					col = OUTLINE
+				elif d < r * 0.75:
+					col = ROOT[0]
+				elif dx + dy < -1:
+					col = ROOT[2]
+				elif dx + dy > 1:
+					col = ROOT[0]
+				_fill(img, kx + dx, ky + dy, 1, 1, col)
 	# The dais it came through: a slab heaved up on each side of it.
 	var hw0 := root_half(-DAIS_HIGH)
 	for side: int in [-1, 1]:
@@ -460,6 +562,7 @@ static func build_image() -> Image:
 	_seat(img)
 	_lintel(img)
 	_rot(img)
+	_cast(img)
 	_root(img)
 	_sap(img)
 	return img

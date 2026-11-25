@@ -2382,7 +2382,7 @@ The seventh room by 12.56's rule, and the first in the Heartwood. The Rot Dwarf 
 
 The sign's words are drawn. One root has come up through all of it, from the floor into the ceiling. The dais is heaved up on both sides of it. The seat's back is split, and its east half has dropped 5 px. The lintel is snapped where the root goes through and lifted on the root's shoulder, 10 px on the west and 4 px on the east, so its ends no longer meet; it still lies on both pillars. A side root has reached the east pillar, and another has come up beside the seat and grips its arm. The east shield has fallen from its nail and lies against the east pillar. Sap runs down the root in seven threads, has pooled on the seat board, and drips from the east side root to a puddle on the dais (a drop every 3.2 s; the only part drawn live). The timber rots within 14 px of the root and nowhere else.
 
-Painted like the ore bin (12.61): whole world pixels on master palette ramps, lit from the upper left, baked once for the whole run. Timber is the umber ramp (umber-1 to umber-3). The root is the bark ramp one step darker (bark-0 to bark-2), so the hall's frame stays the brighter thing and the root reads as what broke it; the first take, on bark-1 to bark-3, was brighter than the hero. The dais and the shields' iron are the stone ramp. Sap is gold-2 to gold-4, and nothing else on the piece is gold. Rot is moss-1 and moss-2. Nothing on it is on the ember ramp. Scenery only: z -2, behind the Rot Dwarves and the hero, no collision, no sound. Judged by eye at 1x and 2x in `heartwood/dwarf_hall`.
+Painted like the ore bin (12.61): whole world pixels on master palette ramps, lit from the upper left, baked once for the whole run. Timber is the umber ramp (umber-1 to umber-3). The root is the bark ramp one step darker (bark-0 to bark-2), so the hall's frame stays the brighter thing and the root reads as what broke it; the first take, on bark-1 to bark-3, was brighter than the hero. The dais and the shields' iron are the stone ramp. Sap is gold-2 to gold-4, and nothing else on the piece is gold. Rot is moss-1 and moss-2. Nothing on it is on the ember ramp. Scenery only: z -2, behind the Rot Dwarves and the hero, no collision, no sound. Since pass 655 the root is shaded round, with bark furrows and plates, and throws its shadow on the seat (12.131). Judged by eye at 1x and 2x in `heartwood/dwarf_hall`.
 
 Tests: `tests/test_high_seat.gd`.
 
@@ -3243,6 +3243,16 @@ The grade of pass 650 named "a small spark and the damage numbers" among the fig
 - **The numbers** (`DamageNumber.SIZES`). A cut's number, and the hero's own losses (red, a poison tick's green), draw at twice the font (14 px of glyph, a 2-pixel outline); a heavy blow's at three times. A number that popped one size larger for its first frames was tried and dropped: a still of a hit always caught it at its largest, which dwarfed the foe.
 
 Judged by eye at 1x and 2x in the eleven fight frames (`workbench/catalog/fights`). `test_a_spark_bursts_wide_round_an_open_middle` (`tests/test_hit_impact.gd`) and `test_damage_numbers_show_what_each_blow_dealt` (`tests/test_systems.gd`) hold it.
+
+### 12.131 The root through the high seat is round (pass 655)
+
+The grade of pass 650 named "the gate tree in the Heartwood tell, a flat unshaded band": the root that has come up through the Rot Dwarf Hall's high seat (12.62) was drawn as three straight strips down its length (a lit strip on the west, the mid tone, a dark strip on the east) with specks for bark, so at 1x it read as a painted board standing in the frame.
+
+- **Round** (`HighSeat.root_light`). Each pixel's tone comes from a round trunk's surface: the light from the upper left and toward the viewer (`LIGHT`), leaning with the root where it wanders. A lit band stands west of the middle, the mid tone turns into a shaded east third, and the edge between mid and shade is broken in a checker. The outermost pixels keep the old rule: lit down the west edge, shaded down the east.
+- **Barked** (`furrow_angle`, `FURROW_STEP` 0.72 rad, `TWIST`). Furrows run all the way round the trunk and twist as it climbs; seen from the front they lie closer together toward its edges, which is what turns it. Each is broken here and there. Between them the bark lies in plates 14 to 24 rows tall, each with a shaded foot and, on the lit side, a lip in bark-3 (`BARK_LIT`), still darker than the timber's lit edge. Two knots mark where limbs once grew.
+- **Its shadow** (`CAST`, 5 px). The root throws its shadow east on the seat's back and the lintel it stands in front of.
+
+A first take cut the plates every 6 to 11 rows and lit most of the width: the trunk read as a brick wall. Judged by eye at 1x and 2x in `heartwood/dwarf_hall`. `test_the_root_is_round_and_barked` (`tests/test_high_seat.gd`) holds it.
 
 ## 13. Asset Production Plan
 

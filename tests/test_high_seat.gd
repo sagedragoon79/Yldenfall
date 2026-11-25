@@ -152,6 +152,86 @@ func test_a_root_has_come_up_through_the_high_seat() -> void:
 	check(_on_root(HighSeat.SIDE_EAST_FROM), "from the root")
 
 
+## The root is round (pass 655, bible 12.131): the pass 650 grade read it as
+## "a flat unshaded band". Across every row it runs from a lit band west of
+## its middle through the mid tone to a shaded east third; furrows of bark run
+## up it and bunch toward its edges; its shadow falls east on the timber behind.
+func test_the_root_is_round_and_barked() -> void:
+	var px := _pixels()
+	var rows := 0
+	var round_rows := 0
+	var furrowed := 0
+	var plates := 0
+	var lit_stray := 0
+	for y in range(HighSeat.CEILING + 4, -HighSeat.DAIS_HIGH - 6):
+		var cx := HighSeat.root_x(y)
+		var hw := HighSeat.root_half(y)
+		if hw < 7:
+			continue
+		rows += 1
+		var west_lit := 0
+		var east_lit := 0
+		var west_dark := 0
+		var east_dark := 0
+		var dark_runs := 0
+		for x in range(cx - hw + 1, cx + hw - 1):
+			var c: Color = px.get(Vector2i(x, y), Color.BLACK)
+			var west := x < cx
+			if c == HighSeat.ROOT[2] or c == HighSeat.BARK_LIT:
+				if west:
+					west_lit += 1
+				else:
+					east_lit += 1
+			var dark := c == HighSeat.ROOT[0] or c == HighSeat.OUTLINE
+			if dark:
+				if west:
+					west_dark += 1
+				else:
+					east_dark += 1
+			if c == HighSeat.BARK_LIT:
+				plates += 1
+				if HighSeat.root_light(x, y) <= 0.88:
+					lit_stray += 1
+			# A mark of bark: darker than the trunk's roundness alone gives there.
+			var l := HighSeat.root_light(x, y)
+			var want := 2 if l > 0.88 else (1 if l > 0.5 else 0)
+			var got := 2 if c == HighSeat.ROOT[2] or c == HighSeat.BARK_LIT else (1 if c == HighSeat.ROOT[1] else 0)
+			if got < want:
+				dark_runs += 1
+		if west_lit > east_lit and east_dark > west_dark and east_dark >= hw / 2:
+			round_rows += 1
+		if dark_runs >= 1:
+			furrowed += 1
+	check(rows > 200, "rows of the root measured (%d)" % rows)
+	check(round_rows * 5 >= rows * 4, "lit west of its middle and shaded east of it in %d of %d rows" % [round_rows, rows])
+	check(furrowed * 2 >= rows, "bark furrows and plates mark %d of %d rows" % [furrowed, rows])
+	check(plates > 20, "the plates' lips catch the light (%d px)" % plates)
+	check(lit_stray == 0, "only where the trunk faces the light (%d px elsewhere)" % lit_stray)
+	# The furrows bunch toward the edges: round, not a striped board.
+	var y0 := -150
+	var hw0 := HighSeat.root_half(y0)
+	var seen: Array[float] = []
+	for k in range(-20, 21):
+		var fa := HighSeat.furrow_angle(k, y0)
+		if absf(fa) < PI * 0.5:
+			seen.append(sin(fa))
+	check(seen.size() >= 4, "%d furrows show on the trunk's face" % seen.size())
+	seen.sort()
+	var near_edge := minf(seen[1] - seen[0], seen[-1] - seen[-2])
+	var near_mid := 0.0
+	for i in seen.size() - 1:
+		near_mid = maxf(near_mid, seen[i + 1] - seen[i])
+	check(near_edge < near_mid, "furrows lie closer at the edge (%.2f) than the middle (%.2f) of a %d px trunk" % [near_edge, near_mid, hw0 * 2])
+	# Its shadow on the seat's back, east of it.
+	var y := HighSeat.BACK_TOP + 40
+	var e := HighSeat.root_x(y) + HighSeat.root_half(y) + 1
+	var shade := 0
+	for x in range(e, e + HighSeat.CAST):
+		if px.get(Vector2i(x, y), Color.BLACK) in [HighSeat.WOOD[0], HighSeat.ROT[0], HighSeat.OUTLINE]:
+			shade += 1
+	check(shade == HighSeat.CAST, "the root's shadow falls on the seat's back east of it (%d of %d px)" % [shade, HighSeat.CAST])
+
+
 ## What the root broke: the seat's back is split and its east half has
 ## dropped; the lintel is snapped and lifted at the break.
 func test_the_root_split_the_high_seat_and_snapped_its_lintel() -> void:
