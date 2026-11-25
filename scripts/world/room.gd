@@ -360,7 +360,7 @@ func build(text: String) -> void:
 	var air_shade := AirShade.new()
 	air_shade.name = "AirShade"
 	add_child(air_shade)
-	air_shade.setup(_deep_solids(), _planks, deck_cells, size_tiles)
+	air_shade.setup(_deep_solids(), _planks, deck_cells, size_tiles, _haunch_cells())
 
 	# A chest is set down on its floor with a few things beside it (design bible 12.114).
 	_seat_chests()

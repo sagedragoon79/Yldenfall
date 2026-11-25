@@ -6,10 +6,10 @@ extends TestSuite
 const T := AirShade.TILE
 
 
-func _shade(solids: Dictionary, size: Vector2i, boards := {}, decks := {}) -> AirShade:
+func _shade(solids: Dictionary, size: Vector2i, boards := {}, decks := {}, haunches := {}) -> AirShade:
 	var shade := AirShade.new()
 	arena.add_child(shade)
-	shade.setup(solids, boards, decks, size)
+	shade.setup(solids, boards, decks, size, haunches)
 	return shade
 
 
@@ -102,3 +102,49 @@ func test_air_a_room_builds_its_shade_behind_the_tiles() -> void:
 	check(shade.alpha_at(Vector2(4.5 * T, 3.0 * T + 8)) == 0.0, "the deck's own cell is not painted")
 	check(shade.alpha_at(Vector2(4.5 * T, 7.0 * T + 1)) > 0.0, "the air under the block darkens")
 	check(shade.alpha_at(Vector2(1.0 * T + 1, 5.0 * T)) > 0.0, "the air beside the wall darkens")
+
+
+## A haunch casts from its diagonal (bible 12.136, pass 660): the falloff runs
+## along the slope the tile draws, not in square steps from the cells behind it.
+func test_air_a_haunch_casts_from_its_diagonal() -> void:
+	# A west haunch at (4, 4): solid above it and to its left, open below and right.
+	var solids := {Vector2i(4, 3): true, Vector2i(3, 4): true, Vector2i(3, 3): true}
+	var shade := _shade(solids, Vector2i(10, 10), {}, {}, {Vector2i(4, 4): true})
+	var o := Vector2(4, 4) * T
+	var n := Vector2(1, 1).normalized()
+	# Two points the same way off the diagonal, near its two ends, are one step.
+	var off := 5.0
+	var near_top := shade.alpha_at(o + Vector2(12, 4) + n * off)
+	var near_wall := shade.alpha_at(o + Vector2(4, 12) + n * off)
+	check(near_top > 0.0, "the air off the slope darkens: %f" % near_top)
+	check(is_equal_approx(near_top, near_wall),
+			"one step all along the slope, not squares from the cells behind it: %f, %f" % [near_top, near_wall])
+	check(is_equal_approx(shade.alpha_at(o + Vector2(9, 9)), AirShade.MAX_ALPHA),
+			"the air just past the diagonal is at its darkest: %f" % shade.alpha_at(o + Vector2(9, 9)))
+	check(shade.alpha_at(o + Vector2(8, 8) + n * 20.0) == 0.0, "and it is gone well off the slope")
+	# An east haunch mirrors it.
+	var east := _shade({Vector2i(5, 3): true, Vector2i(6, 4): true, Vector2i(6, 3): true}, Vector2i(10, 10), {}, {},
+			{Vector2i(5, 4): false})
+	var e := Vector2(5, 4) * T
+	var m := Vector2(-1, 1).normalized()
+	check(is_equal_approx(east.alpha_at(e + Vector2(4, 4) + m * off), east.alpha_at(e + Vector2(12, 12) + m * off)),
+			"an east haunch casts along its own diagonal")
+	check(east.alpha_at(e + Vector2(4, 4) + m * off) > 0.0, "and darkens the air off it")
+
+
+func test_air_a_room_passes_its_haunches() -> void:
+	var rows := ["zone: boughs", "---"]
+	for y in 12:
+		var row := ""
+		for x in 12:
+			row += "#" if y <= 3 or y >= 10 or x <= 1 or x >= 10 else "."
+		rows.append(row)
+	rows[2 + 4] = rows[2 + 4].substr(0, 2) + "`" + rows[2 + 4].substr(3)
+	var room := make_room(rows)
+	var shade := room.get_node_or_null("AirShade") as AirShade
+	if not check(shade != null, "the room builds an AirShade"):
+		return
+	var o := Vector2(2, 4) * T
+	check(room.is_solid_at(o + Vector2(3, 3)) and not room.is_solid_at(o + Vector2(9, 9)), "the haunch is laid")
+	check(is_equal_approx(shade.alpha_at(o + Vector2(9, 9)), AirShade.MAX_ALPHA),
+			"the air just past its diagonal is at its darkest: %f" % shade.alpha_at(o + Vector2(9, 9)))

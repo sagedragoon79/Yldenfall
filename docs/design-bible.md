@@ -3229,8 +3229,8 @@ Judged by eye at 1x and 2x in `tower/foot`, `evercrown/veins`, `spires/sky_steps
 
 The grade of pass 650 saw "no value split between the play plane and the backdrop" (`evercrown/veins`, `tower/foot`, the Spires fight). The parallax layers behind a room sat at the value of its walls and decks, so an edge was told from the air behind it only by its lit top.
 
-- **The air darkens toward every edge** (`scripts/world/air_shade.gd`, `AirShade`). On the backdrop's side of each solid edge, plank board and hung deck, the air darkens to `MAX_ALPHA` (0.6) of a near-black at the edge and falls off with the key light from the top left (12.3): `DOWN_REACH` (18 px) under an underside, `SIDE_REACH` (10 px) beside a wall, `UP_REACH` (4 px) over a walking surface, whose lit top stays the brightest thing at the edge. A plank board casts from its top `BOARD_DEPTH` (5 px); a hung deck (12.128) casts from its whole cell. Slopes cast none, and the room's outside casts none.
-- **Clean steps, no dither.** The falloff is `LEVELS` (4) steps in 2-pixel blocks. A first try used `DeepShade`'s 4 x 4 ordered dither; against the Boughs' pale day air (12.112) the checker read as grime, and the clean steps read as a cast shadow in every zone.
+- **The air darkens toward every edge** (`scripts/world/air_shade.gd`, `AirShade`). On the backdrop's side of each solid edge, plank board and hung deck, the air darkens to `MAX_ALPHA` (0.6) of a near-black at the edge and falls off with the key light from the top left (12.3): `DOWN_REACH` (16 px since pass 660, 12.136) under an underside, `SIDE_REACH` (10 px) beside a wall, `UP_REACH` (4 px) over a walking surface, whose lit top stays the brightest thing at the edge. A plank board casts from its top `BOARD_DEPTH` (5 px); a hung deck (12.128) casts from its whole cell. Slopes cast none, and the room's outside casts none.
+- **Clean steps, no dither.** The falloff is `LEVELS` (8 since pass 660, 12.136; 4 before) steps in 2-pixel blocks. A first try used `DeepShade`'s 4 x 4 ordered dither; against the Boughs' pale day air (12.112) the checker read as grime, and the clean steps read as a cast shadow in every zone.
 - **Behind everything.** It draws at `z_index` -3, behind the tiles, the set pieces, the light shafts and every actor, once per room load as one texture (a pattern per neighbourhood, cached), so it costs nothing per frame.
 
 Judged by eye at 1x and 2x in `tower/foot`, `evercrown/veins`, `boughs/canopy_bridge`, `spires/sky_steps` and `hearthroot/plaza`. `tests/test_air_shade.gd` holds it.
@@ -3290,6 +3290,16 @@ The grade of pass 655 found fights hard to read, and among its reasons "the hero
 - **Inside the outline, with no edge** (`CHUNK` 4 px, `HAZE_FADE` 0.6 and 0.3). The veil lies on the main trunk inside its night-0 outline and nowhere else, so the trunk keeps its shape. It is laid in 4 px cells and fades out over two cells round the body, so it reads as air between the hero and the root, not a patch. At most `MAX_HAZE` 6 bodies at once. The baked piece is unchanged; only the veil is drawn live, still at z -2 behind every body.
 
 Judged by eye at 1x, 2x and 4x in `heartwood-tell`: the hero now stands clear of the trunk, his cloak's edge and boots read, and away from him the root is as painted. `test_the_root_hazes_behind_whoever_stands_before_it` (`tests/test_high_seat.gd`) holds it.
+
+### 12.136 The air's shade follows a vault's slope (pass 660)
+
+The grade of pass 655 named "the canopy's dithered tile edges against a soft backdrop" (`boughs/canopy_bridge`). Hiding the layers one at a time showed them to be `AirShade` (12.129): its falloff took a haunch (12.78) for open air, so the square cells behind each slope of a vault cast square shadows across the slope's open half. Every vault wore a staircase of grey boxes beside its drawn diagonal, and against the Boughs' pale day air (12.112) it read as grime on the tile edges.
+
+- **A haunch casts from its diagonal** (`AirShade.HAUNCH_WEST`, `HAUNCH_EAST`; `Room` passes `_haunch_cells()`). The air's distance to a haunch is measured to its solid triangle (`haunch_distance`), each axis against its own reach as for a block, so the falloff runs in bands parallel to the slope the tile draws. The haunch's own cell is painted whole, its solid half behind the tile, so no pale seam shows along the diagonal.
+- **Softer steps** (`LEVELS` 8, from 4). At 0.15 a step, each band showed as a line; at 0.075 the falloff reads as a gradient in 2-pixel blocks, still with no dither.
+- **It fades out inside its reach** (`DOWN_REACH` 16 px, from 18). A cell's pattern sees only its neighbours, so the falloff under an underside was cut at 16 px, a hard edge at its lightest step; at 16 it ends on its lightest step.
+
+Judged by eye at 1x, 2x and 3x in `boughs/canopy_bridge` (the vaults now read as clean slopes), `tower/foot` and `evercrown/veins` (unchanged but softer under the decks). `test_air_a_haunch_casts_from_its_diagonal` and `test_air_a_room_passes_its_haunches` (`tests/test_air_shade.gd`) hold it.
 
 ## 13. Asset Production Plan
 
