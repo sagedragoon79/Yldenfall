@@ -38,6 +38,20 @@ const TONES := [
 
 ## The underside of the hall's ceiling, from the origin.
 const CEILING := -288
+
+## The haze that lies over the root behind whoever stands in front of it
+## (pass 659, bible 12.135): the root is the hall's darkest, busiest thing,
+## and the hero's dark outline and cloak were lost on its bark. It is drawn
+## over the trunk only, inside its outline, in CHUNK cells: HAZE_ALPHA over a
+## body's box and HAZE_PAD past it, then HAZE_FADE of it for each cell further
+## out, so it has no hard edge.
+const HAZE := Color("634a41")  # umber-2
+const HAZE_ALPHA := 0.55
+const HAZE_PAD := 3
+const CHUNK := 4
+const HAZE_FADE: Array[float] = [0.6, 0.3]
+## No more than this many bodies get a haze at once.
+const MAX_HAZE := 6
 ## The baked image's rectangle, in world pixels from the origin.
 const IMG := Rect2i(-96, -288, 192, 288)
 ## The dais: its half width and its height. Too low to read as a step.
@@ -94,9 +108,13 @@ const POOL_HIGH := 3
 
 ## Baked once for the whole run.
 static var _baked: Image
+static var _baked_trunk: Image
 
 var t := 0.0
 var _tex: ImageTexture
+var _trunk_tex: ImageTexture
+## The boxes (local px) of the bodies in front of the root this frame.
+var hazed: Array[Rect2] = []
 
 
 func _ready() -> void:
@@ -105,11 +123,91 @@ func _ready() -> void:
 	if _baked == null:
 		_baked = build_image()
 	_tex = ImageTexture.create_from_image(_baked)
+	if _baked_trunk == null:
+		_baked_trunk = build_trunk_mask()
+	_trunk_tex = ImageTexture.create_from_image(_baked_trunk)
 
 
 func _process(delta: float) -> void:
 	t += delta
+	_find_hazed()
 	queue_redraw()
+
+
+## The main trunk inside its outline in HAZE, the rest clear: what the haze
+## may lie over. The outline stays, so the trunk keeps its shape.
+static func build_trunk_mask() -> Image:
+	var img := Image.create(IMG.size.x, IMG.size.y, false, Image.FORMAT_RGBA8)
+	for y in range(CEILING, 0):
+		var cx := root_x(y)
+		var hw := root_half(y)
+		_fill(img, cx - hw, y, hw * 2, 1, HAZE)
+	return img
+
+
+## Whether the pixel at `c` (local) is on the main trunk, inside its outline.
+static func on_trunk(c: Vector2i) -> bool:
+	if c.y < CEILING or c.y >= 0:
+		return false
+	var cx := root_x(c.y)
+	var hw := root_half(c.y)
+	return c.x >= cx - hw and c.x < cx + hw
+
+
+## How strong the haze is (0 to HAZE_ALPHA) in the CHUNK cell whose middle is
+## at `p` (local), with bodies at `boxes`.
+static func haze_at(p: Vector2, boxes: Array[Rect2]) -> float:
+	var a := 0.0
+	for b in boxes:
+		var r := b.grow(HAZE_PAD)
+		var d := maxf(maxf(r.position.x - p.x, p.x - r.end.x), maxf(r.position.y - p.y, p.y - r.end.y))
+		var f := 1.0 if d <= 0.0 else 0.0
+		for i in HAZE_FADE.size():
+			if d > CHUNK * i and d <= CHUNK * (i + 1):
+				f = HAZE_FADE[i]
+		a = maxf(a, HAZE_ALPHA * f)
+	return a
+
+
+## The cells (local, whole CHUNKs) the haze covers for `boxes`, each with its
+## strength: Vector3(x, y, alpha).
+static func haze_cells(boxes: Array[Rect2]) -> Array[Vector3]:
+	var out: Array[Vector3] = []
+	var seen := {}
+	for b in boxes:
+		var r := b.grow(HAZE_PAD + CHUNK * HAZE_FADE.size())
+		var x0 := floori(r.position.x / CHUNK)
+		var y0 := floori(r.position.y / CHUNK)
+		for cy in range(y0, ceili(r.end.y / CHUNK)):
+			for cx in range(x0, ceili(r.end.x / CHUNK)):
+				var k := Vector2i(cx, cy)
+				if seen.has(k):
+					continue
+				seen[k] = true
+				var a := haze_at(Vector2((cx + 0.5) * CHUNK, (cy + 0.5) * CHUNK), boxes)
+				if a > 0.0:
+					out.append(Vector3(cx * CHUNK, cy * CHUNK, a))
+	return out
+
+
+## Finds the bodies that stand in front of the root this frame.
+func _find_hazed() -> void:
+	hazed.clear()
+	if not is_inside_tree():
+		return
+	var area := Rect2(Vector2(IMG.position), Vector2(IMG.size))
+	var bodies: Array = get_tree().get_nodes_in_group("player") + get_tree().get_nodes_in_group("enemy")
+	for body in bodies:
+		if hazed.size() >= MAX_HAZE:
+			break
+		if not (body is Node2D) or not body.is_visible_in_tree():
+			continue
+		var g := Tide.body_rect(body)
+		if g.size == Vector2.ZERO:
+			continue
+		var r := Rect2(to_local(g.position), g.size)
+		if r.grow(HAZE_PAD + CHUNK * HAZE_FADE.size()).intersects(area):
+			hazed.append(r)
 
 
 ## The root's middle at row `y`: it comes up west of the seat's middle and
@@ -570,6 +668,12 @@ static func build_image() -> Image:
 
 func _draw() -> void:
 	draw_texture(_tex, Vector2(IMG.position))
+	# The haze over the trunk behind each body, cell by cell.
+	for c in haze_cells(hazed):
+		var dst := Rect2(c.x, c.y, CHUNK, CHUNK).intersection(Rect2(Vector2(IMG.position), Vector2(IMG.size)))
+		if dst.size.x <= 0.0 or dst.size.y <= 0.0:
+			continue
+		draw_texture_rect_region(_trunk_tex, dst, Rect2(dst.position - Vector2(IMG.position), dst.size), Color(1, 1, 1, c.z))
 	# A bead swells under the side root, then falls.
 	var phase := fposmod(t, DRIP_PERIOD) / DRIP_PERIOD
 	var y := roundf(drip_y(t))
