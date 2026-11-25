@@ -63,9 +63,19 @@ const BURST_INNER := 10.0
 const BURST_REACH := 28.0
 const BURST_SHORT := 0.62
 const BURST_WIDTH := 3.0
+## Pass 657 (bible 12.133): the pass 655 grade found the burst covered a small foe.
+## The spikes aimed into the struck foe (within BURST_INTO of the swing, by cosine)
+## are not drawn, so the burst opens round the foe and back toward the hero; and a foe
+## shorter than BURST_FIT_FULL px gets a shorter reach, in proportion, down to
+## BURST_FIT_MIN of it. The middle stays BURST_INNER wide whatever the foe.
+const BURST_INTO := 0.8
+const BURST_FIT_FULL := 30.0
+const BURST_FIT_MIN := 0.7
 
 var dir := Vector2.RIGHT
 var size := 1.0
+## How far the burst reaches for the struck foe, BURST_FIT_MIN to 1 (fit_for).
+var fit := 1.0
 var _life := LIFE
 var _angles: Array[float] = []
 ## The sheet being played ({} for the code look): frames, pivot, fps.
@@ -107,10 +117,12 @@ static func load_sheet(base: String) -> Dictionary:
 
 
 ## Adds a spark to `parent` at global `at`, its rays thrown along `swing_dir`.
-static func spawn(parent: Node, at: Vector2, swing_dir: Vector2, scale_by := 1.0) -> HitSpark:
+## `foe_height` is the struck foe's height in world px (0 for one of full size).
+static func spawn(parent: Node, at: Vector2, swing_dir: Vector2, scale_by := 1.0, foe_height := 0.0) -> HitSpark:
 	var s := HitSpark.new()
 	s.dir = swing_dir.normalized() if swing_dir != Vector2.ZERO else Vector2.RIGHT
 	s.size = scale_by
+	s.fit = fit_for(foe_height)
 	parent.add_child(s)
 	s.global_position = at
 	return s
@@ -168,6 +180,14 @@ func burst() -> float:
 	return 1.0 if t <= 0.5 else 1.0 - (t - 0.5) / 0.5
 
 
+## The burst's reach for a foe `foe_height` px tall: 1 for a full-sized foe (or 0,
+## unknown), less for a small one, never under BURST_FIT_MIN.
+static func fit_for(foe_height: float) -> float:
+	if foe_height <= 0.0:
+		return 1.0
+	return clampf(foe_height / BURST_FIT_FULL, BURST_FIT_MIN, 1.0)
+
+
 ## The burst's rays now, relative to the spark: [from, to, width] for each, rounded to
 ## whole pixels. They open outward a little as the burst fades.
 func burst_rays() -> Array:
@@ -179,7 +199,9 @@ func burst_rays() -> Array:
 	var base := dir.angle() + PI / BURST_RAYS
 	for i in BURST_RAYS:
 		var v := Vector2.from_angle(base + TAU * i / BURST_RAYS)
-		var reach := BURST_REACH * (1.0 if i % 2 == 0 else BURST_SHORT)
+		if v.dot(dir) > BURST_INTO:
+			continue
+		var reach := maxf(BURST_REACH * fit * (1.0 if i % 2 == 0 else BURST_SHORT), BURST_INNER + 4.0)
 		var from := v * (BURST_INNER + push) * size
 		var to := v * (reach + push) * size
 		out.append([from.round(), to.round(), BURST_WIDTH if i % 2 == 0 else BURST_WIDTH - 1.0])

@@ -1331,7 +1331,7 @@ func _process_attack_hits() -> void:
 				Sfx.play(BLOODLET_SOUND, 0.06, -4.0)
 			hit_something = true
 			if collider is Node2D:
-				HitSpark.spawn(get_parent(), _contact_point(rect, collider, dir), dir, HEAVY_SPARK if is_heavy_swing else 1.0)
+				HitSpark.spawn(get_parent(), _contact_point(rect, collider, dir), dir, HEAVY_SPARK if is_heavy_swing else 1.0, _half_extent(collider, Vector2.DOWN) * 2.0)
 			if attack_kind == "up" and rising_cut and collider.has_method("launch"):
 				collider.launch()
 			if collider.is_in_group("enemy"):
@@ -1969,7 +1969,7 @@ func _riposte(foe: Node2D) -> void:
 	foe.take_hit(roundi(heavy_damage * blade_mult()), Vector2(facing, 0) * 1.8)
 	var at: Vector2 = foe.center() if foe.has_method("center") else foe.global_position
 	at.x -= facing * minf(_half_extent(foe, Vector2.RIGHT), SPARK_EDGE_MAX)
-	HitSpark.spawn(get_parent(), at, Vector2(facing, 0), HEAVY_SPARK)
+	HitSpark.spawn(get_parent(), at, Vector2(facing, 0), HEAVY_SPARK, _half_extent(foe, Vector2.DOWN) * 2.0)
 	Sfx.play("heavy", 0.05)
 	ripostes += 1
 
