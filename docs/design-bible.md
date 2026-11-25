@@ -2117,7 +2117,7 @@ The pass 545 grade named Vorrhallow's standing water (4.4, the pass 259 row of t
 
 - **The waterline.** Every visible member of the `player` and `enemy` groups whose collision box crosses the surface, over a surface column, gets a bright line across its body where the water meets it, lifted a pixel, with a lip at each end two pixels past its sides.
 - **Ripples.** Each wading body lets a ripple go every `WAKE_STILL` (1.1 s) standing and every `WAKE_MOVING` (0.35 s) while it moves faster than 20 px/s. A ripple is a pale crest over a dark trough running out both ways from the body's edges, spreading 30 px with an ease-out over `RING_LIFE` (1.3 s) and fading to nothing; at most `MAX_RINGS` live at once.
-- **Depth.** The surface row's body is no longer one fill: it is lighter just under the surface (`SHALLOW`) and darkens and thickens toward the floor (`FLOOR`) in four steps through a 2 x 2 ordered dither in 2-pixel blocks, drawn once as a strip texture, the same grain as the swim water (12.39). Cells under the surface row (the spike pits) take the floor's tone.
+- **Depth.** The surface row's body is no longer one fill: it is lighter just under the surface (`SHALLOW`) and darkens and thickens toward the floor (`FLOOR`) in four steps through a 2 x 2 ordered dither in 2-pixel blocks, drawn once as a strip texture, the same grain as the swim water (12.39). Cells under the surface row (the spike pits) take the floor's tone. Since pass 658 the water clears over whatever wades in it (12.134).
 - Drained, the hall keeps no wake or ripple.
 
 Judged by eye at 1x and 2x in `vorrhallow/flooded_hall` with the hero and a Crystal Dwarf wading. `tests/test_tide_wake.gd` checks the ripple's spread and fade, the depth steps and dither, the hero's waterline and ripples (and that running sends them faster), that nothing out of the water makes a wake, a foe's waterline, and the drained hall.
@@ -3272,6 +3272,15 @@ The grade of pass 655 found fights hard to read, and among its reasons "the burs
 - **Fitted to the foe** (`HitSpark.fit_for`, `BURST_FIT_FULL` 30 px, `BURST_FIT_MIN` 0.7). A blow measures the foe it lands on by its box (`Player._half_extent` down, twice), and a foe shorter than 30 px gets a reach shorter in proportion, never under 0.7 of it (about 20 px for a grub, against 28). The open middle (`BURST_INNER`) is the same for every foe, and every spike keeps some length. A full-sized foe, a guardian and a riposte's target get the burst as before.
 
 Judged by eye at 1x and 3x in the eleven fight frames: the grub in `heartwood-hit` and the mantis in `boughs-hit` now show whole beside the burst, and the Tower's dwarf reads as before. `test_a_spark_bursts_wide_round_an_open_middle` and `test_a_small_foes_burst_leaves_it_in_sight` (`tests/test_hit_impact.gd`) and `test_a_small_foe_gets_a_smaller_burst` (`tests/test_combat.gd`) hold it.
+
+### 12.134 The water clears over what wades in it (pass 658)
+
+The grade of pass 655 found fights hard to read, and among its reasons "a foe half under the flooded hall's cyan water band". The tide (12.41) stands a full tile (32 px) deep on the floors and is drawn in front of what wades in it, at up to 0.68 alpha toward the floor, with the hall's mirror (12.115) laid over it at 0.5: the Crystal Dwarf (a 28 px box) lost everything under its belt to a teal band, and the hero his boots.
+
+- **Cleared over a wader** (`Tide.CLEAR` 0.35, `CLEAR_PAD` 2 px). Over every body that breaks the surface (the waders of 12.41), from its box's edge 2 px out, the surface row's body and its mirror are drawn at 0.35 of their strength, so legs and feet show through, tinted, under the bright waterline that still crosses them. The water elsewhere is as before, and the ripples, glints and laps stay on top.
+- **In the dither's columns** (`CHUNK` 4 px). The clearing is laid in 4 px columns, the body strip's dither period, so the pattern keeps its phase; one more column either side is half way back, so the clearing has no hard edge. The mirror's shader reads the same spans (`clear_spans`, at most `MAX_CLEAR` 8 at once) and clears by the same amount. The deep water's swim surface (`SwimWater`) shares the shader and clears nothing.
+
+Judged by eye at 1x and 3x in `vorrhallow-tell`: the Crystal Dwarf now stands whole in the water with its feet on the floor, and the hero's boots show; the band reads as water round them, not a bar across them. `test_the_water_clears_over_a_wader` (`tests/test_tide_wake.gd`) holds it.
 
 ## 13. Asset Production Plan
 

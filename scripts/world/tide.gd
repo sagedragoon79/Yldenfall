@@ -11,6 +11,11 @@ extends Node2D
 ## waterline crosses the body where the water meets it, and ripples spread from
 ## it along the surface, more often while it moves. The water itself is lighter
 ## just under the surface and darkens toward the floor in dithered steps.
+##
+## Pass 658 (design bible 12.134): the water clears over whatever wades in it. The
+## body and the mirror over a wader's box (and CLEAR_PAD past it) are drawn at CLEAR
+## of their strength, with a CHUNK of half strength either side, so a foe's legs show
+## through the band instead of sinking under it. The line across it stays bright.
 
 const DRAIN_FLAG := "boss:thane_vorrund"
 const WATER := Color(0.16, 0.38, 0.44, 0.55)
@@ -37,6 +42,15 @@ const RING_LIFE := 1.3
 const RING_SPREAD := 30.0
 const RING_ALPHA := 0.75
 const MAX_RINGS := 48
+
+## Over a wader the water is this much of its usual strength (body and mirror), from
+## its box's edge CLEAR_PAD px out, in CHUNK px columns (the dither's period, so its
+## pattern keeps its phase); one more CHUNK either side is half way back. At most
+## MAX_CLEAR waders are cleared at once.
+const CLEAR := 0.35
+const CLEAR_PAD := 2.0
+const CHUNK := 4
+const MAX_CLEAR := 8
 
 ## Spikes under the water keep their steel rim (bible 12.49): the water is drawn in
 ## front of them and would dim it, so it draws the rim again over itself at this alpha.
@@ -71,6 +85,13 @@ uniform float tint_mix = 0.3;
 uniform float still = 4.0;
 uniform float sway = 1.0;
 uniform float pace = 1.4;
+// Pass 658: the water clears over a wader (Tide.CLEAR): each span [x, y] in this
+// rect's parent's px, read in 4 px columns; one column either side is half way.
+uniform vec4 clear_spans[8];
+uniform int clear_n = 0;
+uniform float clear_k = 0.35;
+uniform float left = 0.0;
+uniform float width = 1.0;
 // How far one local pixel down and one across move in screen UV.
 varying vec2 step_uv;
 void vertex() {
@@ -87,7 +108,15 @@ void fragment() {
 	float s = k >= still ? floor(sin(time * pace + k * 0.9) * sway + 0.5) : 0.0;
 	vec4 above = texture(screen_tex, SCREEN_UV + vec2(s, -up) * step_uv);
 	float fade = clamp(1.0 - (k - top) / depth, 0.0, 1.0);
-	COLOR = vec4(mix(above.rgb, tint.rgb, tint_mix), alpha * fade);
+	float lx = left + floor(UV.x * width / 4.0) * 4.0 + 2.0;
+	float f = 1.0;
+	for (int i = 0; i < 8; i++) {
+		if (i < clear_n) {
+			float d = max(clear_spans[i].x - lx, lx - clear_spans[i].y);
+			f = min(f, d <= 0.0 ? clear_k : (d < 4.0 ? (1.0 + clear_k) * 0.5 : 1.0));
+		}
+	}
+	COLOR = vec4(mix(above.rgb, tint.rgb, tint_mix), alpha * fade * f);
 }"
 
 ## The lap at a bank (12.97): still water laps slower and fainter than deep water.
@@ -109,6 +138,8 @@ var sunk: Array = []
 var wakes: Array = []
 ## Each spreading ripple: [x, half width of what made it, age (s)].
 var rings: Array = []
+## Where the water clears this frame: one Vector2(first px, end px) per wader (local).
+var clear_spans: Array[Vector2] = []
 
 var _t := 0.0
 ## The reflection laid over each run of the surface row (see REFLECT_SHADER).
@@ -190,6 +221,9 @@ func _lay_reflections() -> void:
 		mat.set_shader_parameter("still", float(REFLECT_STILL))
 		mat.set_shader_parameter("sway", REFLECT_SWAY)
 		mat.set_shader_parameter("pace", REFLECT_PACE)
+		mat.set_shader_parameter("clear_k", CLEAR)
+		mat.set_shader_parameter("left", rect.position.x)
+		mat.set_shader_parameter("width", rect.size.x)
 		rect.material = mat
 		add_child(rect)
 		reflections.append(rect)
@@ -255,6 +289,23 @@ static func wades(rect: Rect2, y: float) -> bool:
 	return rect.position.y < y and rect.end.y > y
 
 
+## The span (local px, snapped out to whole CHUNKs) the water clears over a body
+## whose middle is at `x` and half as wide as `half`.
+static func clear_span(x: float, half: float) -> Vector2:
+	var a := floorf((x - half - CLEAR_PAD) / CHUNK) * CHUNK
+	var b := ceilf((x + half + CLEAR_PAD) / CHUNK) * CHUNK
+	return Vector2(a, b)
+
+
+## How strong the water is (1 its usual) in the CHUNK column whose middle is at `px`.
+static func clarity_at(px: float, spans: Array[Vector2]) -> float:
+	var f := 1.0
+	for s in spans:
+		var d := maxf(s.x - px, px - s.y)
+		f = minf(f, CLEAR if d <= 0.0 else ((1.0 + CLEAR) * 0.5 if d < CHUNK else 1.0))
+	return f
+
+
 ## How far from its middle a ripple has spread at `age` (s).
 static func ring_reach(half_w: float, age: float) -> float:
 	var k := clampf(age / RING_LIFE, 0.0, 1.0)
@@ -284,13 +335,22 @@ func _process(delta: float) -> void:
 	if drained():
 		wakes.clear()
 		rings.clear()
+		clear_spans.clear()
 		if not reflections.is_empty():
 			_lay_reflections()
 		return
 	_t += delta
-	for r in reflections:
-		(r.material as ShaderMaterial).set_shader_parameter("time", _t)
 	_wake(delta)
+	var spans := PackedVector4Array()
+	for s in clear_spans:
+		spans.append(Vector4(s.x, s.y, 0.0, 0.0))
+	while spans.size() < MAX_CLEAR:
+		spans.append(Vector4.ZERO)
+	for r in reflections:
+		var mat := r.material as ShaderMaterial
+		mat.set_shader_parameter("time", _t)
+		mat.set_shader_parameter("clear_spans", spans)
+		mat.set_shader_parameter("clear_n", clear_spans.size())
 	sunk_spikes()
 	queue_redraw()
 
@@ -298,6 +358,7 @@ func _process(delta: float) -> void:
 ## Finds what wades this frame and lets each body's ripples go.
 func _wake(delta: float) -> void:
 	wakes.clear()
+	clear_spans.clear()
 	var y := surface_y()
 	var seen := {}
 	var bodies: Array = get_tree().get_nodes_in_group("player") + get_tree().get_nodes_in_group("enemy")
@@ -314,6 +375,8 @@ func _wake(delta: float) -> void:
 		var x := r.get_center().x
 		var half := r.size.x * 0.5
 		wakes.append([x, half])
+		if clear_spans.size() < MAX_CLEAR:
+			clear_spans.append(clear_span(x, half))
 		var id: int = body.get_instance_id()
 		seen[id] = true
 		var speed := absf((body as CharacterBody2D).velocity.x) if body is CharacterBody2D else 0.0
@@ -355,6 +418,20 @@ func sunk_spikes() -> Array[Vector2]:
 	return _sunk
 
 
+## One tile of the surface row's body, cleared in CHUNK columns where a wader stands.
+func _draw_surface_cell(cell: Rect2) -> void:
+	var near := false
+	for s in clear_spans:
+		near = near or (s.x - CHUNK < cell.end.x and s.y + CHUNK > cell.position.x)
+	if not near:
+		draw_texture_rect(_strip, cell, true)
+		return
+	for i in Room.TILE / CHUNK:
+		var x := cell.position.x + i * CHUNK
+		var f := clarity_at(x + CHUNK * 0.5, clear_spans)
+		draw_texture_rect(_strip, Rect2(x, cell.position.y, CHUNK, Room.TILE), true, Color(1, 1, 1, f))
+
+
 func _draw() -> void:
 	var y := surface_y()
 	if drained():
@@ -369,7 +446,7 @@ func _draw() -> void:
 	for c: Vector2i in cells:
 		var cell := Rect2(Vector2(c * Room.TILE), Vector2(Room.TILE, Room.TILE))
 		if c.y == row:
-			draw_texture_rect(_strip, cell, true)
+			_draw_surface_cell(cell)
 		else:
 			draw_rect(cell, pit_color())
 	# Stone that stands in the water is darkened at its faces, and damp over the waterline.
