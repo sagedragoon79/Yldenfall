@@ -353,6 +353,64 @@ sections.append({'id': 'music', 'group': 'Systems', 'label': 'Music', 'title': '
                  'lede': 'Every track in assets/music. Zones play their own track by default; rooms listed here set one in their header.',
                  'layout': 'list', 'filter': 'Kind', 'rows': tracks})
 
+# --- Art direction (docs/art/zone-prompts.json and guardian-briefs.json) -------------------
+# Written by hand from the design bible and the boss scripts, for mockups and asset ideas.
+def art(name):
+    path = os.path.join(ROOT, 'docs', 'art', name)
+    return json.load(open(path, encoding='utf-8')) if os.path.exists(path) else []
+
+
+VIEW = {'vista': 'Vista', 'gameplay': 'Gameplay screen', 'props': 'Props sheet'}
+STYLE = {'pixel': 'pixel art', 'painterly': 'painterly'}
+
+
+def prompt_items(ps, view=True):
+    return [{'name': ' · '.join(([VIEW.get(p.get('view'), p.get('view'))] if view and p.get('view') else []) + [STYLE.get(p['style'], p['style']), p['tool']]),
+             'text': p['text'], 'copy': True} for p in ps]
+
+
+zone_pic = {r['id']: r.get('img') for r in zone_rows}
+art_zones = []
+for z in art('zone-prompts.json'):
+    blocks = [{'title': 'Prompts', 'items': prompt_items(z.get('prompts', []))},
+              {'title': 'Keep out', 'items': [{'name': 'Avoid', 'text': z.get('avoid', ''), 'copy': True}]},
+              {'title': 'Landmarks', 'items': z.get('landmarks', [])},
+              {'title': 'Props and set pieces', 'items': [{'name': x} for x in z.get('props', [])]},
+              {'title': 'Foes', 'items': [{'name': x.split(':', 1)[0], 'text': x.split(':', 1)[1].strip() if ':' in x else ''} for x in z.get('foes', [])]}]
+    art_zones.append(clean({
+        'id': z['id'], 'name': z['name'], 'sub': z.get('town') or '', 'img': zone_pic.get(z['id']),
+        'text': z.get('summary', ''), 'body': z.get('look', ''),
+        'tags': z.get('palette', []), 'fields': {'Town': z.get('town'), 'Prompts': len(z.get('prompts', []))},
+        'blocks': [b for b in blocks if b['items'] and any(i.get('name') or i.get('text') for i in b['items'])],
+        'foot': ('Sources: ' + ', '.join(z.get('sources', []))) if z.get('sources') else '',
+    }))
+if art_zones:
+    sections.append({'id': 'zone_art', 'group': 'Art direction', 'label': 'Zone art prompts', 'title': 'Zone art prompts',
+                     'lede': 'A look and nine image prompts per zone: a vista, a gameplay screen and a props sheet, each as pixel art for GPT Image and PixelLab and as painterly concept art. Open a zone and press Copy on a prompt.',
+                     'layout': 'wide', 'keepOrder': True, 'rows': art_zones})
+
+boss_pic = {r['id']: r.get('img') for r in boss_rows}
+art_bosses = []
+for g in art('guardian-briefs.json'):
+    blocks = [{'title': 'Phases', 'items': g.get('phases', [])},
+              {'title': 'Attacks', 'items': [{'name': a['name'], 'text': 'Tell: %s Effect: %s Counter: %s' % (a.get('tell', ''), a.get('effect', ''), a.get('counter', ''))} for a in g.get('attacks', [])]},
+              {'title': 'How to win', 'items': [{'name': '', 'text': g.get('strategy', '')}]},
+              {'title': 'The arena', 'items': [{'name': g.get('arena', ''), 'text': g.get('arena_text', '')}]},
+              {'title': 'Prompts', 'items': prompt_items(g.get('prompts', []), view=False)},
+              {'title': 'Keep out', 'items': [{'name': 'Avoid', 'text': g.get('avoid', ''), 'copy': True}]}]
+    art_bosses.append(clean({
+        'id': g['id'], 'name': g['name'], 'sub': g.get('title', ''), 'img': boss_pic.get(g['id']),
+        'text': g.get('lore', ''), 'body': g.get('look', ''), 'tags': [title(g.get('kind', ''))] if g.get('kind') else [],
+        'fields': {'Zone': g.get('zone'), 'Arena': g.get('arena'), 'Health': g.get('health'), 'Phases': g.get('phase_count') or len(g.get('phases', [])),
+                   'Attacks': len(g.get('attacks', [])), 'Reward': g.get('reward')},
+        'blocks': [b for b in blocks if b['items'] and any(i.get('name') or i.get('text') for i in b['items'])],
+        'foot': ('Sources: ' + ', '.join(g.get('sources', []))) if g.get('sources') else '',
+    }))
+if art_bosses:
+    sections.append({'id': 'guardian_briefs', 'group': 'Art direction', 'label': 'Guardian briefs', 'title': 'Guardian briefs',
+                     'lede': "Every guardian's look, arena, phases and attacks (with their tells and counters), and three image prompts. Open one for the full brief.",
+                     'layout': 'grid', 'keepOrder': True, 'rows': art_bosses})
+
 cat = {'made': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'sections': sections}
 os.makedirs(CAT, exist_ok=True)
 json.dump(cat, open(os.path.join(CAT, 'catalog.json'), 'w', encoding='utf-8'), indent=1, ensure_ascii=False)

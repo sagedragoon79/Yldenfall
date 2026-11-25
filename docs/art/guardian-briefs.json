@@ -1,0 +1,1478 @@
+[
+  {
+    "id": "gnarlmaw",
+    "name": "Gnarlmaw",
+    "title": "the Root-Gnawer",
+    "zone": "Heartwood",
+    "arena": "Root Chamber",
+    "health": 600,
+    "phase_count": 3,
+    "reward": "Thaw Seed",
+    "kind": "guardian",
+    "lore": "A colossal armored grub that has been chewing the Tree's taproot dry. It lairs in the Root Chamber, the last room before the Heartwood Spring, and the spring runs again only once it is dead. Its fall gives the Thaw Seed and a skill point.",
+    "look": "A segmented grub as long as the chamber is wide: 26 segments, each about 22 world px behind the last, so the whole body runs close to 570 px and the hero reaches only to the top of a ring. The head is a wheel of bark mandibles that spins fast when it lunges, plunges or bites and idles slowly otherwise. Behind it come 22 bark-plated rings that swell to their fattest a third of the way down and taper toward the tail, every third ring a little heavier, each at its own small tilt. The rings behind the neck carry three bark thorns raked back along the top; toward the tail moss gathers over their crests. The plates sit back in cool shadow (darker toward the tail), so the two bright things on him are the head and the tail: three swollen amber-gold sacs, the first the fullest, the last ending in a blunt horn, which pulse with light and pulse fast while he is stuck. The body bows in a slow wave as it crawls and thrashes while bitten into a wall. When a stagger cracks him every plate shows at full colour and the body shudders.",
+    "arena_text": "The Root Chamber is one screen (40x23 tiles) of living wood: a round chamber inside the root, with walls and a ceiling of packed bark that he bursts out of and burrows into. The floor is flat and wide. Two wooden ledges climb each wall (one about six tiles up, one about eleven), hung like rope-braced scaffolds, and wall jumps between them are the way over a lunge. Cyan fungus glows in the corners and on dangling roots against a dark tangle of roots behind. In phase 2 his sap clumps harden into amber mounds (about 2.5 by 2 tiles) that stand as platforms for 7 s and warn for the last 1.2 s before they crumble. In phase 3 he tears away the floor between columns 7 and 32, leaving a pit and two short stubs of floor by the walls; a fall into it puts you back on the nearer stub. The way in is from the west (the Boss Gate), and the east door leads to the Heartwood Spring.",
+    "phases": [
+      {
+        "name": "Reveal (2.4 s)",
+        "text": "The walls shake and the name card shows; the head bursts 96 px out of the wall across from you (0.5 s), roars with its mandibles spinning (1.3 s), and pulls back in (0.6 s). Nothing hurts and nothing lands on him during it."
+      },
+      {
+        "name": "Phase 1 (full to 60%)",
+        "text": "He lunges along the floor from the wall on the far side from you. Every second lunge he bites into the far wall and stays stuck for 2.6 s with his amber tail beside the wall he came from, then roars and withdraws. Rests 0.6 s between moves."
+      },
+      {
+        "name": "Phase 2 (below 60%)",
+        "text": "A 1.6 s roar with dust shaking from the ceiling. He lives in the ceiling now and cycles four moves: sap rain, tail dangle, then two plunges."
+      },
+      {
+        "name": "Phase 3 (below 30%)",
+        "text": "A 1.6 s roar while amber cracks spread across the floor, then the floor between columns 7 and 32 falls away. He lunges along three lanes in turn (ledge height, high, then floor level), and every lunge ends bitten into the far wall, now for 3.2 s. Rests are shorter (0.36 s)."
+      }
+    ],
+    "attacks": [
+      {
+        "name": "Wall lunge",
+        "tell": "The wall he will burst from glows amber and cracks, spitting debris, for 0.9 s while the head pushes out a little; a crumble sound, then a roar.",
+        "effect": "The head charges straight across the room at 360 px/s along the floor (or a ledge lane in phase 3) with the body following the same line; every segment hurts 20 on contact.",
+        "counter": "Climb the wall ledges and wall-jump over the body; read which wall glows, since he always comes from the side away from you."
+      },
+      {
+        "name": "Stuck bite",
+        "tell": "Every second lunge in phase 1, every lunge in phase 3: the head does not stop at the wall but bites into it with a crash and a hard shake.",
+        "effect": "He is pinned for 2.6 s (3.2 s in phase 3), thrashing, then roars and withdraws at 300 px/s.",
+        "counter": "Run to the wall he came from and strike the amber tail sacs, the only part that takes full damage. 48 tail damage in one window staggers him."
+      },
+      {
+        "name": "Sap rain",
+        "tell": "A rumble and a shake; each clump first swells as a sap drip on the ceiling for 0.7 s.",
+        "effect": "Five clumps fall 0.45 s apart, one over where you stand and the rest spread across the room, 15 each. Where they land they harden into amber mounds you can stand on for 7 s.",
+        "counter": "Step out from under each swelling drip, then use the mounds as footing to reach the dangling tail."
+      },
+      {
+        "name": "Tail dangle",
+        "tell": "A column of falling dust and an amber glow on the ceiling over you for 0.8 s.",
+        "effect": "The tail drops out of the ceiling and hangs there swaying like a pendulum for 4 s, then pulls back up. It hurts 20 on contact.",
+        "counter": "This is the phase 2 opening: strike the tail from the floor, a ledge or a sap mound. Tail damage here builds toward the stagger."
+      },
+      {
+        "name": "Plunge",
+        "tell": "A column of dust over you for 0.8 s, a faint amber line down to the floor and a darkening spot where it will land.",
+        "effect": "The head drives straight down out of the ceiling at 560 px/s to the floor, holds 0.6 s and rises. Contact 20.",
+        "counter": "Move out of the column; the head and plates are armored, so do not trade blows with it."
+      },
+      {
+        "name": "Floor tear",
+        "tell": "The 1.6 s roar that opens phase 3, with amber cracks spreading across the floor.",
+        "effect": "The floor between columns 7 and 32 falls away for the rest of the fight.",
+        "counter": "Get to a wall stub or a ledge before the roar ends; from here the fight is on the ledges."
+      },
+      {
+        "name": "Body contact",
+        "tell": "Always on.",
+        "effect": "Every segment hurts 20 on touch. The head and bark plates take only a quarter of a blow.",
+        "counter": "Keep blows for the tail, or for any segment while a stagger has the plates cracked."
+      }
+    ],
+    "strategy": "The whole fight is about the tail. In phase 1 watch for the glowing wall, get up a wall ledge, and wall-jump over the lunge; when a lunge ends with the head stuck in the far wall, the tail is right by the wall he came out of, so drop down there and cut it. Put 48 damage into the tail inside one stuck or dangle window and his plates crack for 2 s: every segment then takes full damage and he stays pinned 2 s longer, so a stagger is the time to unload everything. In phase 2 stay mobile under the ceiling: sidestep the dust columns (one is a plunge, one a dangle), and use the amber sap mounds to reach the hanging tail. In phase 3 get onto a ledge the moment the floor cracks; the lanes change each lunge, but every lunge sticks, so each one is an opening. The mistakes that kill are hitting the plated head and body for a quarter damage, standing in a dust column, and being on the torn floor when it drops.",
+    "prompts": [
+      {
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art for a 2D side-scrolling platformer, strict orthographic side view, level camera, no perspective. 1920x1080 16:9 frame, 32 px tiles, crisp hard pixels, no anti-aliasing or blur, limited palette of about 96 colours in hue-shifted ramps, 1 px dark outlines on figures, top-left key light, no pure black or white. Lit play plane in front of darker parallax layers fading into atmosphere, low dark foreground fringe. Scene: the Root Chamber, a round chamber inside a giant tree root, walls and ceiling of packed dark bark, wooden scaffold ledges braced with rope on both walls, cyan glowing fungus and hanging root tendrils against a dark tangle of roots in the background. A colossal armored grub bursts out of the right wall and lunges along the floor: its head is a spinning wheel of bark mandibles, its body a long chain of bark-plated rings, the front rings raked with bark thorns, the rear rings mossy, all sitting in cool shadow, and it ends in three swollen glowing amber-gold tail sacs, the last with a blunt horn. Bark debris flies from the cracked wall. The hero is small against it: a slender elf wanderer with violet hair, hood, long dark green cape and scarf, brown leather armor, sword in his near hand, round shield on his far arm. He is mid wall-jump off the left wall above the grub's back, both feet tucked, sword ready. Cyan fungus light and amber tail glow."
+      },
+      {
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Giant armored grub, side view facing right: head a round wheel of bark mandibles, long chain of dark brown bark-plated rings with bark thorns on front rings and moss on rear rings, three glowing amber-gold tail sacs ending in a blunt horn. HD pixel art sprite, strict orthographic side view, no perspective, single color dark outline, limited palette, plain background."
+      },
+      {
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept key art with visible brushwork, kept side-on like a 2D platformer screen with a level camera and no perspective tilt, the same palette and mood as the game. A small hooded elf wanderer with a sword and round shield leaps from a wooden ledge inside a vast hollow tree root while a colossal bark-plated grub erupts from the wall below him, its mandible wheel spinning and bark splinters flying. The grub's long ringed body curves across the whole floor in shadow, thorny near the head and mossy toward the end, and its tail glows amber-gold like trapped sap. Cool cyan fungus light, warm amber light from the tail and the cracked wall, dark brown bark everywhere, dust in the air."
+      }
+    ],
+    "avoid": "perspective, three-quarter or top-down view, isometric, blur, anti-aliasing, soft gradients on sprites, text, logos, UI, watermark, pure black, pure white, a smooth worm with no plates, a centipede with legs",
+    "sources": [
+      "design bible 8 (opening table, numbers table)",
+      "design bible 8.1",
+      "scripts/bosses/gnarlmaw.gd",
+      "scripts/bosses/sap_clump.gd",
+      "scripts/bosses/sap_mound.gd",
+      "levels/heartwood/root_chamber.room",
+      "workbench/catalog/guardians/gnarlmaw.png"
+    ],
+    "notes": "Code: phase 2 cycles rain, dangle, plunge, plunge (moves mod 4), and phase 3 lanes go ledge height, high, floor. Code gives XP 200 and gold 120; the catalog lists XP as null. Plunge and dangle contact damage is the segments' 20 (no separate number)."
+  },
+  {
+    "id": "foreman",
+    "name": "The Foreman",
+    "title": "Golem of Kettleforge",
+    "zone": "Hollin Tower",
+    "arena": "Foreman's Hall",
+    "health": 220,
+    "phase_count": 2,
+    "reward": "Delver's Pick",
+    "kind": "mini-boss",
+    "lore": "A rock golem the dwarves of Kettleforge set to work the Hollin Tower, still wearing a foreman's lamp-helm. It never stopped working, and the Delver's Pick is wedged in its back. Beat it and the pick is yours (no skill point); it is the one mini-boss in the Boss Rush.",
+    "look": "A hulking golem of rounded sandstone boulders, about one and a half times the hero's height, broad-shouldered with fists like boulders and short heavy legs. Warm brown and ochre rock with darker seams, and thin cracks between the stones that glow lamp orange from inside. On its small head sits a dented dwarven foreman's helm with a brass lamp on the brow. The Delver's Pick sticks out of its back, the iron head and wooden haft rising over one shoulder. It plods slowly (45 px/s) and never reels: rock does not stagger. Winding up it raises both fists overhead, heaves a boulder above its head, or crouches and scrapes the floor with dust spurting behind it; it reads in the tower's iron, rust and lamp-orange colours.",
+    "arena_text": "Foreman's Hall is one screen (40x23 tiles), a tall stone hall in the Hollin Tower with a flat floor and a high ceiling that sheds rocks. Two short ledges stand about four tiles above the floor, one toward each end, high enough to get over a charge. The only door is the west one back to the Foreman's Gate. When the golem hits a wall, or pounds in phase 2, rocks shake loose from the ceiling, each marking its spot with trickling dust and a shadow before it drops.",
+    "phases": [
+      {
+        "name": "Reveal (1.4 s)",
+        "text": "It turns to you with a roar under its name card."
+      },
+      {
+        "name": "Phase 1 (full to 50%)",
+        "text": "It walks after you for 0.9 s, then picks by distance: pound up close (84 px), throw at middle range, charge from far off (120 px) or every fourth move. It never pounds or throws twice in a row; a repeat becomes a charge."
+      },
+      {
+        "name": "Phase 2 (below 50%)",
+        "text": "Tells 25% shorter (pound 0.56 s, throw 0.45 s, charge 0.64 s), the charge runs at 300 px/s instead of 250, every pound also shakes two rocks down, and a wall hit drops four rocks instead of three."
+      }
+    ],
+    "attacks": [
+      {
+        "name": "Pound",
+        "tell": "Fists raised overhead for 0.75 s (0.56 s below half) with a low groan.",
+        "effect": "A two-fisted slam that crushes a space 56 px wide in front of it for 22, and a shockwave rolls out each way along the floor (12, 170 px/s, about 0.9 s). Below half it also drops two ceiling rocks.",
+        "counter": "Back off out of reach during the fists-up pose and hop the shockwaves."
+      },
+      {
+        "name": "Throw",
+        "tell": "It heaves a boulder up over its head for 0.6 s (0.45 s) with a groan.",
+        "effect": "The boulder is lobbed in an arc that reaches you in 0.8 s, 16 damage.",
+        "counter": "Move once it lets go; the arc aims where you stood."
+      },
+      {
+        "name": "Charge",
+        "tell": "It crouches and scrapes the floor, dust spurting behind it, for 0.85 s (0.64 s), with a roar.",
+        "effect": "It barrels across the hall at 250 px/s (300 below half) for up to 3 s; body contact 20. If it meets a wall it is stunned for 1.8 s and the shock drops three rocks (four below half), one over you.",
+        "counter": "Jump it or get onto a ledge, then punish the stun: every blow lands in full while it is dazed."
+      },
+      {
+        "name": "Rockfall",
+        "tell": "Trickling dust and a shadow on the floor for 0.7 s.",
+        "effect": "A rock drops, 16 damage, spread across the hall with one over you.",
+        "counter": "Watch the floor shadows during each stun and keep striking only where the floor is clear."
+      },
+      {
+        "name": "Body contact",
+        "tell": "Always on.",
+        "effect": "20 on touch.",
+        "counter": "Do not stand inside it."
+      }
+    ],
+    "strategy": "Its rock halves every blow except one from above or while it is stunned, and it cannot be parried at all, so the fight is won two ways: strike down onto its helm from above, or bait the charge into a wall. Stand far away to draw the charge, jump it or step onto a ledge, and the golem rams the wall behind you: you then have 1.8 s of full-damage blows, but check the dust for falling rocks first. Up close, the fists-up pose is the warning to back off and hop the two shockwaves. Below half everything comes faster and the pounds drop rocks too. The mistakes that kill are trading side blows at half damage, standing under a rock shadow while punishing the stun, and trying to parry.",
+    "prompts": [
+      {
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art for a 2D side-scrolling platformer, strict orthographic side view, level camera, no perspective. 1920x1080 16:9 frame, 32 px tiles, crisp hard pixels, no anti-aliasing or blur, limited palette of about 96 colours in hue-shifted ramps, 1 px dark outlines on figures, top-left key light, no pure black or white. Lit play plane in front of darker parallax layers fading into atmosphere, low dark foreground fringe. Scene: a tall stone hall inside a dwarven mine tower, iron girders and riveted rust-red plates in the walls, hanging lamps glowing orange, dim pillars and machinery in the parallax behind, a short stone ledge on each side above a flat floor. A huge rock golem made of rounded brown sandstone boulders, thin cracks glowing lamp orange between the stones, a dented dwarven foreman's helm with a brass lamp on its small head and an iron pick wedged in its back, has just slammed both fists into the floor: a shockwave of orange dust rolls out each way and rocks are shaking loose from the ceiling, each with a shadow on the floor below. The hero is small against it: a slender elf wanderer with violet hair, hood, long dark green cape and scarf, brown leather armor, sword in his near hand, round shield on his far arm. He hops over the shockwave mid-jump, sword raised, about two thirds of the golem's height. Warm lamp light, iron grey, rust and orange glow."
+      },
+      {
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Hulking rock golem of rounded brown sandstone boulders, glowing orange cracks between stones, huge fists, small head in a dented dwarven foreman's helm with a brass lamp, iron pick stuck in its back, side view facing right. HD pixel art sprite, strict orthographic side view, no perspective, single color dark outline, limited palette, plain background."
+      },
+      {
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept key art with visible brushwork, kept side-on like a 2D platformer screen with a level camera and no perspective tilt, the same palette and mood as the game. In a tall dwarven stone hall lit by hanging orange lamps, a hulking boulder golem in a dented miner's helm with a lamp on its brow charges across the floor, dust trailing, a pick handle jutting from its back, while a small hooded elf wanderer with sword and round shield leaps up onto a stone ledge to let it pass. Rocks hang loose in the ceiling. Rust, iron grey, warm sandstone and glowing orange seams."
+      }
+    ],
+    "avoid": "perspective, three-quarter or top-down view, isometric, blur, anti-aliasing, soft gradients on sprites, text, logos, UI, watermark, pure black, pure white, a crystal golem, a metal robot",
+    "sources": [
+      "design bible 7 (Hollin Tower row, Rock Golem)",
+      "design bible 8 (opening and numbers tables, mini-boss list)",
+      "scripts/bosses/foreman.gd",
+      "scripts/bosses/rubble.gd",
+      "scripts/enemies/shockwave.gd",
+      "levels/tower/foreman_hall.room",
+      "levels/tower/foreman_gate.room",
+      "workbench/catalog/foes/foreman.png"
+    ],
+    "notes": "Its rock takes full damage only from above or while stunned; it is the Delver's Pick fight, so the pogo may not be in hand yet when you first meet it (the reward is the pick). Rock and shockwave damage come from rubble.gd (16) and shockwave.gd (12)."
+  },
+  {
+    "id": "durgan",
+    "name": "Durgan",
+    "title": "Hammer of Kettleforge",
+    "zone": "Hollin Tower",
+    "arena": "Kettleforge Lift",
+    "health": 260,
+    "phase_count": 3,
+    "reward": "Sun Seed",
+    "kind": "guardian",
+    "lore": "A dwarf champion fused with a mining engine, piloting a walking siege drill. The dwarf inside is still conscious and begs to be stopped, held in his seat by a harness of the Everbloom's crystal. Beating him frees Kettleforge and gives the Sun Seed and a skill point.",
+    "look": "A walking siege drill a little taller than the hero and twice as wide: a riveted barrel hull of rust-red and copper plate with brass gauges and portholes, standing on two jointed piston legs with broad iron feet. A ribbed bronze drill cone juts from the front. Two exhaust stacks rise from the back of the top, and a glass dome cockpit sits on top with the dwarf hunched inside. It walks with a heavy rocking gait, spins the drill up with dust spurting behind it, rears back to stomp, and crawls straight up walls on the drill's grip. Stuck, the drill is buried in the stone with the hull rocking. In phase 3 the cockpit has burst open and a harness of glowing magenta crystal binds the dwarf, the brightest thing on it.",
+    "arena_text": "The Kettleforge Lift is one screen (40x23 tiles): a lift platform in a tall elevator shaft, flat iron floor, a ledge on each side about six tiles up (good for dodging a charge or a dive), doors at both ends (west to the Kettleforge Gate, east to Kettleforge). From phase 2 the lift rises: girders and cable marks stream down the shaft wall behind the fight, and debris falls every 2.4 s. Iron, rust and lamp-orange light.",
+    "phases": [
+      {
+        "name": "Reveal (1.6 s)",
+        "text": "The drill whirs up with a roar under the name card."
+      },
+      {
+        "name": "Phase 1 (full to 65%)",
+        "text": "It walks after you for 0.8 s, then stomps if you are within 90 px or drill-charges if you are not (never two stomps in a row)."
+      },
+      {
+        "name": "Phase 2 (below 65%)",
+        "text": "\"The lift lurches upward!\" The lift rises; debris falls every 2.4 s, one rock over you and often one more elsewhere. Every third attack it climbs a wall and dives at your spot. Tells are 20% shorter (drill 0.64 s, stomp and dive 0.56 s)."
+      },
+      {
+        "name": "Phase 3 (below 30%)",
+        "text": "The cockpit bursts open (1.3 s, untouchable) on the crystal harness. Side blows do nothing now; blows from above land at 1.5x. The lift keeps rising and debris keeps falling."
+      }
+    ],
+    "attacks": [
+      {
+        "name": "Drill charge",
+        "tell": "The drill spins up for 0.8 s (0.64 s from phase 2) with dust spurting behind it and a rising whir.",
+        "effect": "It rams across the lift at 270 px/s for up to 3 s, 24 on the drill. If it hits a wall the drill sticks for 1.5 s.",
+        "counter": "Jump it or step onto a side ledge; then strike the stuck drill, which takes every blow in full."
+      },
+      {
+        "name": "Stomp",
+        "tell": "The hull rears up for 0.7 s (0.56 s) with a heavy groan; used when you are within 90 px.",
+        "effect": "A slam for 22 in a strip 88 px wide under it, and a shockwave runs out each way along the floor (12 each).",
+        "counter": "Get clear of the hull, then hop the shockwave."
+      },
+      {
+        "name": "Climb and dive",
+        "tell": "Phase 2 on, every third attack: it runs to the wall behind it and climbs; at the top it marks your spot on the floor for 0.7 s (0.56 s).",
+        "effect": "It dives drill-first at the mark at 380 px/s, 24, throws shockwaves both ways on landing and sticks in the floor for 1.1 s.",
+        "counter": "Leave the mark, hop the shockwaves, and punish the buried drill."
+      },
+      {
+        "name": "Falling debris",
+        "tell": "Dust and a shadow on the floor for 0.7 s.",
+        "effect": "A rock falls every 2.4 s from phase 2, one over you; 16 each.",
+        "counter": "Keep moving; never stand still under the shaft while punishing."
+      },
+      {
+        "name": "Body contact",
+        "tell": "Always on.",
+        "effect": "20 on touch. The hull lets only a quarter of a side blow through; it never staggers from a parry.",
+        "counter": "Fight from above."
+      }
+    ],
+    "strategy": "This is the pogo test. Side blows do a quarter, but down-strikes on the stacks and cockpit land in full and bounce you back up, so most damage comes from jumping over the hull and bouncing on it. Bait the drill charge with distance, jump it, and when it sticks in the wall, hit the drill freely for 1.5 s. Up close, the rearing hull means a stomp: back out and hop the shockwave. In phase 2 watch for the climb; leave the floor mark, hop the shockwaves, punish the 1.1 s stuck window, and keep an eye on the falling rocks. In phase 3 only blows from above count at all (1.5x on the harness), so live on top of it with the pogo. The mistakes that kill are slashing the hull from the side, standing in the dive mark and getting caught between a shockwave and a falling rock.",
+    "prompts": [
+      {
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art for a 2D side-scrolling platformer, strict orthographic side view, level camera, no perspective. 1920x1080 16:9 frame, 32 px tiles, crisp hard pixels, no anti-aliasing or blur, limited palette of about 96 colours in hue-shifted ramps, 1 px dark outlines on figures, top-left key light, no pure black or white. Lit play plane in front of darker parallax layers fading into atmosphere, low dark foreground fringe. Scene: a lift platform rising in a tall dwarven elevator shaft, iron girders and cable marks streaming down the shaft wall behind, orange work lamps, a short iron ledge on each side, rocks falling from above with shadows marking the floor. A walking siege drill charges across the platform: a riveted rust-red and copper barrel hull with brass gauges and portholes on two piston legs, a spinning ribbed bronze drill cone in front, two exhaust stacks puffing smoke at the back of its top, and a glass dome cockpit with a bearded dwarf hunched inside. Sparks and dust spray behind the drill. The hero is small against it: a slender elf wanderer with violet hair, hood, long dark green cape and scarf, brown leather armor, sword in his near hand, round shield on his far arm. He is mid-jump above the hull, sword pointed down for a down-strike onto the exhaust stacks. Iron grey, rust red, copper and lamp orange."
+      },
+      {
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Walking siege drill machine, riveted rust-red copper barrel hull on two piston legs, ribbed bronze drill cone in front, two exhaust stacks on top, glass dome cockpit with a bearded dwarf inside, side view facing right. HD pixel art sprite, strict orthographic side view, no perspective, single color dark outline, limited palette, plain background."
+      },
+      {
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept key art with visible brushwork, kept side-on like a 2D platformer screen with a level camera and no perspective tilt, the same palette and mood as the game. A riveted rust-red walking drill engine with a spinning bronze drill and a glass cockpit, a desperate dwarf inside held by a harness of glowing magenta crystal, its dome burst open, fights on a lift rising up a vast iron shaft. A small hooded elf wanderer with sword and round shield drops onto the machine from above, blade down. Girders streak past in the background, sparks, smoke from the stacks, falling rocks, warm lamp light against cold iron."
+      }
+    ],
+    "avoid": "perspective, three-quarter or top-down view, isometric, blur, anti-aliasing, soft gradients on sprites, text, logos, UI, watermark, pure black, pure white, a modern vehicle, tank treads, a mech with arms",
+    "sources": [
+      "design bible 8 (opening and numbers tables)",
+      "design bible 8.2",
+      "scripts/bosses/durgan.gd",
+      "scripts/bosses/rubble.gd",
+      "scripts/enemies/shockwave.gd",
+      "levels/tower/kettleforge_lift.room",
+      "workbench/catalog/foes/durgan.png"
+    ],
+    "notes": "Bible 8.2 says debris drops 'one rock over you'; the code drops one over you plus a second elsewhere when a random spot lands more than 48 px away. The crystal harness colour is not stated in 8.2; magenta follows the Everbloom's stillglass elsewhere in the bible."
+  },
+  {
+    "id": "gloamweaver",
+    "name": "Gloamweaver",
+    "title": "The Lantern Widow",
+    "zone": "The Haar",
+    "arena": "Sunken Chapel",
+    "health": 260,
+    "phase_count": 3,
+    "reward": "Lantern Key",
+    "kind": "guardian",
+    "lore": "A spider-wraith that carries the souls of the drowned as lanterns on her legs, nesting in the dwarves' chapel that drowned when the Haar rose. She is invisible in the fog except where her lanterns glow. Her fall gives the Lantern Key, which opens the way to the Haar Wyrm, plus a Mana Dew and a skill point.",
+    "look": "A pale spider-wraith somewhat wider than the hero is tall: a bulbous, ragged abdomen like a wet grey shroud, a smaller veiled head with pale yellow eyes, and eight long jointed legs of bone-white and ash grey. Four small brass lanterns hang from her legs, two near the front and two at the sides, each glowing warm yellow; they are her light and the only way to see her. In the fog she is almost gone (about 8% visible), but every lantern broken frees a soul that clings to her as pale cyan-white fire, so she shows a little more each time. In her wind-ups she shows at 80% or more. She skitters low across the floor, rears up to pounce, climbs to hang upside down from the vault, and drops like a stone.",
+    "arena_text": "The Sunken Chapel is a screen and a half wide (60x23 tiles), a drowned dwarven nave in stone under the Haar's fog at its thickest (0.92). Two long stone side ledges stand about five tiles up near each end, and a long high ledge hangs in the middle of the nave about nine tiles up; two heavy stone ribs hang from the vault. Altar lanterns once burned here. Light comes only from her four lanterns and what little filters through the fog, so she is seen by lantern glow. Doors at both ends (west to Lantern Landing, east to the Marsh Road).",
+    "phases": [
+      {
+        "name": "Reveal (1.4 s)",
+        "text": "A wail under the name card; she is fully visible for the reveal."
+      },
+      {
+        "name": "Phase 1 (full to 66%)",
+        "text": "She stalks the floor at 62 px/s for 0.9 s, then sweeps if you are within 70 px or pounces if you are farther (never two sweeps in a row)."
+      },
+      {
+        "name": "Phase 2 (below 66%)",
+        "text": "She climbs to the vault (1 s, untouchable) and hangs upside down, creeping over you at 70 px/s. Once over you (or after waiting long enough) she alternates a web line and a drop. After each drop she climbs back up."
+      },
+      {
+        "name": "Phase 3 (below 30%, or all four lanterns broken)",
+        "text": "She comes down for good: fully visible, stalking 1.4x faster with shorter pauses, tells a quarter shorter (sweep 0.41 s, pounce 0.49 s), floor attacks only."
+      }
+    ],
+    "attacks": [
+      {
+        "name": "Leg sweep",
+        "tell": "She rears her front legs for 0.55 s with a faint wail.",
+        "effect": "A low sweep 62 px out in front along the floor, 20.",
+        "counter": "Back off or jump; strike her or a lantern after it."
+      },
+      {
+        "name": "Pounce",
+        "tell": "She rears for 0.65 s.",
+        "effect": "She leaps in an arc about 70 px high over 0.6 s to where you stood; her body hurts 18 on contact.",
+        "counter": "Move off the spot during the rear; she lands open for 0.65 s."
+      },
+      {
+        "name": "Web line",
+        "tell": "Phase 2: a thread flickers from her toward you for 0.6 s.",
+        "effect": "A strand shoots along it at 420 px/s for up to 360 px. If it catches you it reels you toward her for 0.9 s at 150 px/s.",
+        "counter": "Step off the line, or slash to cut the strand (the Elven Stride's dash also breaks it)."
+      },
+      {
+        "name": "Drop",
+        "tell": "Phase 2: she shivers for 0.6 s and a shadow marks the floor below her.",
+        "effect": "She falls at 560 px/s and lands for 20 in a 60 px span, then lies stunned on the floor for 1.3 s taking 1.5x damage.",
+        "counter": "Get out of the shadow, then punish: this is her opening."
+      },
+      {
+        "name": "Lanterns",
+        "tell": "Always visible: four yellow lights on her legs.",
+        "effect": "Each breaks in one blow, costs her 18 HP (never the killing blow) and makes her flinch for 0.6 s; each freed soul makes her more visible. All four broken starts phase 3.",
+        "counter": "Break them early to see her in the dark."
+      },
+      {
+        "name": "Body contact",
+        "tell": "Always on.",
+        "effect": "18 on touch.",
+        "counter": "Keep to her sides and wait for a tell."
+      }
+    ],
+    "strategy": "Fight by her light. Her lanterns are separate targets that break in one blow each; break them early, since each one costs her 18 HP, makes her flinch, and leaves her a little more visible for the rest of the fight. On the floor, the rear means sweep (close) or pounce (far): step away from the sweep, and move off your spot during a pounce's rear. In phase 2 she hangs from the vault; side-step the web thread or slash the strand the moment it catches you, and when she shivers, get out of the shadow and punish her where she lands for 1.5x damage. Breaking all four lanterns ends phase 2 early and brings her down for good. In phase 3 she is visible but fast, so wait for each shortened tell. The mistakes that kill are swinging blind into the fog, staying on the web line, and standing under the shadow.",
+    "prompts": [
+      {
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art for a 2D side-scrolling platformer, strict orthographic side view, level camera, no perspective. 1920x1080 16:9 frame, 32 px tiles, crisp hard pixels, no anti-aliasing or blur, limited palette of about 96 colours in hue-shifted ramps, 1 px dark outlines on figures, top-left key light, no pure black or white. Lit play plane in front of darker parallax layers fading into atmosphere, low dark foreground fringe. Scene: a drowned dwarven chapel nave in stone, thick pale grey-green fog filling the room, stone ledges on each side and a long ledge high in the middle, heavy stone ribs hanging from a dark vault, broken altar shapes faint in the background. Almost hidden in the fog, a pale spider-wraith drops from the vault: a ragged grey shroud-like abdomen, a veiled head with pale yellow eyes, eight long bone-white legs, and four small brass lanterns hanging from her legs glowing warm yellow, two of them broken with pale cyan soul-fire clinging to her body. Only the parts near the lanterns are clearly visible; the rest fades into fog. A round shadow marks the floor below her. The hero is small against it: a slender elf wanderer with violet hair, hood, long dark green cape and scarf, brown leather armor, sword in his near hand, round shield on his far arm. He is mid-jump to the side, out of the shadow. Grey-green fog, bone, lantern yellow."
+      },
+      {
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Pale spider-wraith, ragged grey shroud abdomen, veiled head with pale yellow eyes, eight long bone-white legs, four small brass lanterns hanging from the legs glowing yellow, side view facing right. HD pixel art sprite, strict orthographic side view, no perspective, single color dark outline, limited palette, plain background."
+      },
+      {
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept key art with visible brushwork, kept side-on like a 2D platformer screen with a level camera and no perspective tilt, the same palette and mood as the game. In a drowned stone chapel choked with grey-green fog, a ghostly spider-wraith hangs upside down from the vault, mostly invisible, picked out only by four yellow lanterns on her long bone-white legs and wisps of pale cyan soul-fire clinging to her shroud. A thin web strand shoots down at a small hooded elf wanderer with sword and round shield, who stands on a stone ledge ready to cut it. Muted greys, bone white, warm lantern yellow in the murk."
+      }
+    ],
+    "avoid": "perspective, three-quarter or top-down view, isometric, blur, anti-aliasing, soft gradients on sprites, text, logos, UI, watermark, pure black, pure white, a cute spider, bright saturated colours, clear air with no fog",
+    "sources": [
+      "design bible 8 (opening and numbers tables)",
+      "design bible 8.3",
+      "scripts/bosses/gloamweaver.gd",
+      "levels/haar/sunken_chapel.room",
+      "workbench/catalog/foes/gloamweaver.png"
+    ],
+    "notes": "Code: in phase 2 the web and the drop strictly alternate; a lantern can't deal the killing blow (her HP stops at 1). The pounce has no damage of its own; it is her 18 contact damage. The web does no damage, it only reels."
+  },
+  {
+    "id": "haar_wyrm",
+    "name": "The Haar Wyrm",
+    "title": "Three Heads of Steam",
+    "zone": "The Haar",
+    "arena": "Haar Spring",
+    "health": 300,
+    "phase_count": 1,
+    "reward": "Fall Seed",
+    "kind": "guardian",
+    "lore": "A colossal three-headed steam hydra crouched in the dark mouth of a tunnel behind the Haar Spring's great dwarven cistern. It boiled the cistern dry, and the Haar's fog is its steam cooled over the marsh, so the fog lifts by half once it falls. Its death gives the Fall Seed and a skill point, the cistern stays full for good, and the spring can be cleared.",
+    "look": "Far bigger than the hero can take in. The body crouches in the black of a tunnel arch and is never seen lit: a dark violet-black, clawed shape cloaked in shadow whose claws rest on the cistern's lip. From three stumps on its shoulders grow three long telescoping necks of grey-green scales, tapering in eight sections, the side necks reaching far out over the arena and the middle one rising straight up. Each head is a pale bone-coloured, horned skull with grey-green scales, cheek spines and yellow eyes; steam leaks from the jaws at rest. Each head owns one breath: the west head the plume (rears, noses down, pours a rolling cloud), the east head the geyser (its throat glows, it points along its aim), the middle head the fog (it faces you and holds its jaws wide on a core pulsing in its throat). A head that reacts to its pipe rears back, snaps toward the pipe with its jaws open, and a light runs up its neck from the dark. A doused head droops onto the cistern's lip drenched blue and dripping; a dead head hangs limp and grey.",
+    "arena_text": "The Haar Spring is a screen and a half wide (60x25 tiles), strictly side-on, dwarf-built stone under fog (0.6). The tunnel arch fills the middle of the back wall. In front of it the cistern is a pit sunk into the floor (columns 23 to 36, three tiles deep, brim-full at the floor's level), with a low stone lip along its far side and an iron grate across its mouth at floor level: you run straight across the grate, Down + Jump drops you through into the water, and one jump brings you back up. Three brass intake pipes feed the cistern, one per head: the west head's on the arch's west pillar (mouth facing west, reached with a cast dropping off the middle west platform), the east head's mirrored on the east pillar, the middle head's hanging from the ceiling over the cistern (mouth facing west at row 5, reached with a jumping cast from the high west ledge). Each mouth is a brass bell under a plate with a water drop that pulses blue when it wants water, plus a small sigil of its head's breath. Platforms climb both walls in three steps. Yellow lamps hang at the top corners. A Meditation Shrine waits in the Dry Cistern next door.",
+    "phases": [
+      {
+        "name": "Reveal (6.8 s first time, 2.4 s after)",
+        "text": "The tunnel is black. Three pairs of yellow eyes open one after another (1.0, 1.7 and 2.4 s), snorts of steam and a low purring click (3.0 to 4.2 s), the heads come out one by one (4.6, 5.0, 5.4 s), and the name card shows at 6.8 s. A retry or the Boss Rush starts at the heads coming out."
+      },
+      {
+        "name": "Three heads (full health)",
+        "text": "Each round the plume and the geyser breathe in a random order, then the fog always comes third, with a 1.4 s gap between breaths. Each head has 100 HP and its own small bar, and blows can't bring a head below 50 until a full cistern douses it."
+      },
+      {
+        "name": "One head dead",
+        "text": "A phase break rings. The surviving side heads' wind-ups and the gaps between breaths quicken by 0.85 (never under 0.35 s), but the fog's 3 s wind-up never quickens. The dead head's turn stays in the round as a 3 s rest, during which a full cistern still douses. If the fog head is the dead one, the cistern now loses a third every 25 s."
+      },
+      {
+        "name": "Two heads dead",
+        "text": "Everything quickens by another 0.85 (again not the fog's wind-up), the dead heads' turns are rests, and the third head's death ends the fight."
+      }
+    ],
+    "attacks": [
+      {
+        "name": "Plume (west head)",
+        "tell": "0.9 s: a hiss, the head rears and steam gathers on the floor below it.",
+        "effect": "It vents a heavy grey-white cloud that rolls along the floor toward you at 105 px/s for 4.8 s, under a jump's height, straight across the grate. 14 damage once, can't be parried.",
+        "counter": "Jump it, stand on a platform, or drop through the grate into the cistern (standing on the bed, your head is under the floor). On the grate it catches you like the floor."
+      },
+      {
+        "name": "Geyser (east head)",
+        "tell": "1.1 s: its throat glows and a thin spray marks the line it aims along; the line locks 0.45 s before it fires.",
+        "effect": "A straight 18 px jet of boiling water holds for 1.4 s with pressure surges, breaking into steam where it strikes; it runs on into the pit if it comes down on the cistern. 18 and a knock back once, can't be parried.",
+        "counter": "Leave the line once it locks; the cistern is no shelter from it."
+      },
+      {
+        "name": "Thermal fog (middle head)",
+        "tell": "3.0 s, never shortened: near silence and a low drone, the head rises and draws a long breath, steam pulled into its jaws, and the arena starts to shimmer.",
+        "effect": "A nearly invisible wave of superheated vapour fills the whole arena, pit included, for 2.4 s, burning 6 every 0.4 s; rings of heat roll out from the jaws and the screen wavers in a heat haze. As the burn ends it boils the cistern dry.",
+        "counter": "The only shelter is standing in the cistern with a third of water or more, under the grate (Down + Jump). Use the long wind-up to get water in and get down."
+      },
+      {
+        "name": "Sag (opening)",
+        "tell": "After each breath.",
+        "effect": "The head sags to 110 px above the floor for 1.6 s, in reach of a jumping blade, then rises over 0.5 s.",
+        "counter": "Jump and strike, but blows only take it down to half (50) until it is doused."
+      },
+      {
+        "name": "Douse (your move)",
+        "tell": "A Deluge bolt into an intake's mouth sends a third of a cistern down its pipe; the pipe pours a stream into the cistern and its head rears, snaps toward the pipe and a light runs up its neck (0.9 s) with a hiss.",
+        "effect": "When the cistern is full, at the next pause between breaths, the head whose pipe was filled last is doused: its pipe bursts and a thick jet arcs onto it, and it droops onto the cistern's lip, drenched, for 6.5 s. Only then can it go below half; a doused head at 0 dies. A dead head's pipe still fills its third, but filled last it douses nothing.",
+        "counter": "Choose the head you want: fill its pipe last. Strike it hard while it lies on the lip."
+      },
+      {
+        "name": "Rage",
+        "tell": "When the douse ends (or the doused head dies).",
+        "effect": "The hydra roars and thrashes for 2.2 s and boils the cistern dry; every intake opens again and a new round begins.",
+        "counter": "Get ready to refill; the next fog is coming."
+      },
+      {
+        "name": "Steaming cistern (fog head dead)",
+        "tell": "Wisps of steam rise off the water for the last 3 s.",
+        "effect": "With no fog to boil it, the cistern loses a third every 25 s that it holds water (the pipe filled last runs dry, undoing your choice). The clock stops while a head is doused or the cistern boils.",
+        "counter": "Fill all three pipes inside 25 s, finishing with the head you want."
+      }
+    ],
+    "strategy": "Every head is floored at half until the cistern douses it, so the fight is a loop: fill all three intakes with Deluge, choosing the order so the last pipe filled belongs to the head you want to kill, then hit that head while it lies drenched on the lip for 6.5 s. Learn the casting spots: the side pipes from the middle platforms on each side, the hanging middle pipe with a jumping cast from the high west ledge. Between casts, read the breaths: jump or drop under the plume, step off the geyser's locked line, and treat the fog's long, silent wind-up as the signal to have a third of water in the cistern and be down under the grate. Chip each head to half during its 1.6 s sag so the douse finishes it faster. Killing the fog head first removes the only arena-wide damage, but then the water steams away every 25 s. The mistakes that kill are being on the grate or out of the water when the fog lands, an empty cistern at the fog, and filling the wrong pipe last.",
+    "prompts": [
+      {
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art for a 2D side-scrolling platformer, strict orthographic side view, level camera, no perspective. 1920x1080 16:9 frame, 32 px tiles, crisp hard pixels, no anti-aliasing or blur, limited palette of about 96 colours in hue-shifted ramps, 1 px dark outlines on figures, top-left key light, no pure black or white. Lit play plane in front of darker parallax layers fading into atmosphere, low dark foreground fringe. Scene: a dwarven stone cistern hall in thin grey-green fog. A black tunnel arch fills the middle of the back wall; in front of it a water-filled pit is sunk into the floor, covered by an iron grate at floor level, with a low stone lip behind it. Brass intake pipes with bell-shaped mouths stand on the arch's two pillars and one hangs from the ceiling over the pit, each pouring water down. Stone platforms climb both side walls. Inside the arch, a vast shadowed violet-black hydra body crouches, and three long grey-green scaled necks rise out of it, ending in pale bone-horned heads with yellow eyes. The east head fires a straight jet of boiling water that breaks into steam where it hits. The hero is small against it: a slender elf wanderer with violet hair, hood, long dark green cape and scarf, brown leather armor, sword in his near hand, round shield on his far arm. He is mid-jump on a stone platform casting a bolt of water into a pipe mouth. Brass, cold stone, steam white."
+      },
+      {
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Three-headed steam hydra, dark violet-black shadowed body crouching, three long tapering grey-green scaled necks, pale bone-coloured horned dragon heads with cheek spines and yellow eyes, steam at the jaws, side view facing right. HD pixel art sprite, strict orthographic side view, no perspective, single color dark outline, limited palette, plain background."
+      },
+      {
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept key art with visible brushwork, kept side-on like a 2D platformer screen with a level camera and no perspective tilt, the same palette and mood as the game. A colossal three-headed hydra looms out of a black tunnel arch behind a sunken dwarven cistern, its body only a shape in the dark, its three long scaled necks and pale horned heads lit by steam and lamp light. The middle head rears with its jaws wide on a glowing core in its throat while the air ripples with heat; a brass pipe bursts and drenches one side head with a thick arc of water. A small hooded elf wanderer with a sword stands on the iron grate over the water, tiny against the beast. Grey-green fog, brass, bone, steam white, deep violet shadow."
+      }
+    ],
+    "avoid": "perspective, three-quarter or top-down view, isometric, blur, anti-aliasing, soft gradients on sprites, text, logos, UI, watermark, pure black, pure white, a visible lit body, wings, fire breath, a fourth head, a cistern tank standing above the floor",
+    "sources": [
+      "design bible 8 (opening, numbers and spell-guardian notes)",
+      "design bible 8.4",
+      "scripts/bosses/haar_wyrm.gd",
+      "scripts/bosses/haar_breath.gd",
+      "scripts/bosses/hydra_geyser.gd",
+      "scripts/bosses/hydra_fog.gd",
+      "levels/haar/spring_of_haar.room",
+      "workbench/catalog/guardians/haar_wyrm.png",
+      "coordinator brief (rules merged 2026-11-24/25)"
+    ],
+    "notes": "phase_count is 3 as the fight turns once per head death (code phase = 1 + dead heads; PHASES is empty and the bar has no ticks); the catalog lists Phases 1. The bible's pass 490 note in 8 still mentions 'the three tanks' and 'the fourth head comes out', from before the 2026-11-09 redesign. The bible's 8.4 cistern line says 'a third' per bolt and the code matches; the rules given in the brief (no caps, last pipe picks the head, fog boils dry, react, DRAIN_EVERY 25.0) all match the script. The game counts the fight as one phase; the phases listed here follow the heads as they die."
+  },
+  {
+    "id": "snapcrown",
+    "name": "Snapcrown",
+    "title": "the Devouring Bloom",
+    "zone": "High Boughs",
+    "arena": "Crown-Leaf",
+    "health": 260,
+    "phase_count": 3,
+    "reward": "The Bloom Wilts",
+    "kind": "guardian",
+    "lore": "A carnivorous flower the size of a house, rooted in the middle of a giant leaf over open sky east of the Windloft. Nothing grows up there but the Bloom. It guards the way east toward Carillon; its fall gives a skill point, a large purse and the open east door.",
+    "look": "A house-sized carnivorous plant. A long green stem of knobbly segments rises from two great leaves spread at its root, up to a head held about three hero-heights over the leaf: a turtle-shell bulb of dark green hexagonal plates with a gold rim along the jaw line, white teeth, a deep red maw and a single yellow eye, ringed by spiky pink petals. At rest the head sways gently. Winding up it rears back with its jaws parting, swells its bulb, coils a vine at the root, or flares and spins its petals. After a bite the jaws hang wide open on the leaf. In phase 3 it rips its roots out and scuttles after you on them, hopping in behind its bites. Its brood, the Mothlings, are violet imps the size of a hand with pink petal wings.",
+    "arena_text": "The Crown-Leaf is a screen and a half wide (60x23 tiles): a single giant leaf over open sky, the Bloom rooted in its middle. Bounce pods sit near both ends of the leaf, high perches (about seven tiles wide, nine tiles up) stand on the walls at each end, and two short ledges float about six tiles up on either side of the middle. The way in from the Windloft is through an elven veil you must dash, and the east door leads on toward Carillon (the Storm Ledge). In phase 2 bites tear four-tile gaps in the leaf with thorns below; in phase 3 the whole leaf is cut loose and falls through the sky, with wind and torn leaves rushing up past it. Leaf green, sky blue and cloud white.",
+    "phases": [
+      {
+        "name": "Reveal (1.4 s)",
+        "text": "The Bloom rises out of the leaf with a roar under its name card."
+      },
+      {
+        "name": "Phase 1 (full to 50%)",
+        "text": "Every 0.9 s it picks: bite if you are within 110 px (about seven tiles), otherwise vine whip and seed spit in turn. It won't bite twice running unless you are right at its root."
+      },
+      {
+        "name": "Phase 2 (below 50%)",
+        "text": "Tells and pauses a fifth shorter (bite 0.44 s, whip 0.48 s, spit 0.4 s, brood 0.56 s). Every other bite tears a four-tile gap in the leaf (up to three, never next to the root or walls). From afar it broods three Mothlings when none are left (first far move below half, then no sooner than three moves later)."
+      },
+      {
+        "name": "Phase 3 (below 25%)",
+        "text": "When its head next draws back it wrenches its root out of the leaf for 1.2 s. The leaf falls (you weigh 85%, so jumps hang longer), and the Bloom scuttles after you at 80 px/s, stopping 40 px short of you and 48 px from the walls; its bites hop the whole plant up to 80 px in. Every other bite still tears the leaf."
+      }
+    ],
+    "attacks": [
+      {
+        "name": "Bite",
+        "tell": "The head rears back with jaws parting for 0.55 s (0.44 s from phase 2).",
+        "effect": "It lunges down where you stand for 24 (parryable), then the jaws hang open on the leaf for 1.3 s (2.2 s if parried). From phase 2 every other bite tears a four-tile gap in the leaf where it lands.",
+        "counter": "Step out of the bite, then strike the open jaws, the one time blows land in full."
+      },
+      {
+        "name": "Vine whip",
+        "tell": "A vine coils at the root for 0.6 s (0.48 s).",
+        "effect": "It lashes 170 px along the leaf on your side for 16; too long to parry.",
+        "counter": "Jump it, or dash through it on the Stride's invulnerability."
+      },
+      {
+        "name": "Seed spit",
+        "tell": "The bulb swells for 0.5 s (0.4 s).",
+        "effect": "Three seeds in arcs, 28 px apart around you, 12 each, parryable.",
+        "counter": "Move off your spot or parry a seed."
+      },
+      {
+        "name": "Brood",
+        "tell": "Phase 2 on, from afar, with no brood left: the petals flare wide and spin for 0.7 s (0.56 s) with a rustling hum.",
+        "effect": "Three Mothlings fly up (20 HP, harmless for 0.5 s): each hovers to one side of you, screeches with wings flared for 0.4 s, dives at 250 px/s for 0.45 s for 8, and climbs back. While any fly the Bloom only whips and spits. They die with it.",
+        "counter": "Cut them down as they climb; none returns once struck down."
+      },
+      {
+        "name": "Uproot and chase",
+        "tell": "Phase 3: 1.2 s of the head rearing and shaking as the root tears free; the screen shakes and flashes.",
+        "effect": "The leaf falls for the rest of the fight; the Bloom chases at 80 px/s and every bite hops it in by up to 80 px.",
+        "counter": "Run under its head or stride through it to get past; strike the jaws where they land."
+      },
+      {
+        "name": "Leaf gaps",
+        "tell": "From phase 2, every other bite.",
+        "effect": "A four-tile gap with thorns below; the thorns set you back beside the gap.",
+        "counter": "Stride or bounce across; strike the jaws from the gap's edge."
+      },
+      {
+        "name": "Head contact",
+        "tell": "Always on.",
+        "effect": "The head hurts 10 on touch; the shell turns 70% of a blow while the jaws are shut.",
+        "counter": "Hit only the open jaws."
+      }
+    ],
+    "strategy": "Only the head can be struck, and the shell turns most of a blow, so bait bites: stand within about seven tiles, step back as the head rears, and hit the open jaws during the 1.3 s they hang on the leaf. A parry on the bite keeps them open 0.9 s longer. At range it whips (jump or dash through) and spits seeds (move or parry). From phase 2 watch where bites land, since every other one tears a thorny gap: air-dash or bounce across and keep striking from the edge. Kill the Mothlings while they climb after a dive, because while they fly the Bloom only whips and spits and never opens its jaws. In phase 3 the falling leaf makes jumps floaty; let it chase, dodge under or dash through the hop-bite and punish the jaws. The mistakes that kill are swinging at the closed shell, standing in the whip's reach, and falling into the thorn gaps.",
+    "prompts": [
+      {
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art for a 2D side-scrolling platformer, strict orthographic side view, level camera, no perspective. 1920x1080 16:9 frame, 32 px tiles, crisp hard pixels, no anti-aliasing or blur, limited palette of about 96 colours in hue-shifted ramps, 1 px dark outlines on figures, top-left key light, no pure black or white. Lit play plane in front of darker parallax layers fading into atmosphere, low dark foreground fringe. Scene: a single giant green leaf stretched across open blue sky high in a world-sized tree, white clouds and distant boughs in pale layers behind, bounce pods near the leaf's ends, a perch on each side and two small floating ledges. In the middle of the leaf a house-sized carnivorous flower is rooted between two great leaves: a long knobbly green stem, a turtle-shell bulb head of dark green hexagonal plates with a gold rim, white teeth, a red maw, a single yellow eye and a ring of spiky pink petals. Its head has just slammed down onto the leaf, jaws hanging wide open, and torn leaf flies from a fresh gap with thorns below. The hero is small against it: a slender elf wanderer with violet hair, hood, long dark green cape and scarf, brown leather armor, sword in his near hand, round shield on his far arm. He is mid-air dash over the gap toward the open jaws, sword drawn. Leaf green, sky blue, cloud white, petal pink."
+      },
+      {
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Giant carnivorous plant, long knobbly green stem from two broad leaves, turtle-shell bulb head of green hexagonal plates with a gold rim, white teeth, red maw, yellow eye, ring of spiky pink petals, jaws open, side view facing right. HD pixel art sprite, strict orthographic side view, no perspective, single color dark outline, limited palette, plain background."
+      },
+      {
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept key art with visible brushwork, kept side-on like a 2D platformer screen with a level camera and no perspective tilt, the same palette and mood as the game. A monstrous flower the size of a house, its armored green bulb head snapping open in a spray of pink petals, rears over a giant leaf high above the clouds. Torn pieces of the leaf whirl upward as the whole leaf falls through the sky, and the plant scuttles on its ripped-up roots after a small hooded elf wanderer with sword and round shield who dashes past beneath its jaws. Leaf green, gold, deep red maw, soft sky blue."
+      }
+    ],
+    "avoid": "perspective, three-quarter or top-down view, isometric, blur, anti-aliasing, soft gradients on sprites, text, logos, UI, watermark, pure black, pure white, a cute cartoon flower, a pipe or a tube, a sunflower",
+    "sources": [
+      "design bible 8 (opening and numbers tables, 'every fight meets the ability it tests')",
+      "design bible 8.5",
+      "scripts/bosses/snapcrown.gd",
+      "scripts/bosses/seed_shot.gd",
+      "scripts/bosses/leaf_fall.gd",
+      "scripts/enemies/mothling.gd",
+      "levels/boughs/crown_leaf.room",
+      "workbench/catalog/foes/snapcrown.png"
+    ],
+    "notes": "The reward field uses the catalog's tag ('The Bloom Wilts'); bible 8.5 gives a skill point, a large gold drop and the east door. In phase 3 the leaf falls inside the same arena, not a separate scrolling leaf (the bible's recorded deviation)."
+  },
+  {
+    "id": "skyrend",
+    "name": "Skyrend",
+    "title": "the Storm Roc",
+    "zone": "Storm Spires",
+    "arena": "The Roost",
+    "health": 320,
+    "phase_count": 3,
+    "reward": "Sky Key and a skill point (restores the Sky Spring; the key opens Vorrhallow's upper gate)",
+    "kind": "guardian",
+    "lore": "A titanic thunderbird that nests on the highest spire of the Storm Spires, over the Sky Spring, its wings made of rain clouds. The elves built lightning-works around its roost; wake them and the storm it rides comes down on it.",
+    "look": "A storm-blue roc whose body is a dark oval of slate-violet feathers with a pale cream chest, a crest of three trailing pale-lilac plumes, a white eye, a gold hooked beak and gold talons tucked under it. Its wings are not feathers but chains of swelling cloud billows, dark beneath and lit lilac on top, with long dark flight feathers hanging from the trailing edge and thin streaks of rain falling off them. A fan of cloud-dark tail feathers spreads behind. Drawn half again larger than its body, it spans roughly the width of four or five heroes wing tip to wing tip and flies a slow figure-eight over the islands. In its tells pale-yellow and violet sparks crawl over it; grounded it lies with wings flung out and its eye shut, lightning still crackling through the cloud. Colours: storm violet, slate blue, cloud lilac, cream, beak gold, bolt yellow.",
+    "arena_text": "The Roost (58,-12, 60x29 tiles), east off the Spire Stair's top landing, with a Meditation Shrine on the stair outside. Three pale shrine-stone islands float over a cloud-stone floor, each topped by a dead elven conduit, with wooden landings stepping up to them. Two open lanes between the islands are where the phase 3 updraft rises. Six rows of open violet storm sky sit above the fight and the camera pulls out wide so all three islands, the bird and the storm show at once. Rain is driven sideways by the wind, and lightning lights the clouds.",
+    "phases": [
+      {
+        "name": "Phase 1 (full to 50%)",
+        "text": "It circles in the sky for 1.6 s between moves and alternates a feather volley with a dive bomb. In the air it is cloud: blows land at 30%. Wake all three conduits with Tempest Lance and it is struck down, stunned for 4.5 s and taking full damage, then shakes the charge off, the conduits go dead and it climbs again."
+      },
+      {
+        "name": "Phase 2 (below 50%)",
+        "text": "The storm breaks. Every 3.2 s a bolt marks the tallest point and strikes it: you if you stand three tiles or more above the floor, otherwise a dead conduit, which the bolt wakes. A lone woken conduit now drains after 6 s unless all three are awake together. The volley throws seven feathers."
+      },
+      {
+        "name": "Phase 3 (below 25%)",
+        "text": "The duel. Every other move is the gale: it hovers over the open lane nearest you above a column of rising wind for 3.5 s. Ride the updraft up past it and drop onto its head; blows from above land in full, it does no harm while it beats, and the storm waits. Grounding with the conduits still works."
+      }
+    ],
+    "attacks": [
+      {
+        "name": "Feather volley",
+        "tell": "It stops dead in the air and throws its wings wide with a screech, flashing, for 0.6 s.",
+        "effect": "A fan of five storm feathers (seven from phase 2), 0.22 rad apart, at 220 px/s, 8 damage each.",
+        "counter": "Slip between the feathers or parry one: a parried feather flies home and hits it for 12."
+      },
+      {
+        "name": "Dive bomb",
+        "tell": "It rises, screaming, and fixes on you for 0.65 s.",
+        "effect": "It stoops through where you stood and carries 60 px past it, 22 damage, unparryable, then climbs back to the sky.",
+        "counter": "Dash through it with the Stride or step out of the line before it commits."
+      },
+      {
+        "name": "Storm bolt (phase 2+)",
+        "tell": "A thread of light from the sky and a glow where it will land, 0.6 s.",
+        "effect": "Strikes a column about 28 px wide for 18, unparryable. It targets you only when you stand three or more tiles above the floor; otherwise it hits a dead conduit and wakes it.",
+        "counter": "Stay low and let the storm wake conduits for you, or move off the marked column."
+      },
+      {
+        "name": "Gale (phase 3)",
+        "tell": "It flies to the nearer open lane and beats its wings for 0.8 s while dust stirs on the floor where the wind will rise.",
+        "effect": "An updraft from the floor to just above its head lifts you at 240 px/s and gives back your air moves for 3.5 s. No damage.",
+        "counter": "Ride it up, hold Down to drop out onto its head, and pogo: blows from above land in full."
+      },
+      {
+        "name": "Body contact",
+        "tell": "None; it touches only while flying (not during the gale).",
+        "effect": "14 damage.",
+        "counter": "Keep clear of its body between moves."
+      }
+    ],
+    "strategy": "Skyrend is a Tempest Lance fight. Side blows against the cloud only land at 30%, so the real damage comes from grounding it: cast Tempest Lance at each conduit from its island or from beneath it (the bolt leaps to a dead conduit within 72 px) until all three are lit, then spend the 4.5 s stun hitting as hard as you can. Between groundings, read the volley's wide wings (slip the fan or parry a feather back) and the dive's scream (dash through it). In phase 2 stay on the floor so the storm wakes conduits for you, but light at least one yourself in time, because a lone lit conduit drains after 6 s. Standing high on the islands draws the bolts onto you. In phase 3, ride each updraft and pogo its head. The mistakes that kill are climbing during the storm and waking conduits one by one too slowly.",
+    "prompts": [
+      {
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art, 2D side-scrolling platformer, strict orthographic side view, no perspective, feet on one ground line, 1920x1080, 32 px tiles, crisp hard pixels, no anti-aliasing, about 96 colours in hue-shifted ramps, no pure black or white, 1 px selective outlines, top-left key light, a lit play plane before darker parallax layers fading into haze, a low dark foreground fringe. A gameplay screen of a boss fight in the Roost, a storm-swept elven shrine high on the spires. Three floating islands of pale ashlar shrine stone with gold inlay hang over a cloud-stone floor, each topped by a tall elven lightning conduit; wooden landings step up to them. Behind them a violet storm sky churns with lilac cloud banks, forked lightning and wind-slanted rain. A giant storm roc dives across the middle of the frame: a slate-violet body with a pale cream chest, a crest of trailing lilac plumes, a white eye, a gold hooked beak and gold talons, and huge wings built from chained storm-cloud billows, dark below and lit lilac on top, with long flight feathers and streaks of rain trailing off them. A pale yellow thread of lightning marks one conduit, about to strike. The hero is small: a slender hooded elf wanderer about four tiles tall, brown leather armour with brass buckles, dark green gold-trimmed cloak and scarf, sword in his near hand, shield on his far arm. He dashes along the cloud-stone floor, cloak streaming."
+      },
+      {
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "giant storm roc boss, slate violet body, cream chest, gold hooked beak and talons, lilac crest plumes, wings made of storm cloud billows with rain trailing, flying, pixel art sprite, strict orthographic side view, no perspective, flat ground line, limited palette, crisp pixels, transparent background"
+      },
+      {
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept key art, visible brush strokes, the same side-on composition read as a 2D game screen, no perspective tilt, the same palette and mood as the game, 16:9. Key art of a hooded elf wanderer with a sword and shield standing on a floating island of pale shrine stone while a colossal thunderbird stoops out of a violet storm toward him. The bird's wings are rolling storm clouds trailing rain, its beak and talons gold, its eye white. Three elven lightning conduits on three islands blaze yellow as forked lightning arcs from them into the bird. Wind-driven rain, distant drifting islands, a cloud-stone floor far below. Palette of storm violet, slate blue, lilac, cream and bolt yellow."
+      }
+    ],
+    "avoid": "perspective, isometric, top-down or three-quarter view, tilted camera, raised back foot, blur, soft anti-aliasing, photorealism, 3D render, text, logos, UI, HUD, watermarks, pure black, pure white, realistic eagle feathers on the wings, blue daylight sky",
+    "sources": [
+      "design bible 8 (tables) and 8.6",
+      "design bible 3.2 (Carillon as built)",
+      "scripts/bosses/skyrend.gd",
+      "scripts/bosses/storm_strike.gd",
+      "scripts/bosses/updraft.gd",
+      "scripts/enemies/harpy_feather.gd",
+      "scripts/bosses/boss_arena.gd",
+      "levels/spires/roost.room",
+      "workbench/catalog/catalog.json (Guardians)"
+    ],
+    "notes": "Bible 8.6's heading places Skyrend in 'High Boughs, Carillon', but the Roost is in levels/spires (zone Storm Spires in the catalog). Bible 8.6 says a player perched high always gets the volley rather than a dive; in skyrend.gd _choose() the perch check only fires when the last move was a dive, when the volley was already the pick, so it changes nothing and a high player still gets dives after volleys. The script header says blows land 'at a third'; CLOUD is 0.3, as the bible says. The current catalog picture is a placeholder, so the look is written from the code drawing and bible."
+  },
+  {
+    "id": "thane_vorrund",
+    "name": "Thane Vorrund",
+    "title": "the Unweeping",
+    "zone": "Vorrhallow",
+    "arena": "Hall of Still Water",
+    "health": 320,
+    "phase_count": 3,
+    "reward": "Frost Seed, the Severance (his grafting blade) and a skill point; Vorrhallow begins to drain",
+    "kind": "guardian",
+    "lore": "The dwarf king of the Hollin who would not grieve his queen. With his grafting blade, the Severance, he cut the Ylden's last blossom and set it in stillglass so that nothing he loved would end, and the Everbloom stopped his people mid-flood and mid-breath. Regal, tragic and half crystal, he holds his throne hall still; beaten, he weeps at last and gives up the blade.",
+    "look": "A broad dwarf king a little taller than the hero, in a flood-rotted robe of dark teal with a wine-red, gold-edged mantle, a grey beard hanging to his belt, and a gold crown with magenta crystal grown up through its points. The whole back of him is overgrown with jagged magenta stillglass that glows pink-white at the edges. He wields a great-axe on a dark wooden haft whose blade is half steel and half crystal. He walks heavily and raises the axe overhead, its edge glinting, before each chop. On the throne he plants the axe and stands warded in crystal while his crown blazes. In phase 3 his body cracks open with magenta light blazing through the cracks and he moves frantically. Colours: flooded teal, wine red, gold, grey beard, crystal magenta, steel.",
+    "arena_text": "The Hall of Still Water (58,-7, 60x23 tiles), the throne hall off the Thane's Kennels. A long flooded dwarven hall with a dais six tiles high and twelve wide at the east end, his throne on it. A tall bronze-framed glass water clock stands by the west wall; full before the fight, it drains with his health. In phase 2 crystal thorns line the dais top (10 damage), and crystal shards rise from the floor in front of the dais. Door 2 behind the throne is barred by iron until he is beaten and leads up the Glass Rise.",
+    "phases": [
+      {
+        "name": "Phase 1, the duel (full to 50%)",
+        "text": "He walks you down at 40 px/s. Close in he swings a chop then a sweep; keep away (150 px or more) and he leaps after you and slams. His crystal half turns half of every blow unless he reels from a parry."
+      },
+      {
+        "name": "Phase 2, the throne (below 50%)",
+        "text": "He leaps onto the dais and wards himself: side blows do nothing and thorns burn the dais top. Every 3.2 s he calls a wave of four crystal shards that rise to the vault. The first waves also raise a Shade Knight of his household guard from the flood (two in a fight at most, one at a time). Strike his crown from above and he is thrown down, open for 1.8 s, then duels for 7 s with tells at 0.8x before climbing back."
+      },
+      {
+        "name": "Phase 3, the Everbloom takes him (below 20%)",
+        "text": "He roars and cracks open for 1.4 s, untouchable, and comes down off the throne for good; his guard goes down. Frantic, he walks 1.8x faster with tells at 0.65x (never under 0.35 s), and every chop-and-sweep ends in a crystal spike burst. Cracked, he turns no blow, and a parry still throws him reeling."
+      }
+    ],
+    "attacks": [
+      {
+        "name": "Chop",
+        "tell": "The axe raised overhead, its edge glinting, with a heavy wind-up sound, 0.6 s (0.48 s in phase 2's duel, about 0.39 s frantic).",
+        "effect": "A tall chop 54 px long and 58 px high, 20 damage. Parryable.",
+        "counter": "Parry it for a 1.2 s reel, or step back out of its reach."
+      },
+      {
+        "name": "Sweep",
+        "tell": "Follows every chop: the axe drawn back low, 0.4 s (0.35 s minimum later).",
+        "effect": "A low wide sweep 64 px long and 22 px high, 16 damage. Parryable.",
+        "counter": "Jump over it or parry it."
+      },
+      {
+        "name": "Leap slam",
+        "tell": "When you keep 150 px or more away, he crouches and swells, 0.6 s.",
+        "effect": "A 0.7 s leap that lands where you are, a slam of 22 (unparryable) in a 72 px box, and shockwaves rolling each way along the floor at 170 px/s for 12.",
+        "counter": "Move off his landing spot and hop the shockwaves."
+      },
+      {
+        "name": "Crystal shards (phase 2)",
+        "tell": "His crown blazes for 0.5 s; each shard glows in the floor for 0.4 s, nearest the dais first, 0.25 s apart.",
+        "effect": "Four shards 48 px apart shoot up to the vault at 140 px/s, 12 to anything they pass through, making a rising stair.",
+        "counter": "Stand clear of the glowing spots, then turn the Stillstone: held shards have flat tops to stand on. Climb them and strike down on his crown."
+      },
+      {
+        "name": "Dais thorns (phase 2)",
+        "tell": "Always on while he wards on the throne.",
+        "effect": "10 damage to anyone on the dais top beside him.",
+        "counter": "Come at him from above, never along the dais."
+      },
+      {
+        "name": "Household guard (phase 2)",
+        "tell": "A splash at whichever end of the hall floor is farther from you.",
+        "effect": "A Shade Knight rises from the flood: shielded front, a riposte after two blows on the shield, a thrust for 18 and a sweep for 14.",
+        "counter": "Parry its blows, or fight it from behind; it is the parry test under the climb."
+      },
+      {
+        "name": "Crystal spike burst (phase 3)",
+        "tell": "After every sweep he raises the axe again, 0.45 s base (0.35 s frantic); each spike glows 0.18 s.",
+        "effect": "The axe driven into the floor: six crystal spikes burst out in a line toward you, 22 px and 0.08 s apart, 12 each, unparryable.",
+        "counter": "Jump the line or dash through it."
+      },
+      {
+        "name": "Body contact",
+        "tell": "None.",
+        "effect": "16 damage.",
+        "counter": "Don't walk into him."
+      }
+    ],
+    "strategy": "Phase 1 is a parry duel: wait for the glinting overhead chop, parry it, and spend the 1.2 s reel hitting in full; jump or parry the sweep that follows. Don't run, or the leap slam and its shockwaves find you. In phase 2 the throne is untouchable from the side, so time the Stillstone on a rising shard wave, climb the frozen shards, and pogo his crown to throw him down; punish the 1.8 s fall and the 7 s duel. Keep the Shade Knight in view so it doesn't catch you mid-climb. In phase 3 he takes full damage but every combo ends in a spike line, so hit, jump the spikes, and hit again. The mistakes that kill are climbing onto the dais beside him, mistiming the Stillstone, and standing in the spike line.",
+    "prompts": [
+      {
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art, 2D side-scrolling platformer, strict orthographic side view, no perspective, feet on one ground line, 1920x1080, 32 px tiles, crisp hard pixels, no anti-aliasing, about 96 colours in hue-shifted ramps, no pure black or white, 1 px selective outlines, top-left key light, a lit play plane before darker parallax layers fading into haze, a low dark foreground fringe. A gameplay screen of a boss fight in a drowned dwarven throne hall. Dark squat dwarf masonry with a teal tide line, veins of magenta stillglass crystal forcing through the joints, still water on the floor, a stone dais at the right end with a dark throne on it, and a tall bronze-framed glass water clock by the left wall, half drained. Behind, colossal drowned pillars glow with crystal. A broad dwarf king stands on the dais, a little taller than the hero: flood-rotted dark teal robe, a wine-red gold-edged mantle, a grey beard to his belt, a gold crown with magenta crystal grown through it, his back overgrown with glowing magenta crystal, a great-axe with a half-crystal blade planted beside him. His crown blazes. Four crystal shards rise from the floor in front of the dais like a stair, frozen in place. The hero is small: a slender hooded elf wanderer about four tiles tall, brown leather armour with brass buckles, dark green gold-trimmed cloak and scarf, sword in his near hand, shield on his far arm. He leaps from the top shard to strike the crown."
+      },
+      {
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "dwarf king boss, broad, grey beard to belt, gold crown with magenta crystal, dark teal robe, wine red mantle, back overgrown with magenta crystal, great-axe with half crystal blade raised overhead, pixel art sprite, strict orthographic side view, no perspective, flat ground line, limited palette, crisp pixels, transparent background"
+      },
+      {
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept key art, visible brush strokes, the same side-on composition read as a 2D game screen, no perspective tilt, the same palette and mood as the game, 16:9. Key art of a tragic dwarf king in a flooded throne hall, his body cracking open with magenta crystal light, a great-axe with a crystal blade raised high, a long grey beard and a gold crown pierced by crystal. A hooded elf wanderer with sword and shield faces him across still water. Behind, a tall glass water clock drains and colossal drowned pillars glow with crystal. Palette of flooded teal, magenta, wine red and gold."
+      }
+    ],
+    "avoid": "perspective, isometric, top-down or three-quarter view, tilted camera, raised back foot, blur, soft anti-aliasing, photorealism, 3D render, text, logos, UI, HUD, watermarks, pure black, pure white, horned helmet, fantasy-viking cliches, blue ice crystal",
+    "sources": [
+      "design bible 2 (backstory)",
+      "design bible 8 (tables) and 8.7",
+      "design bible 3.2 (Vorrhallow)",
+      "scripts/bosses/thane_vorrund.gd",
+      "scripts/bosses/crystal_shard.gd",
+      "scripts/enemies/crystal_spike.gd",
+      "scripts/enemies/shockwave.gd",
+      "scripts/bosses/boss_arena.gd",
+      "levels/vorrhallow/throne_hall.room",
+      "workbench/catalog/catalog.json (Guardians)"
+    ],
+    "notes": "Code and bible agree on numbers. The code's FAST multiplier (0.8x) applies to every tell for the whole of phase 2, which is only seen in the 7 s duel after he is thrown, as the bible says. In phase 3 most tells clamp at the 0.35 s minimum (sweep and burst). Shade Knight numbers come from bible 7."
+  },
+  {
+    "id": "likeness",
+    "name": "The Likeness",
+    "title": "Kept by the Glass",
+    "zone": "Vorrhallow",
+    "arena": "Crown Gate",
+    "health": 320,
+    "phase_count": 3,
+    "reward": "A skill point; the gate of the Evercrown can open",
+    "kind": "guardian",
+    "lore": "A shadow copy of the hero, made by the Everbloom from every fight it has watched. It keeps the gate of the Evercrown at the top of the dwarves' world as your reflection, and once the glass breaks it fights with whatever you have learned best.",
+    "look": "The hero's own silhouette cut out of the dark: the same height, hood, cloak, scarf, sword and shield, but filled with near-black violet shadow, with a thin violet rim light around the edges and pale pink-white eyes. It moves in the hero's own poses, mirrored, a beat late. In phase 1 it is half part of the glass and sinks into the floor's reflection to vanish; when it rises behind you its blade is raised and glinting. After the mirror shatters it moves with full weight. In phase 3 there are two of it; only the real one casts a faint upside-down reflection in the polished floor under its feet, and the false one swells and bursts in violet shards when struck. Colours: shadow violet, deep night, violet rim, crystal pink, pale eye light.",
+    "arena_text": "The Crown Gate (61,-9), the hall at the top of the Glass Rise. It is laid out symmetrically with a landing at each end, a polished reflective floor, and a faint seam of light down its middle marking the mirror line. The gate of the Evercrown stands against the east wall: black stillglass-iron with four ring sockets that glow for the rings you hold. A Meditation Shrine stands inside the hall but refuses to rest anyone while the guardian stands. When the mirror shatters at half health, the glass down the middle bursts.",
+    "phases": [
+      {
+        "name": "Phase 1, the mirror (full to 50%)",
+        "text": "It stands where you were 0.6 s ago, mirrored across the seam, in your own pose. Each swing you make comes back at you 0.6 s later from its side, so you only reach each other where you meet at the line. Hold still for 2.2 s and it sinks and rises behind you to cut."
+      },
+      {
+        "name": "Phase 2, its own (below 50%)",
+        "text": "The glass bursts and it is untouchable for 1 s, then steps out with real physics and fights with the skill tree branch you have the most nodes in (Blade on a tie or an empty tree). A parried blow staggers it for 1.2 s, and every blow of its own leaves it spent for 0.6 s."
+      },
+      {
+        "name": "Phase 3, two of you (below 20%)",
+        "text": "It splits in two (0.8 s, untouchable); the false double appears on your far side, and half the time they trade places. Both fight as in phase 2. Only the real one shows a reflection in the floor and the boss bar follows it. Strike the false one and it bursts; the real one splits again 3.5 s after the double is gone."
+      }
+    ],
+    "attacks": [
+      {
+        "name": "Echo swing (phase 1)",
+        "tell": "0.6 s after your own swing, its blade glints from the mirrored spot.",
+        "effect": "Your swing, mirrored (side, up, down or low cut), 14 damage.",
+        "counter": "Step away from the echo or parry it: a parried echo leaves it reeling out of the mirror for 1.2 s."
+      },
+      {
+        "name": "Cut from behind (phase 1)",
+        "tell": "Hold still 2.2 s: it sinks into the floor (0.5 s, untouchable), then rises 30 px behind you with its blade raised for 0.45 s.",
+        "effect": "A cut for 14, then it stands spent for 0.6 s before blinking back into the mirror.",
+        "counter": "Keep moving, or turn and parry, then punish the 0.6 s it stands spent."
+      },
+      {
+        "name": "Blade branch: two cuts and a heavy",
+        "tell": "0.4 s before each cut, 0.5 s before the heavy (a heavy wind-up sound).",
+        "effect": "Two cuts for 14 each, then a lunging heavy blow at 220 px/s for 20.",
+        "counter": "Parry any of them for a 1.2 s stagger, or back off and punish the 0.6 s after the heavy."
+      },
+      {
+        "name": "Arcana branch: shadow bolt",
+        "tell": "It keeps about 150 px off and gathers a cast for 0.5 s.",
+        "effect": "A shadow bolt flies straight at you at 200 px/s for 12, every 1.4 s at most. Close in, it cuts once (0.4 s tell, 14).",
+        "counter": "Parry the bolt and it flies back into the shadow for 12; close in after a cast."
+      },
+      {
+        "name": "Wanderer branch: air-dash",
+        "tell": "0.45 s within about 150 px.",
+        "effect": "It dashes through you at 380 px/s for 0.4 s, 14 damage. Once, below a quarter health, it stops to drink a draught for 0.8 s that heals 12% of its health.",
+        "counter": "Jump or dash over it; hit it while it drinks to spill the draught."
+      },
+      {
+        "name": "False double's burst (phase 3)",
+        "tell": "Struck, the false one swells for 0.45 s.",
+        "effect": "It bursts for 10, unparryable, in a 72x60 px area around itself.",
+        "counter": "Check the floor for the reflection before striking; if you hit the false one, step away."
+      },
+      {
+        "name": "Body contact",
+        "tell": "None.",
+        "effect": "10 damage.",
+        "counter": "Don't run into it."
+      }
+    ],
+    "strategy": "In phase 1 you fight yourself: every blow you land comes back 0.6 s later, so swing, then step out of the echo or parry it to make it reel for 1.2 s of free hits. Never stand still for 2.2 s. In phase 2 it takes your strongest branch, so you know its kit: parry the Blade cuts, return the Arcana bolts, hop the Wanderer dash and spill its draught. Every move it makes leaves it spent for 0.6 s, a window even without a shield. In phase 3 look down: only the real one casts a reflection. Hitting the false double costs you a burst and buys nothing. The mistakes that kill are swinging wildly in phase 1, which only arms more echoes, and chasing the wrong shadow in phase 3.",
+    "prompts": [
+      {
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art, 2D side-scrolling platformer, strict orthographic side view, no perspective, feet on one ground line, 1920x1080, 32 px tiles, crisp hard pixels, no anti-aliasing, about 96 colours in hue-shifted ramps, no pure black or white, 1 px selective outlines, top-left key light, a lit play plane before darker parallax layers fading into haze, a low dark foreground fringe. A gameplay screen of a boss fight in a symmetrical dwarven gate hall at the top of a crystal-choked shaft. Dark dwarf masonry with magenta stillglass forcing through the joints, a polished dark floor that reflects the figures upside down, a faint vertical seam of light down the exact middle of the room, a raised landing at each end, and against the right wall a huge gate of black stillglass-iron with four ring sockets glowing. The hero is small: a slender hooded elf wanderer about four tiles tall, brown leather armour with brass buckles, dark green gold-trimmed cloak and scarf, sword in his near hand, shield on his far arm. On the left half he swings his sword. On the right half his exact mirror image swings back: the same hooded silhouette with cloak, scarf, sword and shield, but filled with near-black violet shadow, a thin violet rim of light, pale pink eyes, its blade glinting. The two meet at the seam. Only the hero and the shadow cast reflections in the floor."
+      },
+      {
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "shadow copy of a hooded elf swordsman, cloak, scarf, sword and shield, body filled with near-black violet shadow, thin violet rim light, glowing pale pink eyes, mid sword slash, pixel art sprite, strict orthographic side view, no perspective, flat ground line, limited palette, crisp pixels, transparent background"
+      },
+      {
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept key art, visible brush strokes, the same side-on composition read as a 2D game screen, no perspective tilt, the same palette and mood as the game, 16:9. Key art of a hooded elf wanderer facing his own shadow across a polished floor in a dark stone gate hall. The shadow is his exact silhouette made of violet darkness with a glowing rim and pale eyes, and the glass between them is bursting into shards. Two shadows stand behind him, one with a reflection in the floor and one without. A massive black gate with four glowing ring sockets looms at the back. Palette of violet, night blue, magenta crystal and pale gold."
+      }
+    ],
+    "avoid": "perspective, isometric, top-down or three-quarter view, tilted camera, raised back foot, blur, soft anti-aliasing, photorealism, 3D render, text, logos, UI, HUD, watermarks, pure black, pure white, a different body shape from the hero, horror gore",
+    "sources": [
+      "design bible 8 (tables) and 8.8",
+      "design bible 8.7 (Crown Gate as built)",
+      "scripts/bosses/likeness.gd",
+      "scripts/bosses/shadow_bolt.gd",
+      "scripts/bosses/boss_arena.gd",
+      "levels/vorrhallow/evercrown_gate.room",
+      "workbench/catalog/catalog.json (Guardians)"
+    ],
+    "notes": "Bible 8.8's heading calls it 'the Likeness, the Mirror'; the script's and catalog's epithet is 'Kept by the Glass' (used here). The Likeness has no armour: every blow lands in full outside its untouchable moments. The phase 1 echo's 0.4 s glint is SWING_TELL in the script, inside the 0.6 s delay."
+  },
+  {
+    "id": "drowned_warden",
+    "name": "The Drowned Warden",
+    "title": "Keeper of the Source",
+    "zone": "Sunken Spring",
+    "arena": "The Wellspring",
+    "health": 680,
+    "phase_count": 3,
+    "reward": "Elven Plate (armour tier 4, 60% less damage, goes straight on) and a skill point",
+    "kind": "optional",
+    "lore": "The guardian the first dwarves built to keep the source of every spring, a colossus that has never let anyone near the Wellspring. It is the hardest fight in the game and the only one in water, found at the end of the optional Sunken Spring below the Glass Rise. Beaten, it crumbles and sinks back into the spring, and the Source is free.",
+    "look": "A colossus of pale limestone and green bronze, about twice the hero's height above the waterline while it stands waist-deep. Its body is a block of pale cream limestone with bronze shoulder bosses gone verdigris green, a round bronze lamp set in its chest, and a dwarf-king's bronze helm with a crest over a stone face. Its eyes are lamps of cool cyan spring light. It holds a long green-bronze trident whose tines glow cyan in its tells. Waterweed hangs off it in strands. It wades slowly through the pool, sinks out of sight leaving only a trail of bubbles, and bursts up in a column of water to hang streaming. In phase 3 its chest lamp opens and drags the current toward it. Colours: limestone cream, weathered grey, verdigris green, deep bronze, spring cyan, weed green.",
+    "arena_text": "The Wellspring (64,-5, 60x45 tiles), east off the Source Hall, with a Meditation Shrine on the Source Hall's dry shelf. Ashlar dwarf stone around a deep pool that fills the lower half of the room. An entry ledge on the west and a far ledge on the east step down to the water; two stone islands stand level with the surface and hide the Warden's lower half as it passes; a plank hangs over the middle for a pogo. Below the surface the water goes deep, and the hero can swim and dive. The light is cold spring-blue, the water bright on top and dark below.",
+    "phases": [
+      {
+        "name": "Phase 1 (full to 66%)",
+        "text": "It wades the pool toward you for about 1.1 s between moves. Within about 190 px it thrusts; farther it raises a wave, and every third move is a wave. Its stone halves blows from the front."
+      },
+      {
+        "name": "Phase 2 (below 66%)",
+        "text": "It roars for 1 s, untouchable. Tells shrink to 0.88x and it wades for 0.9 s between moves. Every third move is now the geyser: it sinks and stalks you under the water."
+      },
+      {
+        "name": "Phase 3 (below 33%)",
+        "text": "It roars again. Tells shrink to 0.75x (never under 0.35 s), it waits only 0.7 s between moves, every wave is followed by a second from the far side, and every fourth move is the undertow and slam."
+      }
+    ],
+    "attacks": [
+      {
+        "name": "Thrust",
+        "tell": "The trident draws back, aimed at you and tracking you for most of the 0.6 s tell (0.53 s, then 0.45 s), tines glowing.",
+        "effect": "Drives 150 px along the set line, 18 damage. Parryable.",
+        "counter": "Move off the line in the last part of the tell, or parry it for a 1.4 s reel, open to every blow."
+      },
+      {
+        "name": "Wave",
+        "tell": "Arms raised and the water churning, 0.7 s (0.62 s, then 0.53 s).",
+        "effect": "A tidal wave runs across the surface at 230 px/s, 40 px tall and 24 px deep, 16 damage, unparryable. In phase 3 a second wave follows from the far side 0.6 s later.",
+        "counter": "Jump it, or dive under it and swim."
+      },
+      {
+        "name": "Geyser (phase 2+)",
+        "tell": "It sinks out of sight (untouchable) and stalks you as a trail of bubbles for up to 1.1 s; then the water boils at your spot for 0.6 s (0.53 s, then 0.45 s).",
+        "effect": "It bursts up through the spot in a 44 px column of water, 20 damage, unparryable, then hangs streaming for 1.3 s, open to every blow.",
+        "counter": "Keep moving when the bubbles come, step off the boil, then punish the 1.3 s it hangs open."
+      },
+      {
+        "name": "Undertow and slam (phase 3)",
+        "tell": "Its chest lamp opens for 0.6 s (0.45 s), then after the pull the trident goes up for 0.45 s (0.35 s).",
+        "effect": "The current drags you toward it at 85 px/s for 1.4 s, then it slams around itself in a 120x100 px area for 22. The slam is parryable.",
+        "counter": "Run or dash against the pull to stay out of the slam, or let it pull you in and parry the slam for a 1.4 s reel."
+      },
+      {
+        "name": "Body contact",
+        "tell": "None.",
+        "effect": "14 damage.",
+        "counter": "Don't stand in its wading path."
+      }
+    ],
+    "strategy": "The Warden has 680 health and stone that halves frontal blows, so damage comes from angles and openings. Drop on it from the plank or the ledges (blows from above land in full), get behind it as it wades past the islands, and parry the thrust for 1.4 s of free hits. Jump or dive every wave. From phase 2, keep moving when it sinks, and punish the 1.3 s it hangs after a geyser. In phase 3 don't get dragged into the slam unless you mean to parry it, and expect a second wave from behind. A dagger reaches it only from the islands. The mistakes that kill are swinging at its armoured front for half damage, standing still on the surface when the bubbles stop, and forgetting the second wave.",
+    "prompts": [
+      {
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art, 2D side-scrolling platformer, strict orthographic side view, no perspective, feet on one ground line, 1920x1080, 32 px tiles, crisp hard pixels, no anti-aliasing, about 96 colours in hue-shifted ramps, no pure black or white, 1 px selective outlines, top-left key light, a lit play plane before darker parallax layers fading into haze, a low dark foreground fringe. A gameplay screen of a boss fight in a vast flooded dwarven well-chamber. Worn ashlar stone walls with moss in the joints, a ledge on each side stepping down to a wide deep pool that fills the lower half of the frame, two square stone islands level with the water, and a wooden plank hanging over the middle. The water is bright cyan on top, dark teal below. A colossal guardian stands waist-deep in the pool, about twice the hero's height above the water: a body of pale cream limestone, verdigris green bronze shoulder bosses, a round bronze lamp in its chest, a dwarf-king bronze helm with a crest, eyes of glowing cyan, strands of waterweed hanging off it, a long green bronze trident drawn back with its tines glowing cyan. A tidal wave of white foam runs across the surface toward the hero. The hero is small: a slender hooded elf wanderer about four tiles tall, brown leather armour with brass buckles, dark green gold-trimmed cloak and scarf, sword in his near hand, shield on his far arm. He leaps from the plank above the wave."
+      },
+      {
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "colossal stone and bronze guardian, pale limestone body, verdigris bronze shoulders and crested dwarf king helm, glowing cyan lamp eyes and chest lamp, waterweed strands, holding a long bronze trident, pixel art sprite, strict orthographic side view, no perspective, flat ground line, limited palette, crisp pixels, transparent background"
+      },
+      {
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept key art, visible brush strokes, the same side-on composition read as a 2D game screen, no perspective tilt, the same palette and mood as the game, 16:9. Key art of an ancient limestone and bronze colossus rising waist-deep from a glowing spring pool, a dwarf-king helm on its head, cyan lamp eyes, waterweed streaming off its shoulders, a trident raised over the water. A hooded elf wanderer with sword and shield stands small on a stone island in the pool. Cold spring light pours down through the water. Palette of pale limestone, verdigris green, bronze and cyan."
+      }
+    ],
+    "avoid": "perspective, isometric, top-down or three-quarter view, tilted camera, raised back foot, blur, soft anti-aliasing, photorealism, 3D render, text, logos, UI, HUD, watermarks, pure black, pure white, sea-god mermaid tail, tropical water",
+    "sources": [
+      "design bible 8 (tables) and 8.10",
+      "design bible 3.1 and 3.2 (Sunken Spring)",
+      "scripts/bosses/drowned_warden.gd",
+      "scripts/bosses/tidal_wave.gd",
+      "scripts/bosses/boss_arena.gd",
+      "levels/sunken/wellspring.room",
+      "workbench/catalog/catalog.json (Guardians)"
+    ],
+    "notes": "Code and bible agree. The bible says 'within about 12 tiles' for the thrust; the code's THRUST_RANGE is 190 px (about 12 world tiles of 16 px). The undertow is chosen on every fourth move and overrides the wave or geyser that would fall on the same count. Current catalog art is a placeholder."
+  },
+  {
+    "id": "everbloom_avatar",
+    "name": "The Everbloom (avatar)",
+    "title": "The Bud on the Throne",
+    "zone": "The Evercrown",
+    "arena": "Throne of the Evercrown",
+    "health": 360,
+    "phase_count": 2,
+    "reward": "A skill point (The Avatar Shatters)",
+    "kind": "final",
+    "lore": "The Everbloom is not a demon king but a parasite: an eye-flower of stillglass rooted in the Ylden's crown. Its first form wears a body of armour grown from its own black crystal and comes down off its throne to duel you with a crystal greatsword. Beaten, the borrowed body breaks and the light that wore it flees up the veins.",
+    "look": "A knight of black stillglass about a head taller than the hero, slender and armoured: plates of black-violet crystal lit violet at the edges, a horned crown, a slit of pale cyan light for eyes, cyan crystal growing from its joints, and thin blood-red veins running through the plate. A wine-dark cape hangs from its shoulders. It wields a crystal greatsword of near-black glass with a cyan edge. It stalks slowly and lifts the blade high before a cleave, sinks into a crouch before a lunge, plants the blade and raises a glowing cyan palm for the pull, and lifts the blade to the vault before crystal spikes rain up from the floor. Colours: black-violet, alien cyan, blood red, wine.",
+    "arena_text": "The Throne of the Evercrown (69,-11, 60x23 tiles), past the Proving Scar and its last shrine. A long hall of the Evercrown's flesh: rounded cells of black-violet scar tissue with wine-dark seams and cyan pores whose light rims each cell, ribbed far walls with light veins and a wine glow below, polyps, tendrils and wall eyes. Two hanging planks over the floor give height, and the throne's dais is at the east end. Door 2, high on the east wall, leads to the Veins. A sign: 'THE THRONE. Something sits here that is not a king, in a body that is not its own.'",
+    "phases": [
+      {
+        "name": "Phase 1 (full to 50%)",
+        "text": "It stalks you at 50 px/s for 0.8 s, then picks cleave (within 72 px), lunge (middle) or rain (170 px or more). It uses the pull at least every fourth attack, and whenever it would repeat a lunge or rain. Its plate halves blows to its front."
+      },
+      {
+        "name": "Phase 2 (below 50%)",
+        "text": "Its tells shrink to 0.75x (never under 0.35 s), every cleave comes back for a second swing, and its pull drags at 95 px/s instead of 70."
+      }
+    ],
+    "attacks": [
+      {
+        "name": "Cleave",
+        "tell": "The greatsword goes up overhead, 0.55 s (about 0.41 s in phase 2).",
+        "effect": "A wide overhead arc in front of it (76x64 px), 20 damage. Parryable. In phase 2 it swings a second time after another tell.",
+        "counter": "Parry it for a 1.2 s reel, or step back out of the arc."
+      },
+      {
+        "name": "Lunge",
+        "tell": "It sinks into a crouch, blade back, 0.5 s (0.375 s in phase 2).",
+        "effect": "A drive across the floor point first at 260 px/s for 0.35 s, 18 damage. Parryable.",
+        "counter": "Jump over it and strike its back, or parry it."
+      },
+      {
+        "name": "Pull",
+        "tell": "It plants the blade and raises a glowing palm, 0.6 s (0.45 s in phase 2).",
+        "effect": "Wrong gravity drags you toward it at 70 px/s (95 in phase 2) for 1.2 s, then it bursts in a 52 px ring for 14, unparryable. After the burst it stands spent for 0.7 s, bare.",
+        "counter": "Run or dash against the pull to stay out of the ring, then punish the 0.7 s it stands spent."
+      },
+      {
+        "name": "Rain",
+        "tell": "It lifts the blade to the vault, 0.6 s (0.45 s in phase 2).",
+        "effect": "Six crystal spikes erupt in a line toward you, 26 px and 0.09 s apart, each glowing 0.18 s first, 12 each, unparryable.",
+        "counter": "Jump or dash the line."
+      },
+      {
+        "name": "Body contact",
+        "tell": "None.",
+        "effect": "16 damage.",
+        "counter": "Don't walk into it."
+      }
+    ],
+    "strategy": "A straight duel. Its plate halves blows to the front, so strike from behind (jump the lunge to get there), from above off the hanging planks, or while it reels from a parried cleave or lunge. The pull is the fight's clock: it comes at least every fourth attack, so when the palm glows, run or dash away and let the burst miss, then hit it during the 0.7 s it stands spent. Jump every spike line. In phase 2 expect the second cleave and don't step back in after the first. The mistakes that kill are swinging into its front for half damage and getting dragged into the burst.",
+    "prompts": [
+      {
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art, 2D side-scrolling platformer, strict orthographic side view, no perspective, feet on one ground line, 1920x1080, 32 px tiles, crisp hard pixels, no anti-aliasing, about 96 colours in hue-shifted ramps, no pure black or white, 1 px selective outlines, top-left key light, a lit play plane before darker parallax layers fading into haze, a low dark foreground fringe. A gameplay screen of a final boss fight in a throne hall grown from living crystal flesh. The walls and floor are rounded cells of black-violet scar tissue with wine-dark seams and glowing cyan pores rimming each cell, ribbed far walls with light veins and a deep wine-red glow below, polyps, tendrils and staring wall eyes, two hanging planks over the floor, and a dark throne on a dais at the right end. Cyan spore motes drift in the air. A knight of black stillglass crystal, a head taller than the hero, raises a near-black crystal greatsword with a cyan edge overhead: black-violet crystal plate, a horned crown, a slit of pale cyan light for eyes, cyan crystal at its joints, thin blood-red veins in the plate, a wine-dark cape. The hero is small: a slender hooded elf wanderer about four tiles tall, brown leather armour with brass buckles, dark green gold-trimmed cloak and scarf, sword in his near hand, shield on his far arm. He raises his shield beneath the blade, braced on the floor. Colours: black-violet, alien cyan, blood red, wine."
+      },
+      {
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "knight of black crystal armour, horned crown, glowing cyan eye slit, cyan crystal at joints, thin red veins, wine dark cape, crystal greatsword raised overhead, pixel art sprite, strict orthographic side view, no perspective, flat ground line, limited palette, crisp pixels, transparent background"
+      },
+      {
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept key art, visible brush strokes, the same side-on composition read as a 2D game screen, no perspective tilt, the same palette and mood as the game, 16:9. Key art of a black crystal knight with a horned crown and a slit of cyan light for eyes rising from a throne grown of dark flesh and crystal, one palm raised and glowing, pulling the air toward it. A hooded elf wanderer with sword and shield is dragged forward across the floor, cloak whipping. Cyan pores glow in the walls, red veins pulse in the floor. Palette of black-violet, alien cyan, blood red and wine."
+      }
+    ],
+    "avoid": "perspective, isometric, top-down or three-quarter view, tilted camera, raised back foot, blur, soft anti-aliasing, photorealism, 3D render, text, logos, UI, HUD, watermarks, pure black, pure white, demon horns and fire, bright red armour",
+    "sources": [
+      "design bible 8 (tables) and 8.9 (Phase 1, as built)",
+      "design bible 12.48 and 12.50 (Evercrown look)",
+      "scripts/bosses/everbloom_avatar.gd",
+      "scripts/enemies/crystal_spike.gd",
+      "scripts/bosses/boss_arena.gd",
+      "levels/evercrown/throne.room",
+      "workbench/catalog/catalog.json (Guardians)"
+    ],
+    "notes": "Bible 8.9 calls it 'the Avatar on the Throne'; the script's name card reads 'The Everbloom' with the epithet 'The Bud on the Throne' (used here). Code also forces the pull whenever the pick would repeat a lunge or rain, which the bible does not say. Rain spike damage (12) comes from crystal_spike.gd; the bible leaves it out."
+  },
+  {
+    "id": "everbloom_veins",
+    "name": "The Everbloom (veins)",
+    "title": "Core of the Stillglass",
+    "zone": "The Evercrown",
+    "arena": "The Veins",
+    "health": 60,
+    "phase_count": 2,
+    "reward": "A skill point (The Veins Go Dark)",
+    "kind": "final",
+    "lore": "With its avatar broken, the Everbloom's core fights for itself: a vast crystal eye-flower rooted in the vault of a tall shaft. No blade reaches it. It feeds on the light that fled the throne through veins grown up the shaft, and starves when they are cut.",
+    "look": "The core is a vast crystal eye-flower hanging from the vault, about as wide as six tiles: dark black-violet petals edged with lighter violet ring a fleshy wine-red centre, and in the heart of it a single eye of cyan crystal with a blood-red iris that turns to follow the hero. The six veins are knots of faceted cyan crystal, three prism shards lit from the upper left grown from a fleshy night-violet node, hung on a vein that climbs toward the core with light pulsing up it. Cut, a vein's main shard snaps off, its crystal goes dead night-violet and the vein hangs slack. The core's beams are a thin flickering cyan line, then a lance of white-cyan light. A great twisted stalk climbs the back wall of the shaft. Colours: black-violet, alien cyan, blood red, wine.",
+    "arena_text": "The Veins (71,-13, 40x68 tiles), a tall shaft of stillglass flesh entered from the throne's high east door. The hero climbs zigzag one-way ledges three rows apart, past six light veins grown above the ledges. The Everbloom's twisted stalk stands up the back of the shaft and hanging tendrils drift beside it. The core hangs at the vault. A door high on the east wall, reached from a ledge under the vault, leads to the Heart of the Bloom. A sign: 'The light that fled the throne runs up these veins to the core. Cut them, and it starves.'",
+    "phases": [
+      {
+        "name": "Phase 1 (six to four veins)",
+        "text": "A beam every 2.2 s, its line flickering for 0.6 s first. The core's health bar is the veins still lit, 10 each."
+      },
+      {
+        "name": "Phase 2 (three veins or fewer)",
+        "text": "The beam tell is 0.45 s, volleys come every 1.6 s, and every other volley is a pair of beams fanned to either side of you."
+      }
+    ],
+    "attacks": [
+      {
+        "name": "Core beam",
+        "tell": "A thin flickering line from the eye to you with a zap, 0.6 s (0.45 s below half).",
+        "effect": "A lance of light burns along the line for 0.35 s with a searing sound, 12 px wide, 16 damage, unparryable.",
+        "counter": "Step or dash out of the line once it is drawn; the line does not follow you."
+      },
+      {
+        "name": "Fanned pair (phase 2)",
+        "tell": "Two flickering lines, 0.18 rad to either side of you, 0.45 s.",
+        "effect": "Two beams, 16 each, unparryable.",
+        "counter": "Stand still between them."
+      }
+    ],
+    "strategy": "This is a climb under fire. The core can't be hurt; cut or pogo each of the six veins (one blow each, and a pogo also bounces you higher) as you climb the zigzag ledges. Watch the core's eye and its flickering line: move as soon as the line appears, because the beam burns where the line was drawn. Below half, every other volley is a fanned pair aimed beside you, so stand still for those. The Stillstone holds the core and its beams, which buys time on a hard ledge. The mistakes that kill are dodging into a fanned beam and pausing on a ledge to wait out a beam that is already drawn on you.",
+    "prompts": [
+      {
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art, 2D side-scrolling platformer, strict orthographic side view, no perspective, feet on one ground line, 1920x1080, 32 px tiles, crisp hard pixels, no anti-aliasing, about 96 colours in hue-shifted ramps, no pure black or white, 1 px selective outlines, top-left key light, a lit play plane before darker parallax layers fading into haze, a low dark foreground fringe. A gameplay screen inside a tall vertical shaft of living crystal flesh. Walls of rounded black-violet scar-tissue cells with wine-dark seams and glowing cyan pores, a great twisted stalk climbing the back wall, hanging violet tendrils, deep wine-red glow far below. Thin violet one-way ledges zigzag up the shaft three rows apart. Above the ledges hang knots of faceted cyan crystal on veins that climb toward the top, light pulsing up them; one knot is snapped and dead violet. At the top of the frame hangs a vast crystal eye-flower: black-violet petals around a fleshy wine-red centre and a single cyan crystal eye with a blood-red iris, aiming a thin flickering cyan line down at the hero; a second beam already burns as a lance of white-cyan light. The hero is small: a slender hooded elf wanderer about four tiles tall, brown leather armour with brass buckles, dark green gold-trimmed cloak and scarf, sword in his near hand, shield on his far arm. He leaps between two ledges, sword raised to cut a crystal vein. Colours: black-violet, alien cyan, blood red, wine."
+      },
+      {
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "giant crystal eye-flower hanging from a ceiling, black violet petals, fleshy wine red centre, single cyan crystal eye with red iris, glowing, pixel art sprite, strict orthographic side view, no perspective, flat ground line, limited palette, crisp pixels, transparent background"
+      },
+      {
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept key art, visible brush strokes, the same side-on composition read as a 2D game screen, no perspective tilt, the same palette and mood as the game, 16:9. Key art looking along a towering shaft of dark crystal flesh, a hooded elf wanderer climbing zigzag ledges toward a vast eye-flower of crystal hanging from the vault. Beams of white-cyan light lance down past him, and glowing cyan veins on the walls go dark one by one where he has cut them. A twisted stalk climbs the back wall. Palette of black-violet, alien cyan, blood red and wine."
+      }
+    ],
+    "avoid": "perspective, isometric, top-down or three-quarter view, tilted camera, raised back foot, blur, soft anti-aliasing, photorealism, 3D render, text, logos, UI, HUD, watermarks, pure black, pure white, sci-fi laser guns, metal machinery",
+    "sources": [
+      "design bible 8 (tables) and 8.9 (Phase 2, as built)",
+      "design bible 12.37 and 12.59",
+      "scripts/bosses/everbloom_core.gd",
+      "scripts/bosses/light_vein.gd",
+      "scripts/bosses/core_beam.gd",
+      "scripts/bosses/boss_arena.gd",
+      "levels/evercrown/veins.room",
+      "workbench/catalog/catalog.json (Guardians)"
+    ],
+    "notes": "Health is not a fixed number in code: it is 10 per vein still lit when the fight starts (six veins in veins.room, so 60); the catalog lists it as null. The core has no attack but its beams, no contact damage, and takes no damage itself. The painterly prompt keeps the side-on rule, so 'looking along' means a side view up the shaft."
+  },
+  {
+    "id": "everbloom",
+    "name": "The Everbloom (heart)",
+    "title": "Heart of the Bloom",
+    "zone": "The Evercrown",
+    "arena": "The Heart of the Bloom",
+    "health": 300,
+    "phase_count": 3,
+    "reward": "A skill point (The Heart of the Bloom Dies), then the ending",
+    "kind": "final",
+    "lore": "Starved of its veins, the Everbloom's heart hangs in the dark of its last chamber, holding the stolen light of the Tree's springs. But the Tree has followed the hero here: its roots break the floor to bind the heart, and only the Severance, the blade that cut the blossom, can part it from the Ylden. Each third of it cut away sends a spring's light home.",
+    "look": "A crystal eye-flower slightly smaller than the core, about five tiles wide, hanging high over the floor with petals all around it: black-violet petals with lighter violet edges, a wine-red fleshy centre and a cyan crystal eye with a blood-red iris that follows the hero. It drifts slowly after you and bobs in the air. When the Tree answers, the floor under it cracks and glows green, and a brown bark root with lime-green sap light whips up, wraps it and drags it to the floor, where it strains. In phase 3 it flashes white in its last half second held before it bursts free. Three sockets in the vault hold the springs' stolen light; freed, each fills with blue water light and pours a shaft down. Colours: black-violet, alien cyan, blood red, bark brown, sap green, spring blue.",
+    "arena_text": "The Heart of the Bloom (72,-13, 60x23 tiles), through a door high on the Veins' east wall. A long chamber of the Evercrown's black-violet flesh with two low ledges. The heart hangs far above the floor, out of any blade's reach. Three empty sockets sit in the vault; each lights with spring water and pours a shaft of blue light down as a third of the heart falls. Where the root breaks the floor, green light glows. A sign: 'The Tree has followed you here. When its roots hold the heart down, cut with the Severance.'",
+    "phases": [
+      {
+        "name": "Phase 1 (full to 66%)",
+        "text": "It attacks every 2.0 s, choosing beam or seeds, never the same twice in a row. A root comes after 4 s and then every 7 s."
+      },
+      {
+        "name": "Phase 2 (below 66%)",
+        "text": "The first light goes home and you regain a quarter of your health. It attacks every 1.7 s and adds the spike wave; roots come every 6 s."
+      },
+      {
+        "name": "Phase 3 (below 33%)",
+        "text": "The second light goes home. It attacks every 1.4 s with tells of 0.45 s, roots come every 5 s, and it bursts as each root lets go."
+      }
+    ],
+    "attacks": [
+      {
+        "name": "Beam",
+        "tell": "A thin flickering cyan line from its eye to you, 0.6 s (0.45 s in phase 3).",
+        "effect": "A lance of light burns along the line for 0.35 s, 16 damage, unparryable.",
+        "counter": "Step out of the line once it is drawn."
+      },
+      {
+        "name": "Seeds",
+        "tell": "Three stillglass seeds appear around you, 56 px apart, and swell for 0.7 s.",
+        "effect": "Each bursts in a 30 px ring for 10, unparryable.",
+        "counter": "Crack a seed with one slash or a pogo, or step clear of all three."
+      },
+      {
+        "name": "Spike wave (phase 2+)",
+        "tell": "Crystal gathers under it with a crackle, 0.6 s (0.45 s in phase 3); each spike glows 0.18 s.",
+        "effect": "Eight crystal spikes run out along the floor each way from under it, 30 px and 0.07 s apart, 12 each, unparryable.",
+        "counter": "Jump the wave as it reaches you, or stand on a low ledge."
+      },
+      {
+        "name": "Release burst (phase 3)",
+        "tell": "It flashes for the last 0.5 s it is held by the root.",
+        "effect": "As the root lets go it bursts in a 56 px ring, 14 damage, unparryable.",
+        "counter": "Stop cutting and step back when it flashes."
+      },
+      {
+        "name": "The Tree's root (ally)",
+        "tell": "The floor under the heart cracks and glows green for 0.8 s.",
+        "effect": "A root whips up, binds the heart and drags it to the floor, holding it 2.4 s. Only then can it be hurt, and only by a swing of the Severance.",
+        "counter": "Be under the heart when the green glow shows, then cut with the Severance; the Stillstone holds the bound heart for more time to cut."
+      }
+    ],
+    "strategy": "Nothing hurts the heart while it floats, so the fight is survival between roots. Read the beam's line, crack or dodge the seeds, and jump the spike waves, and stay under the heart as it drifts so you are close when the floor glows green. When the root binds it, cut with the Severance (no other blade, thrown dagger or spell lands) for the whole 2.4 s; turning the Stillstone while it is bound gives more time. Each third freed heals a quarter of your health. In phase 3 back off as soon as it flashes. The mistakes that kill are cutting through the flash into the release burst and wandering off from under it so the bind is wasted.",
+    "prompts": [
+      {
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art, 2D side-scrolling platformer, strict orthographic side view, no perspective, feet on one ground line, 1920x1080, 32 px tiles, crisp hard pixels, no anti-aliasing, about 96 colours in hue-shifted ramps, no pure black or white, 1 px selective outlines, top-left key light, a lit play plane before darker parallax layers fading into haze, a low dark foreground fringe. A gameplay screen of the last boss fight, in a long chamber grown from living crystal flesh. Walls of rounded black-violet cells with wine-dark seams and glowing cyan pores, two low ledges, cyan spore motes in the air, three sockets in the vault, one of them filled with blue spring water pouring a shaft of blue light down. In the middle of the floor a thick brown bark root with lime-green sap light has burst up through cracked, green-glowing ground and wrapped around a crystal eye-flower, dragging it down: black-violet petals around a wine-red fleshy centre and a cyan crystal eye with a blood-red iris. A thin cyan beam line flickers from its eye. The hero is small: a slender hooded elf wanderer about four tiles tall, brown leather armour with brass buckles, dark green gold-trimmed cloak and scarf, sword in his near hand, shield on his far arm. He swings a long pale sword down into the bound flower, cloak and scarf flying. Colours: black-violet, alien cyan, blood red, bark brown, sap green, spring blue."
+      },
+      {
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "floating crystal eye-flower boss, black violet petals all around, wine red fleshy centre, cyan crystal eye with red iris, faint cyan glow, pixel art sprite, strict orthographic side view, no perspective, flat ground line, limited palette, crisp pixels, transparent background"
+      },
+      {
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept key art, visible brush strokes, the same side-on composition read as a 2D game screen, no perspective tilt, the same palette and mood as the game, 16:9. Key art of the end of the journey: a great living root of the Tree bursting up through a floor of dark crystal flesh to bind a floating eye-flower of stillglass, green sap light against cyan crystal. A hooded elf wanderer with a pale sword leaps to strike it. Above, a socket in the vault fills with spring water and pours blue light down onto him. Palette of black-violet, cyan, blood red, bark brown, sap green and spring blue."
+      }
+    ],
+    "avoid": "perspective, isometric, top-down or three-quarter view, tilted camera, raised back foot, blur, soft anti-aliasing, photorealism, 3D render, text, logos, UI, HUD, watermarks, pure black, pure white, happy sunlit scene, cartoon flower face",
+    "sources": [
+      "design bible 2",
+      "design bible 8 (tables) and 8.9 (Phase 3, as built)",
+      "scripts/bosses/everbloom_heart.gd",
+      "scripts/bosses/tree_root.gd",
+      "scripts/bosses/heart_light.gd",
+      "scripts/bosses/core_beam.gd",
+      "scripts/enemies/crystal_spike.gd",
+      "scripts/bosses/boss_arena.gd",
+      "levels/evercrown/heart.room",
+      "workbench/catalog/catalog.json (Guardians)"
+    ],
+    "notes": "Bible 8.9's concept says each strike restores a spring; as built each third does (the bible notes this deviation). The code never repeats the last attack. Seed numbers (0.7 s swell, 30 px, 10 damage) come from the stillglass seed script, whose class name holds a retired word and is not repeated here. The Severance in the prompts is described only as a long pale sword, since its look is not given in these sources."
+  },
+  {
+    "id": "bark_captain",
+    "name": "The Bark Knight Captain",
+    "title": "First Knight of the Tree",
+    "zone": "High Boughs",
+    "arena": "The Thorn Yard",
+    "health": 240,
+    "phase_count": 2,
+    "reward": "Mana Dew",
+    "kind": "mini-boss",
+    "lore": "The first knight the Tree grew, older than Sylvarre, still keeping the watch it was grown for in the Thorn Yard east of the town. It no longer knows the wardens' faces. Squire Ithil warns that fire is the one thing his bark fears. He is optional and gives a Mana Dew (no skill point).",
+    "look": "A Bark Knight grown half again as tall, a little taller than the hero: a knight of living bark in dark and mid brown, his coat made of five overlapping plates of bark over pale cream heartwood, a crown of living green leaves on his head, and eyes that glow lime green when he braces. He carries a long lance of green bough, about seven tiles long, its point a thorn. He walks with a slow, stiff stride. Bracing, he draws the lance back with eyes lit; thrusting, he drives it straight out, then roots in place with the lance left out stiff as a branch you can stand on. In phase 2 he plants the lance and crouches, then pole-vaults high and comes down lance-first, the lance sticking in the floor. Each blow on his bark knocks off a plate, showing more pale heartwood; a plate grows back each time he pulls free.",
+    "arena_text": "The Thorn Yard is one screen (40x23 tiles) through Sylvarre's east gate: a flat yard among the High Boughs' branches, with a wooden shelf about six tiles up near each end and a long high shelf in the middle about eleven tiles up. His rooted lance is a one-way ledge in the middle of the fight: you can land on it, drop through it with Down + Jump, or pogo off it. Leaf green and sky blue, thorny boughs around the edges.",
+    "phases": [
+      {
+        "name": "Reveal (1.4 s)",
+        "text": "A creak of bark under his name card."
+      },
+      {
+        "name": "Phase 1 (full to 50%)",
+        "text": "He walks toward you (44 px/s) and thrusts whenever you are about level with him and within 120 px."
+      },
+      {
+        "name": "Phase 2 (below 50%)",
+        "text": "Tells 20% shorter (thrust 0.52 s, vault 0.56 s). When you keep your distance (past 180 px) or stand off his level, he often vaults (six times in ten)."
+      }
+    ],
+    "attacks": [
+      {
+        "name": "Thrust",
+        "tell": "0.65 s (0.52 s below half): a creak, he braces with the lance drawn back and eyes lit.",
+        "effect": "He drives the lance out to 110 px for 18, parryable. Then he roots for 1.3 s with the lance left out as a one-way bough you can stand on or pogo off.",
+        "counter": "Parry it (he reels 1.4 s, open) or stay out of its line; then strike him while rooted, when blows land in full."
+      },
+      {
+        "name": "Vault",
+        "tell": "Phase 2, 0.7 s (0.56 s): he plants the lance and crouches.",
+        "effect": "He pole-vaults high and comes down lance-first where you stood, for 20 under him. The lance sticks in the floor and he hangs planted for 1.4 s, open.",
+        "counter": "Move off your spot when he leaves the ground, then punish the planted knight."
+      },
+      {
+        "name": "Bark guard",
+        "tell": "Always: five bark plates.",
+        "effect": "While he wears bark, each blow chips one plate and lands only a quarter; bare or open, he takes blows in full. A plate grows back each time he pulls free of a root or a planted lance. A thrown dagger splits nothing.",
+        "counter": "Emberfall burns every plate off at once (20 MP); otherwise strip plates during his open windows."
+      },
+      {
+        "name": "Body contact",
+        "tell": "Always on.",
+        "effect": "12 on touch.",
+        "counter": "Keep out of his body when he walks in."
+      }
+    ],
+    "strategy": "He is a duel about openings. Stand level and close enough to draw the thrust, then either parry it (1.4 s open) or let it miss and strike him during the 1.3 s root, when his bark doesn't guard him. Hop up onto the rooted lance and pogo off it if you want height. His five plates make side blows weak while he is closed, and a plate regrows every time he pulls free, so a slow fight never strips him: burn the whole coat off with Emberfall and then pile in. Below half, keeping your distance invites the vault; step away as he leaves the ground and punish the 1.4 s he hangs planted. The mistakes that kill are chipping at his bark between attacks, standing still under a vault, and stepping into the thrust's line during the brace.",
+    "prompts": [
+      {
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art for a 2D side-scrolling platformer, strict orthographic side view, level camera, no perspective. 1920x1080 16:9 frame, 32 px tiles, crisp hard pixels, no anti-aliasing or blur, limited palette of about 96 colours in hue-shifted ramps, 1 px dark outlines on figures, top-left key light, no pure black or white. Lit play plane in front of darker parallax layers fading into atmosphere, low dark foreground fringe. Scene: a flat yard on a giant tree branch high in the canopy, thorny boughs and leaves framing it, sky blue and pale distant branches in the layers behind, a wooden shelf on each side and a long one high in the middle. A tall knight made of living bark stands in the yard: overlapping dark brown bark plates over pale cream heartwood, a crown of living green leaves, lime green glowing eyes, and a long lance of green bough with a thorn point thrust straight out at full reach, the lance level and stiff like a branch. Chips of bark fly from his chest where a plate has been knocked off. The hero is small against it: a slender elf wanderer with violet hair, hood, long dark green cape and scarf, brown leather armor, sword in his near hand, round shield on his far arm. He has landed on top of the outstretched lance and is about to pogo off it, sword pointed down. Leaf green, bark brown, sky blue."
+      },
+      {
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Tall knight of living bark, overlapping dark brown bark plates over pale cream heartwood, crown of green leaves, lime green glowing eyes, long green bough lance with a thorn point held level, side view facing right. HD pixel art sprite, strict orthographic side view, no perspective, single color dark outline, limited palette, plain background."
+      },
+      {
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept key art with visible brushwork, kept side-on like a 2D platformer screen with a level camera and no perspective tilt, the same palette and mood as the game. An ancient knight grown from living bark, crowned with fresh leaves, pole-vaults high on a long green bough lance over a thorn-ringed yard in the canopy of a world-sized tree, about to come down lance-first. Below him a small hooded elf wanderer with sword and round shield rolls clear, embers of a fire spell still curling off the knight's scorched plates. Bark brown, leaf green, pale heartwood, sky blue."
+      }
+    ],
+    "avoid": "perspective, three-quarter or top-down view, isometric, blur, anti-aliasing, soft gradients on sprites, text, logos, UI, watermark, pure black, pure white, metal armor, a horse, a treant with a face in the trunk",
+    "sources": [
+      "design bible 7 (High Boughs row, Bark Knight)",
+      "design bible 8 (opening and numbers tables, mini-boss section)",
+      "scripts/bosses/bark_captain.gd",
+      "levels/boughs/thorn_yard.room",
+      "workbench/catalog/foes/bark_captain.png"
+    ],
+    "notes": "He is still a code-drawn placeholder (the catalog picture is flat blocks), so the look comes from bible 8 and his script's colours. Bible 8 says the lance is 'six tiles long' and the thrust reaches 110 px; at 16 px world tiles 110 px is nearly seven tiles. The vault chance (60%) and the 180 px distance trigger are from the code."
+  },
+  {
+    "id": "clockwork_alpha",
+    "name": "The Clockwork Alpha",
+    "title": "First Hound of Thane Vorrund",
+    "zone": "Vorrhallow",
+    "arena": "Alpha's Den",
+    "health": 260,
+    "phase_count": 2,
+    "reward": "Life Fruit (no skill point)",
+    "kind": "mini-boss",
+    "lore": "The first of Thane Vorrund's brass hunting hounds, wound by the king's own hand and never let off the chain. It still runs on that winding in a den under the Thane's Kennels, and a Life Fruit, the king's reward for his first hound, is locked in its winding-chest.",
+    "look": "A great brass hound as big as a pony, long and low: a barrel body of riveted brass plates in warm gold, honey and dark bronze, steel joints at the legs, and a dark umber belly where gears show through. A crown collar of bright gold rings its neck, and a winding key the size of a shield stands up out of its back and turns slowly, spinning to a blur in its tells. Its eyes are hot red-orange that blaze pale gold when it winds up. It is about the hero's height at the shoulder and twice his length. It trots with a stiff clockwork gait, crouches with a ratchet before it pounces, skids on landing, and when it jams against a wall it shudders while gears spill out. Flipped on its back by a parry, its belly gears lie bare. In stopped time it freezes mid-stride or mid-leap.",
+    "arena_text": "Alpha's Den (57,-6, 40x23 tiles), reached down a plank-lidded shaft in the Thane's Kennels' floor. A flat dwarven stone den in Vorrhallow's look: squat dark masonry with a teal tide line, magenta stillglass forcing through the joints. A kennel grate at each end of the den is where its pups wind out. Walls at both ends are what jam its charge. A sign: 'THE FIRST HOUND. Wound by the king's hand, and never let off the chain.'",
+    "phases": [
+      {
+        "name": "Phase 1 (full to 50%)",
+        "text": "It trots after you for 0.8 s, then pounces if you are within 150 px and charges if you are farther. Its plating halves every blow unless it is flipped, jammed or stopped."
+      },
+      {
+        "name": "Phase 2 (below 50%)",
+        "text": "Its tells are 25% shorter (pounce 0.45 s, charge 0.53 s), the charge runs at 340 px/s, and it can howl to wind brass pups out of the grates, never more than two at once."
+      }
+    ],
+    "attacks": [
+      {
+        "name": "Pounce",
+        "tell": "It crouches, its key spins up with a ratchet and its eyes blaze, 0.6 s (0.45 s in phase 2).",
+        "effect": "A long low leap aimed to land on you, a bite of 18. It skids 0.55 s on landing.",
+        "counter": "Parry the bite and it flips onto its back for 1.5 s, every blow in full; or jump over it and strike during the skid (still plated)."
+      },
+      {
+        "name": "Charge",
+        "tell": "It plants its feet and its key screams, 0.7 s (about 0.53 s in phase 2).",
+        "effect": "It runs the den at 300 px/s (340 in phase 2) for up to 2.6 s, a body blow of 20.",
+        "counter": "Jump it. Bait it toward a wall: if it reaches one it jams for 1.6 s, gears spilling, open to every blow."
+      },
+      {
+        "name": "Howl (phase 2)",
+        "tell": "Its key winds and it rears to howl: 0.8 s base, and since it howls only in phase 2, 0.6 s in play.",
+        "effect": "A Clockwork Hound pup winds out of the grate at each end of the den, up to two standing at once. Pups bite for 14 and run down when it dies.",
+        "counter": "Hit it during the 0.6 s howl tell, then thin the pups or ignore them and keep pressure on the Alpha."
+      },
+      {
+        "name": "Body contact",
+        "tell": "None.",
+        "effect": "12 damage.",
+        "counter": "Don't stand in its path between moves."
+      }
+    ],
+    "strategy": "Its plating halves everything outside its three openings, so fight for the openings. Stand far enough away to bait the charge, jump it, and let it slam into the wall behind you for 1.6 s of full damage. Up close, parry the pounce's bite to flip it for 1.5 s. The Stillstone is the strongest answer: clockwork stops dead in stopped time, in the air or not, and a stopped Alpha takes every blow in full. In phase 2 watch for the howl and keep the pups from boxing you in. The mistakes that kill are standing between it and a wall during a charge and trading plated hits while pups gather.",
+    "prompts": [
+      {
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art, 2D side-scrolling platformer, strict orthographic side view, no perspective, feet on one ground line, 1920x1080, 32 px tiles, crisp hard pixels, no anti-aliasing, about 96 colours in hue-shifted ramps, no pure black or white, 1 px selective outlines, top-left key light, a lit play plane before darker parallax layers fading into haze, a low dark foreground fringe. A gameplay screen of a mini-boss fight in a flooded dwarven den under a royal kennel. Squat dark dwarf masonry with a teal tide line on every block, magenta stillglass crystal forcing through the joints, a rusted kennel grate at each end of the room, and a plank-lidded shaft opening in the ceiling. Behind, colossal drowned pillars with crystal clusters glowing magenta. A great brass clockwork hound as big as a pony leaps across the middle of the room in a long low arc, jaws open: riveted brass plates in gold and bronze, steel leg joints, a bright gold crown collar, red-orange eyes blazing pale gold, and a winding key the size of a shield spinning to a blur on its back. A small brass pup crouches by the far grate. The hero is small: a slender hooded elf wanderer about four tiles tall, brown leather armour with brass buckles, dark green gold-trimmed cloak and scarf, sword in his near hand, shield on his far arm. He raises his shield to meet the bite, knees bent, on the stone floor."
+      },
+      {
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "giant brass clockwork hound, pony sized, riveted gold and bronze plates, steel joints, gold crown collar, large winding key on its back, glowing red eyes, crouched to pounce, pixel art sprite, strict orthographic side view, no perspective, flat ground line, limited palette, crisp pixels, transparent background"
+      },
+      {
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept key art, visible brush strokes, the same side-on composition read as a 2D game screen, no perspective tilt, the same palette and mood as the game, 16:9. Key art of a huge brass clockwork hound charging across a drowned dwarven den, its shield-sized winding key spinning on its back, sparks and loose gears flying from its joints, a gold crown collar at its neck and eyes glowing red. A hooded elf wanderer leaps over it with sword and shield. Dark stone walls with a teal tide line, magenta crystal growing through the joints, a kennel grate at each end. Palette of flooded teal, crystal magenta, warm brass gold and bronze."
+      }
+    ],
+    "avoid": "perspective, isometric, top-down or three-quarter view, tilted camera, raised back foot, blur, soft anti-aliasing, photorealism, 3D render, text, logos, UI, HUD, watermarks, pure black, pure white, organic fur, a real dog",
+    "sources": [
+      "design bible 7 (Vorrhallow) and 8 (Clockwork Alpha)",
+      "scripts/bosses/clockwork_alpha.gd",
+      "scripts/bosses/boss_arena.gd",
+      "levels/vorrhallow/alpha_den.room",
+      "design bible 3.2 (Vorrhallow look)",
+      "workbench/catalog/catalog.json (Guardians)"
+    ],
+    "notes": "Code caps the howl at three in a fight (_howls < 3) and gives it a 40% chance when fewer than two pups stand; the bible gives neither limit. The den's detailed decor isn't named in the room header, so the den look is Vorrhallow's general look (bible 3.2). Current catalog art is a placeholder."
+  },
+  {
+    "id": "hag_matriarch",
+    "name": "The Marsh Hag Matriarch",
+    "title": "Mother of the Mire",
+    "zone": "The Haar",
+    "arena": "The Matriarch's Mire",
+    "health": 230,
+    "phase_count": 2,
+    "reward": "Mana Dew",
+    "kind": "mini-boss",
+    "lore": "The oldest of the Haar's hags and mother of all of them, grown huge and bent in her mire east of Polesend. Every hag in the fog is her daughter, and she remembers each one you burned. She is optional; she gives a Mana Dew (no skill point), and the Acorn Charm lies in her mire's far corner.",
+    "look": "A huge bent crone, taller than the hero, almost all of her a bell of dry reeds in straw olive and dull gold that hangs to the mud, with a heap of green moss over her head for hair and a grey-green face with pale yellow-green eyes. She leans on a crooked willow staff of dark brown wood, and a great green marsh-wisp is caught in its crook: a light that shows her through the fog and flares brighter while she casts. When she hexes she draws herself up and raises the staff high; when she sinks she settles into the bog in a ring of bubbles; when a hex is broken the staff clatters into the mud and she gropes for it on hands and knees. She moves slowly, drifting away from you as she walks.",
+    "arena_text": "The Matriarch's Mire is one screen (40x23 tiles) of mud under fog (0.5), reached through the east door at the end of Polesend's boardwalk. The floor is soft mud; two plank shelves stand about six tiles up at either end and a high plank shelf hangs in the middle about ten tiles up, all useful for stepping off a hex mark. There is a gap in the rock ceiling over the middle. The light is the green of her wisp and of the bog-light rings of her hexes, in the Haar's grey-green, bone and lantern-yellow palette. The Acorn Charm waits in the far corner.",
+    "phases": [
+      {
+        "name": "Reveal (1.4 s)",
+        "text": "A cackle under her name card."
+      },
+      {
+        "name": "Phase 1 (full to 50%)",
+        "text": "She keeps her distance (backing off when you are within about 8 tiles, closing in when you are past about 15), hexes every time she chooses a move, and sinks away if you crowd her."
+      },
+      {
+        "name": "Phase 2 (below 50%)",
+        "text": "Tells 20% shorter (hex 0.64 s, sink 0.4 s, call 0.56 s), hexes make five marks instead of three, and every third move, if no daughter walks, she calls one."
+      }
+    ],
+    "attacks": [
+      {
+        "name": "Hex",
+        "tell": "0.8 s (0.64 s below half): she raises the staff, the wisp flares and a cackle sounds over welling bubbles; rings of bubbling green bog light mark the floor under you and to either side, 40 px apart.",
+        "effect": "A hand of black mud bursts up out of every mark (three marks, five below half), 16 each, can't be parried.",
+        "counter": "Step between the marks or up onto a plank; or reach her and strike her mid-hex, which breaks the whole spell: every mark fizzles, the blow lands in full and she gropes for her staff for 1.4 s, open."
+      },
+      {
+        "name": "Sink",
+        "tell": "Stay within 80 px (five tiles) of her for 0.5 s: bubbles and a gurgle as she settles for 0.5 s (0.4 s).",
+        "effect": "She sinks into the bog, untouchable for 0.6 s, and rises (0.4 s) at the far end of the mire from you.",
+        "counter": "Close in during a hex, not between them; chase her through the fog toward her light."
+      },
+      {
+        "name": "Call",
+        "tell": "Below half, every third move while no daughter walks: a cackle, 0.7 s (0.56 s).",
+        "effect": "A Marsh Hag climbs out of the bog at the far side, never more than one. The daughter hexes too (a single mark, 0.6 s tell, a mud hand for 16) and sinks with her mother when she dies.",
+        "counter": "Cut the daughter down quickly (30 HP), or keep pressure on the Matriarch and let the daughter fall with her."
+      },
+      {
+        "name": "Body contact",
+        "tell": "Always on.",
+        "effect": "10 on touch.",
+        "counter": "Hit and step away."
+      }
+    ],
+    "strategy": "Her reed shawl halves every blow unless she is open, and she runs from you, so the fight is about breaking hexes. When the staff goes up and rings appear under you, that is your moment: rush her through the fog toward the green wisp and strike before the hands erupt. A broken hex fizzles every mark and leaves her groping for 1.4 s, open to full damage. If you can't reach her in time, step between the rings or onto a plank and close the gap afterward. Don't loiter beside her between hexes, or she sinks and resurfaces across the mire. A parry also opens her (1.2 s) and fizzles the marks. Below half, five marks cover more floor and daughters join; kill a daughter if it starts hexing you from the other side. The mistakes that kill are waiting for hexes at range, standing on a mark, and letting a daughter and the mother hex you at once. A thrown dagger stings her but never breaks a hex.",
+    "prompts": [
+      {
+        "style": "pixel",
+        "tool": "GPT Image",
+        "text": "HD pixel art for a 2D side-scrolling platformer, strict orthographic side view, level camera, no perspective. 1920x1080 16:9 frame, 32 px tiles, crisp hard pixels, no anti-aliasing or blur, limited palette of about 96 colours in hue-shifted ramps, 1 px dark outlines on figures, top-left key light, no pure black or white. Lit play plane in front of darker parallax layers fading into atmosphere, low dark foreground fringe. Scene: a marsh cavern of black mud under drifting grey-green fog, crooked plank shelves on posts at each end and one high in the middle, reeds and dead stalks in the dark parallax behind, a gap of grey sky in the rock ceiling. A huge bent marsh crone stands in the mud: a great bell of dry straw-coloured reeds hanging to the ground, a heap of green moss for hair, a grey-green face with pale yellow-green eyes, raising a crooked willow staff with a glowing green marsh-wisp caught in its crook. Three rings of bubbling green bog light mark the mud around the hero, and a black mud hand is bursting up from one of them. The hero is small against it: a slender elf wanderer with violet hair, hood, long dark green cape and scarf, brown leather armor, sword in his near hand, round shield on his far arm. He is mid-jump between the rings toward her, sword raised. The light is the green of the wisp and the rings in the fog."
+      },
+      {
+        "style": "pixel",
+        "tool": "PixelLab",
+        "text": "Huge bent swamp crone, bell-shaped cloak of dry straw reeds to the ground, green moss hair, grey-green face, pale yellow-green eyes, crooked willow staff with a glowing green wisp in its crook, side view facing right. HD pixel art sprite, strict orthographic side view, no perspective, single color dark outline, limited palette, plain background."
+      },
+      {
+        "style": "painterly",
+        "tool": "GPT Image",
+        "text": "Loose painted concept key art with visible brushwork, kept side-on like a 2D platformer screen with a level camera and no perspective tilt, the same palette and mood as the game. Deep in a foggy marsh mire, a towering old crone wrapped in a bell of dry reeds and crowned with moss lifts a crooked willow staff whose green wisp flares through the fog. Rings of green bog light open in the black mud and clawing hands of mud rise from them, while a small hooded elf wanderer with a sword and round shield dashes through the murk toward her light. Grey-green fog, straw gold, moss green, glowing wisp green."
+      }
+    ],
+    "avoid": "perspective, three-quarter or top-down view, isometric, blur, anti-aliasing, soft gradients on sprites, text, logos, UI, watermark, pure black, pure white, a pretty witch, a pointed witch hat, a broomstick",
+    "sources": [
+      "design bible 7 (The Haar row, Marsh Hag)",
+      "design bible 8 (opening and numbers tables, mini-boss section)",
+      "scripts/bosses/hag_matriarch.gd",
+      "scripts/enemies/mire_grasp.gd",
+      "scripts/enemies/marsh_hag.gd",
+      "levels/haar/hag_mire.room",
+      "workbench/catalog/foes/hag_matriarch.png"
+    ],
+    "notes": "She is still code-drawn as a placeholder (the catalog picture is flat blocks), so the look comes from the bible's words and her script's colours. The daughter's numbers come from bible 7's Marsh Hag line."
+  }
+]
