@@ -153,6 +153,19 @@ func _ready() -> void:
 	_body.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	_body.draw.connect(_draw_body)
 	add_child(_body)
+	# The room's light shafts carry on under the surface (12.141), just over the
+	# body and behind the actors.
+	var shafts := WaterShaft.new()
+	shafts.name = "Shafts"
+	shafts.z_index = -2
+	shafts.cells = cells
+	shafts.roofed = roofed
+	shafts.top = _top
+	var air := get_parent().get_node_or_null("LightShaft") as LightShaft if get_parent() != null else null
+	if air != null and LightShaft.SHAFTS.has(air.zone):
+		shafts.centers = LightShaft.beam_centers(air.room_size.x, air.seed)
+		shafts.slope = float(LightShaft.SHAFTS[air.zone]["slope"])
+	add_child(shafts)
 	_build_edges()
 	# The stone's part and the drowned stone's tone are drawn once, behind this
 	# node's front and before the waver reads the screen, so they waver with the
