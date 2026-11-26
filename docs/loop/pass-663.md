@@ -44,7 +44,7 @@ the court turning the ceiling more than once, the walls at row 5, and no haunche
 ## Full suite
 
 One full run (`TEST_TIMEOUT=7200`): 38,015 checks passed, 2 failed, both timing budgets in rooms
-this pass does not touch, while CI ran on the same PC: `test_spires_rain_stays_cheap` (8.08 ms)
+this pass does not touch: `test_spires_rain_stays_cheap` (8.08 ms)
 and `test_every_room_loads_and_settles_inside_the_budget` (`evercrown/proving_scar` 586 ms against
 500). Rerun alone, the rain test passes; the load test missed once more by 27 ms, then passed three
 times in a row (once with the old plaza, twice with the new). CI's test job passed in full.
