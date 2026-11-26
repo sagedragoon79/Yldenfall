@@ -13,6 +13,7 @@ const BRIDGE := "boughs/canopy_bridge"
 const HALL := "vorrhallow/flooded_hall"
 ## A roof this many rows thick over the burrows' tunnel is a dead band (pass 662).
 const BURROW_THICK := 9
+const PLAZA := "hearthroot/plaza"
 
 
 func _grid(id: String) -> Array[String]:
@@ -156,3 +157,40 @@ func test_the_burrows_roof_is_one_chewed_vault() -> void:
 	for x in vault:
 		crown = mini(crown, _underside(grid, x))
 	check(crown <= 5, "and rises to row 5 at its crown (%d)" % crown)
+
+
+## The Fountain Plaza's ceiling (pass 663, bible 12.139). The grade saw the
+## plaza as a boxed room: its ceiling was square shoulders and two flat runs of
+## eighteen columns at one height, with a one-tile tooth west of the court. It is
+## now one built vault: from each gate its underside only rises to the court's
+## crown, in steps no longer than ten columns, every step chamfered by a haunch.
+func test_the_plaza_ceiling_is_one_vault() -> void:
+	var grid := _grid(PLAZA)
+	var prof := _profile(grid)
+	var crown: int = prof.min()
+	var first := prof.find(crown)
+	var last := prof.rfind(crown)
+	check(crown == 2 and first <= 32 and last >= 46, "the crown stands over the fountain court at row 2 (%d, columns %d to %d)" % [crown, first + 1, last + 1])
+	for i in range(1, prof.size()):
+		var rising := i <= first
+		var ok := prof[i] <= prof[i - 1] if rising else prof[i] >= prof[i - 1]
+		check(ok, "the underside only rises to the crown and falls from it (column %d)" % (i + 1))
+	check(_turns(grid) == 1, "so the ceiling turns once (%d)" % _turns(grid))
+	check(prof[0] >= 7 and prof.back() >= 7, "it springs from row 7 or lower at both walls (%d, %d)" % [prof[0], prof.back()])
+	var run := 1
+	var steps := 0
+	var chamfered := 0
+	for i in range(1, prof.size()):
+		if prof[i] == prof[i - 1]:
+			run += 1
+		else:
+			run = 1
+			steps += 1
+			var x := i + 1 if prof[i] < prof[i - 1] else i
+			var y := mini(prof[i], prof[i - 1])
+			if "`'".contains(grid[y][x]):
+				chamfered += 1
+		if prof[i] != crown:
+			check(run <= 10, "no step off the crown runs longer than ten columns (column %d)" % (i + 1))
+	check(steps >= 10 and chamfered == steps, "every one of its %d steps is chamfered by a haunch (%d)" % [steps, chamfered])
+
