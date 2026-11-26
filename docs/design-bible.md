@@ -3340,6 +3340,17 @@ The grade of pass 660 named "empty boxed rooms", the last of them "the veins in 
 
 After: beside the stalk the air measures hue 234 and luminance 47 (it was 288 and 27), the walls' side of the shaft is unchanged at 289, and the frame's median hue moves from 288 to 263. The stalk now stands as a violet silhouette against cool light, and the core's wine eye hangs in front of it. Judged by eye at 1x and 2x at the floor, halfway up and at the core. `test_the_veins_light_the_shaft_round_the_stalk` (`tests/test_bloom_stalk.gd`) holds it: the tone, the hue turn of at least 40 degrees and the lift over the wine, the falloff in clean steps, the column's width, its place behind everything, and the dimming with each cut.
 
+### 12.141 The light goes on under the water (pass 665)
+
+The grade of pass 660 named "flat water rectangles (the source hall, the flooded hall)". Measured in `sunken/source_hall` in 16-pixel blocks across the pool: a fifth of the way down, every block lay between luminance 59 and 71, and two thirds down between 42 and 65, darkening only toward the corners. The pool changed with depth and nowhere else, and the room's light shafts (12.17), which rake the air over it, stopped dead at the waterline. Seen from a screen away the pool was one teal block under lit air.
+
+- **The air's shafts carry on into the deep water** (`WaterShaft`, `scripts/world/water_shaft.gd`, a child of `SwimWater`). Each of the room's shafts (`LightShaft.beam_centers`, the zone's lean) that meets an open surface cell enters there, bent steeper (`BEND` 0.75 of its lean in the air), narrower (`NARROW` 0.62 of the air shaft's half-width) and widening as it sinks (`SPREAD`: 1.7 times as wide by `FADE_DEPTH`), in the water's own pale cyan (`SwimWater.SURFACE`).
+- **Pixel art, not a gradient.** Drawn in 2-pixel rows with its edges on the 2-pixel grid, a three-tier core (`TIERS`: full, 0.55, 0.25 from the axis out) and the fall with depth in `LEVELS` (6) clean steps with no dither, from `PEAK` (0.2, additive) at the surface to nothing at `FADE_DEPTH` (184 px); by the floor of a seven-tile pool it is at half strength or less, so the bed stays dark. It sways a whole grain at a time (`SWAY`), and the water's waver (12.116) bends its edges with the stone behind it.
+- **Only through an open surface.** A shaft over a roofed surface cell (12.97) or one that misses the pool does not enter; it lights only water cells, so it stops at a pier and at the pool's floor.
+- **Behind every actor** (just over the body, additive like the air's shafts): a swimmer, an eel and their tells draw over it.
+
+Judged by eye at 1x and 2x in the Source Hall, the Drowned Aqueduct, the Spring Gate and the Wellspring. In the Source Hall's pool a fifth of the way down a shaft now measures luminance 87 beside 63, and two thirds down 76 beside 54; the floor is still the darkest part of the pool. `test_the_light_goes_on_under_the_water` (`tests/test_swim_water_art.gd`) holds the steps, the tiers, the widening, the bend, the open-surface rule and the Source Hall's shafts. Not done here: the Flooded Hall's tide, a tile deep, the other half of the grade's item.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

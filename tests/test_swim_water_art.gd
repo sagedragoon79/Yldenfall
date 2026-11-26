@@ -91,3 +91,71 @@ func test_water_pool_draws_its_body_behind_the_actors() -> void:
 		by_row[int(water._runs[i].position.y / Room.TILE)] = water._run_depth[i]
 	check(is_equal_approx(by_row[5], 2.0 * Room.TILE), "the row under the pillar is two tiles deep (%s)" % by_row[5])
 	check(is_equal_approx(by_row[3], 0.0), "the top row is at the surface")
+
+
+## The room's light shafts carry on under the surface (design bible 12.141, pass
+## 665): bent steeper, narrow where they enter and widening as they sink, in clean
+## steps that fade out above the pool's floor, only through an open surface.
+func test_the_light_goes_on_under_the_water() -> void:
+	# The fall with depth: brightest at the surface, LEVELS clean steps, gone by
+	# FADE_DEPTH; and the core is the brightest tier, the edge the faintest.
+	check(is_equal_approx(WaterShaft.alpha_at(0.0, 0.0), WaterShaft.PEAK), "the core is full at the surface")
+	var seen := {}
+	var prev := INF
+	var falling := true
+	for d in range(0, int(WaterShaft.FADE_DEPTH) + 2, 2):
+		var a := WaterShaft.alpha_at(float(d), 0.0)
+		falling = falling and a <= prev
+		prev = a
+		seen[snappedf(a, 0.0001)] = true
+	check(falling, "a shaft never brightens as it sinks")
+	check(seen.size() == WaterShaft.LEVELS + 1, "it falls in %d clean steps (%d tones)" % [WaterShaft.LEVELS, seen.size()])
+	check(WaterShaft.alpha_at(WaterShaft.FADE_DEPTH, 0.0) == 0.0, "and is gone by FADE_DEPTH")
+	check(WaterShaft.alpha_at(7.0 * Room.TILE, 0.0) <= WaterShaft.PEAK * 0.5 + 0.0001, "by the floor of a seven-tile pool it is at half or less")
+	var h := WaterShaft.half_width(0.0)
+	var core := WaterShaft.alpha_at(8.0, 0.0)
+	var mid := WaterShaft.alpha_at(8.0, h * 0.5)
+	var rim := WaterShaft.alpha_at(8.0, h * 0.9)
+	check(core > mid and mid > rim and rim > 0.0, "core, middle and rim step down (%.3f, %.3f, %.3f)" % [core, mid, rim])
+	check(WaterShaft.alpha_at(8.0, h * 1.05) == 0.0, "nothing past its edge")
+	check(h < LightShaft.HALF, "it enters narrower than the air's shaft")
+	check(WaterShaft.half_width(WaterShaft.FADE_DEPTH) > h * 1.5, "and widens as it sinks")
+	check(absf(WaterShaft.BEND) < 1.0, "it is bent steeper in the water")
+	check(WaterShaft.PEAK > LightShaft.PEAK, "it is brighter than the faint air shaft, so the pool has its light")
+	for t in [0.0, 1.0, 2.5, 7.0]:
+		check(int(WaterShaft.sway_at(1, t)) % WaterShaft.GRAIN == 0 and absf(WaterShaft.sway_at(1, t)) <= WaterShaft.SWAY * WaterShaft.GRAIN,
+			"it sways a whole grain at a time")
+	# It enters only through an open surface: three shafts fall on a pool whose
+	# east end is under a roof, and one misses the water.
+	var shafts := WaterShaft.new()
+	for x in range(1, 13):
+		for y in range(3, 7):
+			shafts.cells[Vector2i(x, y)] = true
+	for x in range(9, 13):
+		shafts.roofed[Vector2i(x, 3)] = true
+	var t := float(Room.TILE)
+	shafts.centers = [3.5 * t, 10.5 * t, 20.5 * t]
+	shafts.slope = 0.0
+	var entries := shafts.find_entries()
+	check(entries.size() == 1, "only the shaft over the open surface enters (%d)" % entries.size())
+	if entries.size() == 1:
+		check(is_equal_approx(float(entries[0][1]), 3.0 * t), "at the surface")
+		check(is_equal_approx(float(entries[0][0]), 3.5 * t), "where the air's shaft meets it")
+	shafts.free()
+	# In the Source Hall the air's shafts carry on into its pool, behind the actors.
+	var room := Room.from_file("res://levels/sunken/source_hall.room")
+	arena.add_child(room)
+	await frames(2)
+	var water: SwimWater = null
+	for c in room.get_children():
+		if c is SwimWater:
+			water = c
+	var under := water.get_node_or_null("Shafts") as WaterShaft if water != null else null
+	check(under != null, "the pool has its shafts")
+	if under != null:
+		check(under.entries.size() >= 2, "at least two of the hall's shafts enter its pool (%d)" % under.entries.size())
+		check(water.z_index + under.z_index < 0, "they draw under the actors")
+		check(under.get_index() > water.get_node("Body").get_index(), "and over the body")
+		check(is_equal_approx(under.slope, float(LightShaft.SHAFTS["sunken"]["slope"])), "they lean as the zone's air shafts do")
+	room.queue_free()
+	await frames(1)
