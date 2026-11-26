@@ -25,6 +25,22 @@ const ANIMS := {"idle": "idle", "walk": "walk", "windup": "windup", "rooted": "r
 ## The raised crystal fist in the windup (world px from his feet, facing right), where it blazes.
 const FIST_AT := Vector2(6, -30)
 const CRYSTAL_LIGHT := Color("f0a0f0")
+## The lane his spikes will rise along, lit through the windup (bible 12.144, pass 667):
+## a crack of crystal light runs along the floor from his fist over `LANE_RUN` of the
+## windup, and a seam opens at each spike's spot as it passes, so the tell shows the
+## attack and where it lands, not only a glow on his fist.
+const LANE_RUN := 0.4
+## The lane draws on its own layer over the tide (`Tide`, z 1), so it reads under water
+## as a glow through it, and under the struck foe (`Enemy.STRUCK_Z`, 3).
+const LANE_Z := 2
+## From the windup's first frame every seam shows faint, at this share of its light,
+## and comes up to full as the crack reaches it.
+const SEAM_FAINT := 0.4
+const LANE_HOT := Color("fff0ff")
+const SEAM_HEIGHT := 7.0
+## The glow standing over the lane: two clean steps, this high (world px).
+const GLOW_LOW := 4.0
+const GLOW_HIGH := 9.0
 ## The crystal on his back (world px from his feet, facing right): where his glow sits
 ## (`FoeGlow`, bible 12.52), and its half extents.
 const CRYSTAL_AT := Vector2(-3, -20)
@@ -36,6 +52,16 @@ var _cool := 0.0
 var _died_at := -1.0
 ## The light his crystal throws on the dark behind him.
 var glow: FoeGlow
+## The layer the lit lane is drawn on (LANE_Z).
+var lane_fx: Node2D
+
+
+## Draws the dwarf's lit lane on its own layer.
+class LaneFx extends Node2D:
+	var dwarf: CrystalDwarf
+
+	func _draw() -> void:
+		dwarf.draw_lane(self)
 
 
 func _init() -> void:
@@ -56,6 +82,11 @@ func _ready() -> void:
 	glow.reach = GLOW_REACH
 	glow.at = CRYSTAL_AT
 	add_child(glow)
+	lane_fx = LaneFx.new()
+	lane_fx.dwarf = self
+	lane_fx.z_as_relative = false
+	lane_fx.z_index = LANE_Z
+	add_child(lane_fx)
 
 
 ## How strongly his crystal glows now: out when he is dead, swelling through the windup.
@@ -135,15 +166,54 @@ func fist_rect() -> Rect2:
 func _erupt() -> void:
 	Feel.add_trauma(0.25)
 	Sfx.play("break", 0.05, 3.0)
+	var spots := spike_spots()
+	for i in spots.size():
+		var s := CrystalSpike.new()
+		s.delay = i * SPIKE_STEP
+		get_parent().add_child(s)
+		s.global_position = spots[i]
+
+
+## Where the spikes will rise (world positions on the floor), stopping at a wall or a
+## ledge: the eruption and the lane lit through the windup both read it.
+func spike_spots() -> Array[Vector2]:
+	var out: Array[Vector2] = []
 	var room := get_parent() as Room
 	for i in SPIKES:
 		var at := Vector2(global_position.x + facing * (body_size.x * 0.5 + 14.0 + i * SPIKE_GAP), global_position.y)
 		if room != null and (room.is_solid_at(at + Vector2(0, -6)) or not (room.is_solid_at(at + Vector2(0, 4)) or room.is_one_way_at(at + Vector2(0, 4)))):
 			break
-		var s := CrystalSpike.new()
-		s.delay = i * SPIKE_STEP
-		get_parent().add_child(s)
-		s.global_position = at
+		out.append(at)
+	return out
+
+
+## How far along the lane the crack has run (0 to 1) at this point in the windup.
+func lane_lit() -> float:
+	if state != "windup" or dead:
+		return 0.0
+	return clampf(maxf(state_time, 1.0 / 60.0) / (WINDUP * LANE_RUN), 0.0, 1.0)
+
+
+## The lit lane in his own space: the crack's start and end x on the floor line, every
+## spike spot (each seam's x) and those the crack has reached. Empty while nothing is lit.
+func lane_now() -> Dictionary:
+	var lit := lane_lit()
+	if lit <= 0.0:
+		return {}
+	var spots := spike_spots()
+	if spots.is_empty():
+		return {}
+	var x0 := facing * (body_size.x * 0.5 - 4.0)
+	var x1 := spots[spots.size() - 1].x - global_position.x + facing * 6.0
+	var tip := lerpf(x0, x1, lit)
+	var seams: Array[float] = []
+	var reached: Array[float] = []
+	for s in spots:
+		var sx := s.x - global_position.x
+		seams.append(sx)
+		if (sx - x0) * facing <= (tip - x0) * facing:
+			reached.append(sx)
+	return {"from": x0, "to": tip, "seams": seams, "reached": reached}
 
 
 func _wall_ahead() -> bool:
@@ -163,6 +233,8 @@ func die() -> void:
 func _process(_delta: float) -> void:
 	if glow != null:
 		glow.strength = glow_strength()
+	if lane_fx != null:
+		lane_fx.queue_redraw()
 	# The dissolve runs after death, when the body no longer redraws itself: keep
 	# the collapse playing under it.
 	if dead and dissolving():
@@ -190,3 +262,46 @@ func _draw() -> void:
 	if state == "windup" and not dead:
 		# The raised fist brightens: the tell.
 		draw_circle(FIST_AT * Vector2(facing, 1), 8.0 + 3.0 * sin(state_time * 30.0), Color(CRYSTAL_LIGHT, 0.25))
+
+
+## The crack along the floor to where the spikes will rise: a jagged line of crystal
+## light on the floor's top with a white-hot core, a low glow standing over it, a hot
+## running tip, and a small crystal tip at each spike's spot, faint until the crack
+## reaches it.
+func draw_lane(on: CanvasItem) -> void:
+	var lane := lane_now()
+	if lane.is_empty():
+		return
+	var x0: float = lane["from"]
+	var x1: float = lane["to"]
+	var pulse := 0.8 + 0.2 * sin(state_time * 30.0)
+	var a := floorf(minf(x0, x1))
+	var b := ceilf(maxf(x0, x1))
+	# The glow over the lane, in two clean steps (no dither, as the air's shade, 12.3).
+	on.draw_rect(Rect2(a, -GLOW_LOW, b - a, GLOW_LOW), Color(CRYSTAL_LIGHT, 0.22 * pulse))
+	on.draw_rect(Rect2(a, -GLOW_HIGH, b - a, GLOW_HIGH - GLOW_LOW), Color(CRYSTAL_LIGHT, 0.1 * pulse))
+	var x := a
+	while x < b:
+		# A step of three pixels, rising a pixel on every other step: a crack, not a rule.
+		var up := 1.0 if int(absf(x) / 3.0) % 2 == 0 else 0.0
+		var w := minf(3.0, b - x)
+		on.draw_rect(Rect2(x, -2.0 - up, w, 2.0), Color(CRYSTAL_LIGHT, pulse))
+		on.draw_rect(Rect2(x, -1.0 - up, w, 1.0), Color(LANE_HOT, 0.9 * pulse))
+		x += 3.0
+	# The running tip burns white.
+	on.draw_rect(Rect2(x1 - 1.5, -3.0, 3.0, 3.0), Color(LANE_HOT, pulse))
+	var reached: Array = lane["reached"]
+	for sx: float in lane["seams"]:
+		var k := pulse if reached.has(sx) else SEAM_FAINT
+		_draw_tip(on, sx, k)
+
+
+## A small crystal tip standing out of the floor where a spike will rise: a pointed
+## shard SEAM_HEIGHT tall, rim-lit on its left (the key light, 12.3).
+func _draw_tip(on: CanvasItem, sx: float, k: float) -> void:
+	var x := roundf(sx)
+	for row in int(SEAM_HEIGHT):
+		var half := floorf((SEAM_HEIGHT - row) / 3.0)
+		var y := -1.0 - row
+		on.draw_rect(Rect2(x - half - 1.0, y, half * 2.0 + 2.0, 1.0), Color(CRYSTAL_LIGHT, 0.85 * k))
+		on.draw_rect(Rect2(x - half - 1.0, y, 1.0, 1.0), Color(LANE_HOT, 0.9 * k))
