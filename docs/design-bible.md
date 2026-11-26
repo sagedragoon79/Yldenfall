@@ -2448,7 +2448,7 @@ A town's floor is built, not broken, so the shape is terraces. The floor now sta
 
 The plinth is gone. It was there to reach the chest's plank; the plank now stands over the King's Hall terrace, three tiles up, a jump straight up through it. So the plaza, the room crossed more than any other, is a walk from the west gate to the court and from the court to the east gate with no jump; only the two posts at the fountain are a hop, as they were. The chest is on the tile it was on.
 
-The ceiling's underside stands at four heights. It hangs three tiles low over both gates and two over both terraces, with a shoulder a tile deep at each end, and over the fountain court it is as it was for 19 tiles, the longest straight run left, so the court is the tallest space in the room and the Three Mouths keep the air over their crown. It can only be hung lower: the plaza is one screen tall.
+The ceiling's underside stands at four heights. It hangs three tiles low over both gates and two over both terraces, with a shoulder a tile deep at each end, and over the fountain court it is as it was for 19 tiles, the longest straight run left, so the court is the tallest space in the room and the Three Mouths keep the air over their crown. It can only be hung lower: the plaza is one screen tall. (Since pass 663 it is one vault with chamfered steps: 12.139.)
 
 Nothing here hurts: no hazard and no foe. Reachability is as it was. Judged by eye at 1x at the west gate, the King's Hall door, the fountain and the temple door of `hearthroot/plaza`: the plank now stands on legs on the terrace instead of hanging from chains, and each door reads as a building's own threshold.
 
@@ -3318,7 +3318,17 @@ The grade of pass 660 named "empty boxed rooms", among them "the burrows' black 
 - **The deep mass shrinks to a crust.** Above the crown the roof is five rows thick, so `DeepShade` (12.38) sinks only the top of the frame, and the vault's walls are lit rock with its soffit shade (12.102) and the zone's hanging roots and lights.
 - **The grubs keep the roof.** Of the two ceiling grubs that hung over the old flat run, one clings to the stretch of roof left east of the vault and one starts on the tunnel floor under it and crawls up the walls, so "their roofs are never empty" still holds. A grub was not set on the crown or the west stretch of roof: a foe's spoils pop up from 12 px over its body, and there they lodged in the roof (`test_every_foes_spoils_rest_in_its_room`).
 
-Judged by eye at 1x, before and after, from the tunnel's west end and its middle. The plaza's ceiling and the veins' single purple, the grade's other two boxed rooms, are left for their own passes. `test_the_burrows_roof_is_one_chewed_vault` (`tests/test_ceiling_forms.gd`) holds it: no more than eight columns of that roof lie nine rows thick, and the vault is one hollow, twelve columns wide at row 6, with its crown at row 5.
+Judged by eye at 1x, before and after, from the tunnel's west end and its middle. The veins' single purple, the grade's other boxed room, is left for its own pass; the plaza's ceiling is 12.139. `test_the_burrows_roof_is_one_chewed_vault` (`tests/test_ceiling_forms.gd`) holds it: no more than eight columns of that roof lie nine rows thick, and the vault is one hollow, twelve columns wide at row 6, with its crown at row 5.
+
+### 12.139 The plaza's ceiling is one built vault (pass 663)
+
+The grade of pass 660 named "empty boxed rooms", the first of them the plaza's ceiling. Since 12.67 the Fountain Plaza's ceiling had stood at four heights, but as square shoulders: two flat runs of 18 and 19 columns at row 4, a one-tile tooth west of the fountain court, and a hard corner wherever it changed height, so the top of the first room a player sees was a ruled box.
+
+- **One vault.** The ceiling is now one vault built over the court (`levels/hearthroot/plaza.room`). It springs from row 8 at both walls and only rises toward the fountain court, where its crown is the court's 17 columns at row 2, as 12.67 and 12.58 keep it for the Three Mouths. No step off the crown runs longer than ten columns, and the steps shorten toward the walls, so the vault curves down fastest where it meets them.
+- **Every step is chamfered.** Each of its 12 steps, and its corner with each wall, carries a haunch (12.78, `tools/levels/haunches.py`), so no corner of the ceiling is square.
+- **Not a mirror.** The west side climbs in six steps of 2, 2, 4, 6, 8 and 10 columns, the east side in six of 7, 7, 5, 4, 3 and 3, so the west side is the long slow climb over the King's Hall terrace and the east side falls off the crown in two long steps before it drops to the temple's gate (12.104).
+
+The ceiling is hung lower at the gates than before (row 8 against row 5), which 12.67 allows; the gates' doors, the King's Hall terrace's plank and its chest keep their headroom, and reachability is unchanged. Judged by eye at 1x at the west gate, the fountain and the temple door. `test_the_plaza_ceiling_is_one_vault` (`tests/test_ceiling_forms.gd`) holds it: the crown is over the court at row 2, the underside only rises to it and falls from it, it springs from row 7 or lower at both walls, no step off the crown is longer than ten columns, and every step has its haunch.
 
 ## 13. Asset Production Plan
 
