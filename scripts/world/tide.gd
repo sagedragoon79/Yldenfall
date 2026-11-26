@@ -52,6 +52,25 @@ const CLEAR_PAD := 2.0
 const CHUNK := 4
 const MAX_CLEAR := 8
 
+## Round the legs (pass 666, design bible 12.143). The water climbs a wader: at
+## each edge of the body a meniscus COLLAR px high, its foot BOW_FOOT px wide on
+## the line and a pixel at its top against the body, and in front of a moving one
+## a bow wave BOW px long, a pixel over the line, thinning out ahead.
+const COLLAR := 2
+const COLLAR_FOOT := 3
+const COLLAR_ALPHA := 0.8
+const BOW := 6
+## (The spray a moving wader kicks is the hero's own step dust: `Dust`, "wade".)
+## A moving wader stirs silt off the floor: a puff every SILT_EVERY seconds at its feet that
+## rises SILT_RISE px and drifts back SILT_DRIFT px over SILT_LIFE seconds, fading.
+const SILT_EVERY := 0.2
+const SILT_RISE := 6.0
+const SILT_DRIFT := 6.0
+const SILT_LIFE := 1.0
+const SILT_ALPHA := 0.55
+const SILT_PUFF := Color("8a9a86")
+const MAX_SILT := 24
+
 ## Spikes under the water keep their steel rim (bible 12.49): the water is drawn in
 ## front of them and would dim it, so it draws the rim again over itself at this alpha.
 const SUNK_RIM := 0.9
@@ -134,8 +153,10 @@ var stone := {}
 ## Each bank of the surface, and the stone's darkened bands (see `WaterEdge`).
 var banks: Array = []
 var sunk: Array = []
-## Each body wading this frame: [x (local px), half width (px)].
+## Each body wading this frame: [x (local px), half width (px), its velocity's x (px/s)].
 var wakes: Array = []
+## Each puff of silt off the floor: [start (local px), side it drifts (-1 or 1), age (s)].
+var silt: Array = []
 ## Each spreading ripple: [x, half width of what made it, age (s)].
 var rings: Array = []
 ## Where the water clears this frame: one Vector2(first px, end px) per wader (local).
@@ -152,6 +173,8 @@ var _col_set := {}
 var _floor := {}
 ## Instance id -> seconds to that body's next ripple.
 var _clock := {}
+## Instance id -> seconds to that body's next puff of silt.
+var _silt_clock := {}
 var _strip: ImageTexture
 ## Each spike cluster standing in the water: its bottom centre (local px).
 var _sunk: Array[Vector2] = []
@@ -316,6 +339,40 @@ static func ring_alpha(age: float) -> float:
 	return RING_ALPHA * clampf(1.0 - age / RING_LIFE, 0.0, 1.0)
 
 
+## Where a puff of silt is at `age` (s), from `start`, drifting to `side`.
+static func silt_at(start: Vector2, side: float, age: float) -> Vector2:
+	var k := clampf(age / SILT_LIFE, 0.0, 1.0)
+	var e := 1.0 - (1.0 - k) * (1.0 - k)
+	return (start + Vector2(side * SILT_DRIFT * e, -SILT_RISE * e)).round()
+
+
+static func silt_alpha(age: float) -> float:
+	return SILT_ALPHA * clampf(1.0 - age / SILT_LIFE, 0.0, 1.0)
+
+
+## The water climbing a wader at `x`, `half` wide, on the surface at `y`, moving
+## at `vx` (px/s): [Rect2, alpha] pieces, local px. Each edge of the body takes a
+## meniscus: COLLAR_FOOT px on the row over the line, narrowing a pixel a row up,
+## against the body. A moving body pushes a bow wave BOW px long out in front, a
+## pixel over the line, fading out ahead.
+static func collar(x: float, half: float, y: float, vx: float) -> Array:
+	var x0 := roundf(x - half)
+	var x1 := roundf(x + half)
+	var out: Array = []
+	for k in COLLAR:
+		var w := float(COLLAR_FOOT - k)
+		var a := COLLAR_ALPHA * (1.0 - 0.3 * k)
+		out.append([Rect2(x0 - w, y - 1.0 - k, w, 1.0), a])
+		out.append([Rect2(x1, y - 1.0 - k, w, 1.0), a])
+	if absf(vx) > MOVING_SPEED:
+		var side := signf(vx)
+		var lead := x1 + float(COLLAR_FOOT) if side > 0.0 else x0 - float(COLLAR_FOOT)
+		for i in BOW / 2:
+			var at := lead + side * float(i * 2) - (0.0 if side > 0.0 else 2.0)
+			out.append([Rect2(at, y - 1.0, 2.0, 1.0), COLLAR_ALPHA * (1.0 - float(i) / float(BOW / 2))])
+	return out
+
+
 ## A body's box (global px) from its first rectangle or capsule shape, or an empty one.
 static func body_rect(body: Node2D) -> Rect2:
 	for c in body.get_children():
@@ -335,6 +392,7 @@ func _process(delta: float) -> void:
 	if drained():
 		wakes.clear()
 		rings.clear()
+		silt.clear()
 		clear_spans.clear()
 		if not reflections.is_empty():
 			_lay_reflections()
@@ -374,7 +432,8 @@ func _wake(delta: float) -> void:
 			continue
 		var x := r.get_center().x
 		var half := r.size.x * 0.5
-		wakes.append([x, half])
+		var speed_x := (body as CharacterBody2D).velocity.x if body is CharacterBody2D else 0.0
+		wakes.append([x, half, speed_x])
 		if clear_spans.size() < MAX_CLEAR:
 			clear_spans.append(clear_span(x, half))
 		var id: int = body.get_instance_id()
@@ -387,9 +446,27 @@ func _wake(delta: float) -> void:
 				rings.append([x, half, 0.0])
 			left = period
 		_clock[id] = minf(left, period)
+		# A moving wader stirs the floor's silt behind its feet.
+		if speed > MOVING_SPEED:
+			var back := -signf(speed_x)
+			var p_left: float = float(_silt_clock.get(id, 0.0)) - delta
+			if p_left <= 0.0:
+				if silt.size() < MAX_SILT:
+					silt.append([Vector2(roundf(x + back * half), y + Room.TILE - 2.0), back, 0.0])
+				p_left = SILT_EVERY
+			_silt_clock[id] = p_left
 	for id in _clock.keys():
 		if not seen.has(id):
 			_clock.erase(id)
+	for id in _silt_clock.keys():
+		if not seen.has(id):
+			_silt_clock.erase(id)
+	var stirred: Array = []
+	for p: Array in silt:
+		p[2] = float(p[2]) + delta
+		if float(p[2]) < SILT_LIFE:
+			stirred.append(p)
+	silt = stirred
 	var live: Array = []
 	for ring: Array in rings:
 		ring[2] = float(ring[2]) + delta
@@ -456,6 +533,12 @@ func _draw() -> void:
 	for bank: Array in banks:
 		if bank[2]:
 			WaterEdge.draw_damp(self, bank_face(bank), int(bank[1]))
+	# The silt a wader's feet stir off the floor (12.143).
+	for p: Array in silt:
+		var at := silt_at(p[0], float(p[1]), float(p[2]))
+		var a := silt_alpha(float(p[2]))
+		draw_rect(Rect2(at, Vector2(2, 1)), Color(SILT_PUFF, a))
+		draw_rect(Rect2(at + Vector2(-float(p[1]) * 2.0, 1.0), Vector2(2, 1)), Color(SILT_PUFF, a * 0.6))
 	# What hurts shows through: pale water over each sunk cluster, and its steel rim again.
 	for at: Vector2 in _sunk:
 		for k in 5:
@@ -490,3 +573,7 @@ func _draw() -> void:
 		draw_rect(Rect2(x0, y, x1 - x0, 1), Color(SURFACE, 0.55))
 		draw_rect(Rect2(x0 - 1, y, 1, 1), Color(SURFACE, 0.6))
 		draw_rect(Rect2(x1, y, 1, 1), Color(SURFACE, 0.6))
+		# The water climbs the legs, and a moving wader pushes a bow wave (12.143).
+		for piece: Array in collar(float(wake[0]), float(wake[1]), y, float(wake[2])):
+			draw_rect(piece[0], Color(WaterEdge.FOAM, float(piece[1])))
+

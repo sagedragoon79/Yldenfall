@@ -238,3 +238,75 @@ func test_the_water_clears_over_a_wader() -> void:
 	await frames(3)
 	check(tide.clear_spans.is_empty(), "drained, there is nothing to clear")
 	GameState.data.flags.erase(Tide.DRAIN_FLAG)
+
+
+## Pass 666 (bible 12.143): the pass 665 grade saw the flooded hall's band with nothing
+## round the feet. The water climbs a wader's legs, a moving one pushes a bow wave and
+## stirs silt behind it, and its spray is single drops, not a square on its hip.
+func test_the_water_climbs_round_a_wader() -> void:
+	var still := Tide.collar(50.0, 6.0, 100.0, 0.0)
+	check(still.size() == 2 * Tide.COLLAR, "standing: a meniscus each side, %d rows high (%d pieces)" % [Tide.COLLAR, still.size()])
+	var left_ok := true
+	var right_ok := true
+	var narrowing := true
+	for piece: Array in still:
+		var r: Rect2 = piece[0]
+		check(r.end.y <= 100.0 and r.position.y >= 100.0 - Tide.COLLAR, "on the line, never under it (%s)" % r)
+		if r.end.x <= 44.0:
+			left_ok = left_ok and r.end.x == 44.0
+		else:
+			right_ok = right_ok and r.position.x == 56.0
+		var k := int(100.0 - 1.0 - r.position.y)
+		narrowing = narrowing and r.size.x == float(Tide.COLLAR_FOOT - k)
+	check(left_ok and right_ok, "against the body's edges")
+	check(narrowing, "narrowing a pixel a row up")
+	var right := Tide.collar(50.0, 6.0, 100.0, 80.0)
+	var left := Tide.collar(50.0, 6.0, 100.0, -80.0)
+	check(right.size() > still.size() and left.size() == right.size(), "moving, a bow wave joins it")
+	var ahead := true
+	for piece: Array in right.slice(still.size()):
+		ahead = ahead and (piece[0] as Rect2).position.x >= 56.0
+	for piece: Array in left.slice(still.size()):
+		ahead = ahead and (piece[0] as Rect2).end.x <= 44.0
+	check(ahead, "in front of the wader, whichever way it goes")
+	var fading := right.size() > still.size() + 1 and float((right[still.size()] as Array)[1]) > float((right[-1] as Array)[1])
+	check(fading, "thinning out ahead")
+	check(Tide.collar(50.0, 6.0, 100.0, Tide.MOVING_SPEED * 0.5).size() == still.size(), "a slow drift pushes none")
+	# The silt rises off the floor and drifts back, fading.
+	var start := Vector2(40, 110)
+	var mid := Tide.silt_at(start, -1.0, Tide.SILT_LIFE * 0.5)
+	var end := Tide.silt_at(start, -1.0, Tide.SILT_LIFE)
+	check(mid.y < start.y and end.y <= mid.y and end.x < mid.x and mid.x <= start.x, "silt rises and drifts back (%s, %s)" % [mid, end])
+	check(Tide.silt_alpha(0.0) > Tide.silt_alpha(Tide.SILT_LIFE * 0.5) and Tide.silt_alpha(Tide.SILT_LIFE) == 0.0, "and fades away")
+	# In the hall: standing stirs none; running stirs it behind the hero.
+	var w := _hall()
+	await frames(10)
+	var tide: Tide = w.room.tide
+	check(tide.silt.is_empty(), "standing, the hero stirs no silt")
+	var p := w.player
+	p.input.scripted = true
+	p.input.move_x = 1
+	await frames(20)
+	var x := tide.to_local(p.global_position).x
+	var behind := 0
+	for puff: Array in tide.silt:
+		behind += 1 if float(puff[1]) < 0.0 and (puff[0] as Vector2).x < x + 2.0 else 0
+	check(behind >= 1, "running right, silt is stirred behind (to the left of) the hero (%d of %d)" % [behind, tide.silt.size()])
+	var bow := false
+	for wake: Array in tide.wakes:
+		bow = bow or Tide.collar(float(wake[0]), float(wake[1]), tide.surface_y(), float(wake[2])).size() > 2 * Tide.COLLAR
+	check(bow, "and its wake carries the speed for the bow wave")
+	p.input.move_x = 0
+	# Spray off the water is single drops, strung along the line.
+	var d := Dust.new()
+	d.setup("run", 1, "wade")
+	var xs := {}
+	for q: Array in d._particles:
+		xs[(q[0] as Vector2).x] = true
+	check(d._size == Dust.WADE_DROP and Dust.WADE_DROP == 1, "spray drops are a pixel across")
+	check(xs.size() >= 4, "and do not start piled on one point (%d starts)" % xs.size())
+	d.free()
+	var dry := Dust.new()
+	dry.setup("run", 1, "stone")
+	check(dry._size == 2, "dust off dry ground is as it was")
+	dry.free()
