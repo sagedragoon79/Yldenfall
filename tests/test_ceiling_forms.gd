@@ -11,6 +11,8 @@ const TURN_SPAN := 7
 const LEDGE := "spires/storm_ledge"
 const BRIDGE := "boughs/canopy_bridge"
 const HALL := "vorrhallow/flooded_hall"
+## A roof this many rows thick over the burrows' tunnel is a dead band (pass 662).
+const BURROW_THICK := 9
 
 
 func _grid(id: String) -> Array[String]:
@@ -131,3 +133,26 @@ func test_the_fallen_vault_has_one_broken_edge() -> void:
 		if _underside(grid, hole[i]) != _underside(grid, hole[i - 1]):
 			steps += 1
 	check(steps == 1, "in one step, not a comb (%d)" % steps)
+
+
+## The grub burrows' roof (pass 662, bible 12.138). The grade saw the tunnel's
+## roof as a black band: west of the upper chamber the mass over the tunnel lay
+## eleven rows thick and flat over 35 columns. The grubs have chewed one great
+## vault into it, so no stretch of that roof is a thick flat band.
+func test_the_burrows_roof_is_one_chewed_vault() -> void:
+	var grid := _grid("heartwood/grub_burrows")
+	var run := 0
+	var longest := 0
+	var vault: Array[int] = []
+	for x in range(1, 36):
+		var u := _underside(grid, x)
+		run = run + 1 if u >= BURROW_THICK else 0
+		longest = maxi(longest, run)
+		if u <= 6:
+			vault.append(x)
+	check(longest <= 8, "no more than eight columns of the roof lie %d rows thick (%d)" % [BURROW_THICK, longest])
+	check(vault.size() >= 12 and vault.back() - vault[0] == vault.size() - 1, "the vault is one hollow, twelve columns wide at row 6 (%s)" % [vault])
+	var crown := 99
+	for x in vault:
+		crown = mini(crown, _underside(grid, x))
+	check(crown <= 5, "and rises to row 5 at its crown (%d)" % crown)
