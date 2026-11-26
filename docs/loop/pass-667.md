@@ -48,7 +48,13 @@ Mutation check: with the lane's layer at z 0, and with nothing ever lit, the tes
 
 ## Full suite
 
-FULL_SUITE_RESULT
+One full run (`TEST_TIMEOUT=7200`): 38,329 checks passed, 4 failed, all timing budgets:
+`test_spires_rain_stays_cheap` (8.11 ms), `test_every_room_loads_and_settles_inside_the_budget`
+(six rooms over 500 ms to load and six over 8 ms a frame) and `test_every_foes_spoils_rest_in_its_room`
+(its frame budget in `proving_scar` and `sky_steps`). Rerun alone, the rain and spoils tests passed;
+the room budget failed only on load time in `evercrown/proving_scar` (584 ms) and `gym/gym` (591 ms),
+neither with a Crystal Dwarf, as in passes 665 and 666. The PC was running Unity, Chrome and Wave Link.
+CI (test and mix) is the clean run.
 
 ## Rubric (design bible 15.3)
 
