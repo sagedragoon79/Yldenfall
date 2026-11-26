@@ -1143,6 +1143,8 @@ const WATER_HOLDS := ["#", "-", "%", "u", "/", "\\", "`", "'"]
 ## from the water first (sides held), then lets go of any cell left open at a
 ## side or under, or under one let go, so a pocket two cells deep fills whole.
 static func water_holes(grid: Array[String], water: Dictionary) -> Array[Vector2i]:
+	if water.is_empty():
+		return []
 	var wet := water.duplicate()
 	var added := {}
 	var at := func(c: Vector2i) -> String:

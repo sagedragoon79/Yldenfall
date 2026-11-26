@@ -61,7 +61,13 @@ bow wave never pushed, and with the wade spray piled on one point, the collar te
 
 ## Full suite
 
-FULLSUITE
+One full run (`TEST_TIMEOUT=7200`): 38,315 checks passed, 3 failed, all timing budgets:
+`test_spires_rain_stays_cheap` (10.84 ms) and `test_every_room_loads_and_settles_inside_the_budget`
+(`evercrown/proving_scar` 506 ms and `gym/gym` 504 ms to load, `spires/sky_steps` 8.07 ms a frame).
+The hole scan then returns at once in a room with no swim water. Rerun alone, the rain test passed;
+the room budget failed on load time in three rooms with no swim water (`proving_scar` 543 ms,
+`gym` 560 ms, `vorrhallow/throne_hall` 510 ms), as it did in pass 665 with that pass's code taken
+out. The PC was running Unity and Chrome. CI (test and mix) is the clean run.
 
 ## Rubric (design bible 15.3)
 
