@@ -3640,21 +3640,35 @@ MOUND_MAX_COVER = 0.4
 MOUND_CLEAR_RUN = 200    # world px
 
 
+# Since pass 661 (12.137) a mass is built of its matter, not a dome. The grade of
+# pass 660 read the domes of 12.127 as "blobby stains at every frame's foot": a
+# smooth half-ellipse 44 to 64 px tall in one flat tone, with a few blades on top.
+# Now the body is a low bank (MOUND_BANK, under half the cap) and the height is
+# carried by the matter itself (fronds, blades, shards, blocks, timbers), each
+# piece lit on its west edge; the bank's top wears a broken lip and grit in the
+# rim tone, so a mass reads as a thing standing near the lens, not a hole.
+MOUND_BANK = (26, 32)    # world px: how high the low bank under a mass rises
+MOUND_GRIT = 0.07        # the share of the bank's upper third flecked in the rim tone
+MOUND_OPEN = 0.6         # over the bank, the most of a mass's span solid in any row
+MOUND_OPEN_BLOCKS = 0.85  # a heap of blocks stacks solid, with seams of air between them
+
+
 def _mound_put(img, x, y, base, rim=False):
     if base - MOUND_RISE * D <= y:
         put(img, x, y, c(FORE_RIM if rim else FORE_BODY, MOUND_RIM_A if rim else MOUND_A))
 
 
 def _mound_body(img, x0, w, rise, base, rng, lumps=None):
-    """A ragged mound on the band: overlapping half-ellipses at most `rise` high
-    across `w`, its top wandering by a smoothed walk, a faint rim along it.
-    Returns the mound's top y in each column."""
+    """A ragged low bank on the band: overlapping half-ellipses at most `rise`
+    high across `w`, its top wandering by a smoothed walk, a rim along it, a
+    broken lip under the rim and grit in its upper third (12.137).
+    Returns the bank's top y in each column."""
     lumps = lumps or max(2, w // (22 * D))
     top = {}
     for k in range(lumps):
         cx = x0 + int((k + 0.5) * w / lumps) + rng.randint(-3, 3) * D
-        rx = max(10 * D, int(w / lumps * rng.uniform(0.75, 1.05)))
-        ry = max(8 * D, int(rise * rng.uniform(0.55, 1.0)))
+        rx = max(10 * D, int(w / lumps * rng.uniform(0.85, 1.1)))
+        ry = max(8 * D, int(rise * rng.uniform(0.8, 1.0)))
         for dx in range(-rx, rx + 1):
             if not x0 <= cx + dx < x0 + w:
                 continue
@@ -3665,7 +3679,7 @@ def _mound_body(img, x0, w, rise, base, rng, lumps=None):
     for col in sorted(top):
         # The ends slope down to the band, so a mass is a mound, never a box.
         u = (col - x0) / max(1, w)
-        env = math.sin(math.pi * min(1.0, max(0.0, u))) ** 0.6
+        env = math.sin(math.pi * min(1.0, max(0.0, u))) ** 0.45
         walk = max(-2.0 * D, min(2.0 * D, walk + rng.uniform(-0.8, 0.8) * D))
         top[col] = int(top[col] * env)
         if top[col] > 3 * D:
@@ -3674,101 +3688,175 @@ def _mound_body(img, x0, w, rise, base, rng, lumps=None):
         for y in range(base - h, base + 1):
             _mound_put(img, col, y, base)
         _mound_put(img, col, base - h, base, rim=True)
+    # The lip: a broken second line just under the rim, where the bank turns.
+    lip_on = True
+    for col in sorted(top):
+        if rng.random() < 0.12:
+            lip_on = not lip_on
+        h = top[col]
+        if lip_on and h > 8 * D:
+            _mound_put(img, col, base - h + 3 * D, base, rim=True)
+    # Grit: flecks of the rim tone in the bank's upper third, a pixel pair each.
+    for col in range(x0, x0 + w, D):
+        h = top.get(col, 0)
+        if h <= 6 * D:
+            continue
+        for y in range(base - h + 2 * D, base - 2 * h // 3, D):
+            if rng.random() < MOUND_GRIT:
+                for dx in range(D):
+                    _mound_put(img, col + dx, y, base, rim=True)
     return {col: base - h for col, h in top.items()}
 
 
-def _mound_blade(img, cx, y0, h, w, lean, base, point=True):
+def _bank(rng):
+    return rng.randint(*MOUND_BANK) * D
+
+
+def _fit_lean(cx, lean, x, w, pad):
+    """`lean` cut so a piece rising at `cx` ends at least `pad` inside its mass's
+    span: nothing of a mass strays over the fringe outside it (12.127)."""
+    return max(x + pad - cx, min(x + w - pad - cx, lean))
+
+
+def _mound_blade(img, cx, y0, h, w, lean, base, point=True, curve=1.0, facet=False):
     """A broad tapering blade or shard rising from (cx, y0), rimmed on its lit
-    west edge, never narrower than a pixel pair until its tip. A blade is cut
-    short to fit under MOUND_RISE, so its tip is never sheared off flat."""
+    west edge, never narrower than a pixel pair until its tip. `curve` over 1
+    arches it (a frond), `facet` lights its west half (a crystal's face). A blade
+    is cut short to fit under MOUND_RISE, so its tip is never sheared off flat.
+    Returns the blade's spine as (x, y) per row."""
     h = min(h, y0 - (base - MOUND_RISE * D))
+    spine = []
     for i in range(h):
         t = i / max(1, h)
         half = max(D // 2, int(w * (1.0 - t) / 2)) if point else max(D, w // 2)
-        x = cx + int(lean * t)
+        x = cx + int(lean * t ** curve)
+        spine.append((x, y0 - i))
         for dx in range(-half, half + 1):
-            _mound_put(img, x + dx, y0 - i, base)
+            _mound_put(img, x + dx, y0 - i, base, rim=facet and -half + D < dx < 0)
         _mound_put(img, x - half, y0 - i, base, rim=True)
+    return spine
 
 
 def _mound_fern(img, x, w, base, rng):
-    """A fern bank: a mossy mound with broad fronds arching out of its top."""
-    top = _mound_body(img, x, w, rng.randint(56, 64) * D, base, rng)
-    for _ in range(rng.randint(4, 6)):
-        cx = x + rng.randint(w // 5, 4 * w // 5)
-        y0 = top.get(cx, base)
-        lean = rng.choice([-1, 1]) * rng.randint(8, 18) * D
-        h = rng.randint(14, 24) * D
-        _mound_blade(img, cx, y0, h, rng.randint(5, 7) * D, lean, base)
-        for j in range(3 * D, h - 3 * D, 5 * D):  # leaflets off the frond's outer side
-            t = j / h
-            lx, ly = cx + int(lean * t), y0 - j
-            d = 1 if lean > 0 else -1
-            for m in range(rng.randint(3, 5) * D):
-                for dy in range(D):
-                    _mound_put(img, lx + d * m, ly + m // 2 + dy, base)
+    """A fern bank: a low mossy bank with broad fronds arching out of it, leaflets
+    off both sides of each, every leaflet lit on its upper edge."""
+    top = _mound_body(img, x, w, _bank(rng), base, rng)
+    n = rng.randint(7, 10)
+    for k in range(n):
+        cx = x + int((k + 0.5) * w / n) + rng.randint(-4, 4) * D
+        y0 = top.get(cx, base) + 2 * D
+        lean = (1 if cx > x + w // 2 else -1) * rng.randint(10, 22) * D
+        if rng.random() < 0.25:
+            lean = -lean
+        cx = max(x + 10 * D, min(x + w - 10 * D, cx))
+        lean = _fit_lean(cx, lean, x, w, 10 * D)
+        h = rng.randint(26, 44) * D
+        spine = _mound_blade(img, cx, y0, h, rng.randint(4, 6) * D, lean, base, curve=1.8)
+        for j in range(4 * D, len(spine) - 2 * D, 4 * D):  # leaflets off both sides
+            sx, sy = spine[j]
+            reach = int(rng.randint(4, 7) * D * (1.0 - j / max(1, len(spine))) + 2 * D)
+            for d in (-1, 1):
+                for m in range(reach):
+                    yy = sy + m // 2
+                    _mound_put(img, sx + d * m, yy, base)
+                    _mound_put(img, sx + d * m, yy + 1, base)
+                    _mound_put(img, sx + d * m, yy - 1, base, rim=True)
 
 
 def _mound_reed(img, x, w, base, rng):
-    """A reed tussock: a low bank with a sheaf of broad reed blades."""
-    top = _mound_body(img, x, w, rng.randint(52, 60) * D, base, rng)
-    for _ in range(rng.randint(5, 8)):
-        cx = x + rng.randint(w // 6, 5 * w // 6)
+    """A reed tussock: a low bank with a dense sheaf of reed blades, some bent,
+    and a few cattail heads on their own stalks."""
+    top = _mound_body(img, x, w, _bank(rng), base, rng)
+    n = rng.randint(11, 15)
+    for k in range(n):
+        cx = x + int((k + 0.5) * w / n) + rng.randint(-3, 3) * D
+        y0 = top.get(cx, base) + 2 * D
+        h = rng.randint(22, 42) * D
+        cx = max(x + 4 * D, min(x + w - 4 * D, cx))
+        lean = _fit_lean(cx, rng.randint(-10, 10) * D, x, w, 4 * D)
+        _mound_blade(img, cx, y0, h, rng.randint(3, 5) * D, lean, base,
+                     curve=rng.choice([1.0, 1.6, 2.2]))
+    for _ in range(rng.randint(2, 3)):  # cattails: a stalk with a long head near its end
+        cx = x + rng.randint(w // 5, 4 * w // 5)
         y0 = top.get(cx, base)
-        _mound_blade(img, cx, y0, rng.randint(16, 30) * D, rng.randint(4, 6) * D,
-                     rng.randint(-8, 8) * D, base)
+        h = min(rng.randint(30, 40) * D, y0 - (base - MOUND_RISE * D) - 6 * D)
+        lean = rng.randint(-4, 4) * D
+        for i in range(h):
+            xx = cx + int(lean * i / h)
+            for dx in range(D):
+                _mound_put(img, xx + dx, y0 - i, base)
+        hx, hy = cx + int(lean * 0.8), y0 - int(h * 0.8)
+        for dy in range(-5 * D, 5 * D):
+            for dx in range(-2 * D, 2 * D + 1):
+                if (dx / (2.2 * D)) ** 2 + (dy / (5.0 * D)) ** 2 <= 1.0:
+                    _mound_put(img, hx + dx, hy + dy, base, rim=dx < -D)
 
 
 def _mound_crystal(img, x, w, base, rng):
-    """A crystal boulder: a rock mound with a few great shards grown out of it."""
-    top = _mound_body(img, x, w, rng.randint(44, 52) * D, base, rng)
-    for k in range(rng.randint(2, 3)):
-        cx = x + int((k + 0.5) * w / 3) + rng.randint(-4, 4) * D
+    """A crystal cluster: a low rock bank with great shards grown out of it, each
+    with a lit west face, and small shards at their feet."""
+    top = _mound_body(img, x, w, _bank(rng), base, rng)
+    n = rng.randint(3, 4)
+    for k in range(n):
+        cx = x + int((k + 0.5) * w / n) + rng.randint(-4, 4) * D
+        cx = max(x + 10 * D, min(x + w - 10 * D, cx))
         y0 = top.get(cx, base) + 4 * D
-        _mound_blade(img, cx, y0, rng.randint(40, 60) * D, rng.randint(14, 20) * D,
-                     rng.randint(-6, 6) * D, base)
+        _mound_blade(img, cx, y0, rng.randint(34, 60) * D, rng.randint(12, 18) * D,
+                     _fit_lean(cx, rng.randint(-8, 8) * D, x, w, 4 * D), base, facet=True)
+    for _ in range(rng.randint(3, 5)):
+        cx = x + rng.randint(w // 8, 7 * w // 8)
+        y0 = top.get(cx, base) + 2 * D
+        _mound_blade(img, cx, y0, rng.randint(10, 18) * D, rng.randint(6, 9) * D,
+                     rng.randint(-6, 6) * D, base, facet=True)
 
 
 def _mound_rubble(img, x, w, base, rng):
-    """A heap of fallen blocks: a rubble mound with squared blocks tumbled on it."""
-    top = _mound_body(img, x, w, rng.randint(44, 52) * D, base, rng, lumps=3)
-    bx = x + rng.randint(2, 8) * D
-    while bx < x + w - 18 * D:
-        bw = rng.randint(16, 30) * D
-        bh = rng.randint(24, 32) * D
-        y1 = top.get(bx + bw // 2, base) + 3 * D
-        chip = rng.randint(2, 5) * D
-        shear = rng.randint(-5, 5) * D  # a fallen block sits askew
-        bw = min(bw, x + w - bx - max(0, shear) - 2 * D)  # inside the mass's span
-        if bx + min(0, shear) < x or bw < 10 * D:
-            bx += 6 * D
-            continue
-        for dy in range(bh + 1):
-            sx = bx + shear * dy // bh
-            for dx in range(bw):
-                if (bh - dy) < chip and (dx < chip - (bh - dy) or dx > bw - (chip - (bh - dy))):
-                    continue  # chipped upper corners
-                _mound_put(img, sx + dx, y1 - dy, base, rim=dy == bh or dx == 0)
-        bx += bw + rng.randint(-4, 6) * D
+    """A heap of fallen blocks: a low rubble bank with squared blocks tumbled on
+    it in two courses, chipped and askew, lit on top and west."""
+    top = _mound_body(img, x, w, _bank(rng), base, rng, lumps=3)
+    for course in range(2):
+        bx = x + rng.randint(2, 8) * D + course * rng.randint(8, 14) * D
+        laid = 0
+        while bx < x + w - 18 * D:
+            bw = rng.randint(16, 28) * D
+            bh = rng.randint(16, 24) * D
+            y1 = top.get(bx + bw // 2, base) + 3 * D - course * rng.randint(14, 20) * D
+            chip = rng.randint(2, 5) * D
+            shear = rng.randint(-5, 5) * D  # a fallen block sits askew
+            bw = min(bw, x + w - bx - max(0, shear) - 2 * D)  # inside the mass's span
+            if bx + min(0, shear) < x or bw < 10 * D or (course and laid and rng.random() < 0.35):
+                bx += max(bw, 0) + 6 * D
+                continue
+            for dy in range(bh + 1):
+                sx = bx + shear * dy // bh
+                for dx in range(bw):
+                    if (bh - dy) < chip and (dx < chip - (bh - dy) or dx > bw - (chip - (bh - dy))):
+                        continue  # chipped upper corners
+                    _mound_put(img, sx + dx, y1 - dy, base, rim=dy == bh or dx == 0)
+            laid += 1
+            bx += bw + rng.randint(3, 7) * D  # a dark seam of air between blocks
 
 
 def _mound_fence(img, x, w, base, rng):
-    """A timber pile: a mound of earth and splinters with a broken post and a
-    plank leaning on it."""
-    top = _mound_body(img, x, w, rng.randint(52, 60) * D, base, rng)
+    """A timber pile: a low bank of earth and splinters with a broken post, a
+    plank leaning on it and a second board fallen against it from the far side."""
+    top = _mound_body(img, x, w, _bank(rng), base, rng)
     px = x + rng.randint(w // 3, 2 * w // 3)
-    _mound_blade(img, px, top.get(px, base) + 2 * D, rng.randint(26, 36) * D,
+    _mound_blade(img, px, top.get(px, base) + 2 * D, rng.randint(36, 46) * D,
                  rng.randint(7, 9) * D, rng.randint(-2, 2) * D, base, point=False)
-    # a plank leaning from the mound onto the post
-    sx = x + rng.choice([w // 8, 7 * w // 8])
-    sy = top.get(sx, base)
-    ex, ey = px, top.get(px, base) - rng.randint(18, 26) * D
-    n = max(abs(ex - sx), abs(ey - sy))
-    for i in range(n):
-        f = i / n
-        for th in range(6 * D):
-            _mound_put(img, sx + int((ex - sx) * f), sy + int((ey - sy) * f) + th, base,
-                       rim=th < D)
+    for k, side in enumerate(rng.sample([w // 8, 7 * w // 8], 2)):
+        # the first leans high on the post; the second has slid down it, so the
+        # pile is no tent of two matched boards
+        sx = x + side
+        sy = top.get(sx, base)
+        ex = px
+        ey = top.get(px, base) - (rng.randint(24, 32) if k == 0 else rng.randint(4, 9)) * D
+        n = max(abs(ex - sx), abs(ey - sy))
+        for i in range(n):
+            f = i / n
+            for th in range(5 * D):
+                _mound_put(img, sx + int((ex - sx) * f), sy + int((ey - sy) * f) + th, base,
+                           rim=th < D)
 
 
 MOUND_SHAPE = {

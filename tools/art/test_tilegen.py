@@ -508,6 +508,31 @@ def test_the_foot_of_the_view_holds_broad_masses():
         assert min(best, tg.BG_W) >= tg.MOUND_CLEAR_RUN * tg.D, f"{z}: the clearest run is {best // tg.D} px"
 
 
+def test_a_near_mass_is_built_of_its_matter():
+    # The grade of pass 660: the foot's masses read as "blobby stains", smooth
+    # domes in one flat tone (bible 12.137). Now each is a low bank with its matter
+    # carrying the height: over the bank, a mass is pieces with air between them
+    # (at most MOUND_OPEN of its span solid in any row there), the pieces still
+    # rise past the fringe, and they are lit on their edges in the rim tone. A
+    # heap of blocks is the one matter that stacks solid (MOUND_OPEN_BLOCKS).
+    assert tg.MOUND_BANK[1] < tg.FORE_MAX_RISE, "the bank under a mass stays under the fringe's top"
+    base = tg.FORE_FLOOR - tg.FORE_BAND
+    for z in tg.FORE_KIND:
+        img = tg.foreground(z)
+        a = img.getchannel("A").load()
+        px = img.load()
+        rim = tg.c(tg.FORE_TONES[z][1], tg.MOUND_RIM_A)
+        most = tg.MOUND_OPEN_BLOCKS if tg.FORE_KIND[z] == "rubble" else tg.MOUND_OPEN
+        for sx, sw in tg.mound_spans(z):
+            lit = 0
+            for wy in range(tg.FORE_MAX_RISE, tg.MOUND_RISE):  # over the fringe, over the bank
+                y = base - wy * tg.D
+                solid = sum(1 for x in range(sx, sx + sw) if a[x % tg.BG_W, y] >= tg.MOUND_RIM_A - 1)
+                assert solid <= most * sw,                     f"{z}: the mass at {sx} is {solid / sw:.2f} solid {wy} px up, a dome not its matter"
+                lit += sum(1 for x in range(sx, sx + sw) if px[x % tg.BG_W, y] == rim)
+            assert lit >= 5 * tg.D, f"{z}: the pieces of the mass at {sx} carry {lit} lit pixels"
+
+
 def test_the_hanging_frame_frames_the_top_without_a_band():
     # The grade of pass 640: no foreground layer frames the rooms. Every zone with
     # a low fringe also has a frame hanging into the top of the view (bible
