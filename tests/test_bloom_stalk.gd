@@ -237,7 +237,8 @@ func test_the_veins_have_their_stalk() -> void:
 	for n: Node in room.get_children():
 		if n is LightVein:
 			check((n as LightVein).z_index > stalk.z_index, "a vein is drawn over it")
-	check(stalk.get_child_count() == 0, "scenery only: nothing to touch or to be hurt by")
+	for c: Node in stalk.get_children():
+		check(c is VeinGlow, "scenery only: nothing to touch or to be hurt by, only its light (%s)" % c.name)
 	check(FileAccess.get_file_as_string("res://levels/evercrown/veins.room").contains("runs up these veins to the core"), "the sign still tells of the light that runs up to the core")
 	check(BloomStalk._baked != null, "the stalk is baked once for the whole run")
 
@@ -373,4 +374,69 @@ func test_the_veins_are_not_a_level_box() -> void:
 	check(stalk != null and w.room.is_solid_at(stalk.position + Vector2(BloomStalk.AXIS, -BloomStalk.HEIGHT - 4)) and not w.room.is_solid_at(stalk.position + Vector2(BloomStalk.AXIS, -BloomStalk.HEIGHT + 4)), "and its crown still meets the vault")
 	w.queue_free()
 	await frames(2)
+	GameState.new_game()
+
+
+## The pass 660 grade saw the Veins "in one purple": a wine backdrop, violet
+## shelves and a violet stalk. The veins light the air of the shaft round the
+## stalk in their own cool cyan (12.140): a column that turns the wine to the
+## light's hue beside the stalk and leaves the walls' side of the shaft wine.
+## It is the light in the channels, so it dims a step with each cut and is gone
+## once the core is starved.
+func test_the_veins_light_the_shaft_round_the_stalk() -> void:
+	var palette := _palette()
+	check(palette.has(VeinGlow.COLOR.to_html(false)), "the glow is a master palette tone (#%s)" % VeinGlow.COLOR.to_html(false))
+	check(VeinGlow.COLOR == BloomStalk.LINE, "the light of a channel")
+	var wine: Color = Backdrop.ZONE_HAZE["evercrown"]
+	var lit := wine.lerp(VeinGlow.COLOR, VeinGlow.PEAK)
+	var hue_gap := absf(lit.h - wine.h) * 360.0
+	check(hue_gap >= 40.0 and hue_gap <= 320.0, "beside the stalk the wine turns to the light's hue (%.0f degrees off it)" % hue_gap)
+	check(lit.get_luminance() > wine.get_luminance() * 1.4, "and is lighter: it is light, not fog (%.2f over %.2f)" % [lit.get_luminance(), wine.get_luminance()])
+	check(lit.v < LightVein.SKY[5].v, "the veins stay the brightest things in the shaft")
+	# The falloff: full round the axis, none at its reach, brighter toward the core, in clean steps.
+	check(VeinGlow.strength(0, 900) == 1.0 or VeinGlow.strength(0, 900) >= 0.875, "full at the axis, high up")
+	check(VeinGlow.strength(VeinGlow.REACH, 400) == 0.0 and VeinGlow.strength(-VeinGlow.REACH - 1, 400) == 0.0, "nothing at its reach")
+	check(VeinGlow.strength(0, 0) < VeinGlow.strength(0, BloomStalk.HEIGHT), "brighter toward the core than at the floor")
+	var last := 2.0
+	var steps := {}
+	for dx in range(0, VeinGlow.REACH + 1, 2):
+		var s := VeinGlow.strength(dx, 500)
+		check(s <= last, "it only fades going out (%d px)" % dx)
+		last = s
+		steps[s] = true
+		check(is_equal_approx(s * VeinGlow.LEVELS, roundf(s * VeinGlow.LEVELS)), "in clean steps, no dither (%.3f)" % s)
+	check(steps.size() >= 5, "a falloff, not a box (%d steps)" % steps.size())
+	var tex := VeinGlow.texture()
+	check(tex.get_width() == VeinGlow.REACH * 2 and tex.get_height() == BloomStalk.HEIGHT, "baked once, the stalk's height")
+	# The shaft keeps its wine at the walls: the column is a band, not the room.
+	var w := make_world({}, "evercrown/veins")
+	await frames(2)
+	var room: Room = w.room
+	var stalk := _stalk(room)
+	check(stalk != null and stalk.glow != null, "the stalk gives off its glow")
+	if stalk == null or stalk.glow == null:
+		w.queue_free()
+		return
+	var width := float(room.size_tiles.x * Room.TILE)
+	var half_at := 0
+	while VeinGlow.strength(half_at, 500) >= 0.5:
+		half_at += 1
+	check(half_at * 2 <= width / 3.0, "the glow is a column: at half strength or more over a third of the shaft at most (%d px of %d)" % [half_at * 2, int(width)])
+	var wall := width * 0.5 - BloomStalk.AXIS - 4 * Room.TILE
+	check(VeinGlow.strength(wall, 500) == 0.0 and VeinGlow.strength(-wall, 500) == 0.0, "and the four tiles off each wall stay wine")
+	check(stalk.glow.z_index < -3 and not stalk.glow.z_as_relative, "behind the air's shade, the stalk, the tiles and every actor")
+	check(is_equal_approx(stalk.glow.peak(), VeinGlow.PEAK), "every vein lit: the glow at full")
+	var veins := stalk.veins()
+	(veins[0] as LightVein).take_hit(1, Vector2.RIGHT)
+	(veins[4] as LightVein).take_hit(1, Vector2.RIGHT)
+	check(is_equal_approx(stalk.glow.peak(), VeinGlow.PEAK * 4.0 / 6.0), "two cut: two sixths of it gone (%.3f)" % stalk.glow.peak())
+	w.queue_free()
+	await frames(2)
+	GameState.set_flag("boss:everbloom_veins")
+	var after := Room.from_file("res://levels/evercrown/veins.room")
+	arena.add_child(after)
+	await frames(2)
+	var dark := _stalk(after)
+	check(dark != null and dark.glow != null and dark.glow.peak() == 0.0, "the core starved: the shaft is wine again")
+	after.queue_free()
 	GameState.new_game()

@@ -3318,7 +3318,7 @@ The grade of pass 660 named "empty boxed rooms", among them "the burrows' black 
 - **The deep mass shrinks to a crust.** Above the crown the roof is five rows thick, so `DeepShade` (12.38) sinks only the top of the frame, and the vault's walls are lit rock with its soffit shade (12.102) and the zone's hanging roots and lights.
 - **The grubs keep the roof.** Of the two ceiling grubs that hung over the old flat run, one clings to the stretch of roof left east of the vault and one starts on the tunnel floor under it and crawls up the walls, so "their roofs are never empty" still holds. A grub was not set on the crown or the west stretch of roof: a foe's spoils pop up from 12 px over its body, and there they lodged in the roof (`test_every_foes_spoils_rest_in_its_room`).
 
-Judged by eye at 1x, before and after, from the tunnel's west end and its middle. The veins' single purple, the grade's other boxed room, is left for its own pass; the plaza's ceiling is 12.139. `test_the_burrows_roof_is_one_chewed_vault` (`tests/test_ceiling_forms.gd`) holds it: no more than eight columns of that roof lie nine rows thick, and the vault is one hollow, twelve columns wide at row 6, with its crown at row 5.
+Judged by eye at 1x, before and after, from the tunnel's west end and its middle. The veins' single purple, the grade's other boxed room, is 12.140; the plaza's ceiling is 12.139. `test_the_burrows_roof_is_one_chewed_vault` (`tests/test_ceiling_forms.gd`) holds it: no more than eight columns of that roof lie nine rows thick, and the vault is one hollow, twelve columns wide at row 6, with its crown at row 5.
 
 ### 12.139 The plaza's ceiling is one built vault (pass 663)
 
@@ -3329,6 +3329,16 @@ The grade of pass 660 named "empty boxed rooms", the first of them the plaza's c
 - **Not a mirror.** The west side climbs in six steps of 2, 2, 4, 6, 8 and 10 columns, the east side in six of 7, 7, 5, 4, 3 and 3, so the west side is the long slow climb over the King's Hall terrace and the east side falls off the crown in two long steps before it drops to the temple's gate (12.104).
 
 The ceiling is hung lower at the gates than before (row 8 against row 5), which 12.67 allows; the gates' doors, the King's Hall terrace's plank and its chest keep their headroom, and reachability is unchanged. Judged by eye at 1x at the west gate, the fountain and the temple door. `test_the_plaza_ceiling_is_one_vault` (`tests/test_ceiling_forms.gd`) holds it: the crown is over the court at row 2, the underside only rises to it and falls from it, it springs from row 7 or lower at both walls, no step off the crown is longer than ten columns, and every step has its haunch.
+
+### 12.140 The veins light the shaft (pass 664)
+
+The grade of pass 660 named "empty boxed rooms", the last of them "the veins in one purple". Measured in `evercrown/veins` at the floor and halfway up: the backdrop's hue was 287 to 290 (the Evercrown's wine haze, 12.48), the grown shelves and the stalk 257 to 263, and the whole frame's median 288. The light the room's sign tells of ("the light that fled the throne runs up these veins to the core") was only six thin channels on the stalk (12.59) and six small crystals.
+
+- **A column of the veins' light** (`VeinGlow`, `scripts/world/vein_glow.gd`, a child of `BloomStalk`). The stalk's veins light the air of the shaft round it in sky-2, a channel's own line (`COLOR`), laid over the backdrop as a normal blend at up to `PEAK` (0.62), so the wine turns toward the light's hue rather than only growing brighter. It is full within `CORE` (0.18) of its reach of the axis and falls off to nothing at `REACH` (230 px), brighter toward the core than at the floor (`FOOT` 0.7), in `LEVELS` (8) clean steps in 2-pixel blocks with no dither (12.129). At half strength or more it spans under a third of the shaft, and the four tiles off each wall stay wine.
+- **It is the light in the channels.** Each lit vein feeds a sixth of it, so the column dims a step with every cut, and once the core is starved (the veins stay cut, `boss:everbloom_veins`) the shaft is wine again. Only a cut redraws it; it is baked once.
+- **Behind everything played** (`Z` -4, not relative): under the light shafts, the stalk, the air's shade (12.129), the tiles and every actor, so it tints only the air seen past them; the shelves keep their violet, the air's shade still darkens round every edge in it, and the hero, the veins, the core and its beams draw over it.
+
+After: beside the stalk the air measures hue 234 and luminance 47 (it was 288 and 27), the walls' side of the shaft is unchanged at 289, and the frame's median hue moves from 288 to 263. The stalk now stands as a violet silhouette against cool light, and the core's wine eye hangs in front of it. Judged by eye at 1x and 2x at the floor, halfway up and at the core. `test_the_veins_light_the_shaft_round_the_stalk` (`tests/test_bloom_stalk.gd`) holds it: the tone, the hue turn of at least 40 degrees and the lift over the wine, the falloff in clean steps, the column's width, its place behind everything, and the dimming with each cut.
 
 ## 13. Asset Production Plan
 
