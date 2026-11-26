@@ -46,7 +46,7 @@ it fails (the column covers 386 of 640 px, and reaches the walls).
 
 ## Full suite
 
-FULL_SUITE_RESULT
+One full run (`TEST_TIMEOUT=7200`): 38,266 checks passed, 0 failed. CI (test and mix) passed.
 
 ## Rubric (design bible 15.3)
 
