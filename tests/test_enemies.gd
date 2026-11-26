@@ -755,6 +755,67 @@ func test_crystal_dwarf_raises_his_fist_then_erupts_spikes() -> void:
 	check(p.hp < hp, "and catches a player standing in its path")
 
 
+## Bible 12.144 (pass 667): the pass 665 grade found the flooded hall's tell showed no
+## attack, only a glow on his fist. Through the windup a crack of crystal light runs
+## along the floor from his toes to where the spikes will rise, a crystal tip standing
+## at each spot (faint until the crack reaches it), drawn over the tide; it goes out
+## when the spikes come, and they rise where the tips stood.
+func test_the_crystal_dwarfs_tell_lights_the_spikes_lane() -> void:
+	var room := _room_with({Vector2i(22, 6): "q"})
+	var p := make_player(room, Vector2i(3, 6))
+	p.max_hp = 9999
+	p.hp = 9999
+	var d: CrystalDwarf = _find(room, CrystalDwarf)
+	await frames(3)
+	check(d.lane_now().is_empty(), "walking, nothing is lit")
+	check(d.lane_fx != null and not d.lane_fx.z_as_relative and d.lane_fx.z_index > 1 and d.lane_fx.z_index < Enemy.STRUCK_Z,
+		"the lane draws over the tide (z 1) and under a struck foe (%d)" % (d.lane_fx.z_index if d.lane_fx else -99))
+	d.facing = -1
+	p.teleport(Vector2(d.global_position.x - 84.0, 7 * 16))
+	for i in 60:
+		await frames(1)
+		if d.state == "windup":
+			break
+	check(d.state == "windup", "he winds up (%s)" % d.state)
+	var first := d.lane_now()
+	check(not first.is_empty(), "on the windup's first frame the lane is already lit")
+	var spots := d.spike_spots()
+	check(spots.size() == CrystalDwarf.SPIKES, "on open floor every spike has a spot (%d)" % spots.size())
+	var seams: Array = first.get("seams", [])
+	var same := seams.size() == spots.size()
+	for i in mini(seams.size(), spots.size()):
+		same = same and absf(seams[i] - (spots[i].x - d.global_position.x)) < 0.01
+	check(same, "a crystal tip stands at every spot a spike will rise from")
+	check(first.get("reached", []).size() < spots.size(), "at first the far tips are faint: the crack has not reached them")
+	var start: float = first["from"]
+	check(start * d.facing > 0.0 and absf(start) <= d.body_size.x * 0.5, "the crack starts at his toes, on the side he faces (%.1f)" % start)
+	var tip0: float = first["to"]
+	await frames(int(CrystalDwarf.WINDUP * CrystalDwarf.LANE_RUN * 60.0) + 2)
+	check(d.state == "windup", "still winding up (%s)" % d.state)
+	var full := d.lane_now()
+	check((full["to"] - tip0) * d.facing > 20.0, "the crack runs out along the floor (%.1f to %.1f)" % [tip0, full["to"]])
+	check(full["reached"].size() == spots.size(), "before he strikes it has reached every tip (%d of %d)" % [full["reached"].size(), spots.size()])
+	check(absf(full["to"] - (spots[spots.size() - 1].x - d.global_position.x)) <= 8.0, "and ends just past the last")
+	var lit_at := spots.duplicate()
+	for i in 40:
+		await frames(1)
+		if d.state != "windup":
+			break
+	check(d.lane_now().is_empty(), "when the fist comes down the lane goes out (%s)" % d.state)
+	await frames(int(CrystalDwarf.SPIKE_STEP * 60.0 * CrystalDwarf.SPIKES) + 2)
+	var risen := room.get_children().filter(func(c: Node) -> bool: return c is CrystalSpike)
+	var on_tips := risen.size() > 0
+	for s: CrystalSpike in risen:
+		on_tips = on_tips and lit_at.any(func(v: Vector2) -> bool: return v.distance_to(s.global_position) < 0.5)
+	check(on_tips, "the spikes rise where the tips stood (%d)" % risen.size())
+	# A wall cuts the lane short, as it cuts the eruption.
+	var walled := _room_with({Vector2i(12, 6): "q", Vector2i(8, 6): "#", Vector2i(8, 5): "#"})
+	var w: CrystalDwarf = _find(walled, CrystalDwarf)
+	await frames(3)
+	w.facing = -1
+	check(w.spike_spots().size() < CrystalDwarf.SPIKES, "a wall ahead stops the lane (%d spots)" % w.spike_spots().size())
+
+
 ## Bible 7 (pass 246): each spike of an eruption cracks up through the floor with
 ## a glassy stab as it rises, not while its mark glows, and two that rise on
 ## the same frame sound once.
