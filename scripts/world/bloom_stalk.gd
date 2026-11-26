@@ -79,6 +79,8 @@ var _state := -1
 var _tex: ImageTexture
 var _veins: Array = []
 var _found := false
+## The light the veins give the shaft's air (12.140).
+var glow: VeinGlow
 
 
 func _ready() -> void:
@@ -86,6 +88,10 @@ func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	bake()
 	_tex = ImageTexture.create_from_image(_baked)
+	glow = VeinGlow.new()
+	glow.name = "VeinGlow"
+	glow.stalk = self
+	add_child(glow)
 
 
 static func bake() -> void:
@@ -100,6 +106,8 @@ func _process(delta: float) -> void:
 	var step := int(t * STEP_FPS)
 	var state := lit_mask()
 	if step != _step or state != _state:
+		if state != _state and glow != null:
+			glow.queue_redraw()
 		_step = step
 		_state = state
 		queue_redraw()
