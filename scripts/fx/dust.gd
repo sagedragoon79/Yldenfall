@@ -33,6 +33,11 @@ const GROUND := ["run", "dash", "jump", "land"]
 ## and spray from standing water (`Room.surface_at`).
 const GROUND_TINT := {"mud": Color("5e4c36"), "sap": Color("ffb84a"), "wade": Color("7cc4f0")}
 
+## Spray off standing water: drops WADE_DROP px across, strung WADE_SPREAD px
+## either side of where they leave the surface (12.143).
+const WADE_DROP := 1
+const WADE_SPREAD := 4
+
 ## The kind this puff was set up as (tests).
 var kind := ""
 ## The ground it was kicked off, if it took that ground's look (tests).
@@ -56,8 +61,11 @@ func setup(kind_name: String, facing := 1, ground := "") -> void:
 		# Mud, sap and water are heavy: flung, they fall back rather than drift.
 		_rise = 260.0
 		if ground == "wade":
-			# Spray leaps higher and wider than dust, out of the surface.
+			# Spray leaps higher and wider than dust, out of the surface, in single
+			# drops (pass 666, 12.143): a 2 px puff born on one point read as a
+			# flat square on the wader's hip.
 			speed = Vector2(speed.x * 0.8 + 20.0, 130.0)
+			_size = WADE_DROP
 	var count := int(k["count"]) + (3 if surface == "wade" else 0)
 	for i in count:
 		var dir := Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 0.2))
@@ -73,7 +81,11 @@ func setup(kind_name: String, facing := 1, ground := "") -> void:
 			dir.y = -randf_range(0.6, 1.4)
 			dir.x *= 0.7
 		var life: float = k["life"] * randf_range(0.7, 1.2)
-		_particles.append([Vector2.ZERO, dir * speed, life, life])
+		var at := Vector2.ZERO
+		if surface == "wade":
+			# Strung along the line, never piled on one point.
+			at.x = float(i % (2 * WADE_SPREAD + 1) - WADE_SPREAD)
+		_particles.append([at, dir * speed, life, life])
 	z_index = 2
 
 

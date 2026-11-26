@@ -3351,6 +3351,27 @@ The grade of pass 660 named "flat water rectangles (the source hall, the flooded
 
 Judged by eye at 1x and 2x in the Source Hall, the Drowned Aqueduct, the Spring Gate and the Wellspring. In the Source Hall's pool a fifth of the way down a shaft now measures luminance 87 beside 63, and two thirds down 76 beside 54; the floor is still the darkest part of the pool. `test_the_light_goes_on_under_the_water` (`tests/test_swim_water_art.gd`) holds the steps, the tiers, the widening, the bend, the open-surface rule and the Source Hall's shafts. Not done here: the Flooded Hall's tide, a tile deep, the other half of the grade's item.
 
+### 12.142 Water stands only where something holds it (pass 666)
+
+The grade of pass 665 named the Source Hall's water "a hard-edged box ending in a vertical line". It was: the pool's top two rows stood two tiles over the ledge beside it, so from the surface down to the ledge its right side was a wall of water against open air, held by nothing. The same fault, smaller, was in the Spring Gate: a chest and a figure set in the water each kept a dry cell of their own (the room marks only `a` and `l` cells as water), and one open cell under the stone beside the east door stood dry with water on three sides.
+
+- **The Source Hall's pool lies level with its ledge.** Its surface is now the ledge's top (row 15), five tiles deep, so it meets stone at both ends and laps there (12.97). The shafts of 12.141 still enter it.
+- **What is set in the water is under it** (`Room.water_holes`). After the grid is placed, an open cell with water over it, and water or what holds water (stone, a slope, a board, a door) at each side and under it, becomes water; it grows down from the water and then lets go of any cell left open, so a pocket two cells deep fills whole. A cell under the open air over the surface is never filled. The Spring Gate's chest and figure are now in the water; its cell by the door is drawn as water in the room file.
+- **The rule, for every room** (`Room.unheld_water`): no swim water cell has open air at its side or under it. A door counts as holding it (the water goes on into the next room).
+
+`tests/test_water_held.gd` holds the rule over every room, the Source Hall's level and the holes. Judged by eye at 1x in the Source Hall and the Spring Gate.
+
+### 12.143 The water climbs round a wader (pass 666)
+
+The same grade saw "the flooded hall's uniform tide band with nothing round the feet". The tide is a tile deep, so a wader's feet are under it and what meets the water is the shin: the bright line across the body (pass 550) was one pixel, and a moving hero's spray (`Dust`, "wade") came out of one point as seven 2-pixel drops, which at the moment of a step read as a flat pale square on the hero's hip.
+
+- **A meniscus at each edge of the body** (`Tide.collar`): the water climbs `COLLAR` (2) px against the legs, `COLLAR_FOOT` (3) px wide on the row over the line and a pixel narrower a row up, in the bank foam's colour (`WaterEdge.FOAM`, 0.8 and 0.56).
+- **A bow wave in front of a moving wader:** past `MOVING_SPEED` the water heaps a pixel over the line for `BOW` (6) px in front, in 2 px steps fading out ahead. A slow drift pushes none.
+- **Silt off the floor:** a moving wader stirs a puff from behind its feet every `SILT_EVERY` (0.2 s) that rises `SILT_RISE` (6) px and drifts back `SILT_DRIFT` (6) px over a second, fading, in a pale silt green (`SILT_PUFF`). Standing stirs none.
+- **Spray in single drops:** the wade spray's drops are `Dust.WADE_DROP` (1) px across, strung `WADE_SPREAD` (4) px either side of where they leave the surface. Dust off dry ground is as it was.
+
+A first take also laid a shadow of the feet on the floor under the water; it could not be seen through the tide's own dark floor tone and was dropped, as was a second spray the tide threw itself (the hero's step spray already is one). Judged by eye at 1x and 6x in the Flooded Hall, standing and wading both ways. `test_the_water_climbs_round_a_wader` (`tests/test_tide_wake.gd`) holds the collar, the bow wave, the silt and the drops.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

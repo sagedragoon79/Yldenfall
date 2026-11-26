@@ -268,6 +268,10 @@ func build(text: String) -> void:
 		var row := grid[y]
 		for x in row.length():
 			_place(row[x], Vector2i(x, y), grid)
+	# Something set in the water (a chest, a figure) is under
+	# it, not in a dry pocket of its own (12.142).
+	for c: Vector2i in Room.water_holes(grid, _water):
+		_water[c] = true
 	_place_basins(grid)
 	_place_falls()
 	for cell: Vector2i in covers:
@@ -1122,6 +1126,71 @@ func _restore_purse() -> void:
 	var bag := GoldPurse.new()
 	bag.value = int(purse.value)
 	_spawn(bag, Vector2(float(purse.x), float(purse.y)))
+
+
+## What holds water at its side or under it: stone, a slope, a board, and a door
+## (the water goes on through it into the next room).
+static func holds_water(ch: String) -> bool:
+	return ch in WATER_HOLDS or ch.is_valid_int()
+
+
+const WATER_HOLDS := ["#", "-", "%", "u", "/", "\\", "`", "'"]
+
+
+## The open cells inside a room's swim water (design bible 12.142): under water
+## and walled at each side and under by water or by what holds it. The room
+## fills them, so nothing set in the water stands in a dry pocket. It grows down
+## from the water first (sides held), then lets go of any cell left open at a
+## side or under, or under one let go, so a pocket two cells deep fills whole.
+static func water_holes(grid: Array[String], water: Dictionary) -> Array[Vector2i]:
+	var wet := water.duplicate()
+	var added := {}
+	var at := func(c: Vector2i) -> String:
+		if c.y < 0 or c.y >= grid.size() or c.x < 0 or c.x >= grid[c.y].length():
+			return "#"
+		return grid[c.y][c.x]
+	var held := func(c: Vector2i) -> bool: return wet.has(c) or Room.holds_water(at.call(c))
+	var changed := true
+	while changed:
+		changed = false
+		for y in grid.size():
+			for x in grid[y].length():
+				var c := Vector2i(x, y)
+				if wet.has(c) or Room.holds_water(at.call(c)) or not wet.has(c + Vector2i.UP):
+					continue
+				if held.call(c + Vector2i.LEFT) and held.call(c + Vector2i.RIGHT):
+					wet[c] = true
+					added[c] = true
+					changed = true
+	changed = true
+	while changed:
+		changed = false
+		for c: Vector2i in added.keys():
+			var keep: bool = wet.has(c + Vector2i.UP)
+			for d: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN]:
+				keep = keep and held.call(c + d)
+			if not keep:
+				wet.erase(c)
+				added.erase(c)
+				changed = true
+	var out: Array[Vector2i] = []
+	for c: Vector2i in added:
+		out.append(c)
+	return out
+
+
+## The swim water's cells whose side or floor stands open (design bible 12.142): a
+## wall of water held up by nothing. A room should have none.
+static func unheld_water(grid: Array[String], water: Dictionary) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	for c: Vector2i in water:
+		for d: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN]:
+			var n := c + d
+			var ch := "#" if n.y < 0 or n.y >= grid.size() or n.x < 0 or n.x >= grid[n.y].length() else grid[n.y][n.x]
+			if not water.has(n) and not Room.holds_water(ch):
+				out.append(c)
+				break
+	return out
 
 
 func _char_at(grid: Array[String], cell: Vector2i) -> String:
