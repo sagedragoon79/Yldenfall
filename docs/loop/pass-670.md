@@ -43,7 +43,10 @@ one row up); with the legs at half the rise it fails (not 45 degrees).
 
 ## Full suite
 
-See the pull request.
+One full run (`TEST_TIMEOUT=7200`): 38,351 checks passed, 2 failed, both the room budget
+(`test_every_room_loads_and_settles_inside_the_budget`: `evercrown/proving_scar` 505 ms and 8.16 ms a
+frame, `gym/gym` 510 ms). Rerun alone it passed. `proving_scar` has no planks, and it failed the
+same way in pass 665 with that pass's code taken out. CI (test and mix) is green.
 
 ## Rubric (design bible 15.3)
 
