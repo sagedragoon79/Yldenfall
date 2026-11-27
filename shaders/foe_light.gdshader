@@ -5,6 +5,8 @@ shader_type canvas_item;
 // One colour of its own is left out of that and lifted: its accent (12.69).
 // Its mid tones are lit by a fill, so its body stands a step above the room's
 // shadows while its outline stays sunk (12.89).
+// First the foe is put on the cast's key (12.149): a gamma on its value and a
+// scale on its saturation, so every foe's body sits in one value and chroma.
 // FoeLight.lit is the same sum in GDScript, for the tests.
 
 uniform vec3 haze = vec3(0.17, 0.15, 0.25);
@@ -23,6 +25,8 @@ uniform float floor_soft = 0.12;
 uniform vec2 fill = vec2(0.0);
 uniform vec3 fill_tint = vec3(1.0);
 uniform vec4 fill_band = vec4(0.06, 0.2, 0.3, 0.7);
+// The key: x the gamma on value, y the scale on saturation. (1, 1): none.
+uniform vec2 key = vec2(1.0);
 
 vec3 to_hsv(vec3 c) {
 	float mx = max(c.r, max(c.g, c.b));
@@ -48,8 +52,13 @@ vec3 from_hsv(vec3 hsv) {
 
 void fragment() {
 	vec3 painted = COLOR.rgb;
-	float g = dot(painted, vec3(0.299, 0.587, 0.114));
-	vec3 c = mix(painted, vec3(g), mute);
+	vec3 base = painted;
+	if (key != vec2(1.0)) {
+		vec3 kh = to_hsv(painted);
+		base = from_hsv(vec3(kh.x, min(kh.y * key.y, 1.0), pow(kh.z, key.x)));
+	}
+	float g = dot(base, vec3(0.299, 0.587, 0.114));
+	vec3 c = mix(base, vec3(g), mute);
 	float w = sink * (1.0 - g) * (1.0 - g);
 	c = mix(c, haze, w);
 	float f = smoothstep(fill_band.x, fill_band.y, g) * (1.0 - smoothstep(fill_band.z, fill_band.w, g));

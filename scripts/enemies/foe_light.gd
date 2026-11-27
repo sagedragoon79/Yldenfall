@@ -81,6 +81,31 @@ const ACCENTS := {
 	"meteor_slug": [8.0, 22.0, 0.6, 0.45, 0.7, 0.45],  # the fire in its shell
 }
 
+## Each foe's key (design bible 12.149): a gamma on its painted value and a
+## scale on its saturation, applied before the room's light, so every foe's
+## body sits at the cast's median value and saturation. The pass 670 grade saw
+## the foes "in three styles"; measured, they were painted in different keys
+## (the Thunder Beetle dark and saturated, the Hornet light). Written by
+## `tools/art/cast_key.py`, which a test reruns against the sheets. A gamma
+## leaves black and full value in place: the outline stays, a light stays.
+## A foe not here is already on the key, or kept off it (the tool says why).
+const KEYS := {
+	"blinkhop": [1.30, 1.00],  # value 0.54, saturation 0.47 as painted
+	"bog_puffcap": [1.27, 1.15],  # value 0.51, saturation 0.29 as painted
+	"clockwork_hound": [1.00, 0.80],  # value 0.39, saturation 0.55 as painted
+	"drowned_dwarf": [0.79, 1.15],  # value 0.35, saturation 0.31 as painted
+	"gear_bat": [1.27, 1.00],  # value 0.51, saturation 0.40 as painted
+	"grub_lump": [1.20, 0.80],  # value 0.49, saturation 0.57 as painted
+	"hornet": [1.30, 1.00],  # value 0.55, saturation 0.42 as painted
+	"iron_dwarf": [0.75, 1.00],  # value 0.27, saturation 0.45 as painted
+	"mothling": [1.25, 1.00],  # value 0.51, saturation 0.48 as painted
+	"rot_dwarf": [0.75, 1.15],  # value 0.30, saturation 0.22 as painted
+	"sap_spitter": [1.00, 0.80],  # value 0.38, saturation 0.62 as painted
+	"seed_bomber": [1.00, 0.80],  # value 0.40, saturation 0.61 as painted
+	"spire_sentinel": [1.30, 1.15],  # value 0.58, saturation 0.20 as painted
+	"thunder_beetle": [0.75, 0.80],  # value 0.31, saturation 0.66 as painted
+}
+
 static var _materials := {}
 
 
@@ -91,7 +116,7 @@ static var _materials := {}
 static func material_for(zone: String, foe := "") -> ShaderMaterial:
 	if not Backdrop.ZONE_HAZE.has(zone):
 		return null
-	var who := foe if ACCENTS.has(foe) else ""
+	var who := foe if ACCENTS.has(foe) or KEYS.has(foe) else ""
 	var key := zone + "/" + who
 	if not _materials.has(key):
 		var mat := ShaderMaterial.new()
@@ -106,7 +131,10 @@ static func material_for(zone: String, foe := "") -> ShaderMaterial:
 		mat.set_shader_parameter("fill", Vector2(FILL_GAIN, FILL_ADD))
 		mat.set_shader_parameter("fill_tint", Vector3(tint.r, tint.g, tint.b))
 		mat.set_shader_parameter("fill_band", Vector4(FILL_LO, FILL_FULL, FILL_HOLD, FILL_END))
-		if who != "":
+		if KEYS.has(who):
+			var k: Array = KEYS[who]
+			mat.set_shader_parameter("key", Vector2(k[0], k[1]))
+		if ACCENTS.has(who):
 			var a: Array = ACCENTS[who]
 			mat.set_shader_parameter("accent", Vector4(a[0], a[1], a[2], a[3]))
 			mat.set_shader_parameter("lift", Vector2(a[4], a[5]))
@@ -171,9 +199,10 @@ static func fill_tint(zone: String) -> Color:
 static func lit(c: Color, zone: String, foe := "") -> Color:
 	if not Backdrop.ZONE_HAZE.has(zone):
 		return c
-	var g := luma(c)
+	var k := keyed(c, foe)
+	var g := luma(k)
 	var grey := Color(g, g, g, c.a)
-	var muted := c.lerp(grey, MUTE)
+	var muted := k.lerp(grey, MUTE)
 	var out := muted.lerp(deep_for(zone), sink_at(g))
 	var f := fill_at(g)
 	var tint := fill_tint(zone)
@@ -185,6 +214,15 @@ static func lit(c: Color, zone: String, foe := "") -> Color:
 		out = out.lerp(lifted(c, foe), w)
 	out.a = c.a
 	return out
+
+
+## `c` on the cast's key for `foe` (KEYS): its value to the key's gamma, its
+## saturation scaled. Unchanged for a foe with no key.
+static func keyed(c: Color, foe: String) -> Color:
+	if not KEYS.has(foe):
+		return c
+	var k: Array = KEYS[foe]
+	return Color.from_hsv(c.h, minf(c.s * k[1], 1.0), pow(c.v, k[0]), c.a)
 
 
 ## The zone of the room `node` stands in, or "" outside any room.

@@ -140,9 +140,10 @@ func test_each_foe_keeps_one_colour_of_its_own() -> void:
 			check(gain_s / lit_up > 0.08, "%s: the accent is more saturated than the room's light leaves it (%.2f)" % [id, gain_s / lit_up])
 			check(gain_v / lit_up > 0.08, "%s: and lighter (%.2f)" % [id, gain_v / lit_up])
 			check(hue_drift < 0.03, "%s: in the hue it was painted" % id)
-		# What is not the accent is as it was: the outline, the white, a grey.
+		# What is not the accent is as it was (on the foe's key, 12.149): the
+		# outline, the white, a grey.
 		for c: Color in [Color.BLACK, Color.WHITE, Color(0.4, 0.4, 0.4), Color("3a4450")]:
-			check(FoeLight.lit(c, "tower", id).is_equal_approx(FoeLight.lit(c, "tower")), "%s: %s is lit as before" % [id, c.to_html(false)])
+			check(FoeLight.lit(c, "tower", id).is_equal_approx(FoeLight.lit(FoeLight.keyed(c, id), "tower")), "%s: %s is lit as before" % [id, c.to_html(false)])
 		var mat := FoeLight.material_for("tower", id)
 		check(mat != FoeLight.material_for("tower"), "%s has a material of its own" % id)
 		check(mat == FoeLight.material_for("tower", id), "%s: one per foe and zone" % id)
@@ -153,8 +154,10 @@ func test_each_foe_keeps_one_colour_of_its_own() -> void:
 			and is_equal_approx(mat.get_shader_parameter("floor_soft"), FoeLight.FLOOR_SOFT), "%s: and the falloffs" % id)
 
 	# A foe with no accent shares the zone's material, and is lit as before.
-	for id: String in ["lantern_ghost", "crystal_dwarf", "bog_puffcap", "bark_knight", "spring_eel", ""]:
+	for id: String in ["bog_puffcap"]:
 		check(not FoeLight.ACCENTS.has(id), "%s has no accent" % id)
+	for id: String in ["lantern_ghost", "crystal_dwarf", "bark_knight", "spring_eel", ""]:
+		check(not FoeLight.ACCENTS.has(id) and not FoeLight.KEYS.has(id), "%s has no accent and no key" % id)
 		check(FoeLight.material_for("haar", id) == FoeLight.material_for("haar"), "%s shares the zone's material" % id)
 		check(FoeLight.lit(Color(0.9, 0.5, 0.1), "haar", id).is_equal_approx(FoeLight.lit(Color(0.9, 0.5, 0.1), "haar")), "%s is lit as before" % id)
 	var plain_mat := FoeLight.material_for("haar")
@@ -253,7 +256,9 @@ func test_a_foes_body_stands_above_the_rooms_dark() -> void:
 				if c.a < 0.8:
 					continue
 				lumas.append(FoeLight.luma(FoeLight.lit(c, "vorrhallow", id)))
-				plain.append(FoeLight.luma(c))
+				# Against the paint on the cast's key (12.149): the key is the
+				# foe's paint now, and the fill is measured from there.
+				plain.append(FoeLight.luma(FoeLight.keyed(c, id)))
 		if lumas.size() < 40:
 			continue
 		seen += 1
@@ -265,3 +270,70 @@ func test_a_foes_body_stands_above_the_rooms_dark() -> void:
 		check(mid_lit < plain[plain.size() / 2] + 0.12, "%s: and is not washed out (%.2f from %.2f)" % [id, mid_lit, plain[plain.size() / 2]])
 		check(lumas[0] < 0.12, "%s: its outline is still an outline (%.2f)" % [id, lumas[0]])
 	check(seen >= 20, "the sheet foes were all looked at (%d)" % seen)
+
+
+## Pass 672 (bible 12.149). The pass 670 grade saw the foes "in three styles":
+## rendered bees and snake, a flat hero, and a third set in the beetle and the
+## purple slug. Measured, they were painted in different keys. Each foe off the
+## cast's key gets a gamma on its value and a scale on its saturation that bring
+## its body's median value and mean saturation to the cast's.
+const KEY_V := 0.43
+const KEY_S := 0.43
+const KEY_SLACK_V := 0.05
+const KEY_SLACK_S := 0.08
+const KEY_EXEMPT := ["lantern_ghost", "crystal_dwarf", "spring_eel", "leaf_mantis"]
+
+
+## The median value and mean saturation of a sheet's body (opaque, not the
+## outline), as `tools/art/cast_key.py` measures it, after `key`.
+func _body_key(id: String, key: Array) -> Vector2:
+	var img: Image = (load("res://assets/sprites/%s.png" % id) as Texture2D).get_image()
+	var vs: Array[float] = []
+	var sat := 0.0
+	for y in range(0, img.get_height(), 2):
+		for x in range(0, img.get_width(), 2):
+			var c := img.get_pixel(x, y)
+			if c.a <= 0.5 or c.v < 0.12:
+				continue
+			var k := Color.from_hsv(c.h, minf(c.s * key[1], 1.0), pow(c.v, key[0]))
+			vs.append(k.v)
+			sat += k.s
+	vs.sort()
+	return Vector2(vs[vs.size() / 2], sat / maxf(vs.size(), 1.0))
+
+
+func test_the_cast_is_painted_in_one_key() -> void:
+	check(FoeLight.KEYS.has("thunder_beetle") and FoeLight.KEYS.has("hornet"), "the beetle and the bee are put on the key")
+	for f in DirAccess.get_files_at("res://scripts/enemies/"):
+		if not f.ends_with(".gd") or f == "enemy.gd":
+			continue
+		var id := f.get_basename()
+		if id in KEY_EXEMPT or not Sheet.exists(id) or not ("extends Enemy" in FileAccess.get_file_as_string("res://scripts/enemies/" + f)):
+			continue
+		var key: Array = FoeLight.KEYS.get(id, [1.0, 1.0])
+		var painted := _body_key(id, [1.0, 1.0])
+		var on := _body_key(id, key)
+		# On the key, or as near as the key's limits let it come, and never further.
+		var dv0 := absf(painted.x - KEY_V)
+		var dv := absf(on.x - KEY_V)
+		var ds0 := absf(painted.y - KEY_S)
+		var ds := absf(on.y - KEY_S)
+		check(dv <= KEY_SLACK_V or (dv < dv0 and (is_equal_approx(key[0], 0.75) or is_equal_approx(key[0], 1.3))),
+			"%s: its body's value is on the cast's key (%.2f, painted %.2f)" % [id, on.x, painted.x])
+		check(ds <= KEY_SLACK_S or (ds < ds0 and (is_equal_approx(key[1], 0.8) or is_equal_approx(key[1], 1.15))),
+			"%s: its saturation too (%.2f, painted %.2f)" % [id, on.y, painted.y])
+		if FoeLight.KEYS.has(id):
+			check(key[0] >= 0.75 and key[0] <= 1.3 and key[1] >= 0.8 and key[1] <= 1.15, "%s: a key moves a sheet a step, not a repaint" % id)
+			check(dv0 > KEY_SLACK_V or ds0 > KEY_SLACK_S, "%s: a key only where the sheet is off it" % id)
+			check(FoeLight.keyed(Color.BLACK, id).is_equal_approx(Color.BLACK), "%s: its outline stays black" % id)
+			var w := FoeLight.keyed(Color(1, 1, 1), id)
+			check(is_equal_approx(w.v, 1.0), "%s: a light stays a light" % id)
+			var mat := FoeLight.material_for("tower", id)
+			check(mat != FoeLight.material_for("tower"), "%s: its key has a material" % id)
+			check((mat.get_shader_parameter("key") as Vector2).is_equal_approx(Vector2(key[0], key[1])), "%s: the shader has its key" % id)
+	# The beetle comes up out of its dark purple and the bee steps down.
+	var beetle := FoeLight.lit(Color("4a2a6a"), "spires", "thunder_beetle")
+	check(beetle.v > FoeLight.lit(Color("4a2a6a"), "spires").v and beetle.s < FoeLight.lit(Color("4a2a6a"), "spires").s,
+		"the beetle's purple is lighter and less saturated than painted")
+	check(FoeLight.lit(Color("8090a0"), "heartwood", "hornet").v < FoeLight.lit(Color("8090a0"), "heartwood").v, "the bee's wings and body are darker")
+	check(FoeLight.material_for("gym", "thunder_beetle") == null, "outside a zone a foe still draws as painted")
