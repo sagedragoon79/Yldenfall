@@ -37,7 +37,7 @@ the middle it fails twice (not straight down).
 
 ## Full suite
 
-See the pull request.
+One full run (`TEST_TIMEOUT=7200`): 38,409 checks passed, 0 failed. CI (test and mix) is green.
 
 ## Rubric (design bible 15.3)
 
