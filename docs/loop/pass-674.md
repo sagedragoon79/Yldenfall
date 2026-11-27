@@ -40,7 +40,8 @@ Mutation check: with the keyline and the glint's backing taken out of the draw, 
 
 ## Full suite
 
-FULLSUITE
+One full run (`TEST_TIMEOUT=7200`): 38,594 checks passed, 0 failed. CI (test and mix) passed on the
+pull request.
 
 ## Rubric (design bible 15.3)
 
