@@ -3425,6 +3425,18 @@ The plan and the bridle's apex (12.147) are unchanged: which runs bridle, and wh
 
 Judged by eye at 1x and 3x in `tower/foot` (the spreader; its first beam was 3 px with a half-pixel lit edge and read as a railing, now 4 px), `evercrown/veins` (the drooping sinews and the knot), `haar/marsh_road` (the block, faint under the fog as everything there is) and `spires/sky_steps` (the ring). `test_plank_each_zone_family_hangs_its_own_rig` (`tests/test_plank_supports.gd`) holds it: every zone takes a known rig and every rig is used, the four graded zones each hang their own, the spreader's height, width and straight drops, the block's hook and timber, the sinew's droop and the knot's pore, the ring's accent, and every tone in the palette.
 
+### 12.149 The cast of foes is painted in one key (pass 672)
+
+The grade of pass 670 saw the foes "in three styles": rendered bees and snake against the flat hero, and a third set in the Thunder Beetle and the Meteor Slug. Measured on the sheets, the foes were painted in different keys: a body's median value ran from 0.27 (the Iron Dwarf) to 0.58 (the Spire Sentinel), its mean saturation from 0.20 to 0.66 (the Thunder Beetle, dark and saturated, against the Hornet, light). Every foe draws through FoeLight's material (12.43), so each foe off the cast's key now takes one there (`FoeLight.KEYS`), before the room's light, the fill and the accent:
+
+- **A gamma on its value** that brings its body's median value to the cast's, 0.43, and **a scale on its saturation** that brings its mean saturation to the cast's, 0.43. A body counts its opaque pixels at or over a value of 0.12 (not the outline).
+- **A step, not a repaint.** The gamma stays within 0.75 to 1.3 and the scale within 0.8 to 1.15; a foe within 0.05 of the value and 0.08 of the saturation gets no key on that axis. A gamma leaves black and full value where they are, so the outline stays an outline and a light stays a light. The accent (12.69) is found and lifted on the painted colour, as before.
+- **Kept off the key:** the Lantern Ghost (meant to be faint, bible 7), the Crystal Dwarf (a light, 12.52) the Spring Eel (seen through water) and the Leaf Mantis (it stands off the Boughs' green woods by its saturation, 12.112; the full suite caught the key pulling it in).
+
+`tools/art/cast_key.py` measures the sheets and writes the table; rerun it after a foe's sheet changes. Fourteen foes take a key: the Thunder Beetle comes up out of its dark purple and loses its excess chroma, the dwarves in plate and rags come up a step, and the Hornet, the Blinkhop, the Gear Bat and the Mothling step down. The fill (12.89) is now measured from the keyed paint. Judged by eye at 3x on the sheets and in the Spires and Tower fight frames. This is a step toward one cast: the key evens value and chroma, not line or rendering, so the beetle's and the slug's lit seams and the bee's soft shading remain until those sheets are redrawn.
+
+`test_the_cast_is_painted_in_one_key` (`tests/test_foe_light.gd`) holds it: every sheet foe's body is on the key, or as near as the key's limits let it come; each key is a bounded step on a sheet that was off; black and white are unmoved; the shader carries each key.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

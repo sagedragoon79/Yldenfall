@@ -80,6 +80,10 @@ gets them the same way:
   until they are redrawn. 96 at most (a test). No pure black or white.
 - **Light:** top-left key light. A dark foe (night armour, black chitin) gets a `"gain"` and
   a `"rim"` in its zone's light colour, as the Iron Dwarf has, so it stands off dark walls.
+- **One key for the cast (bible 12.149):** paint the body so its median value sits near 0.43
+  and its mean saturation near 0.43, as the rest of the cast. A sheet off that key is put on it in
+  code (`FoeLight.KEYS`, from `tools/art/cast_key.py`), but only by a bounded step: rerun the tool
+  after importing a sheet, and redraw a sheet the step cannot reach.
 - **No dithering** and no painted motion blur on bodies. A smear frame for a fast strike is
   allowed (bible 12.4), one frame, the body's own colours.
 - **Facing (2026-11-06):** anything that **moves** — walk, run, every attack, jumps — is a
