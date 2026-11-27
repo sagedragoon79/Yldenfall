@@ -70,6 +70,22 @@ const BRIDLE_MIN := 16.0
 const BRIDLE_CLEAR := 12.0
 ## The ring's outer width, world px.
 const RING := 5.0
+## How each zone family meets a hung deck's hangers over its middle (pass 671, design
+## bible 12.148). The pass 670 grade read the bridle as "one hung-deck rig pasted
+## across four zones". The town and the stone cities keep the bridle on a ring in the
+## zone's accent metal ("ring"); the Tower and the Trials lift on a riveted iron
+## spreader beam whose chains drop straight to the deck's ends ("spreader", a T, not
+## a triangle); the timber and water zones run their ropes up to a wooden pulley block
+## on a hook ("block"); the Evercrown's sinews droop and grow together in a swollen
+## knot ("knot").
+const RIGS := ["ring", "spreader", "block", "knot"]
+## A spreader beam stands at most this far over the deck, world px, and is this deep.
+const SPREADER_RISE := 20.0
+const SPREADER_H := 4.0
+## How far a beam runs past each drop, world px.
+const SPREADER_OVER := 3.0
+## How far a drooping sinew leg sags below its straight line, as a share of its rise.
+const KNOT_SAG := 0.3
 ## A frame's widest bay, world px; a longer span is split into bays.
 const BAY_MAX := 48.0
 ## A frame needs this much height between board and footing, world px (a post
@@ -83,21 +99,21 @@ const FRAME_MIN_H := 40.0
 ## `nail`), and `foot` the footing stone (lit, mid, dark). `moss`, where a zone has it
 ## (lit, mid, dark), grows on the rail and climbs each leg from its footing (pass 637).
 const LOOKS := {
-	"gym": {"frame": "x", "post": "squared", "hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "aca1ba", "foot": ["797767", "58544c", "363330"]},
+	"gym": {"frame": "x", "post": "squared", "hang": "rope", "rig": "block", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "aca1ba", "foot": ["797767", "58544c", "363330"]},
 	# The Heartwood's timber is old and grey, grown over with moss, and lashed with flax (pass 637).
-	"heartwood": {"frame": "lashed", "post": "raked", "hang": "rope", "lit": "aa9173", "mid": "8a6e56", "dark": "3c2c2a", "wood": ["728061", "4f5c47", "2f392d"], "moss": ["49aa36", "2b782c", "1e4825"], "bolt": "f0c02e", "foot": ["797767", "58544c", "363330"]},
-	"boughs": {"frame": "forked", "post": "trunk", "hang": "rope", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "a1d684", "foot": ["797767", "58544c", "363330"]},
-	"hearthroot": {"frame": "x", "post": "squared", "hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "f0c02e", "foot": ["867ba2", "645e82", "2f2c3a"]},
-	"haar": {"frame": "piling", "post": "pile", "hang": "rope", "lit": "aa9173", "mid": "8a6e56", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "989885", "foot": ["797767", "58544c", "363330"]},
-	"sunken": {"frame": "piling", "post": "pile", "hang": "chain", "lit": "aa9173", "mid": "634a41", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "84cbd6", "foot": ["797767", "58544c", "363330"]},
+	"heartwood": {"frame": "lashed", "post": "raked", "hang": "rope", "rig": "block", "lit": "aa9173", "mid": "8a6e56", "dark": "3c2c2a", "wood": ["728061", "4f5c47", "2f392d"], "moss": ["49aa36", "2b782c", "1e4825"], "bolt": "f0c02e", "foot": ["797767", "58544c", "363330"]},
+	"boughs": {"frame": "forked", "post": "trunk", "hang": "rope", "rig": "block", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "a1d684", "foot": ["797767", "58544c", "363330"]},
+	"hearthroot": {"frame": "x", "post": "squared", "hang": "chain", "rig": "ring", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "f0c02e", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"haar": {"frame": "piling", "post": "pile", "hang": "rope", "rig": "block", "lit": "aa9173", "mid": "8a6e56", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "989885", "foot": ["797767", "58544c", "363330"]},
+	"sunken": {"frame": "piling", "post": "pile", "hang": "chain", "rig": "block", "lit": "aa9173", "mid": "634a41", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "84cbd6", "foot": ["797767", "58544c", "363330"]},
 	# The Spires are a ruined stone city: their footings and piers are its own lilac stone (pass 625).
-	"spires": {"frame": "pier", "post": "stone", "hang": "rope", "lit": "bea860", "mid": "9c7f44", "dark": "432d23", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "edce6e", "foot": ["867ba2", "645e82", "2f2c3a"]},
-	"vorrhallow": {"frame": "arch", "post": "stone", "hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "d684c6", "foot": ["867ba2", "645e82", "2f2c3a"]},
-	"trials": {"frame": "truss", "post": "column", "set_in": 8.0, "hang": "chain", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "b4b4a7", "foot": ["867ba2", "645e82", "2f2c3a"]},
-	"tower": {"frame": "truss", "post": "column", "set_in": 8.0, "hang": "chain", "lit": "aca1ba", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "84cbd6", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"spires": {"frame": "pier", "post": "stone", "hang": "rope", "rig": "ring", "lit": "bea860", "mid": "9c7f44", "dark": "432d23", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "edce6e", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"vorrhallow": {"frame": "arch", "post": "stone", "hang": "chain", "rig": "ring", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "d684c6", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"trials": {"frame": "truss", "post": "column", "set_in": 8.0, "hang": "chain", "rig": "spreader", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "b4b4a7", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"tower": {"frame": "truss", "post": "column", "set_in": 8.0, "hang": "chain", "rig": "spreader", "lit": "aca1ba", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "84cbd6", "foot": ["867ba2", "645e82", "2f2c3a"]},
 	# The Evercrown's shelves are grown, not built (bible 12.34, pass 542): they hang on
 	# sinew strands (night-5, night-3, crystal-1: wine, not red, bible 12.48), not hot crystal chains.
-	"evercrown": {"frame": "web", "post": "squared", "hang": "sinew", "lit": "af92c9", "mid": "5d4997", "dark": "421e48", "wood": ["8265b8", "5d4997", "2c2541"], "bolt": "b5e3e1", "foot": ["8265b8", "5d4997", "2c2541"]},
+	"evercrown": {"frame": "web", "post": "squared", "hang": "sinew", "rig": "knot", "lit": "af92c9", "mid": "5d4997", "dark": "421e48", "wood": ["8265b8", "5d4997", "2c2541"], "bolt": "b5e3e1", "foot": ["8265b8", "5d4997", "2c2541"]},
 }
 
 ## How each zone frames two posts under one run (pass 604): the pass 600 grade saw
@@ -388,15 +404,16 @@ func _draw() -> void:
 					_draw_chain(s.x, top, bottom, s.anchored and not s.get("bridled", false))
 				else:
 					_draw_rope(s.x, top, bottom, s.anchored and not s.get("bridled", false))
-	# Each bridle: the hanger above its ring, its two legs, then the ring over them.
+	# Each bridle: the hanger above its head, its two legs, then the head over them (pass 671: per zone family).
 	for br: Dictionary in bridles:
+		var head_top := PlankSupports.rig_top(br, _look)
 		if _look.hang == "chain":
-			_draw_chain(br.x, br.top, br.apex - RING * 0.5, true)
+			_draw_chain(br.x, br.top, head_top, true)
 		else:
-			_draw_rope(br.x, br.top, br.apex - RING * 0.5, true)
+			_draw_rope(br.x, br.top, head_top, true)
 		for end: float in [br.left, br.right]:
-			_draw_leg(Vector2(end, br.foot), Vector2(br.x, br.apex))
-		_draw_ring(br.x, br.apex)
+			_draw_leg(PlankSupports.leg_path(br, end, _look))
+		_draw_parts(PlankSupports.rig_parts(br, _look))
 	# Decks over their hangers' feet, then the stirrups that take each chord.
 	for d: Dictionary in decks:
 		_draw_parts(PlankSupports.deck_parts(d.left, d.right, d.y, _look))
@@ -460,18 +477,17 @@ func _draw_chain(x: float, top: float, bottom: float, anchored: bool) -> void:
 		_draw_cleat(x, top)
 
 
-## A bridle's leg from `from` (its end of the board) up to `to` (the ring), in
+## A bridle's leg along `path` (from its end of the board up to the head), in
 ## the zone's hanger: a chain as links that swell face-on and narrow edge-on,
 ## every `CHAIN_W` along it; a rope or sinew as a `ROPE_W` strand with a lit lay.
 ## Each is lit on its upper left and dark on its lower right, on the 2-pixel grid.
-func _draw_leg(from: Vector2, to: Vector2) -> void:
-	var d := to - from
-	var n := maxi(1, int(ceilf(maxf(absf(d.x), absf(d.y)) / 0.5)))
-	var length := d.length()
+func _draw_leg(path: PackedVector2Array) -> void:
 	var chain: bool = _look.hang == "chain"
-	for i in n + 1:
-		var p := (from + d * (float(i) / n)).snapped(Vector2(0.5, 0.5))
-		var along := length * float(i) / n
+	var along := 0.0
+	for i in path.size():
+		if i > 0:
+			along += path[i].distance_to(path[i - 1])
+		var p := path[i].snapped(Vector2(0.5, 0.5))
 		if chain:
 			var face := int(along / 4.0) % 2 == 0
 			var w := 2.0 if face else 1.0
@@ -486,14 +502,100 @@ func _draw_leg(from: Vector2, to: Vector2) -> void:
 			draw_rect(Rect2(p.x + hw - 0.5, p.y + hw - 0.5, 0.5, 0.5), _c(_look.dark))
 
 
-## The ring a bridle's legs meet in: a `RING` square with a dark eye, lit along its top and left.
-func _draw_ring(x: float, y: float) -> void:
-	var h := RING * 0.5
-	draw_rect(Rect2(x - h, y - h, RING, RING), _c(_look.dark))
-	draw_rect(Rect2(x - h + 0.5, y - h + 0.5, RING - 1.0, RING - 1.0), _c(_look.mid))
-	draw_rect(Rect2(x - h + 0.5, y - h + 0.5, RING - 1.5, 0.5), _c(_look.lit))
-	draw_rect(Rect2(x - h + 0.5, y - h + 0.5, 0.5, RING - 1.5), _c(_look.lit))
-	draw_rect(Rect2(x - 1.0, y - 1.0, 2.0, 2.0), _c(_look.dark))
+## Where a bridle's head meets its legs, world y (pass 671): a spreader beam stands
+## no higher than `SPREADER_RISE` over the deck; every other head at the bridle's apex.
+static func rig_apex(br: Dictionary, look: Dictionary) -> float:
+	if String(look.get("rig", "ring")) == "spreader":
+		return maxf(br.apex, br.foot - SPREADER_RISE)
+	return br.apex
+
+
+## The top of a bridle's head, where the one hanger above it ends, world y.
+static func rig_top(br: Dictionary, look: Dictionary) -> float:
+	var ay := PlankSupports.rig_apex(br, look)
+	match String(look.get("rig", "ring")):
+		"spreader":
+			return ay - SPREADER_H * 0.5 - 3.0
+		"block":
+			return ay - 11.0
+		"knot":
+			return ay - 3.0
+	return ay - RING * 0.5
+
+
+## A bridle leg's points from its end of the board (`end`) up to the head, every
+## half pixel (pass 671): straight at 45 degrees to a ring or a block's hook; straight
+## down from a spreader beam; a sinew drooping below its straight line to the knot.
+static func leg_path(br: Dictionary, end: float, look: Dictionary) -> PackedVector2Array:
+	var rig := String(look.get("rig", "ring"))
+	var ay := PlankSupports.rig_apex(br, look)
+	var foot := Vector2(end, br.foot)
+	var head := Vector2(br.x, ay)
+	if rig == "spreader":
+		head = Vector2(end, ay + SPREADER_H * 0.5)
+	elif rig == "knot":
+		head = Vector2(br.x, ay + 2.0)
+	var d := head - foot
+	var n := maxi(1, int(ceilf(maxf(absf(d.x), absf(d.y)) / 0.5)))
+	var ctrl := (foot + head) * 0.5 + Vector2(0.0, (foot.y - head.y) * KNOT_SAG)
+	var out := PackedVector2Array()
+	for i in n + 1:
+		var t := float(i) / n
+		if rig == "knot":
+			out.append(foot.lerp(ctrl, t).lerp(ctrl.lerp(head, t), t))
+		else:
+			out.append(foot.lerp(head, t))
+	return out
+
+
+## The rects of a bridle's head, each [Rect2, hex tone], back to front (pass 671).
+static func rig_parts(br: Dictionary, look: Dictionary) -> Array:
+	var out: Array = []
+	var x: float = br.x
+	var ay := PlankSupports.rig_apex(br, look)
+	var w: Array = look.wood
+	match String(look.get("rig", "ring")):
+		"spreader":
+			# A riveted iron beam over the deck, its ends past the drops, a shackle on its middle.
+			var x0: float = br.left - SPREADER_OVER
+			var x1: float = br.right + SPREADER_OVER
+			var y0 := ay - SPREADER_H * 0.5
+			out.append([Rect2(x0, y0, x1 - x0, SPREADER_H), look.dark])
+			out.append([Rect2(x0 + 0.5, y0 + 0.5, x1 - x0 - 1.0, SPREADER_H - 1.5), look.mid])
+			out.append([Rect2(x0 + 0.5, y0 + 0.5, x1 - x0 - 1.0, 1.0), look.lit])
+			for rx: float in [br.left, x, br.right]:
+				out.append([Rect2(rx - 0.5, y0 + 1.0, 1.0, 1.0), look.bolt])
+			out.append([Rect2(x - 2.0, y0 - 3.0, 4.0, 3.0), look.dark])
+			out.append([Rect2(x - 1.5, y0 - 3.0, 3.0, 0.5), look.lit])
+			out.append([Rect2(x - 0.5, y0 - 2.0, 1.0, 1.5), look.mid])
+		"block":
+			# A wooden pulley block on an iron strap, its sheave pinned, a hook under it the legs meet on.
+			out.append([Rect2(x - 1.0, ay - 11.0, 2.0, 2.5), look.dark])
+			out.append([Rect2(x - 3.0, ay - 9.0, 6.0, 7.0), w[2]])
+			out.append([Rect2(x - 2.5, ay - 8.5, 5.0, 6.0), w[1]])
+			out.append([Rect2(x - 2.5, ay - 8.5, 1.0, 6.0), w[0]])
+			out.append([Rect2(x - 1.0, ay - 7.0, 2.0, 3.0), w[2]])
+			out.append([Rect2(x - 0.5, ay - 6.0, 1.0, 1.0), look.bolt])
+			out.append([Rect2(x - 0.5, ay - 2.0, 1.0, 2.0), look.dark])
+			out.append([Rect2(x - 1.5, ay - 0.5, 1.5, 1.0), look.dark])
+		"knot":
+			# The sinews grow together in a swollen knot, lit on its upper left, a pore glowing in it.
+			var rows := [3.0, 5.0, 7.0, 7.0, 5.0, 3.0]
+			for i in rows.size():
+				var rw: float = rows[i]
+				out.append([Rect2(x - rw * 0.5, ay - 3.0 + i, rw, 1.0), w[2] if i >= 3 else w[1]])
+			out.append([Rect2(x - 1.5, ay - 3.0, 1.5, 1.0), w[0]])
+			out.append([Rect2(x - 2.5, ay - 2.0, 1.0, 1.0), w[0]])
+			out.append([Rect2(x + 0.5, ay - 1.0, 1.0, 1.0), look.bolt])
+		_:
+			# A ring in the zone's accent metal: a dark eye, lit along its top and left.
+			var h := RING * 0.5
+			out.append([Rect2(x - h, ay - h, RING, RING), look.dark])
+			out.append([Rect2(x - h + 0.5, ay - h + 0.5, RING - 1.0, RING - 1.0), look.mid])
+			out.append([Rect2(x - h + 0.5, ay - h + 0.5, RING - 1.5, 0.5), look.bolt])
+			out.append([Rect2(x - h + 0.5, ay - h + 0.5, 0.5, RING - 1.5), look.bolt])
+			out.append([Rect2(x - 1.0, ay - 1.0, 2.0, 2.0), look.dark])
+	return out
 
 
 ## The strap a hanger takes a deck's chord in: up both faces and under the chord.
