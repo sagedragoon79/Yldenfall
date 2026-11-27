@@ -57,7 +57,8 @@ named as flat, and its edge shade knows no slopes).
 
 ## Full suite
 
-See the pull request.
+One full run (`TEST_TIMEOUT=7200`): 38,546 checks passed, 0 failed, the reachability tests
+included. CI (test and mix) passed on the pull request.
 
 ## Rubric (design bible 15.3)
 
