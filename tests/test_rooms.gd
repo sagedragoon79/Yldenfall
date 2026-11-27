@@ -3278,3 +3278,79 @@ func test_a_door_gives_back_the_air_moves() -> void:
 	await frames(2)
 	var bible := FileAccess.get_file_as_string("res://docs/design-bible.md")
 	check(bible.contains("`test_a_door_gives_back_the_air_moves`"), "the bible names the test")
+
+
+## Pass 673 (design bible 12.150): a room's lowest floor is not one flat line from wall
+## to wall. Past boss arenas, rooms with standing water and towns, every room whose floor ran
+## flat has a bank raised on it (tools/levels/floor_banks.py): two slopes and a top, clear of
+## doors, the header's things and the grid's foes, with a hero's height of air over it.
+func test_a_rooms_floor_is_not_one_flat_line() -> void:
+	# Rooms where no bank fits, each for a reason the bible gives.
+	var kept := {
+		"tower/bell_loft": "the fallen bell and the secret fill the floor",
+		"tower/cistern": "grubs, a chest and a low plank leave no room",
+		"tower/kettleforge_stair": "a row of floor spikes is its floor",
+		"vorrhallow/meteor_rise": "its floor is the lip of the Sunken Spring's shaft",
+	}
+	var solid := "#/\\`'CRZkw[J"
+	var flat_rooms: Array[String] = []
+	var banked := 0
+	for zone: String in DirAccess.get_directories_at("res://levels"):
+		for file: String in DirAccess.get_files_at("res://levels/" + zone):
+			if not file.ends_with(".room"):
+				continue
+			var id := "%s/%s" % [zone, file.get_basename()]
+			var parsed := Room.parse(FileAccess.get_file_as_string("res://levels/%s/%s" % [zone, file]))
+			var head: Dictionary = parsed.header
+			var town := false
+			for p: String in parsed.lists.get("prop", []):
+				var name := p.get_slice(",", 2).strip_edges()
+				town = town or name == "house" or name.begins_with("shop_")
+			if head.has("boss") or head.has("tide") or town:
+				continue
+			var grid: Array[String] = parsed.grid
+			var w := 0
+			for r in grid:
+				w = maxi(w, r.length())
+			var cell := func(x: int, y: int) -> String:
+				return grid[y][x] if x < grid[y].length() else "#"
+			# The lowest floor's top in each inner column, and its longest flat stretch.
+			var run := 0
+			var best := 0
+			var prev := -1
+			for x in range(1, w - 1):
+				var fy := -1
+				for y in range(grid.size() - 1, 0, -1):
+					if solid.contains(cell.call(x, y)) and not solid.contains(cell.call(x, y - 1)):
+						fy = y
+						break
+				run = run + 1 if fy == prev and fy >= 0 else 1
+				prev = fy
+				best = maxi(best, run)
+			var flat := float(best) / float(w - 2)
+			if flat >= 0.9 and not kept.has(id):
+				flat_rooms.append("%s (%.2f)" % [id, flat])
+			var slopes := 0
+			for r in grid:
+				slopes += r.count("/") + r.count("\\")
+			if slopes >= 2 and flat < 0.9:
+				banked += 1
+	check(flat_rooms.is_empty(), "no room's floor runs flat from wall to wall: %s" % [flat_rooms])
+	check(banked >= 17, "and the banks are there (%d rooms with a floor that rises and falls)" % banked)
+	for id: String in kept:
+		check(FileAccess.file_exists("res://levels/%s.room" % id), "%s, kept flat, is still a room" % id)
+	# A bank's slopes take no square rim from the edge shade, which drew a dark box
+	# round each slope's open half.
+	var steps := Room.from_file(World.room_path("spires/sky_steps"))
+	arena.add_child(steps)
+	await frames(2)
+	var shade := steps.get_node("EdgeShade") as EdgeShade
+	var slope_cells: Array = []
+	for c: Vector2i in steps._slope_cells:
+		slope_cells.append(c)
+	check(not slope_cells.is_empty() and slope_cells.all(func(c: Vector2i) -> bool: return shade._slopes.has(c)),
+		"the Sky Steps' bank slopes are known to the edge shade (%d)" % slope_cells.size())
+	steps.queue_free()
+	await frames(1)
+	var bible := FileAccess.get_file_as_string("res://docs/design-bible.md")
+	check(bible.contains("`test_a_rooms_floor_is_not_one_flat_line`"), "the bible names the test")

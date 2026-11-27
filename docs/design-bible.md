@@ -3437,6 +3437,20 @@ The grade of pass 670 saw the foes "in three styles": rendered bees and snake ag
 
 `test_the_cast_is_painted_in_one_key` (`tests/test_foe_light.gd`) holds it: every sheet foe's body is on the key, or as near as the key's limits let it come; each key is a bounded step on a sheet that was off; black and white are unmoved; the shader carries each key.
 
+### 12.150 A room's floor rises and falls (pass 673)
+
+The grade of pass 670 named "boxed rooms with one flat floor and the hero at the far left". Measured, 19 rooms that are not boss arenas had a lowest floor that ran at one height across 90% or more of the room, most of them the 40 by 45 climbing shafts (the Sky Steps, the Heartwood Rise, the Windward Climb): a box with a line drawn across its foot. Each now has a **bank** raised on that floor (`tools/levels/floor_banks.py`):
+
+- **Two slopes and a top.** A mound two tiles high, or one where a ledge comes low, with a 45-degree slope (`/`, `\`) at each end, so the floor rises and falls once across the room. It is 6 to 12 tiles wide (a fifth of the room) and sits off the middle, toward 62% of the width.
+- **Clear of the play.** At least three tiles from a wall, a door or a pit; clear of every sign, prop, person, chest and lock in the header and of the grid's foes and pickups; and four rows of plain air over its top and a tile beyond each end, so no ledge or foe comes within a hero's height (the hero is 2.5 tiles tall).
+- **Left flat:** boss arenas (their fights are tuned on that floor), rooms with standing water (the tide reads the floor's depth), towns (a street runs level under its houses and shops), and four rooms where no bank fits: the Bell Loft (the fallen bell and its secret), the Cistern (grubs, a chest and a low plank), the Kettleforge Stair (its floor is a row of spikes) and the Meteor Rise (its floor is the lip of the Sunken Spring's shaft).
+
+A slope takes no square rim from the edge shade (12.3), which had drawn a dark box round each slope's open half; its neighbours still count it as solid.
+
+The workbench's room pictures stand the hero on the floor near the room's middle, as the arenas' already do, rather than at the door the room is entered by.
+
+`test_a_rooms_floor_is_not_one_flat_line` (`tests/test_rooms.gd`) holds it: past the rooms above, no room's lowest floor runs flat across 90% of it, the banks are there, and the edge shade knows their slopes.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

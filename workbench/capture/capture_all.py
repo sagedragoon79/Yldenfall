@@ -133,7 +133,9 @@ def jobs():
     J = []   # (kind, out, callable)
     add = lambda kind, out, fn: J.append((kind, os.path.join(CAT, out), fn))
     for rid, h in R.items():
-        add('rooms', 'rooms/%s.jpg' % rid.replace('/', '__'), lambda o, rid=rid: shot(o, ['--room=' + rid], frames=50))
+        # The hero stands near the room's middle, not at the door it is entered by
+        # (bible 12.150): the pass 670 grade read every room with him at the far left.
+        add('rooms', 'rooms/%s.jpg' % rid.replace('/', '__'), lambda o, rid=rid, h=h: shot(o, ['--room=' + rid, '--shot-at=%d,%d' % floor_mid(h['grid'])], frames=50))
     seen = set()
     for rid, h in R.items():
         for n in h['npcs']:
