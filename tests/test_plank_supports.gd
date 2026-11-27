@@ -668,3 +668,64 @@ func test_plank_a_hung_run_meets_its_hangers_in_a_bridle() -> void:
 		var holds := room.get_node_or_null("PlankSupports") as PlankSupports
 		check(holds != null and holds.bridles.size() >= 4, "%s hangs its decks on bridles: %d" % [path, holds.bridles.size() if holds else -1])
 		room.queue_free()
+
+
+func test_plank_each_zone_family_hangs_its_own_rig() -> void:
+	# The pass 670 grade read the bridle as "one hung-deck rig pasted across four
+	# zones" (design bible 12.148): each family now meets its hangers its own way.
+	var by_rig := {}
+	for zone: String in PlankSupports.LOOKS:
+		var rig := String(PlankSupports.LOOKS[zone].get("rig", ""))
+		check(rig in PlankSupports.RIGS, "%s hangs its decks a known way (%s)" % [zone, rig])
+		by_rig[rig] = true
+	check(by_rig.size() == PlankSupports.RIGS.size(), "every rig is used (%s)" % [by_rig.keys()])
+	var graded := ["tower", "evercrown", "spires", "haar"].map(func(z: String) -> String: return PlankSupports.LOOKS[z].rig)
+	var distinct := {}
+	for g: String in graded:
+		distinct[g] = true
+	check(distinct.size() == 4, "the four zones the grade saw each hang their own rig (%s)" % [graded])
+	# One bridle over a run of 6 cells, 40 px above its board.
+	var br := {"left": 84.0, "right": 156.0, "x": 120.0, "apex": 92.0, "top": 16.0, "foot": 132.0}
+	var look_of := func(rig: String) -> Dictionary:
+		for zone: String in PlankSupports.LOOKS:
+			if PlankSupports.LOOKS[zone].rig == rig:
+				return PlankSupports.LOOKS[zone]
+		return {}
+	# A spreader: a beam no higher than SPREADER_RISE, as wide as the deck and past it, the drops straight down.
+	var look: Dictionary = look_of.call("spreader")
+	var ay := PlankSupports.rig_apex(br, look)
+	check(is_equal_approx(br.foot - ay, PlankSupports.SPREADER_RISE), "the beam stands SPREADER_RISE over the deck: %s" % (br.foot - ay))
+	var beam: Rect2 = PlankSupports.rig_parts(br, look)[0][0]
+	check(beam.position.x < br.left and beam.end.x > br.right, "the beam runs past both drops: %s" % beam)
+	for end: float in [br.left, br.right]:
+		var path := PlankSupports.leg_path(br, end, look)
+		check(Array(path).all(func(p: Vector2) -> bool: return is_equal_approx(p.x, end)), "a drop falls straight from the beam at %s" % end)
+	check(PlankSupports.rig_top(br, look) < ay - PlankSupports.SPREADER_H * 0.5, "the hanger above ends on the shackle over the beam")
+	# A block: the legs meet at its hook, at 45 degrees, under a block in the zone's timber.
+	look = look_of.call("block")
+	var path := PlankSupports.leg_path(br, br.left, look)
+	check(path[path.size() - 1].is_equal_approx(Vector2(br.x, br.apex)), "the legs meet on the block's hook")
+	var tones: Array = PlankSupports.rig_parts(br, look).map(func(p: Array) -> String: return p[1])
+	check(look.wood[1] in tones and look.wood[0] in tones, "the block is the zone's timber")
+	check(br.apex - PlankSupports.rig_top(br, look) <= PlankSupports.BRIDLE_CLEAR, "the block fits under the anchor's clearance")
+	# A knot: a sinew leg droops below its straight line, and the knot glows in the accent.
+	look = look_of.call("knot")
+	path = PlankSupports.leg_path(br, br.left, look)
+	var a: Vector2 = path[0]
+	var b: Vector2 = path[path.size() - 1]
+	var midp: Vector2 = path[path.size() / 2]
+	var straight_y := lerpf(a.y, b.y, (midp.x - a.x) / (b.x - a.x))
+	check(midp.y > straight_y + 3.0, "a sinew leg droops below its straight line: %s against %s" % [midp.y, straight_y])
+	tones = PlankSupports.rig_parts(br, look).map(func(p: Array) -> String: return p[1])
+	check(look.bolt in tones, "the knot has a glowing pore")
+	# A ring: straight legs at 45 degrees, lit in the zone's accent metal.
+	look = look_of.call("ring")
+	path = PlankSupports.leg_path(br, br.right, look)
+	check(path[path.size() - 1].is_equal_approx(Vector2(br.x, br.apex)), "the legs meet in the ring")
+	tones = PlankSupports.rig_parts(br, look).map(func(p: Array) -> String: return p[1])
+	check(look.bolt in tones, "the ring is lit in the zone's accent")
+	# Every tone is in the palette.
+	var palette := _palette()
+	for rig: String in PlankSupports.RIGS:
+		for p: Array in PlankSupports.rig_parts(br, look_of.call(rig)):
+			check(palette.has(p[1]), "%s: %s is a palette value" % [rig, p[1]])

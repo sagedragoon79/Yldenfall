@@ -3412,6 +3412,19 @@ The grade of pass 665 named "platforms hung on chains and ropes from nothing" (`
 
 Judged by eye at 1x and 3x in `tower/foot` (chain), `evercrown/veins` (sinew; its first legs were 1.5 px and read as hairs, now 2 px), `spires/sky_steps` and `haar/marsh_road` (rope). `test_plank_a_hung_run_meets_its_hangers_in_a_bridle` (`tests/test_plank_supports.gd`) holds it.
 
+### 12.148 Each zone family hangs its own deck (pass 671)
+
+The grade of pass 670 called the bridle (12.147) "one hung-deck rig pasted across four zones": the same triangle and ring in the Tower foot, the veins, the sky steps and the marsh road, recolored. As 12.105 did for posts, each family of zones now meets a hung deck's hangers its own way (`PlankSupports.RIGS`, a `rig` per zone in `LOOKS`), and the rig's outline changes with it:
+
+- **A ring** (`ring`; Hearthroot, the Spires, Vorrhallow): the pass 670 bridle, two straight legs at 45 degrees to a ring, now lit along its top and left in the zone's accent metal.
+- **A spreader beam** (`spreader`; the Tower, the Trials): a riveted iron beam (`SPREADER_H`, 4 px, lit along its top, rivets in the accent over each drop and its middle) stands no higher than `SPREADER_RISE` (20 px) over the deck and runs `SPREADER_OVER` (3 px) past each end. The chains drop straight down from it to the deck's ends, and one chain rises from a shackle on its middle. The rig is a T, not a triangle.
+- **A pulley block** (`block`; the gym, the Heartwood, the Boughs, the Haar, the Sunken Spring): the two ropes meet on an iron hook under a wooden block in the zone's timber, its sheave pinned in the accent, hung on a strap from the one rope above. The block stands within `BRIDLE_CLEAR` of its apex, so it never meets the anchor.
+- **A knot** (`knot`; the Evercrown): each sinew leg droops below its straight line by `KNOT_SAG` (0.3) of its rise, a grown curve rather than a strung one, and the two grow together in a swollen knot of the shelf's tissue, lit on its upper left, with a pore glowing in the zone's cyan.
+
+The plan and the bridle's apex (12.147) are unchanged: which runs bridle, and where. Collision is untouched.
+
+Judged by eye at 1x and 3x in `tower/foot` (the spreader; its first beam was 3 px with a half-pixel lit edge and read as a railing, now 4 px), `evercrown/veins` (the drooping sinews and the knot), `haar/marsh_road` (the block, faint under the fog as everything there is) and `spires/sky_steps` (the ring). `test_plank_each_zone_family_hangs_its_own_rig` (`tests/test_plank_supports.gd`) holds it: every zone takes a known rig and every rig is used, the four graded zones each hang their own, the spreader's height, width and straight drops, the block's hook and timber, the sinew's droop and the knot's pore, the ring's accent, and every tone in the palette.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each
