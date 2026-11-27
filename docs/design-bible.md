@@ -3451,6 +3451,16 @@ The workbench's room pictures stand the hero on the floor near the room's middle
 
 `test_a_rooms_floor_is_not_one_flat_line` (`tests/test_rooms.gd`) holds it: past the rooms above, no room's lowest floor runs flat across 90% of it, the banks are there, and the edge shade knows their slopes.
 
+### 12.151 A tell is keyed off what stands behind it (pass 674)
+
+The grade of pass 670 named "tells drawn in the background's values": the Rot Dwarf's wind-up in the Heartwood, his gold rim and glint over the gate's tan planks (the seat's shade, 12.145, darkens the planks but keeps their warm hue), and the Crystal Dwarf's lane in the Flooded Hall, a thin pink line on the tide. A tell's warm gold is light, and on a light warm ground it had no value break. Each tell now carries one:
+
+- **A keyline outside the warm rim** (`Enemy.TELL_KEY`, near-black, `TELL_KEY_STEP` 2 px out). On a lit beat, in the same squares about the weapon as the rim (12.88), the foe's silhouette is drawn once more in near-black one pixel further out, at `TELL_KEY_RIM` (0.5) in each square, so the gold lies between the body and a dark edge near the weapon and fades with it. A sheet foe with no point, whose rim runs round its whole body, gets the keyline round its whole body.
+- **A dark backing under the glint** (`GLINT_KEY`, 2 half pixels): the glint's arms and core drawn first in near-black, a pixel wider each side and a little longer, so the four-point star reads on pale stone, tan wood or a lit sky as well as in the dark.
+- **The Crystal Dwarf's lane is keyed and its tips stand taller** (`CrystalDwarf.LANE_KEY`, `SEAM_HEIGHT` 10 px, 7 before). A dark pixel runs over the crack and down to the floor's top under it, the running tip has a dark box, and every crystal tip has a dark shard a pixel larger behind it.
+
+The tint, the pulse, the glint's growth and the wind-ups' lengths are unchanged. Judged by eye at 1x and 8x in `heartwood/dwarf_hall` and `vorrhallow/flooded_hall`. `test_a_tell_is_keyed_off_the_background` (`tests/test_tell_glint.gd`) holds it.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

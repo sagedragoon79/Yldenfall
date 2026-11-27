@@ -37,7 +37,12 @@ const LANE_Z := 2
 ## and comes up to full as the crack reaches it.
 const SEAM_FAINT := 0.4
 const LANE_HOT := Color("fff0ff")
-const SEAM_HEIGHT := 7.0
+## Since pass 674 the tips stand 10 px (7 before) and the lane and every tip are keyed in
+## `LANE_KEY`, a near-black pixel round them (12.151): the pass 670 grade still read the
+## lane as a "thin spike tell", pale pink on the Flooded Hall's pale tide.
+const SEAM_HEIGHT := 10.0
+const LANE_KEY := Color("1a0f22")
+const LANE_KEY_ALPHA := 0.85
 ## The glow standing over the lane: two clean steps, this high (world px).
 const GLOW_LOW := 4.0
 const GLOW_HIGH := 9.0
@@ -285,10 +290,13 @@ func draw_lane(on: CanvasItem) -> void:
 		# A step of three pixels, rising a pixel on every other step: a crack, not a rule.
 		var up := 1.0 if int(absf(x) / 3.0) % 2 == 0 else 0.0
 		var w := minf(3.0, b - x)
+		# The key: a dark pixel over the crack and down to the floor's top under it.
+		on.draw_rect(Rect2(x, -3.0 - up, w, 3.0 + up), Color(LANE_KEY, LANE_KEY_ALPHA))
 		on.draw_rect(Rect2(x, -2.0 - up, w, 2.0), Color(CRYSTAL_LIGHT, pulse))
 		on.draw_rect(Rect2(x, -1.0 - up, w, 1.0), Color(LANE_HOT, 0.9 * pulse))
 		x += 3.0
 	# The running tip burns white.
+	on.draw_rect(Rect2(x1 - 2.5, -4.0, 5.0, 4.0), Color(LANE_KEY, LANE_KEY_ALPHA))
 	on.draw_rect(Rect2(x1 - 1.5, -3.0, 3.0, 3.0), Color(LANE_HOT, pulse))
 	var reached: Array = lane["reached"]
 	for sx: float in lane["seams"]:
@@ -300,6 +308,10 @@ func draw_lane(on: CanvasItem) -> void:
 ## shard SEAM_HEIGHT tall, rim-lit on its left (the key light, 12.3).
 func _draw_tip(on: CanvasItem, sx: float, k: float) -> void:
 	var x := roundf(sx)
+	# The key first: the shard a pixel wider each side and a pixel taller, in near-black.
+	for row in int(SEAM_HEIGHT) + 1:
+		var kh := floorf((SEAM_HEIGHT - row) / 3.0) + 1.0
+		on.draw_rect(Rect2(x - kh - 1.0, -1.0 - row, kh * 2.0 + 2.0, 1.0), Color(LANE_KEY, LANE_KEY_ALPHA * maxf(k, SEAM_FAINT)))
 	for row in int(SEAM_HEIGHT):
 		var half := floorf((SEAM_HEIGHT - row) / 3.0)
 		var y := -1.0 - row

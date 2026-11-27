@@ -91,6 +91,17 @@ const GLINT_CORE := Color(1.0, 0.97, 0.86)
 const TELL_REACH: Array[float] = [5.0, 8.0, 12.0]
 const TELL_REACH_CELL := 56.0
 const TELL_REACH_RIM := 0.45
+## A tell is keyed off what stands behind it (bible 12.151, pass 674). The pass 670
+## grade read tells "drawn in the background's values": the Rot Dwarf's gold rim and
+## glint over the Heartwood gate's tan planks, the same hue and value. Outside the
+## warm rim, near the weapon, runs a keyline of near-black (`TELL_KEY`) one more pixel
+## out (`TELL_KEY_STEP`), at `TELL_KEY_RIM` in each square, and the glint sits on a
+## dark backing `GLINT_KEY` (half pixels) wider than its arms, so the warning has a
+## value break on a light ground as well as a dark one.
+const TELL_KEY := Color("120c16")
+const TELL_KEY_RIM := 0.5
+const TELL_KEY_STEP := 2.0
+const GLINT_KEY := 2.0
 ## A wind-up shows on the body (bible 12.109, pass 633). The pass 630 grade read the
 ## glint alone as "a few-pixel sparkle with no pose or color change". Through a
 ## wind-up with a point, a sheet foe **rears**: it leans back from the way it faces
@@ -240,6 +251,9 @@ var _struck_edge_drawn := 0
 ## The arm of the glint this foe's last sheet drawing wore, in world pixels (0: none),
 ## and where it sat, relative to the sheet's origin, before facing.
 var _glint_drawn := 0.0
+## Whether the last tell drawn wore its dark keyline (12.151), and its glint a backing.
+var _key_drawn := false
+var _glint_keyed := false
 var _glint_at := Vector2.ZERO
 ## How far into its rear this foe's last sheet frame was drawn (0 to 1), and the
 ## most of the weapon's light that lay on it (an alpha; 0 with none).
@@ -805,10 +819,20 @@ func draw_sheet(sheet: String, anim: String, t: float, white := false, offset :=
 	_glint_drawn = 0.0
 	_light_drawn = 0.0
 	_rear_drawn = rear_at(state_time) if glint else 0.0
+	_key_drawn = false
+	_glint_keyed = false
 	if _tell_drawn and glint:
 		# The tell lights the weapon, not the foe: the rim only near the point.
 		_sheet_white_alpha = 0.0
 		var at := tell_point(sheet, anim, f)
+		# The keyline first, one pixel outside where the warm rim will lie (12.151).
+		for reach: float in TELL_REACH:
+			var half := Vector2(reach, reach) * tell_reach_scale(sheet) * float(Sheet.get_sheet(sheet).density)
+			var part := Rect2(at - half, half * 2.0)
+			for step: Vector2 in RIM_STEPS:
+				draw_set_transform_matrix(_sheet_transform(offset + step * TELL_KEY_STEP))
+				Sheet.draw_part(self, sheet, anim, f, part, Color(TELL_KEY, TELL_KEY_RIM), true)
+		_key_drawn = true
 		for reach: float in TELL_REACH:
 			var half := Vector2(reach, reach) * tell_reach_scale(sheet) * float(Sheet.get_sheet(sheet).density)
 			var part := Rect2(at - half, half * 2.0)
@@ -817,6 +841,11 @@ func draw_sheet(sheet: String, anim: String, t: float, white := false, offset :=
 				Sheet.draw_part(self, sheet, anim, f, part, Color(TELL_TINT, TELL_REACH_RIM), true)
 	elif _tell_drawn or _hit_rim_drawn:
 		var rim := Color(TELL_TINT, TELL_RIM) if _tell_drawn else Color(HIT_RIM_COLOR, HIT_RIM)
+		if _tell_drawn:
+			for step: Vector2 in RIM_STEPS:
+				draw_set_transform_matrix(_sheet_transform(offset + step * TELL_KEY_STEP))
+				Sheet.draw(self, sheet, anim, f, Color(TELL_KEY, TELL_RIM), true)
+			_key_drawn = true
 		for step: Vector2 in RIM_STEPS:
 			draw_set_transform_matrix(_sheet_transform(offset + step))
 			Sheet.draw(self, sheet, anim, f, rim, true)
@@ -919,6 +948,16 @@ func glint_drawn() -> float:
 	return _glint_drawn
 
 
+## Whether this foe's last tell wore its dark keyline outside the warm rim (12.151).
+func tell_keyed() -> bool:
+	return _key_drawn
+
+
+## Whether this foe's last glint sat on its dark backing (12.151).
+func glint_keyed() -> bool:
+	return _glint_keyed and _glint_drawn > 0.0
+
+
 ## Where that glint sat, in world pixels from this foe's origin, facing included.
 func glint_at() -> Vector2:
 	return Vector2(_glint_at.x * facing, _glint_at.y)
@@ -934,6 +973,16 @@ func _draw_glint(sheet: String, point: Vector2, lit: bool) -> void:
 	_glint_drawn = arm
 	_glint_at = c
 	var gold := Color(TELL_TINT, 0.95)
+	# The backing (12.151): the arms and core in near-black, a little wider and longer,
+	# so the gold reads on a pale or warm ground too.
+	var key := Color(TELL_KEY, 0.85)
+	for d: Vector2 in RIM_STEPS:
+		var side := Vector2(absf(d.y), absf(d.x))
+		_glint_bar(c, d, 0.0, arm * 0.55 + GLINT_KEY * 0.5, side, 1.0 + GLINT_KEY, key)
+		_glint_bar(c, d, arm * 0.55, arm + GLINT_KEY * 0.5, side, 0.5 + GLINT_KEY, key)
+	var back := (1.5 if lit else 1.0) + GLINT_KEY * 0.5
+	draw_rect(Rect2(c - Vector2(back, back), Vector2(back, back) * 2.0), key)
+	_glint_keyed = true
 	for d: Vector2 in RIM_STEPS:
 		var side := Vector2(absf(d.y), absf(d.x))
 		# A thick root, a thin tip.

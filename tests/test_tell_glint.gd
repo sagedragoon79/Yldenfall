@@ -244,3 +244,38 @@ func test_the_weapons_light_falls_on_the_body() -> void:
 		before = d.light_drawn()
 		seen += 1
 	check(seen >= 20 and is_equal_approx(before, top), "gathered, it is whole (%.2f)" % before)
+
+
+## A tell is keyed off what stands behind it (pass 674, bible 12.151). The pass 670
+## grade read tells "drawn in the background's values": the gold rim and glint over
+## the Heartwood gate's tan planks. A near-black keyline runs outside the warm rim and
+## the glint sits on a dark backing; the Crystal Dwarf's lane and tips are keyed too.
+func test_a_tell_is_keyed_off_the_background() -> void:
+	var tint := Enemy.TELL_TINT.get_luminance()
+	check(tint - Enemy.TELL_KEY.get_luminance() >= 0.6, "the key is far darker than the tell's gold (%.2f, %.2f)" % [Enemy.TELL_KEY.get_luminance(), tint])
+	check(Enemy.TELL_KEY_STEP > 1.0, "the keyline lies outside the warm rim (%.1f px out)" % Enemy.TELL_KEY_STEP)
+	check(Enemy.GLINT_KEY >= 2.0, "the glint's backing shows a whole pixel each side (%.1f)" % Enemy.GLINT_KEY)
+	check(CrystalDwarf.CRYSTAL_LIGHT.get_luminance() - CrystalDwarf.LANE_KEY.get_luminance() >= 0.5, "the lane's key is dark against its crystal")
+	check(CrystalDwarf.SEAM_HEIGHT >= 10.0, "a spike's tip stands tall enough to read (%.0f px)" % CrystalDwarf.SEAM_HEIGHT)
+
+	var d := _dwarf()
+	await frames(2)
+	check(not d.tell_keyed() and not d.glint_keyed(), "a dwarf on patrol wears no key")
+	d.set_state("windup")
+	var lit := 0
+	for i in 20:
+		await frames(1)
+		if d.state != "windup":
+			break
+		check(d.glint_keyed(), "the glint sits on its backing on every frame")
+		if d.tell_drawn():
+			lit += 1
+			check(d.tell_keyed(), "a lit beat's warm rim has its keyline")
+		else:
+			check(not d.tell_keyed(), "between beats there is no rim to key")
+	check(lit >= 2, "the rim was lit on some beats (%d)" % lit)
+	d.set_state("windup")
+	d.take_hit(1, Vector2(float(d.facing), 0))
+	await frames(1)
+	check(not d.tell_keyed() and not d.glint_keyed(), "struck, the key gives way to the blow")
+	await frames(14)
