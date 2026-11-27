@@ -50,14 +50,19 @@ var _size: Vector2i
 ## false for an east one. They count as solid for their neighbours, but their own
 ## rim runs along the diagonal, since a square rim would shade their open half.
 var _haunches: Dictionary = {}
+## Walking slopes (`/`, `\`): solid for their neighbours, but with no square rim of
+## their own, which would draw a dark box round their open half (bible 12.150).
+var _slopes: Dictionary = {}
 
 
 ## Reads the room's final solid cells (`solids`) and rims them over the `size`
-## tile grid. `haunches` are the cells among them solid on one side of a diagonal.
-func setup(solids: Dictionary, size: Vector2i, haunches := {}) -> void:
+## tile grid. `haunches` are the cells among them solid on one side of a diagonal,
+## `slopes` the walking slopes among them.
+func setup(solids: Dictionary, size: Vector2i, haunches := {}, slopes := {}) -> void:
 	_solids = solids
 	_size = size
 	_haunches = haunches
+	_slopes = slopes
 	queue_redraw()
 
 
@@ -96,6 +101,8 @@ func _draw() -> void:
 			var cell := Vector2i(x, y)
 			if _haunches.has(cell):
 				_diagonal_band(Vector2(cell * TILE), _haunches[cell])
+				continue
+			if _slopes.has(cell):
 				continue
 			var m := bands_for(_solids, _size, cell)
 			if m == 0:

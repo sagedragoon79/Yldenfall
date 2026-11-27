@@ -321,7 +321,7 @@ func build(text: String) -> void:
 	var shade := EdgeShade.new()
 	shade.name = "EdgeShade"
 	add_child(shade)
-	shade.setup(_solid_look, size_tiles, _haunch_cells())
+	shade.setup(_solid_look, size_tiles, _haunch_cells(), _plain_slopes())
 
 	# Mass that hangs over open air is in shadow (design bible 12.102).
 	_soffit_shade = SoffitShade.new()
