@@ -3634,7 +3634,9 @@ FORE_SHAPE = {
 # MOUND_MAX_COVER of the width is a mass, and a clear run of MOUND_CLEAR_RUN
 # stays somewhere, so the middle of the screen is never walled off.
 MOUND_RISE = 68          # world px above the band (Backdrop.FORE_MASS_RISE mirrors it)
-MOUND_A, MOUND_RIM_A = 236, 216
+# Opaque since pass 669 (12.146): at 236 and 216 the lit floor behind showed
+# through, and a see-through dark shape over a lit floor reads as a stain.
+MOUND_A, MOUND_RIM_A = 255, 255
 MOUND_MIN_SPAN = 12      # world px: the narrowest a mass is anywhere above the fringe
 MOUND_MAX_COVER = 0.4
 MOUND_CLEAR_RUN = 200    # world px
@@ -3647,7 +3649,9 @@ MOUND_CLEAR_RUN = 200    # world px
 # carried by the matter itself (fronds, blades, shards, blocks, timbers), each
 # piece lit on its west edge; the bank's top wears a broken lip and grit in the
 # rim tone, so a mass reads as a thing standing near the lens, not a hole.
-MOUND_BANK = (26, 32)    # world px: how high the low bank under a mass rises
+# Since pass 669 (12.146) the bank is a low foot (12 to 18 px, once 26 to 32): the
+# pass 665 grade still saw "black blobs", and at 1x the bank was most of a mass.
+MOUND_BANK = (12, 18)    # world px: how high the low bank under a mass rises
 MOUND_GRIT = 0.07        # the share of the bank's upper third flecked in the rim tone
 MOUND_OPEN = 0.6         # over the bank, the most of a mass's span solid in any row
 MOUND_OPEN_BLOCKS = 0.85  # a heap of blocks stacks solid, with seams of air between them
@@ -3820,19 +3824,24 @@ def _mound_rubble(img, x, w, base, rng):
         while bx < x + w - 18 * D:
             bw = rng.randint(16, 28) * D
             bh = rng.randint(16, 24) * D
-            y1 = top.get(bx + bw // 2, base) + 3 * D - course * rng.randint(14, 20) * D
-            chip = rng.randint(2, 5) * D
-            shear = rng.randint(-5, 5) * D  # a fallen block sits askew
+            y1 = top.get(bx + bw // 2, base) + 3 * D - course * rng.randint(16, 22) * D
+            chip = rng.randint(4, 8) * D
+            east = rng.random() < 0.5  # one corner broken off, cut straight (12.146)
+            shear = rng.randint(-7, 7) * D  # a fallen block sits askew
             bw = min(bw, x + w - bx - max(0, shear) - 2 * D)  # inside the mass's span
             if bx + min(0, shear) < x or bw < 10 * D or (course and laid and rng.random() < 0.35):
                 bx += max(bw, 0) + 6 * D
                 continue
+            face = 3 * D  # the lit top face: a block, not a tombstone (12.146)
             for dy in range(bh + 1):
                 sx = bx + shear * dy // bh
                 for dx in range(bw):
-                    if (bh - dy) < chip and (dx < chip - (bh - dy) or dx > bw - (chip - (bh - dy))):
-                        continue  # chipped upper corners
-                    _mound_put(img, sx + dx, y1 - dy, base, rim=dy == bh or dx == 0)
+                    cut = chip - (bh - dy)
+                    if cut > 0 and ((east and dx >= bw - cut) or (not east and dx < cut)):
+                        continue  # one chipped upper corner, a straight break
+                    _mound_put(img, sx + dx, y1 - dy, base,
+                               rim=bh - dy < face or dx < D
+                               or (cut > 0 and dx == (bw - cut - 1 if east else cut)))
             laid += 1
             bx += bw + rng.randint(3, 7) * D  # a dark seam of air between blocks
 
@@ -3857,6 +3866,26 @@ def _mound_fence(img, x, w, base, rng):
             for th in range(5 * D):
                 _mound_put(img, sx + int((ex - sx) * f), sy + int((ey - sy) * f) + th, base,
                            rim=th < D)
+
+
+def _mound_contour(img, x, w, base):
+    """Light the top edge of every piece of a mass (12.146): each mass pixel
+    with air above it takes the rim tone, one world pixel deep, so fronds,
+    blades, shards, blocks and timbers part from each other and from the bank
+    at 1x instead of merging into one dark shape."""
+    a = img.getchannel("A").load()
+    body = c(FORE_BODY, MOUND_A)
+    edge = []
+    for col in range(x - 8 * D, x + w + 8 * D):
+        xx = col % BG_W
+        for y in range(base - MOUND_RISE * D, base - 2 * D):
+            if a[xx, y] >= MOUND_A and a[xx, y - D] < MOUND_A:
+                edge.append((xx, y))
+    px = img.load()
+    for xx, y in edge:
+        for dy in range(D):
+            if px[xx, y + dy] == body:
+                px[xx, y + dy] = c(FORE_RIM, MOUND_RIM_A)
 
 
 MOUND_SHAPE = {
@@ -3901,6 +3930,7 @@ def _foreground(zone):
     mrng = random.Random(sum(ord(ch) for ch in zone) + 1272)
     for mx, mw in mound_spans(zone):
         mound(img, mx, mw, base, mrng)
+        _mound_contour(img, mx, mw, base)
     _fore_fill(img)  # the band last, so it covers the protrusion roots cleanly
     return img
 

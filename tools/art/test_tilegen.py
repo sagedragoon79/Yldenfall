@@ -477,8 +477,8 @@ def test_the_foot_of_the_view_holds_broad_masses():
     # The grade of pass 650: no foreground occluders at the screen's foot, and the
     # ground's top line straight across the frame (bible 12.127). Every zone sets
     # two or more broad masses of its matter that rise well past the low fringe;
-    # each is a mound, solid across MOUND_MIN_SPAN * 3 at least at half the fringe's
-    # height (never a post), at most MOUND_MAX_COVER of the width carries anything
+    # each is a mound, solid across MOUND_MIN_SPAN * 3 at least at half its bank's
+    # height (never a post; half the fringe's until pass 669 lowered the bank, 12.146), at most MOUND_MAX_COVER of the width carries anything
     # above the fringe, and a clear run of MOUND_CLEAR_RUN stays there.
     base = tg.FORE_FLOOR - tg.FORE_BAND
     for z in tg.FORE_KIND:
@@ -490,7 +490,7 @@ def test_the_foot_of_the_view_holds_broad_masses():
             peak = min((y for x in range(sx, sx + sw) for y in range(base - tg.MOUND_RISE * tg.D, base)
                         if a[x % tg.BG_W, y] >= tg.MOUND_RIM_A - 1), default=base)
             assert (base - peak) / tg.D >= tg.FORE_MAX_RISE + 8,                 f"{z}: the mass at {sx} rises {(base - peak) / tg.D:.0f} px, not past the fringe"
-            row = base - (tg.FORE_MAX_RISE // 2) * tg.D
+            row = base - (tg.MOUND_BANK[0] // 2) * tg.D
             run = best = 0
             for x in range(sx, sx + sw):
                 run = run + 1 if a[x % tg.BG_W, row] >= tg.MOUND_RIM_A - 1 else 0
@@ -531,6 +531,41 @@ def test_a_near_mass_is_built_of_its_matter():
                 assert solid <= most * sw,                     f"{z}: the mass at {sx} is {solid / sw:.2f} solid {wy} px up, a dome not its matter"
                 lit += sum(1 for x in range(sx, sx + sw) if px[x % tg.BG_W, y] == rim)
             assert lit >= 5 * tg.D, f"{z}: the pieces of the mass at {sx} carry {lit} lit pixels"
+
+
+def test_a_near_mass_is_solid_low_banked_and_lit_along_its_top():
+    # The grade of pass 665 still saw "black foreground blobs at the frame's foot"
+    # (bible 12.146): each mass was see-through (alpha 236), so the lit floor showed
+    # through it like a stain, its bank 26 to 32 px tall was most of it at 1x, and
+    # its pieces merged into one dark shape. Now a mass is opaque, its bank a low
+    # foot, already open above it, and every piece is lit along its top edge.
+    assert tg.MOUND_A == 255 and tg.MOUND_RIM_A == 255, "a near mass is opaque"
+    assert tg.MOUND_BANK[1] <= 18, f"the bank rises to {tg.MOUND_BANK[1]} px, not a low foot"
+    base = tg.FORE_FLOOR - tg.FORE_BAND
+    for z in tg.FORE_KIND:
+        img = tg.foreground(z)
+        a = img.getchannel("A").load()
+        px = img.load()
+        body = tg.c(tg.FORE_TONES[z][0], 255)
+        rim = tg.c(tg.FORE_TONES[z][1], 255)
+        most = tg.MOUND_OPEN_BLOCKS if tg.FORE_KIND[z] == "rubble" else tg.MOUND_OPEN
+        for sx, sw in tg.mound_spans(z):
+            for wy in range(tg.MOUND_BANK[1] + 4, tg.MOUND_RISE):
+                y = base - wy * tg.D
+                xs = [x % tg.BG_W for x in range(sx, sx + sw)]
+                if wy > tg.FORE_MAX_RISE:  # over the fringe only the mass draws
+                    half = [x for x in xs if 0 < a[x, y] < 255]
+                    assert not half, f"{z}: the mass at {sx} is see-through {wy} px up"
+                solid = sum(1 for x in xs if a[x, y] == 255)
+                assert solid <= most * sw,                     f"{z}: the mass at {sx} is {solid / sw:.2f} solid {wy} px up, a dome over a low bank"
+            dark_tops = 0
+            for x in range(sx, sx + sw):
+                xx = x % tg.BG_W
+                for y in range(base - tg.MOUND_RISE * tg.D, base - tg.FORE_MAX_RISE * tg.D):
+                    if a[xx, y] == 255:
+                        dark_tops += px[xx, y] == body
+                        break
+            assert dark_tops == 0, f"{z}: {dark_tops} columns of the mass at {sx} end in an unlit top"
 
 
 def test_the_hanging_frame_frames_the_top_without_a_band():
