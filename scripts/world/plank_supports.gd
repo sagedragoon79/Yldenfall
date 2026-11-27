@@ -60,6 +60,16 @@ const DECK_SWELL := 5.0
 ## A chain link's width and a rope's, world px (pass 652: 3 and 1.5 read as hairs).
 const CHAIN_W := 4.0
 const ROPE_W := 2.5
+## A hung deck's bridle (design bible 12.147, pass 670): its two hangers rise
+## as legs to a ring over its middle, at most this far above the board, world px
+## (the legs rise as far as they reach in, so they stand at 45 degrees).
+const BRIDLE_MAX := 44.0
+## A bridle shorter than this reads as a kink, not a bridle: the run keeps two straight hangers.
+const BRIDLE_MIN := 16.0
+## The ring sits at least this far under the anchor above, world px.
+const BRIDLE_CLEAR := 12.0
+## The ring's outer width, world px.
+const RING := 5.0
 ## A frame's widest bay, world px; a longer span is split into bays.
 const BAY_MAX := 48.0
 ## A frame needs this much height between board and footing, world px (a post
@@ -130,6 +140,8 @@ const SET_IN_CELLS := 3
 var supports: Array[Dictionary] = []
 ## The hung decks, one {left, right, y} per run that hangs (pass 652).
 var decks: Array[Dictionary] = []
+## The bridles, one {left, right, x, apex, top, foot} per deck whose hangers meet over it (pass 670).
+var bridles: Array[Dictionary] = []
 var _look: Dictionary = LOOKS["gym"]
 
 
@@ -148,7 +160,54 @@ func setup(zone: String, planks: Dictionary, solid: Dictionary, size: Vector2i) 
 		for d: Dictionary in decks:
 			if s.x >= d.left and s.x <= d.right and is_equal_approx(s.bottom, d.y + BOARD):
 				s["stirrup"] = d.y + DECK_FOOT
+	bridles = PlankSupports.bridle(planks, solid, size, supports)
 	queue_redraw()
+
+
+## The bridles (design bible 12.147, pass 670). The pass 665 grade read hung
+## runs as "platforms hung on chains and ropes from nothing": two parallel lines
+## rising out of the frame, one from each end, like two strings of debug lines.
+## A run whose two hangers are both its own meets them over its middle instead:
+## each rises from its end of the board as a leg, at 45 degrees, to a ring, and
+## one hanger runs on from the ring to the first solid cell or plank above the
+## middle, fixed there on a cleat. A run keeps its two straight hangers when
+## nothing is above its middle within `HANG_MAX`, or when the anchor is too close
+## for a bridle of `BRIDLE_MIN`. Marks each bridled hanger `bridled`.
+static func bridle(planks: Dictionary, solid: Dictionary, size: Vector2i, held: Array[Dictionary]) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for run: Vector3i in runs(planks):
+		var board := run.x * TILE + BOARD
+		var left := float(run.y * TILE)
+		var right := float((run.z + 1) * TILE)
+		var legs: Array[Dictionary] = []
+		for s: Dictionary in held:
+			if s.kind == "hang" and s.x >= left and s.x <= right and is_equal_approx(s.bottom, board):
+				legs.append(s)
+		if legs.size() != 2:
+			continue
+		var a: Dictionary = legs[0] if legs[0].x < legs[1].x else legs[1]
+		var b: Dictionary = legs[1] if a == legs[0] else legs[0]
+		var mid: float = (a.x + b.x) * 0.5
+		# The anchor over the middle: of the one or two columns the middle touches, the nearest.
+		var top := -INF
+		for col: int in [int(floorf((mid - 0.5) / TILE)), int(floorf((mid + 0.5) / TILE))]:
+			var above := PlankSupports._gap(col, run.x, -1, planks, solid, size)
+			if above < 0 or above > HANG_MAX:
+				continue
+			var t := float((run.x - above) * TILE)
+			if planks.has(Vector2i(col, run.x - above - 1)):
+				t = (run.x - above - 1) * TILE + BOARD_UNDER
+			top = maxf(top, t)
+		if is_inf(top):
+			continue
+		var rise: float = minf(minf((b.x - a.x) * 0.5, BRIDLE_MAX), board - BRIDLE_CLEAR - top)
+		rise = floorf(rise)
+		if rise < BRIDLE_MIN:
+			continue
+		a["bridled"] = true
+		b["bridled"] = true
+		out.append({"left": a.x, "right": b.x, "x": mid, "apex": board - rise, "top": top, "foot": board})
+	return out
 
 
 ## The runs that hang (pass 652): a run with a hanger under its board is a deck,
@@ -323,10 +382,21 @@ func _draw() -> void:
 				_draw_parts(PlankSupports.frame_parts(s.left, s.right, s.top, s.bottom, _look))
 			"hang":
 				var bottom: float = s.get("stirrup", s.bottom)
+				# A bridled hanger keeps only its foot, from the board to the stirrup; its leg is the bridle's.
+				var top: float = s.bottom if s.get("bridled", false) else s.top
 				if _look.hang == "chain":
-					_draw_chain(s.x, s.top, bottom, s.anchored)
+					_draw_chain(s.x, top, bottom, s.anchored and not s.get("bridled", false))
 				else:
-					_draw_rope(s.x, s.top, bottom, s.anchored)
+					_draw_rope(s.x, top, bottom, s.anchored and not s.get("bridled", false))
+	# Each bridle: the hanger above its ring, its two legs, then the ring over them.
+	for br: Dictionary in bridles:
+		if _look.hang == "chain":
+			_draw_chain(br.x, br.top, br.apex - RING * 0.5, true)
+		else:
+			_draw_rope(br.x, br.top, br.apex - RING * 0.5, true)
+		for end: float in [br.left, br.right]:
+			_draw_leg(Vector2(end, br.foot), Vector2(br.x, br.apex))
+		_draw_ring(br.x, br.apex)
 	# Decks over their hangers' feet, then the stirrups that take each chord.
 	for d: Dictionary in decks:
 		_draw_parts(PlankSupports.deck_parts(d.left, d.right, d.y, _look))
@@ -388,6 +458,42 @@ func _draw_chain(x: float, top: float, bottom: float, anchored: bool) -> void:
 		k += 1
 	if anchored:
 		_draw_cleat(x, top)
+
+
+## A bridle's leg from `from` (its end of the board) up to `to` (the ring), in
+## the zone's hanger: a chain as links that swell face-on and narrow edge-on,
+## every `CHAIN_W` along it; a rope or sinew as a `ROPE_W` strand with a lit lay.
+## Each is lit on its upper left and dark on its lower right, on the 2-pixel grid.
+func _draw_leg(from: Vector2, to: Vector2) -> void:
+	var d := to - from
+	var n := maxi(1, int(ceilf(maxf(absf(d.x), absf(d.y)) / 0.5)))
+	var length := d.length()
+	var chain: bool = _look.hang == "chain"
+	for i in n + 1:
+		var p := (from + d * (float(i) / n)).snapped(Vector2(0.5, 0.5))
+		var along := length * float(i) / n
+		if chain:
+			var face := int(along / 4.0) % 2 == 0
+			var w := 2.0 if face else 1.0
+			draw_rect(Rect2(p.x - w * 0.5, p.y - w * 0.5, w, w), _c(_look.mid))
+			draw_rect(Rect2(p.x - w * 0.5, p.y - w * 0.5, 0.5, 0.5), _c(_look.lit))
+			draw_rect(Rect2(p.x + w * 0.5 - 0.5, p.y + w * 0.5 - 0.5, 0.5, 0.5), _c(_look.dark))
+		else:
+			var hw := 1.0
+			draw_rect(Rect2(p.x - hw, p.y - hw, hw * 2.0, hw * 2.0), _c(_look.mid))
+			if int(along / 2.0) % 2 == 0:
+				draw_rect(Rect2(p.x - hw, p.y - hw, 0.5, 0.5), _c(_look.lit))
+			draw_rect(Rect2(p.x + hw - 0.5, p.y + hw - 0.5, 0.5, 0.5), _c(_look.dark))
+
+
+## The ring a bridle's legs meet in: a `RING` square with a dark eye, lit along its top and left.
+func _draw_ring(x: float, y: float) -> void:
+	var h := RING * 0.5
+	draw_rect(Rect2(x - h, y - h, RING, RING), _c(_look.dark))
+	draw_rect(Rect2(x - h + 0.5, y - h + 0.5, RING - 1.0, RING - 1.0), _c(_look.mid))
+	draw_rect(Rect2(x - h + 0.5, y - h + 0.5, RING - 1.5, 0.5), _c(_look.lit))
+	draw_rect(Rect2(x - h + 0.5, y - h + 0.5, 0.5, RING - 1.5), _c(_look.lit))
+	draw_rect(Rect2(x - 1.0, y - 1.0, 2.0, 2.0), _c(_look.dark))
 
 
 ## The strap a hanger takes a deck's chord in: up both faces and under the chord.

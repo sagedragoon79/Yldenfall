@@ -34,5 +34,17 @@
   "text": "The 3/4 view is off. The far horn is curled backward instead of toward the muzzle.",
   "status": "done",
   "reply": "Fixed in art pass 9 — a fresh review picture is on the Shots tab (haar-wyrm-base-for-approval.png). The base is redrawn as the steam-and-bone wyrm (pro, 15 generations): now both horns rise from the crown and curve forward over the brow toward the muzzle, a matched pair in the east profile and the three-quarter alike, so the far horn no longer curls the wrong way and the two views agree. It also reads paler and more bleached (steam, not fog). First retake came out multi-headed because the prompt said 'three-headed serpent' — discarded, and the lesson ('name only the part the sprite is, not the whole creature') is now in the style guide. No animation until you OK this base; approve or flag it on the Shots tab. Open question still waiting for you: keep the three heads code-drawn (this becomes a portrait/intro look only), or move the solid head onto the sheet while the coil and necks stay code?"
+ },
+ {
+  "id": "7a4f9ac9",
+  "at": "6:04 PM",
+  "ts": 1794269054.1367378,
+  "kind": "Idea",
+  "on": "The Haar Wyrm",
+  "tab": "guardians",
+  "ref": "guardians:haar_wyrm",
+  "text": "There is a dark band of nearly opaque black that goes across the top and bottom of the screen,even when you travel up and down from screen to screen",
+  "status": "done",
+  "reply": "Fixed in pass 528 (#590). It was the foreground silhouette layer (the reeds, ferns, crystals and posts in front of the play field): its solid black ground strip was pinned to the world instead of the camera, so it sat as a strip over the floor of one-screen rooms and as a 136 px black band across every taller room, in front of the platforms there, in every zone. The foreground now follows the camera and its strip stays below the screen edge; only the thin silhouettes rise from the bottom. It now frames the bottom of every screen, mid-shaft included; if you would rather it only grow from each room's floor, leave a note."
  }
 ]

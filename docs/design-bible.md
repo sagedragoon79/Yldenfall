@@ -3402,6 +3402,16 @@ The grade of pass 665 still named "the black foreground blobs at the frame's foo
 
 Judged by eye at 1x and 3x in `tower/foot` (a heap of tumbled slabs, where there were tombstones), `spires/sky_steps` and `hearthroot/plaza` (a broken post and boards, where there was a dome), `haar/marsh_road` (reeds, where there was a blue dome), `heartwood/grub_burrows` and `evercrown/veins`. `test_a_near_mass_is_solid_low_banked_and_lit_along_its_top` (`tools/art/test_tilegen.py`) holds it; `test_the_foot_of_the_view_holds_broad_masses` now measures a mass's broad foot at half its bank's height.
 
+### 12.147 A hung deck hangs from one point (pass 670)
+
+The grade of pass 665 named "platforms hung on chains and ropes from nothing" (`tower/foot`, `evercrown/veins`). Each hung deck (12.128) rose on two parallel hangers, one from each end, straight up out of the frame: in a shaft of stacked decks they ran as long pairs of lines with nothing to say what held them.
+
+- **A bridle** (`scripts/world/plank_supports.gd`, `bridle`). A run whose two hangers are both its own meets them over its middle: each rises from its end of the board as a leg at 45 degrees (no higher than `BRIDLE_MAX`, 44 px) to a ring (`RING`, 5 px, a dark eye, lit on its top and left), and one hanger runs on from the ring to the first solid cell or plank above the middle, fixed there on its cleat. Each hanger's foot still takes the chord in its stirrup.
+- **Legs in the zone's hanger.** A chain leg is links that swell face-on and narrow edge-on every 4 px; a rope or sinew leg is a 2 px strand with a lit lay; both lit on the upper left and dark on the lower right, on the 2-pixel grid.
+- **When it stays two hangers.** Nothing above the middle within `HANG_MAX`, or an anchor so close that the ring, `BRIDLE_CLEAR` (12 px) under it, would stand lower than `BRIDLE_MIN` (16 px) over the board. A stacked shaft so reads as decks hung one under the next, each from a single point.
+
+Judged by eye at 1x and 3x in `tower/foot` (chain), `evercrown/veins` (sinew; its first legs were 1.5 px and read as hairs, now 2 px), `spires/sky_steps` and `haar/marsh_road` (rope). `test_plank_a_hung_run_meets_its_hangers_in_a_bridle` (`tests/test_plank_supports.gd`) holds it.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

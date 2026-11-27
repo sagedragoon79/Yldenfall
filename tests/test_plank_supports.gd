@@ -617,3 +617,54 @@ func test_plank_a_room_takes_its_decks_chord_in_stirrups() -> void:
 		for s: Dictionary in holds.supports:
 			if s.kind == "hang":
 				check(s.has("stirrup") and is_equal_approx(s.stirrup, 3.0 * T + PlankSupports.DECK_FOOT), "each hanger takes the chord at the cell's foot: %s" % [s])
+
+
+func test_plank_a_hung_run_meets_its_hangers_in_a_bridle() -> void:
+	# The pass 665 grade read hung runs as "platforms hung on chains and ropes from
+	# nothing" (design bible 12.147): two loose lines rising out of the frame.
+	var size := Vector2i(16, 20)
+	var planks := _planks(8, 5, 9)
+	var plan := PlankSupports.plan(planks, _box(size), size)
+	var bridles := PlankSupports.bridle(planks, _box(size), size, plan)
+	check(bridles.size() == 1, "the run hangs from one bridle: %s" % [bridles])
+	if bridles.size() == 1:
+		var br: Dictionary = bridles[0]
+		var board := 8.0 * T + PlankSupports.BOARD
+		check(plan.all(func(s: Dictionary) -> bool: return s.get("bridled", false)), "both its hangers are the bridle's legs")
+		check(is_equal_approx(br.x, (plan[0].x + plan[1].x) * 0.5), "the ring is over the run's middle: %s" % br.x)
+		var rise: float = board - br.apex
+		check(rise >= PlankSupports.BRIDLE_MIN and rise <= PlankSupports.BRIDLE_MAX, "the ring stands over the board: %s" % rise)
+		check(absf(rise - minf((br.right - br.left) * 0.5, PlankSupports.BRIDLE_MAX)) <= 1.0, "the legs rise at 45 degrees: %s over %s" % [rise, (br.right - br.left) * 0.5])
+		check(is_equal_approx(br.top, 1.0 * T), "one hanger runs on from the ring to the ceiling: %s" % br.top)
+	# A plank close above: the ring stays clear of it, and a run right under another keeps two straight hangers.
+	planks = _planks(6, 4, 10)
+	planks.merge(_planks(8, 4, 10))
+	plan = PlankSupports.plan(planks, _box(size), size)
+	bridles = PlankSupports.bridle(planks, _box(size), size, plan)
+	var low := bridles.filter(func(b: Dictionary) -> bool: return is_equal_approx(b.foot, 8.0 * T + PlankSupports.BOARD))
+	check(low.size() == 1, "the lower run is bridled under the upper")
+	if low.size() == 1:
+		check(low[0].apex - low[0].top >= PlankSupports.BRIDLE_CLEAR, "its ring is clear of the plank above: %s" % [low[0]])
+		check(is_equal_approx(low[0].top, 6.0 * T + PlankSupports.BOARD_UNDER), "and hangs from that plank's board")
+	planks = _planks(7, 4, 10)
+	planks.merge(_planks(8, 4, 10))
+	plan = PlankSupports.plan(planks, _box(size), size)
+	bridles = PlankSupports.bridle(planks, _box(size), size, plan)
+	check(not bridles.any(func(b: Dictionary) -> bool: return is_equal_approx(b.foot, 8.0 * T + PlankSupports.BOARD)), "no room for a bridle right under a plank")
+	# Nothing over the middle within reach: the two hangers stay as they were.
+	size = Vector2i(10, 60)
+	var solid := _box(size)
+	solid[Vector2i(2, 20)] = true
+	solid[Vector2i(7, 20)] = true
+	planks = _planks(30, 2, 7)
+	plan = PlankSupports.plan(planks, solid, size)
+	bridles = PlankSupports.bridle(planks, solid, size, plan)
+	check(_kinds(plan) == ["hang", "hang"] and bridles.is_empty(), "no bridle when nothing is over the middle: %s" % [bridles])
+	check(not plan.any(func(s: Dictionary) -> bool: return s.get("bridled", false)), "and no hanger is marked as a leg")
+	# The rooms the grade named hang their decks on bridles.
+	for path: String in ["res://levels/tower/foot.room", "res://levels/evercrown/veins.room"]:
+		var room := Room.from_file(path)
+		arena.add_child(room)
+		var holds := room.get_node_or_null("PlankSupports") as PlankSupports
+		check(holds != null and holds.bridles.size() >= 4, "%s hangs its decks on bridles: %d" % [path, holds.bridles.size() if holds else -1])
+		room.queue_free()

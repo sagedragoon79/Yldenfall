@@ -44,5 +44,728 @@
    "Generic, undersized foes with weak silhouettes.",
    "Platforms are one uniform stamped plank sprite repeated across every biome."
   ]
+ },
+ {
+  "t": "Nov 7, 3:25 AM",
+  "overall": 4.2,
+  "note": "Independent reviewer, 12 no-hints stills (9 zone rooms, a shop, 2 boss-arena frames), target Hollow Knight. CAVEAT: the two boss-arena frames rendered with no boss visible (a capture artifact on our side — the boss did not spawn in the static shot), so Characters-and-foes (3.0) and Combat-readability (2.6) are understated and this 4.2 overall is NOT like-for-like with pass-497's 5.3, which used live-guardian stills. The environment read is the fair signal for this pass (rim/AO shading): Environments 5.0, Atmosphere/lighting 5.6, Art cohesion 4.3. Reviewer praised the fog/lighting (haar_lampwick, the mire) and the clean shop UI; the biggest lever named is characters/foes — a large, readable, animated player and bosses that actually appear in frame.",
+  "areas": {
+   "Art and cohesion": 4.3,
+   "Environments": 5.0,
+   "Characters and foes": 3.0,
+   "Combat readability": 2.6,
+   "UI and menus": 6.5,
+   "Atmosphere and lighting": 5.6
+  },
+  "defects": [
+   "Capture artifact (not a game defect): both boss-arena frames showed the player in an empty room with no boss, so there was nothing to read or telegraph.",
+   "A uniform dot/crosshatch dither grid is laid over the midground on several rooms (boughs, evercrown, spires, sky_spring, sunken, vorrhallow), reading as flat moire noise rather than texture or depth.",
+   "In the sunlit bough room the background branches/leaves are translucent glass shapes at inconsistent scale, detached from the solid foreground, so the space reads as two unrelated layers.",
+   "The player sprite is tiny, low-detail and identical in pose across frames, with a muddy silhouette that never reads clearly against busy or dark backgrounds.",
+   "Platforms are the weakest geometry: sky_spring's floating bars are flat untextured solid-green rectangles and the wooden planks repeat as one stamped tile everywhere.",
+   "The grass fringe on floors and ledges is a single flat bright-green band with no shading or variation, cheapening otherwise-moody rooms (haar_lampwick, deep_roots, source_hall).",
+   "Enemies are nearly absent and when present are small and low-contrast, lost against the detailed background instead of popping as threats.",
+   "Heavy silhouette repetition: evercrown_heart and hearthroot_plaza tile the same rounded-headstone pillar across the whole screen, flattening the sense of a designed space."
+  ]
+ },
+ {
+  "t": "Nov 7, 5:43 AM",
+  "overall": 5.4,
+  "note": "Independent reviewer, 12 no-hints stills (9 zone rooms across heartwood/hearthroot/tower/haar/boughs/spires/sunken/vorrhallow/evercrown, a shop, and 2 live boss-arena frames: Haar Wyrm and Gnarlmaw), target Hollow Knight. Bosses were in frame this time, so this is like-for-like with pass-497's 5.3 (and up from it), unlike the environment-only pass-500 4.2 which had the boss-missing capture artifact. This pass (501) shipped atmospheric perspective on the parallax back layers; the reviewer read real depth cues and a consistent palette across biomes but named the same structural levers as the top defects: bosses that don't read as creatures, dead empty midgrounds, a tiny generic hero, flat directionless lighting, and enemies camouflaged against their tiles. The boss and hero items are the gated PixelLab art loop (awaiting Sean); the empty-rooms, lighting and enemy-contrast items are code-first and unblocked.",
+  "areas": {
+   "Art and cohesion": 6.5,
+   "Environments": 6.0,
+   "Characters and foes": 4.0,
+   "Combat readability": 3.5,
+   "UI and menus": 6.5,
+   "Atmosphere and lighting": 5.0
+  }
+ },
+ {
+  "t": "Nov 7, 7:20 AM",
+  "overall": 5.1,
+  "note": "Independent reviewer, 12 no-hints stills (9 zone rooms across heartwood/haar/spires/boughs/evercrown/vorrhallow/sunken/tower/hearthroot, a shop, and 2 guardian showcase frames: Gnarlmaw and the Haar Wyrm), target Hollow Knight. This pass (502) softened the sky backdrop dither into a palette ramp with noise-dithered seams, killing the halftone/screen-door moire that was a top defect at the pass-497/500/501 grades. That defect is gone from this reviewer's list — he named depth in 02/04/09 backdrops and did not flag midground moire. Not strictly like-for-like with pass-501's 5.4: this set swapped the two live boss-arena frames for two guardian showcase frames, which the reviewer read harshly as placeholder-grade bosses (the gated PixelLab art loop), pulling Characters/Combat down. Top defects now are the gated items (forgettable hero, placeholder bosses) plus code-first/unblocked ones already queued (empty under-decorated rooms, flat ambient lighting, repetitive platform sprites, zone-to-zone palette/outline incoherence).",
+  "areas": {
+   "Art and cohesion": 5.0,
+   "Environments": 5.5,
+   "Characters and foes": 4.0,
+   "Combat readability": 4.5,
+   "UI and menus": 6.0,
+   "Atmosphere and lighting": 5.0
+  }
+ },
+ {
+  "t": "Nov 7, 9:35 AM",
+  "overall": 5.5,
+  "note": "Pass 503 (grass fringe). Best recent number; the environment/atmosphere read carries it (Atmosphere 6.5, Environments 6). Reviewer confirmed the fringe is improved but still flags grass/ground transitions mildly among tiling-repeat notes, and the headline defects stay the gated art: the boss (shot 10) reads placeholder-grade and the hero is tiny/low-contrast. New code-first defect: ambiguous translucent teal foreground blocks in evercrown/drift_well look like unstyled collision/glass placeholders. Set swaps two live boss frames for guardian-arena showcase frames, so Characters/Combat are understated vs a live-boss set.",
+  "areas": {
+   "Art and cohesion": 5.0,
+   "Environments": 6.0,
+   "Characters and foes": 4.0,
+   "Combat readability": 5.0,
+   "UI and menus": 4.5,
+   "Atmosphere and lighting": 6.5
+  }
+ },
+ {
+  "t": "Nov 7, 12:09 PM",
+  "overall": 5.6,
+  "note": "Pass 504 (tileset variants / grid banding). Up a touch from pass 503's 5.5; Atmosphere 6.5 and Art cohesion 6.0 carry it. The tiling-repetition defect dropped off the headline but still lands at #3 — the reviewer now points it at the backdrop brick (hearthroot, a parallax/mid-ground wall this pass did not touch) and the regular mortar lattice, not the solid-field accent repeat the variants broke. Headline defects stay the gated art: the boss (shot 10) reads placeholder-grade and the hero/foes are low-detail. New code-first defect: the recurring gray note/sign panels with meaningless scribble-lines (lore tablets / sign prompts) read as un-authored UI stubs across five rooms. The natural companion to this pass is a mid-ground/backdrop variant pass (vary <zone>_mid.png so its brick/column field stops repeating).",
+  "areas": {
+   "Art and cohesion": 6.0,
+   "Environments": 5.5,
+   "Characters and foes": 4.0,
+   "Combat readability": 4.5,
+   "UI and menus": 4.0,
+   "Atmosphere and lighting": 6.5
+  }
+ },
+ {
+  "t": "Nov 7, 5:30 PM",
+  "overall": 5.2,
+  "note": "Pass 505 (per-zone distance-fog colour). Blind grader; 5.2 is within the recent 5.1-5.6 spread (variance between cold graders is real) and not a regression from this pass -- it explicitly reads the zone palettes as 'distinct' (murky swamp, purple crystal, dark forest, brick ruins, canopy, clockwork), and praises the town (05) and shop UI (10) as near-shipping. The drag is the gated art: the boss frame (11) reads off-spec/placeholder, the hero is a tiny low-detail blob that blows to white, and foes are too small to read -- all PixelLab items held on Sean's base approvals. The grey note/sign placeholder panels (already queued) and empty negative space (queued) recur. New code-first signal: the swamp (haar) and underwater (sunken) zones collapse into low-contrast grey-green/grey-teal so platforms and hazards don't separate from the backdrop -- partly this pass's dark haar/sunken fog; worth lifting gameplay-tile contrast or easing those two hazes.",
+  "areas": {
+   "Art and cohesion": 5.5,
+   "Environments": 5.5,
+   "Characters and foes": 4.0,
+   "Combat readability": 4.5,
+   "UI and menus": 6.5,
+   "Atmosphere and lighting": 5.0
+  }
+ },
+ {
+  "t": "Nov 8, 2:40 AM",
+  "overall": 5.4,
+  "note": "Pass 510 (foreground silhouette layers). Blind grader on 11 shots across 7 zones + a shop + the Wyrm arena; 5.4 is within the recent 5.1-5.6 spread and not a regression (a different random shot spread, more character/empty-room heavy than pass 504's set). Atmosphere & lighting is the strongest area (6.5): it reads the point lights, fog, rain, grade and glow pools as 'real mood'. The new foreground wasn't singled out (it's a subtle near-black band by design), but depth/empty-space and flat-parallax notes persist, so 'more parallax layers' is the right next depth step. The drag stays the gated PixelLab art: the hero/NPCs read as tiny featureless blobs (#1 defect) and foes blend into their tiles. New non-gated defect: the coarse-pixel shop/HUD UI clashes with the finer in-world art and reads placeholder.",
+  "areas": {
+   "Art and cohesion": 5.5,
+   "Environments": 6.0,
+   "Characters and foes": 4.0,
+   "Combat readability": 4.5,
+   "UI and menus": 5.5,
+   "Atmosphere and lighting": 6.5
+  }
+ },
+ {
+  "t": "Nov 8, 2:35 PM",
+  "overall": 4.3,
+  "note": "Pass 515 (second masonry sweep). Blind grader, 10 shots across 8 zones + a shop, no hints. 4.3 is below the recent 5.1-5.6 spread, from a harsher grader and a shot set heavy on tall rooms with large dark empty upper bands (heartwood amber_falls, haar, evercrown) that it read as a 'letterbox'. Verified: not a render bug but a real sparse/dark upper backdrop with thin parallax (aligns with Sean's depth/more-parallax request). Strongest: atmosphere/lighting 5.5 and the Market shopfronts; closest to the bar: Sunken and Vorrhallow silhouettes (the swept masonry zones). Weakest called: dark empty upper voids, remaining stamp repetition in Spires brick and Hearthroot background buildings, painterly-vs-flat-tile zone incohesion, and the player sprite.",
+  "areas": {
+   "Art and cohesion": 4.0,
+   "Environments": 4.0,
+   "Characters and foes": 4.5,
+   "Combat readability": null,
+   "UI and menus": null,
+   "Atmosphere and lighting": 5.5
+  }
+ },
+ {
+  "t": "Nov 9, 3:30 AM",
+  "overall": 4.7,
+  "note": "Pass 520 (zone style cohesion: Heartwood/Haar sculpted mossy crown + mottled wood face). Blind grader, 10 shots across 8 zones, no hints, no HUD in the shots (captured without --ui, so its 'no HUD/UI 2.0' is a capture artifact, not a real defect). 4.7 sits in the recent 4.1-5.6 spread. Top real defects it raised: painterly/anti-aliased backdrops vs hard pixel foreground (the recurring style-incoherence theme this pass chipped at from the tile side), copy-pasted floating plank platforms with no structural support, cheap radial-gradient lantern/mushroom glow that ignores surfaces, and the small placeholder hero (the gated HD-hero/guardian art loop). Atmosphere/lighting its strongest axis (6.0).",
+  "areas": {
+   "Art and cohesion": 3.8,
+   "Environments": 5.2,
+   "Characters and foes": 3.5,
+   "Combat readability": 4.3,
+   "UI and menus": 2.0,
+   "Atmosphere and lighting": 6.0
+  }
+ },
+ {
+  "t": "Nov 9, 1:16 PM",
+  "overall": 5.6,
+  "note": "Pass 525 spread (8 zones + shop). Up from 4.7. Top defects: tile repetition in stone/brick columns and gameplay masonry; style incoherence (soft vector swamp vs hard pixel tilesets); crushed-black dead zones (upper bands of dark rooms); weak/small character + foe presence; dark-on-dark hazard readability; flat tiling water/cattail fields.",
+  "areas": {
+   "Art and cohesion": 5.5,
+   "Environments": 6.0,
+   "Characters and foes": 4.5,
+   "Combat readability": 4.5,
+   "UI and menus": 6.5,
+   "Atmosphere and lighting": 6.0
+  }
+ },
+ {
+  "t": "Nov 9, 11:59 PM",
+  "overall": 4.6,
+  "note": "Pass 529 spread (9 whole-room overviews across zones, 2 play-framed hit frames, a shop). Down from 5.6, on a different shot set: whole-room overviews this time where pass 525 framed at play scale, and the two hit frames threw a spark with no swing (the capture's --spark), caught on the sheet's opening disc. Top defects: foreground posts cut through actors (the Hearthroot shopkeepers); the hit spark's flat yellow disc covers the target and the blade; noisy high-frequency terrain fill with no clear lit top edge; random square 'missing pixel' blocks in midground ruins; one plank platform reused in every zone; shop footer gold differs from the HUD and the town backdrop differs between room and shop.",
+  "areas": {
+   "Art and cohesion": 4.5,
+   "Environments": 4.8,
+   "Characters and foes": 5.0,
+   "Combat readability": 3.8,
+   "UI and menus": 5.5,
+   "Atmosphere and lighting": 5.2
+  }
+ },
+ {
+  "t": "Nov 10, 2:40 PM",
+  "overall": 4.6,
+  "note": "Pass 535 spread (8 zones at play scale with the HUD, 2 swing frames, the Hearthroot arms shop). Level with pass 529. Top defects: foreground silhouettes stand over the play layer as black bars (01, 04, 07-10); the new swing smear read fat, banana-yellow and ahead of the blade on one heavy frame (retuned slimmer and paler in the same pass; timing vs the windup queued); rooms are empty boxes of unsupported floating planks; placeholder set pieces (Spires red orb columns, grey sign slabs, flat liquid and crystal shapes); hero detail density and flat glow-disc lighting don't match the tiles.",
+  "areas": {
+   "Art and cohesion": 4.5,
+   "Environments": 4.0,
+   "Characters and foes": 5.5,
+   "Combat readability": 3.5,
+   "UI and menus": 5.5,
+   "Atmosphere and lighting": 5.0
+  }
+ },
+ {
+  "t": "Nov 11, 2:30 AM",
+  "overall": 5.3,
+  "note": "Pass 540 spread (9 zones at play scale with the HUD, a swing frame, the Hearthroot arms shop). Up from 4.6 at pass 535. Top defects: rooms read as one template (spawn at the left edge beside a stele, rope-hung planks, an empty middle); flat placeholder props (Spires magenta islands, Evercrown hot-magenta platforms, the smelter's vector cauldron, the Haar's orange blocks); repeating tile stripes and grids, and the thorn column repeats one stamp; mixed rendering (painterly Boughs leaves, banded ring light pools); the hero is small and low-contrast; thin UI (shop with no icons, minimap a single rectangle, stray black bars in the shop).",
+  "areas": {
+   "Art and cohesion": 5.0,
+   "Environments": 4.8,
+   "Characters and foes": 6.2,
+   "Combat readability": 5.0,
+   "UI and menus": 5.0,
+   "Atmosphere and lighting": 5.6
+  }
+ },
+ {
+  "t": "Nov 12, 8:10 PM",
+  "overall": 5.4,
+  "note": "Pass 545 spread (10 rooms across nine zones as whole-room views with the HUD, the Hearthroot arms shop). Up from 5.3 at pass 540. Top defects: off-room solid mass reads as flat repeated cobble with no falloff (Proving Scar); the Sunken Spring's stone pillars read as striped wallpaper and its water is a flat fill; layouts are empty boxes of hung planks in every zone; low-effort backgrounds (Hearthroot silhouettes, the Boughs' filtered foliage); the hero barely reads (small, low contrast, whole-room framing); fire seals lack glow onto nearby surfaces; Haar lamp lights stack as perfect circles; the shop has no icons or portrait; flat wading-water rectangles in Vorrhallow; uniform rain over the Spires.",
+  "areas": {
+   "Art and cohesion": 5.5,
+   "Environments": 5.0,
+   "Characters and foes": 6.0,
+   "Combat readability": 5.5,
+   "UI and menus": 5.0,
+   "Atmosphere and lighting": 5.5
+  }
+ },
+ {
+  "t": "Nov 13, 7:40 AM",
+  "overall": 5.3,
+  "note": "Pass 550 spread (9 zone rooms as whole-room views with the HUD, the Hearthroot arms shop, the Haar Wyrm and Gnarlmaw fight frames). Level with pass 540, a tenth below 5.4 at pass 545. Atmosphere 6.5 is the strongest area; the reviewer's biggest levers are the code-drawn guardians (Haar Wyrm as flat circles, Gnarlmaw's repeated segments), the small hero, empty box rooms and loud repeating frame tiles.",
+  "areas": {
+   "Art and cohesion": 5.5,
+   "Environments": 6.0,
+   "Characters and foes": 4.5,
+   "Combat readability": 4.0,
+   "UI and menus": 5.5,
+   "Atmosphere and lighting": 6.5
+  },
+  "defects": [
+   "The Haar Wyrm reads as placeholder: flat identical teal circles and a blocky head with a pasted-on eye.",
+   "Gnarlmaw is a long row of identical segments that hides the hero and the safe space.",
+   "The hero is about 40 px tall and blends into backgrounds; no strong silhouette.",
+   "Rooms are wide empty rectangles with a flat floor and a few floating planks.",
+   "Frame tiles repeat on a loud grid (Tower and Vorrhallow checkered stone, Heartwood/Boughs striped dirt) and overpower the playfield.",
+   "Proving Scar: over half the screen is empty black void, and the lava column is a flat noisy rectangle with no glow falloff.",
+   "Foes (bee, snake, Bark Knight) are more saturated and detailed than the muted rooms, so they look pasted in.",
+   "The shop is a plain box with no item icons or portrait; the HUD is small and generic."
+  ]
+ },
+ {
+  "t": "Nov 13, 5:00 PM",
+  "overall": 4.2,
+  "note": "Pass 555 spread (9 zone rooms as whole-room views, the Hearthroot arms shop, the Haar Wyrm and Gnarlmaw fight frames). Down from 5.3 at pass 550 with a different room set (the Haar's drowned stair in fog and rain, the Trials, the Sunken aqueduct). The frame tiles no longer draw a checkerboard remark, but brick fields still read as a flat tile-editor fill with random dark missing bricks. Strongest: the Heartwood's mood (teal glow lights, hanging roots, light shafts).",
+  "areas": {
+   "Art and cohesion": 4.5,
+   "Environments": 4.0,
+   "Characters and foes": 4.0,
+   "Combat readability": 3.5,
+   "UI and menus": 5.0,
+   "Atmosphere and lighting": 5.0
+  },
+  "defects": [
+   "The Haar Wyrm frame: a near-black blob on a near-black arch with four yellow dashes for eyes; no silhouette, no visible hero, no telegraph.",
+   "Haar drowned stair: fog and rain wash the room to grey mud, with dither halos around lamps and platforms that barely read as walkable.",
+   "Spires, Vorrhallow, Sunken, Trials: terrain is a flat repeated brick with a hard black outline and random dark missing-brick noise; no structure, trim or wear.",
+   "Every room: a rectangular box with thin floating planks, a large empty middle, and almost no foreground, props or set dressing.",
+   "Gnarlmaw: one body segment tiled about 25 times in a row; the hero overlaps it dark red on dark brown; egg sacs and maw look pasted on.",
+   "Boughs: the smooth vector-style leaf backdrop clashes with the pixel tiles, and the saturated orange frame fights the green scene.",
+   "Foes come from different style families with inconsistent outline weight and shading.",
+   "The hero is small and stiff with a muted cloak and no signature shape, less detailed than the knight NPC.",
+   "Vorrhallow and Evercrown are nearly monochrome with low value contrast; shards, tendrils and columns blur together.",
+   "The shop has a large dead area between its rows and the description; the portrait is flatter than the world; the HUD masks are generic."
+  ]
+ },
+ {
+  "t": "Nov 14, 7:15 AM",
+  "overall": 4.9,
+  "note": "Pass 560 spread (9 zone rooms, the Hearthroot arms shop, the Gnarlmaw arena and the Haar Wyrm close-up). Up from 4.2 at pass 555 with a similar set. The Evercrown and Vorrhallow no longer draw the 'monochrome' remark; the brick remark is now tile repetition without trim, not noise. No frame shows an attack or a hit. Strongest: the Tower's smelter, a tilted crucible pouring molten metal, warm light on cool stone, the one room that feels composed.",
+  "areas": {
+   "Art and cohesion": 4.8,
+   "Environments": 5.2,
+   "Characters and foes": 4.4,
+   "Combat readability": 4.3,
+   "UI and menus": 5.6,
+   "Atmosphere and lighting": 5.6
+  },
+  "defects": [
+   "Seven rooms: the hero stands idle in one pose at the far left, tiny against the room; no frame shows animation, an attack arc or hit feedback.",
+   "Boughs canopy: flat saturated vector-like leaves and smooth branch curves behind chunky pixel tiles; white dash wind lines and a row of identical red thorn bulbs look like placeholders.",
+   "Haar marsh road: coarse dither halos around every lamp, pale vertical smears over the frame, and platforms, the crate and the spike bed nearly the same grey-green as the backdrop.",
+   "Gnarlmaw: one brown husk segment stamped about twenty times in a straight line with three flat yellow sacs; a tiled strip, not a creature, and the red hero is lost against it.",
+   "Sunken aqueduct: two thirds of the frame is a flat teal water gradient with dither banding, one small fish, and plain brick with an obvious repeat.",
+   "Heartwood, Vorrhallow, Evercrown, Tower: one terrain tile repeated without variation in thick floor and ceiling bands, with no edge pieces, cracks or trim.",
+   "Hearthroot plaza and shop: a flat low-contrast silhouette band behind a large empty mid-ground; crates and the doorway look pasted on, with no grounding shadows.",
+   "Spires sky steps: uniform white rain over everything competes with the foreground; small foes and pickups are lost on busy purple; the red bulb columns are one sprite about fifteen times each.",
+   "Vorrhallow: magenta shards scattered at random angles like floating spears, attached to no rock; the foe at the waterline is nearly invisible against the dark pillars.",
+   "The shop panel is legible but generic, with a large empty middle and a portrait simpler than the world sprites; the Haar Wyrm close-up is two pairs of yellow slits and grey puffs."
+  ]
+ },
+ {
+  "t": "Nov 15, 1:20 AM",
+  "overall": 4.6,
+  "note": "Pass 565 spread (9 zone rooms, the Hearthroot arms shop, and three fight frames: Heartwood hit, Vorrhallow tell, Tower hit). Down from 4.9 at pass 560; this is the first set with fight frames, and they drew two of the top four defects. The 'one tile with no trim' remark is gone for the Heartwood, Vorrhallow and the Evercrown; the Tower's plates still read as a noisy grid and the Sunken Spring's brick as uniform. Strongest: atmosphere in the dark zones (the root cavern's mushrooms and hanging lights, the foundry's crucible, the violet crystal ruin and its waterline).",
+  "areas": {
+   "Art and cohesion": 4.8,
+   "Environments": 4.7,
+   "Characters and foes": 4.3,
+   "Combat readability": 4.5,
+   "UI and menus": 4.4,
+   "Atmosphere and lighting": 5.6
+  },
+  "defects": [
+   "Boughs thorn-pit room: huge flat vector-style leaves, branches and white dash wind lines at a different style and pixel density from the sprites and tiles; reads as a pasted illustration.",
+   "Haar marsh road: full-screen fog streaks with coarse dithered halo blobs wash out platforms, the chest and the foreground; hard to tell what is solid.",
+   "The hero is tiny, stiff and upright in one idle pose at the left edge of almost every room, with a muddy green cloak and little silhouette character.",
+   "Both hit frames (Heartwood, Tower): the sword is a flat grey-white bar wider than the hero with no arc, smear or shading, and the struck foe is a solid white cutout; reads as a debug overlay.",
+   "Nearly every room uses one kit (rope or chain swings, a four-legged table platform, one chest) on a dead-flat floor; zones differ by palette more than architecture.",
+   "Sunken aqueduct: brick repeats uniformly with no edge wear or moss, the waterfall is a flat cyan strip, the underwater area an empty dithered gradient with one fish.",
+   "Spires sky steps: dense white rain at one brightness over everything, the red thorn-pod columns are one sprite tiled, the clouds are flat blobs against pixel tiles.",
+   "Tower: ceiling and floor are a noisy grid of small square plates with scattered dark squares; reads as a test pattern and competes with the crucible.",
+   "Shop: a plain dark rectangle, a three-item list leaving over half the panel empty, a crude portrait with heavier outlines than the rest of the game, tiny icons; small generic HUD.",
+   "Foes are small, low-detail and at inconsistent outline weights; the dark armored figure sinks into the dark foundry and the mantis-like foe into the jungle bridge."
+  ]
+ },
+ {
+  "t": "Nov 15, 1:55 PM",
+  "overall": 4.7,
+  "note": "Pass 570 spread (9 zone rooms: Hearthroot plaza, Heartwood lantern grotto, Haar Lampwick causeway, Boughs canopy bridge, Spires storm ledge, Tower Gear Pit, Vorrhallow drowned nave, Evercrown veins, Sunken spring gate; the Kettleforge smith's shop; two fight frames: Boughs hit, Haar tell). Up from 4.6 at pass 565. The grader, given no hints, named the Gear Pit the best frame: 'the large rusted gears give a real focal point, a sense of place and layered depth that the other rooms lack'. Also strong: each zone's controlled palette, the lanterns and glowing mushrooms, the Spires' rain and lightning, and a clean legible font and shop layout. UI rose to 5.0 from 4.4.",
+  "areas": {
+   "Art and cohesion": 4.5,
+   "Environments": 5.0,
+   "Characters and foes": 4.0,
+   "Combat readability": 4.5,
+   "UI and menus": 5.0,
+   "Atmosphere and lighting": 5.5
+  },
+  "defects": [
+   "Haar (Lampwick causeway, the tell frame): the fog is a full-screen layer of smeared vertical blobs that washes out platforms, the chest, spikes and foes; a dirty lens instead of depth.",
+   "Boughs (canopy bridge, the hit frame): smooth vector-like leaves and hairline branches at a different pixel density from the chunky tiles and sprites.",
+   "Hearthroot plaza and Evercrown veins: mostly empty dark space with flat silhouette backdrops and a handful of tiny props; no midground, no focal point.",
+   "The hero is a tiny, stiff, upright figure with little silhouette character, lost against the room scale (worst in the plaza, the Gear Pit and the veins).",
+   "Foes are small and low in contrast against their backgrounds (the knights in the drowned nave, the beetle on the storm ledge, the mantises in the Boughs), none with a memorable shape.",
+   "Light halos use a coarse checkerboard dither with hard stepped edges, clashing with the soft light shafts in the same frames (Haar, Vorrhallow).",
+   "Boughs hit frame: the sword is a flat grey slab longer than the hero with no shading; the hit spark and the foe's flash merge into one pale blob.",
+   "Tiles repeat in an obvious grid with blotchy dark stains instead of built structure (the Sunken sand brick, the plain stone squares of the Tower and the Spires).",
+   "Hazards and liquids are crude: the red thorn bulbs are one sprite stamped in a row, the Heartwood grotto's amber pool is a flat rectangle, the Haar's lava column a noisy strip with no glow shape.",
+   "The shop panel is a flat dark box with a thin border, no ornament and loose empty space; the white wind dashes in the Boughs read as a rendering glitch."
+  ]
+ },
+ {
+  "t": "Nov 16, 7:20 AM",
+  "overall": 4.8,
+  "note": "Pass 575 spread (9 rooms: Hearthroot plaza, Heartwood Rot Dwarf Hall, Tower Ore Bin and Rail Gallery, Haar Lampwick causeway, Boughs canopy bridge, Vorrhallow drowned nave, Sunken spring gate, Evercrown veins; the Kettleforge smith's shop; two fight frames: Tower hit, Haar tell). Up from 4.7 at pass 570. The grader, given no hints, said the large props carry the game: the pouring crucible (the best frame), the ore hopper, the trestle rail and the root splitting the high seat 'each give a room a subject and a story'. Also strong: each zone's own palette and material, the drowned nave and the Dwarf Hall as the moodiest frames, and a clean shop panel. The worst frame is again the Lampwick causeway under the Haar's fog.",
+  "areas": {
+   "Art and cohesion": 5.0,
+   "Environments": 5.3,
+   "Characters and foes": 4.0,
+   "Combat readability": 4.4,
+   "UI and menus": 5.2,
+   "Atmosphere and lighting": 5.3
+  },
+  "defects": [
+   "Rooms are flat boxes with one walkable strip: a rectangular tile frame around a dead-level floor with 60 to 70 percent empty dark air (plaza, Rail Gallery, Ore Bin, Dwarf Hall, veins). Vary the floor height, break the ceiling line, add foreground that overlaps the frame.",
+   "Characters are too small and too low in contrast for the stage (the hero is about 7 percent of the screen height; the nave's knight, the canopy bridge's archer and mantis, the Dwarf Hall's dwarf melt into the background). Rim light or value separation for every actor.",
+   "The Haar's fog is a dithered overlay with vertical smears that cuts contrast to near zero (Lampwick causeway, the tell frame); the lantern holes are coarse checkerboard blobs.",
+   "The Haar tell frame: the foe turns into a flat white featureless silhouette, like a missing texture; no direction, weapon or reach.",
+   "The Tower hit frame: the slash is a huge flat bar like a plank and the struck foe flashes fully grey-white, so attacker, weapon and target are one clump; the impact ring is small; no HUD in either fight frame.",
+   "Mixed rendering styles: the Boughs' smooth vector-like leaves and white wind dashes, soft smudged shadow blotches over the spring gate's crisp brick.",
+   "Tiling repeats over large areas with no trim, cracks or large stones (the spring gate is half plain brick; the Tower's block grid; the canopy bridge's striped bark border).",
+   "NPCs and foes sit below the hero's standard: stiff front-facing shop people, a cartoonish purple blob in the Rail Gallery and the bee on the canopy bridge.",
+   "Hazards and pickups read unevenly: the red thorn row is one loud stamp, the causeway's spikes are near invisible, and the hanging chest platform is the same gimmick in five rooms.",
+   "Lighting is decorative, not structural: faint shafts that tint nothing, lanterns with no cast light on nearby tiles, the veins' monotone purple, the plaza's flat two-tone city cutout."
+  ]
+ },
+ {
+  "t": "Nov 16, 5:31 PM",
+  "overall": 5.6,
+  "note": "Pass 580 spread (8 rooms: Hearthroot plaza, Heartwood Hornet Gallery and Rot Dwarf Hall, Tower Rail Gallery and Ore Bin, Haar Lampwick causeway, Vorrhallow drowned nave, Sunken drowned aqueduct; the Hearthroot arms shop; three fight frames: Heartwood hit, Haar tell, Spires hit). Up from 4.8 at pass 575, the largest step so far; some of it may be the grader, a fresh one each time, so read it with the next grade. Room shape is no longer named as a defect. The grader, given no hints, again named the set pieces as the best of the game (the hornet nest, the ore hopper, the root-split high seat), then each zone's own palette, and the Heartwood hit frame's slash and burst. The worst frame is again the Lampwick causeway under the Haar's fog.",
+  "areas": {
+   "Art and cohesion": 6.0,
+   "Environments": 6.3,
+   "Characters and foes": 4.6,
+   "Combat readability": 5.2,
+   "UI and menus": 5.4,
+   "Atmosphere and lighting": 6.2
+  },
+  "defects": [
+   "The Haar's fog destroys readability and looks like an artifact (the causeway, the Haar tell frame): spikes, the chest and foes fall below visible contrast, and the lantern clearings are coarse dithered blobs. Put fog behind the play layer only, keep platforms, pickups and foes at full value, and make the lantern light a soft glow.",
+   "Characters are too small and too quiet for the frame (every room; worst in the plaza, the Rail Gallery and the aqueduct): the hero is about 6 percent of the screen height, and foes are dark on dark. Tighten the camera or enlarge the sprites, rim the hero, and give each foe one saturated color.",
+   "The sword in the hit frames is a flat white bar wider than the hero, and the struck foe hides behind the burst (Heartwood hit, Spires hit).",
+   "Large dead midgrounds and flat backdrops (the plaza's west half, the aqueduct's open water, the Rail Gallery).",
+   "Tile repetition that shows the grid (the aqueduct's sandstone, the Tower's ceilings, the Spires' floating blocks).",
+   "The shop panel is plain and oversized for its content, its portrait is cruder than the world, and the HUD overlaps the ceiling tiles.",
+   "The Spires fight frame is noisy: rain, lightning, lamps and magenta rock compete, and lightning crosses the harpy."
+  ]
+ },
+ {
+  "t": "Nov 17, 5:34 AM",
+  "overall": 5.3,
+  "note": "Pass 585 spread (8 rooms: Hearthroot plaza, Heartwood Rot Dwarf Hall, Boughs canopy bridge, Tower Gear Pit, Haar Lampwick causeway, Vorrhallow flooded hall, Spires storm ledge, Sunken drowned aqueduct; the Hearthroot arms shop; three fight frames: Heartwood tell, Haar hit, Spires hit). Down from 5.6 at pass 580 with a fresh grader and four different rooms, so read the two together: the game sits between 5 and 6. Combat readability rose to 5.5 (5.2): the Spires hit frame was named among the best things for its arc, spark and struck beetle 'even through rain' (pass 584), and the tell is no longer called a missing texture (pass 585), though the grader wants an outline only. Best frames again the set pieces: the Rot Dwarf Hall's root-split gate and the Gear Pit. The worst frame is again the Lampwick causeway under the Haar's fog.",
+  "areas": {
+   "Art and cohesion": 5.0,
+   "Environments": 5.5,
+   "Characters and foes": 4.5,
+   "Combat readability": 5.5,
+   "UI and menus": 5.5,
+   "Atmosphere and lighting": 6.0
+  },
+  "defects": [
+   "The Haar's fog is visual mud (the causeway, the Haar hit frame): the overlay flattens everything and the dithered holes around lamps look like rendering errors. Fog behind the play layer, half the opacity, soft gradient light.",
+   "Rooms are rectangular boxes (Boughs canopy bridge, Vorrhallow flooded hall, Spires storm ledge, Sunken aqueduct): flat ceilings, straight walls, one thick tile border.",
+   "The hero is small, stiff and low in presence, with less contrast than a chest (all rooms; worst in the plaza and the causeway).",
+   "Mixed rendering styles: smooth leaves and soft clouds behind crisp pixel tiles (Boughs, Spires), and a shop portrait cruder than the sprites.",
+   "Repeated set dressing: the same chest on a thin table and the same sign in nearly every room; red gem spikes that ignore their zone.",
+   "Dead midground (the plaza; the aqueduct's plain oversized brick and flat water).",
+   "The sword is a featureless white bar as long as the hero, and the tell's gold full-body tint erases the foe's form (flash only an outline or the weapon).",
+   "Thin UI: the shop is a plain dark panel with no frame ornament."
+  ]
+ },
+ {
+  "t": "Nov 17, 6:20 PM",
+  "overall": 5.3,
+  "note": "Pass 590 spread (the same rooms as pass 585: Hearthroot plaza, Heartwood dwarf hall, Boughs canopy bridge, Tower gear pit, Haar Lampwick causeway, Vorrhallow flooded hall, Spires storm ledge, Sunken drowned aqueduct; the Hearthroot arms shop; three fight frames: Heartwood tell, Haar hit, Spires hit). Level with 5.3 at pass 585 with a fresh grader. The four reshaped rooms are no longer called rectangular boxes, but their ceilings now read as stair-stepped tile blocks. Best frames again the Heartwood dwarf hall and its tell, the aqueduct and the gear pit. Combat readability fell to 4.5 (5.5): the hit frames' sword is a flat white plank with no smear and no flash on the foe.",
+  "areas": {
+   "Art and cohesion": 5.0,
+   "Environments": 5.5,
+   "Characters and foes": 4.5,
+   "Combat readability": 4.5,
+   "UI and menus": 6.0,
+   "Atmosphere and lighting": 6.0
+  },
+  "defects": [
+   "The hero and foes are tiny against the room (about 6% of screen height); zoom the camera 1.5 to 2x or scale the characters.",
+   "Hit frames have no impact (Haar hit, Spires hit): a flat white plank of a sword with no taper or smear, a small spark, no flash or knockback on the foe.",
+   "The Haar fog is a mess (causeway, Haar hit): smear streaks and dithered halos read as artifacts; platforms vanish.",
+   "Ceiling silhouettes are stair-stepped blocks (canopy bridge, flooded hall, storm ledge, aqueduct): add slope and corner tiles, break the edges.",
+   "Backgrounds are a different style from the foreground (canopy bridge's vector leaves; the plaza's flat grey city).",
+   "Rooms are empty and props thin (plaza, gear pit, causeway): bare planks on sticks; the plaza's chest table looks like a placeholder.",
+   "Hazards don't read: the red thorn rows look like strawberries or candy (canopy bridge, storm ledge).",
+   "The shop UI is plain: crude portrait, generic panel, odd 'Jump: choose / Dash: leave' labels."
+  ]
+ },
+ {
+  "t": "Nov 18, 7:40 AM",
+  "overall": 5.3,
+  "note": "Pass 595 spread (the same rooms as passes 585 and 590: Hearthroot plaza, Heartwood dwarf hall, Boughs canopy bridge, Tower gear pit, Haar Lampwick causeway, Vorrhallow flooded hall, Spires storm ledge, Sunken drowned aqueduct; the Hearthroot arms shop; three fight frames: Heartwood tell, Haar hit, Spires hit). Level with 5.3 at pass 590 with a fresh grader. Combat readability up to 5.5 (4.5) after the pass 592 impact streak; the chests and thorn bulbs are no longer named. Best frames: the Heartwood dwarf hall and its tell, and the gear pit.",
+  "areas": {
+   "Art and cohesion": 4.8,
+   "Environments": 5.6,
+   "Characters and foes": 4.5,
+   "Combat readability": 5.5,
+   "UI and menus": 6.0,
+   "Atmosphere and lighting": 5.8
+  },
+  "defects": [
+   "The Haar's fog and light halos are coarse blotchy dither circles that read as compression noise and muddy the frame (causeway, Haar hit).",
+   "Detail density differs by zone: flat vector-style leaves behind pixel tiles (canopy bridge); the wasps and beetle are far more rendered than the hero.",
+   "The hero is small, low-contrast and thinly shaded in every room shot.",
+   "The hit frames' sword is a flat pale slab with no taper or shading (Haar hit, Spires hit).",
+   "Terrain silhouettes are big staircase steps with a uniform outline (canopy bridge, storm ledge, aqueduct, flooded hall ceilings).",
+   "Platforms are bare debug-like sticks on posts (plaza, gear pit, causeway); repeated floating brick blocks (Spires hit); unanchored crystals (flooded hall).",
+   "Midground and parallax layers are flat low-contrast silhouettes with empty stretches (plaza, gear pit, flooded hall).",
+   "In hit frames the slash arc and spark cover the struck foe.",
+   "No HUD in room shots or fight frames.",
+   "The shop panel is generic: thin gold border, mostly empty list, flat portrait."
+  ]
+ },
+ {
+  "t": "Nov 18, 12:50 PM",
+  "overall": 5.2,
+  "note": "Pass 600 spread (the same rooms as passes 585 to 595: Hearthroot plaza, Heartwood dwarf hall, Boughs canopy bridge, Tower gear pit, Haar Lampwick causeway, Vorrhallow flooded hall, Spires storm ledge, Sunken drowned aqueduct; the Hearthroot arms shop; three fight frames: Heartwood tell, Haar hit, Spires hit). For the first time the room and fight frames carry the HUD (pass 600). 5.2 with a fresh grader, against 5.3 at pass 595. UI and menus 4.9 (6.0): with the HUD in view the grader named the empty minimap and the plain HUD box. The flat parallax, floating blocks and covered hits are no longer named; new: the window-dotted skyline repeats in Hearthroot and the Spires (pass 598 gave both one roofline), and the struck foe goes semi-transparent. Best frames: the gear pit, the dwarf hall, the storm ledge.",
+  "areas": {
+   "Art and cohesion": 4.8,
+   "Environments": 5.4,
+   "Characters and foes": 5.5,
+   "Combat readability": 5.0,
+   "UI and menus": 4.9,
+   "Atmosphere and lighting": 5.6
+  },
+  "defects": [
+   "Characters and foes use a much finer pixel size than terrain, props and trees, so the sprites look pasted onto a coarser world (dwarf hall, canopy bridge, flooded hall, all three fight frames).",
+   "Light halos and shadows are large checkerboard dither blotches that read as compression damage (causeway, flooded hall, aqueduct, Haar hit).",
+   "The swamp rooms are a low-contrast grey-green wash with vertical streaks that bury the platforms, chest and foe (causeway, Haar hit).",
+   "The hit frames' sword is an oversized flat white slab held level at the shoulder, a plank, not a blade (Haar hit, Spires hit).",
+   "At impact the struck foe goes semi-transparent; the white sword, white arc and pale foe merge, so the hit reads as the foe fading out (Haar hit, Spires hit).",
+   "Terrain edges are coarse stair-stepped blocks with flat fills and crude dither, worst on ceilings and pillars (canopy bridge, storm ledge, aqueduct).",
+   "The minimap is an empty dark panel with one flat rectangle, and the HUD sits on a plain translucent box (every frame).",
+   "The same X-braced trestle and the same skyline of window-dotted rectangles repeat across areas (trestle in the plaza, dwarf hall, canopy bridge, gear pit, causeway and two hit frames; skyline in the plaza, storm ledge, shop and Spires hit).",
+   "The shop menu is a plain dark box, two-thirds empty, with a thin flat border and a stiff portrait.",
+   "No foreground framing layer and large empty midground voids; some foes are crude, such as the slime drawn as a plain green rectangle (plaza, canopy bridge, causeway, aqueduct)."
+  ]
+ },
+ {
+  "t": "Nov 18, 5:55 PM",
+  "overall": 5.3,
+  "note": "Pass 605 spread (the same eight rooms, the Hearthroot arms shop and three fight frames as passes 585 to 600, all with the HUD). 5.3 with a fresh grader, 5.2 at pass 600. UI and menus 6.0 (4.9) after the framed menus, the shop's counter and the minimap's ways on; combat readability 4.5 (5.0): the struck foe still reads as a see-through ghost, and the sword's slab and the clock-face spark are named. New: the health masks copy Hollow Knight's almost directly (an originality problem, first in the queue). No longer named: the trestle and the Spires' skyline. Best frames: the dwarf hall, the storm ledge, the flooded hall.",
+  "areas": {
+   "Art and cohesion": 5.0,
+   "Environments": 5.0,
+   "Characters and foes": 5.5,
+   "Combat readability": 4.5,
+   "UI and menus": 6.0,
+   "Atmosphere and lighting": 5.5
+  },
+  "defects": [
+   "The sword smear is a flat white bar with square ends, a plank, not steel; at impact the struck foe turns into a see-through ghost and loses its outline (Haar hit, Spires hit).",
+   "The swamp's grey fog streaks wash out the whole screen (causeway, Haar hit).",
+   "Light halos and shadow edges use a coarse checkerboard dither like a compression error (causeway, Haar hit, the foe's halo in the flooded hall, the plaza's archway).",
+   "Foes blend into their backgrounds: the mantis and archer green on green (canopy bridge), the shade dark violet on violet (flooded hall), the gear pit's ceiling creatures a tangle of pixels.",
+   "Styles clash: soft painted leaves behind crisp tiles and a flat green placeholder block (canopy bridge); foes at different levels of detail.",
+   "Ceilings and ledges are 45-degree stair steps and rectangles, a tile grid rather than rock (canopy bridge, flooded hall, storm ledge, aqueduct).",
+   "Rooms feel empty: flat floors, little foreground, empty midground, the hero at the screen's edge (plaza, gear pit, causeway, aqueduct).",
+   "Generic, repeated backgrounds: a skyline of rectangles with dot windows (plaza, shop), the same pine and spike outlines, a flat block of blue water (aqueduct).",
+   "The hit spark is a gear or clock-face ring like a lock-on marker; the wind-up is a thin yellow outline on a small foe with no exaggerated pose (Heartwood tell, both hits).",
+   "The HUD's health masks copy Hollow Knight's almost directly; the boxed, slashed gold zero looks like a debug glyph; the minimap is an almost empty grid; the shop squeezes its keeper into a corner with a flat portrait."
+  ]
+ },
+ {
+  "t": "Nov 19, 5:10 PM",
+  "overall": 5.6,
+  "note": "Pass 610 spread (the same eight rooms, the Hearthroot arms shop and three fight frames as passes 585 to 605, all with the HUD). 5.6 with a fresh grader, 5.3 at pass 605. Environments 6.2 (5.0), atmosphere 6.0 (5.5), combat readability 5.0 (4.5); characters and foes 4.8 (5.5): the hero and foes are small and sink into dark rooms. No longer named: the health masks, the see-through struck foe, the clock-face spark, the slashed zero, the flat green block (the bounce-pod, pass 610). Top defect again: the Haar's fog and dithered light. New: the Bark Knight's tell is a flat yellow full-body tint that reads as a debug overlay. Best frames: the dwarf hall and its tell, the gear pit, the storm ledge.",
+  "areas": {
+   "Art and cohesion": 5.8,
+   "Environments": 6.2,
+   "Characters and foes": 4.8,
+   "Combat readability": 5.0,
+   "UI and menus": 5.8,
+   "Atmosphere and lighting": 6.0
+  },
+  "defects": [
+   "The swamp's fog and light overlay renders as coarse dithered blobs with hard stippled edges that look like a rendering artifact and wash the frame to grey (causeway, Haar hit).",
+   "The hero is tiny in the frame, and his dark green cloak sinks into mid-dark backgrounds: the least visible thing on screen (plaza, causeway, flooded hall, Heartwood tell, Haar hit).",
+   "Foes are as undersized and low in contrast: the armored foe nearly lost against the trunk, the foe in the water a dark smudge (dwarf hall, flooded hall, Heartwood tell).",
+   "Pixel density is inconsistent: chunky terrain and trunk beside fine-pixel characters, smooth gradient glows and thin vector-like lines (dwarf hall, canopy bridge, causeway, Heartwood tell).",
+   "Sword slashes are flat white slabs with a small star spark: no arc shading, smear, hit flash or particles (Haar hit, Spires hit).",
+   "The canopy zone's terrain is flat vertical brown stripes with stair-stepped edges, and its smooth painterly leaf backdrop clashes with the rest (canopy bridge).",
+   "Terrain tiles repeat visibly: uniform brick and cobble fills, one vine overlay on every block, little edge variation (plaza, flooded hall, storm ledge, aqueduct, Spires hit).",
+   "Platforms, the chest and spikes in the swamp are nearly invisible behind the fog (causeway, Haar hit).",
+   "The armored foe's telegraph is a flat yellow full-body tint that reads as a debug overlay, not a wind-up (Heartwood tell).",
+   "The HUD is generic and small; the minimap is a large dark box showing one rectangle (all room frames).",
+   "The shop panel is plain: dead area round one small icon, a crude portrait, no comparison with equipped gear (shop).",
+   "The city skyline is a flat low-contrast silhouette of repeated rectangles with gridded windows (plaza, shop)."
+  ]
+ },
+ {
+  "t": "Nov 20, 3:20 AM",
+  "overall": 5.6,
+  "note": "Pass 615 spread (the same eight rooms, the Hearthroot arms shop and three fight frames as passes 585 to 610, all with the HUD). 5.6 with a fresh grader, level with pass 610. Atmosphere 6.2 (6.0), environments 6.0 (6.2), art and cohesion 5.4 (5.8), UI 5.5 (5.8); characters and foes 4.8 and combat readability 4.9, as before. No longer named: the canopy's striped bark (pass 615), the flat yellow tell (611), foes sinking into dark rooms (612), the plaza's one vine overlay (613). Top defect again: the Haar's fog and dithered halos. New: the Haar's lava column is a saturated strip with no glow falloff; the water is a banded slab with a hard top line; a hit is one small spark with no flash or debris. Best frames: the root shrine, the gear pit, the storm fight.",
+  "areas": {
+   "Art and cohesion": 5.4,
+   "Environments": 6.0,
+   "Characters and foes": 4.8,
+   "Combat readability": 4.9,
+   "UI and menus": 5.5,
+   "Atmosphere and lighting": 6.2
+  },
+  "defects": [
+   "The swamp's fog is a full-screen layer of pale dithered streaks that flattens every value: platforms, the chest and the mushroom foes nearly vanish (causeway, Haar hit).",
+   "The hero is a tiny, dark, low-contrast figure with no rim light, and disappears against the trunk and the gate (Heartwood tell; plaza, storm ledge, dwarf hall, gear pit).",
+   "The sword slash is a flat white bar with a detached crescent, at another resolution from the hero (Haar hit, Spires hit).",
+   "Light halos are coarse checkerboard-dither blobs with stair-stepped edges that look like rendering errors (causeway, Haar hit).",
+   "The forest backdrop mixes smooth vector-like leaves and thin branches with chunky tiles and white wind dashes: three pixel densities in one frame (canopy bridge).",
+   "Hit feedback is one small orange spark with no foe flash, streak or debris (all three fight frames).",
+   "Wall and ceiling masses are large fields of uniform tile with stair-stepped 45-degree edges and no large shapes to break them (flooded hall, storm ledge, aqueduct, gear pit).",
+   "Far backdrops are flat single-value silhouettes with little depth or lit accents: the grey block city (plaza, shop) and the fence-post skyline (storm ledge, Spires hit).",
+   "The lava column is a saturated orange strip with a flat pattern and no glow falloff (Haar hit).",
+   "The water is a slab of banded dither with a hard top line and no reflections or interaction with the stone (aqueduct, flooded hall).",
+   "The shop panel is a plain dark box with a crude portrait and a large dead area; the minimap is an empty grid with one rectangle (shop, fight frames).",
+   "Foes share no design language (a bee, a beetle, a harpy, a small knight, a mushroom) and several are too small to show a tell (canopy bridge, storm ledge, Heartwood tell, Spires hit)."
+  ]
+ },
+ {
+  "t": "Nov 20, 3:10 PM",
+  "overall": 5.6,
+  "note": "Pass 620 spread (the same eight rooms, the Hearthroot arms shop and three fight frames as passes 585 to 615, all with the HUD). 5.6 with a fresh grader, level with passes 610 and 615. UI 6.0 (5.5), art and cohesion 5.5 (5.4), environments 6.0, atmosphere 6.2, characters and foes 4.8, combat readability 4.8 (4.9). No longer named: the water (pass 620; the flooded hall is now a best frame for its water), the lone dark specks as such (618), the lava column's missing glow (619; it is now called garish against the fog palette). Top defects again: the Haar's fog and dithered halos, the hero's size and darkness, the sword's slab. New: large rectangular dark blotches and stepped tone patches on brick and earth read as tile errors (aqueduct, canopy, flooded hall, storm ledge); foes lack silhouette contrast with their backdrops; copied props (one crystal cluster, banners, scaffolds, floating islands). Best frames: the root shrine, the gear pit, the flooded hall.",
+  "areas": {
+   "Art and cohesion": 5.5,
+   "Environments": 6.0,
+   "Characters and foes": 4.8,
+   "Combat readability": 4.8,
+   "UI and menus": 6.0,
+   "Atmosphere and lighting": 6.2
+  },
+  "defects": [
+   "The fog zone is a grey wash: full-screen vertical smears flatten platforms, the chest, mushrooms and floor spikes (causeway, Haar hit).",
+   "Light pools are coarse checkerboard-dither blobs with ragged edges that read as a rendering artifact (causeway, Haar hit, flooded hall).",
+   "The hero is tiny, low in detail and dark on dark; lost against the trunk and in the water (Heartwood tell, flooded hall, plaza, root shrine).",
+   "The sword slash is a flat white slab plus a detached crescent, with no arc or smear and a tiny hit spark (Haar hit, Spires hit).",
+   "Brick and earth carry large rectangular dark blotches and stair-stepped tone patches that look like tile errors, not weathering (aqueduct, canopy bridge, flooded hall, storm ledge).",
+   "The jungle mixes three rendering styles: noisy orange cracked-earth tiles, smooth giant leaves and flat pine silhouettes; orange and green clash (canopy bridge).",
+   "Foes lack silhouette contrast with their backdrops: green on green, the grey knight on the grey gate, pale mushrooms in fog (canopy bridge, Heartwood tell, causeway, Haar hit).",
+   "Midground backdrops are flat single-tone silhouette bands with little depth, leaving dead areas mid-screen (root shrine, Heartwood tell, storm ledge, Spires hit, plaza).",
+   "Repetition: one crystal cluster copied at several angles, identical banners, scaffold platforms and floating islands (flooded hall, plaza, storm ledge, Spires hit, canopy bridge, root shrine).",
+   "The minimap is a large empty grid box with one rectangle; the HUD panel collides with scenery; the coin count reads as an odd 0 glyph (aqueduct, all).",
+   "Fight frames have busy overlays competing with the action (rain, lightning, lamps, three foes at one value) and a garish lava pillar outside the fog palette (Spires hit, Haar hit).",
+   "The shop panel is plain: a crude portrait, a small icon in a large empty area, a description that repeats the stat lines; the town building is cropped mid-arch (shop, plaza)."
+  ]
+ },
+ {
+  "t": "Nov 21, 3:25 AM",
+  "overall": 5.6,
+  "note": "Pass 625 spread (the same eight rooms, the Hearthroot arms shop and three fight frames as passes 585 to 620, all with the HUD). 5.6 with a fresh grader, level with passes 610 to 620. Characters and foes 5.2 (4.8), combat readability 5.0 (4.8), art and cohesion 5.8 (5.5), UI 6.0, environments 6.0, atmosphere 5.8 (6.2). No longer named: the floating islands and the two Spires rooms' shared sky (pass 625), the crystal cluster and the banners (624), the brick blotches as tile errors (623), the fire seal's color. Still named: 'the same cross-braced platform in nearly every frame, recoloured' (the plank on posts itself reads as one kit, though the frames now differ by zone). Top defects again: the Haar's fog and dithered halos, the hero's size and darkness, the sword's slab. New or sharper: terrain is a uniform fill cut into 45-degree stairs with no lip or shadowed underside (aqueduct, canopy, storm ledge, Spires hit, flooded hall); chests and signs do not separate from the scenery; the rain is one even overlay with no splash and the lightning casts no light. Best frames: the Heartwood tell (the gate with the tree through it), the root shrine, the gear pit.",
+  "areas": {
+   "Art and cohesion": 5.8,
+   "Environments": 6.0,
+   "Characters and foes": 5.2,
+   "Combat readability": 5.0,
+   "UI and menus": 6.0,
+   "Atmosphere and lighting": 5.8
+  },
+  "defects": [
+   "The fog zone is a grey smear with dither holes punched in it; platforms, the chest, spikes and foes are nearly invisible (causeway, Haar hit).",
+   "The hero is tiny, dark and low in contrast against almost every background, with no rim light or silhouette hook (plaza, gear pit, flooded hall, canopy bridge, storm ledge, causeway).",
+   "Terrain is a flat repeating texture cut into staircase diagonals: no top-lip variation, no shadowed underside, no large form (aqueduct, canopy bridge, storm ledge, Spires hit, flooded hall).",
+   "The sword slash dwarfs the hero and is drawn in another style: a flat grey-white slab, a white crescent and a small orange spark, three styles (Haar hit, Spires hit).",
+   "Combat frames are cluttered and the hit has no punch: rain, lightning, lamps, islands and three foes at one value; no flash or darkening isolates the strike (Spires hit, Haar hit).",
+   "Foes are inconsistent in scale and style: a dense saturated bee, thin green foes on green, a cartoon blob, a grey figure lost in a purple dither cloud (canopy bridge, storm ledge, Spires hit, Heartwood tell, flooded hall).",
+   "Midground parallax layers are muddy one-value cutouts over a third of the frame (plaza, root shrine, gear pit, storm ledge, Heartwood tell).",
+   "The same cross-braced plank platform appears in nearly every frame, recoloured (plaza, root shrine, gear pit, canopy bridge, causeway, Haar hit, Heartwood tell).",
+   "Chests, signs and pickups do not separate from the scenery (flooded hall, aqueduct, causeway, Haar hit).",
+   "Rain is a uniform overlay with no splash, depth or wet surfaces; the lightning is a thin pink line that lights nothing (storm ledge, Spires hit).",
+   "The minimap is a large, mostly empty navy box larger than the hero, in no zone's palette; the bar, potions and coin count are crammed under the leaves (all).",
+   "The shop panel is plain; the portrait is a flat bust in another style; the icon floats in an empty area; the panel hides the vendor's hut (shop)."
+  ]
+ },
+ {
+  "t": "Nov 21, 1:40 PM",
+  "overall": 5.1,
+  "note": "Pass 630 spread (the same eight rooms, the Hearthroot arms shop and three fight frames as passes 585 to 625, all with the HUD). 5.1 with a fresh grader (5.6 at pass 625; graders differ by about half a point, and this one was told to grade strictly). Art and cohesion 4.8 (5.8), environments 5.4 (6.0), characters and foes 4.6 (5.2), combat readability 4.3 (5.0), UI 5.8 (6.0), atmosphere 5.9 (5.8). No longer named: chests and signs lost in the scenery (pass 630; the flooded hall's 'lit chest on a stepped plinth' is called a focal point, though the Haar's chest is still under the fog), the plank on two posts (629), the rain as one overlay. Top defects again: the Haar's fog and dithered halos, the hero's size and contrast, the sword's slab. Still named: terrain cut at 45 degrees under a heavy outline, uniform tile fills, flat midground cutouts, foes from different sets. New or sharper: the canopy room is in another style (smooth branches and soft leaves behind pixel terrain); the Heartwood tell is a few-pixel sparkle with no pose change; a square of magenta dither round the foe in the flooded hall and white dash clusters in the canopy sky; props are not grounded (the plaza's doorway floats on the skyline, no contact shadows). Best frames: the flooded hall, the gear pit, the Heartwood tell as a room.",
+  "areas": {
+   "Art and cohesion": 4.8,
+   "Environments": 5.4,
+   "Characters and foes": 4.6,
+   "Combat readability": 4.3,
+   "UI and menus": 5.8,
+   "Atmosphere and lighting": 5.9
+  },
+  "defects": [
+   "The Haar fog destroys the frame: a grey wash with vertical smears hides platforms, the chest, spikes and foes, and the lamp holes have coarse dither edges (causeway, Haar hit).",
+   "The hero is too small and too low in contrast to anchor a frame, and vanishes against the tree trunk (Heartwood tell, canopy bridge, causeway, plaza).",
+   "The sword slash is a flat white rectangle with no arc, longer than the hero is tall; the spark is a tiny orange star (Haar hit, Spires hit).",
+   "The canopy room is in another style: smooth anti-aliased branches, soft oversized leaves and flat hills behind chunky pixel terrain (canopy bridge).",
+   "Terrain silhouettes are 45-degree cuts with a heavy black outline; the inverted brick pyramids hanging into the water are absurd (storm ledge, aqueduct, canopy bridge, flooded hall).",
+   "Tile surfaces are uniform fills with no large shape, wear or edge treatment (aqueduct, storm ledge, canopy bark, the root shrine's striped ceiling and floor).",
+   "The attack tell is nearly invisible: a few-pixel sparkle at the foe's head, no pose or color change (Heartwood tell).",
+   "Midground layers are flat cutouts that repeat: the sawtooth band, the tower skyline, the wavy bands (root shrine, Heartwood tell, plaza, shop, storm ledge, Spires hit).",
+   "Foes lack a shared design language and sit at the background's value (Spires hit, Heartwood tell, Haar hit, canopy bridge).",
+   "Stray dither and effects: a square of magenta dither round the foe in the flooded hall, white dash clusters in the canopy sky, an unlit red lava pillar in the fog (flooded hall, canopy bridge, Haar hit).",
+   "The HUD and menus are generic: an empty minimap grid, a flat shop panel, a portrait cruder than the world (shop, fight frames).",
+   "Props are not grounded: the plaza's doorway floats on the skyline, the fountain is cut by the frame, the hero stands in the sign, no contact shadows (plaza, aqueduct)."
+  ]
+ },
+ {
+  "t": "Nov 22, 4:15 AM",
+  "overall": 5.6,
+  "note": "Pass 635 spread (the same eight rooms, the Hearthroot arms shop and three fight frames as passes 585 to 630, all with the HUD), a fresh strict grader. 5.6 (5.1 at pass 630 with another strict grader). Art and cohesion 5.5 (4.8), environments 6.0 (5.4), characters and foes 5.0 (4.6), combat readability 5.0 (4.3), UI 6.5 (5.8), atmosphere 5.5 (5.9). No longer named: props without contact shadows, the plaza's floating door, the magenta dither square and the canopy's dash clusters, the canopy room's other style. Still named: the sword's slab, the Haar's fog and dither, the hero's size, uniform tile fills, flat parallax (now ranked sixth, named with the town skyline and the Spires' bands). New: the hero has no attack pose, the canopy foes' contrast, the trestle repeated across zones, floating shards and flat water. Best frames: the Heartwood tell (the root through the gate) and the gear pit.",
+  "areas": {
+   "Art and cohesion": 5.5,
+   "Environments": 6.0,
+   "Characters and foes": 5.0,
+   "Combat readability": 5.0,
+   "UI and menus": 6.5,
+   "Atmosphere and lighting": 5.5
+  },
+  "defects": [
+   "The sword is a flat white slab held across the chest, with no grip, edge or arc (Spires hit, Haar hit).",
+   "The hero stands in a near-neutral pose while a strike lands: no anticipation, follow-through or lean; the smear starts behind the foe (Spires hit, Haar hit).",
+   "The Haar's dithered lamp halos and grey veil hide platforms, silhouettes and the chest (causeway, Haar hit).",
+   "The hero is tiny in the wide rooms and reads as a small stick at the frame's edge (root shrine, gear pit, aqueduct, flooded hall).",
+   "Tile textures are noisy and uniform across zones; the speckle fights the background (storm ledge, canopy bridge, aqueduct, flooded hall).",
+   "Parallax layers are still flat single-value cutouts in places: the town skyline, the pine silhouettes, the rolling bands (plaza, root shrine, storm ledge).",
+   "The canopy bridge's foes are small and low-contrast against the foliage, while the bee is brighter and more detailed (canopy bridge).",
+   "Props repeat across zones: the same orange A-frame trestle, lone chests on featureless plinths (root shrine, plaza, Heartwood tell).",
+   "The flooded hall's purple shards float with no anchoring or glow logic, and its water has no reflection (flooded hall).",
+   "The aqueduct's water is a flat teal gradient; the waterfall has no splash or mist (aqueduct).",
+   "The shop is a plain dark box with floating icon and stats, a mannequin-like portrait, and a description that repeats the numbers (shop).",
+   "Light is additive glow circles that rarely shape surfaces; the Heartwood tell is a small sparkle and a thin outline at play scale (plaza, Heartwood tell)."
+  ]
+ },
+ {
+  "t": "Nov 22, 7:10 PM",
+  "overall": 5.2,
+  "note": "Pass 640 spread (the same eight rooms, the Hearthroot arms shop and three fight frames as passes 585 to 635, all with the HUD), a fresh strict grader. 5.2 (5.6 at pass 635 with another strict grader). Art and cohesion 5.5 (5.5), environments 5.0 (6.0), characters and foes 5.0 (5.0), combat readability 4.5 (5.0), UI 6.0 (6.5), atmosphere 4.8 (5.5). No longer named: the orange trestle, the lone chests on plinths, the canopy foes' contrast, the waterfall's missing splash and mist. Still named: the Haar's fog and dither, the sword's slab and the hero's one attack pose, flat parallax (now: the same pine band and trunk columns behind five areas) and no foreground layer, light as additive circles, the hero's size, ground tiling, the shop. New or back: the deep water still reads as a flat teal slab (the pass 640 mirror is too faint at this scale, and nothing refracts the submerged pillars), foes in two styles, the crystals and the tree through the gate still pasted on, identical inverted-triangle islands, spikes that read as grass. Best frames: the Heartwood tell and the gear pit.",
+  "areas": {
+   "Art and cohesion": 5.5,
+   "Environments": 5.0,
+   "Characters and foes": 5.0,
+   "Combat readability": 4.5,
+   "UI and menus": 6.0,
+   "Atmosphere and lighting": 4.8
+  }
+ },
+ {
+  "t": "Nov 23, 4:30 PM",
+  "overall": 5.2,
+  "note": "Pass 645 spread (eight rooms: the Hearthroot plaza, the grub burrows, the marsh road, the canopy bridge, the Tower foot, the sky steps, the Evercrown veins, a Sunken Spring hall; the Hearthroot arms shop; three fight frames with the HUD), a fresh strict grader. 5.2 (5.2 at pass 640). Art and cohesion 5.0 (5.5), environments 5.5 (5.0), characters and foes 4.5 (5.0), combat readability 4.5 (4.5), UI 6.5 (6.0), atmosphere 5.5 (4.8). No longer named: no foreground layer, the same pine band and trunk columns, the deep water's flat slab. Named: the Haar reads as a broken render (haze, stair-stepped dither, streaks); the sword is a flat white bar; the hero small and generic; foes in three styles (the bandaged brute is mush); fight contact points are mush; dead voids (the grub burrows' black top half, the Evercrown's flat purple); walls that end mid-air; barcode dirt tiles; copied hazards and town towers; floating islands and chain platforms hung from nothing; heavy rain overlay; an oversized minimap. Best frames: the Tower's foundry ladle and the canopy bridge.",
+  "areas": {
+   "Art and cohesion": 5.0,
+   "Environments": 5.5,
+   "Characters and foes": 4.5,
+   "Combat readability": 4.5,
+   "UI and menus": 6.5,
+   "Atmosphere and lighting": 5.5
+  }
+ },
+ {
+  "t": "Nov 24, 2:20 AM",
+  "overall": 5.2,
+  "note": "Pass 650 spread (the same eight rooms as pass 645: the Hearthroot plaza, the grub burrows, the marsh road, the canopy bridge, the Tower foot, the sky steps, the Evercrown veins, a Sunken Spring hall; the Hearthroot arms shop; three fight frames with the HUD), a fresh strict grader. 5.2 (5.2 at pass 645). Art and cohesion 5.5 (5.0), environments 5.0 (5.5), characters and foes 4.5 (4.5), combat readability 5.0 (4.5), UI 6.5 (6.5), atmosphere 5.0 (5.5). The word barcode is gone, but the Heartwood dirt is still called 'a striped noise fill with a hard straight top line'. No longer named: the dead voids, walls that end mid-air. Named: the Haar's fog overlay reads as broken (dither-masked blobs, streaks over the play field); the hero small and plain; ground as one repeated slab with a straight top and no foreground occluders; hanging platforms read as debug geometry and sink into their backdrops (Tower foot, Evercrown veins); no value split between play plane and backdrop (Tower foot, Evercrown veins, Spires fight); the sword's flat bar, a small spark and damage numbers; foes in mixed styles; the gate tree in the Heartwood tell a flat unshaded band; repeated skyline and ruin cut-outs; flat ceiling bands like letterboxing; the minimap's empty frame and plain health and mana; stamped spike rows. Best frames: the Sunken hall's water, the shop, the canopy bridge.",
+  "areas": {
+   "Art and cohesion": 5.5,
+   "Environments": 5.0,
+   "Characters and foes": 4.5,
+   "Combat readability": 5.0,
+   "UI and menus": 6.5,
+   "Atmosphere and lighting": 5.0
+  }
+ },
+ {
+  "t": "Nov 24, 9:30 PM",
+  "overall": 5.0,
+  "note": "Pass 655 spread (the same eight rooms as pass 650: the Hearthroot plaza, the grub burrows, the marsh road, the canopy bridge, the Tower foot, the sky steps, the Evercrown veins, the Sunken Spring's source hall; the Hearthroot arms shop; three fight frames with the HUD: the dwarf hall's tell, the Spires hit, the flooded hall's tell), a fresh strict grader. 5.0 (5.2 at pass 650). Art and cohesion 5.0 (5.5), environments 5.0 (5.0), characters and foes 4.5 (4.5), combat readability 4.5 (5.0), UI 6.0 (6.5), atmosphere 5.5 (5.0). The gate tree is no longer named a flat band: the dwarf hall frame is now the best composition ('the root-wrapped gateway as a centrepiece'). No longer named: hung platforms as debug geometry, the value split, the damage numbers, stamped spike rows, flat ceiling bands. Named, in order: the hero small and low in contrast; the same dark foreground silhouettes at the foot of every frame (pass 651's foreground) look stamped and hide the floor line; fights hard to read (the sword's flat bar, the burst covers the beetle, a foe half under the flooded hall's cyan water band, the hero overlaps the trunk); the Haar's dither halos and green wash read as a broken shader; the canopy's dithered tile edges against a soft backdrop and an oversized bee; large empty chained-platform rooms in one hue (Tower foot, Evercrown veins); a dead black band over the grub burrows; the flat grey skyline with stamped windows; the source hall's flat water rectangle; rain as a uniform overlay; the minimap's empty grid; the shop panel's size and flat portrait. Best frames: the dwarf hall, the shop, the Spires hit.",
+  "areas": {
+   "Art and cohesion": 5.0,
+   "Environments": 5.0,
+   "Characters and foes": 4.5,
+   "Combat readability": 4.5,
+   "UI and menus": 6.0,
+   "Atmosphere and lighting": 5.5
+  }
+ },
+ {
+  "t": "Nov 25, 9:30 PM",
+  "overall": 5.4,
+  "note": "Pass 660 spread (the same eight rooms as pass 655: the Hearthroot plaza, the grub burrows, the marsh road, the canopy bridge, the Tower foot, the sky steps, the Evercrown veins, the Sunken Spring's source hall; the Hearthroot arms shop; three fight frames with the HUD: the dwarf hall's tell, the Spires hit, the flooded hall's tell), a fresh strict grader. 5.4 (5.0 at pass 655). Art and cohesion 5.5 (5.0), environments 5.5 (5.0), characters and foes 5.0 (4.5), combat readability 5.0 (4.5), UI 6.0 (6.0), atmosphere 5.5 (5.5). The canopy bridge is now the best frame ('warm hand-textured earth framing a cool, misty forest backdrop'); its tile edges and the hero overlapping the trunk are no longer named. Named, in order: fights that don't look like fights (the hero's stiff walk pose through a foe's tell, a pink smear of a tell, a foe's lower half under the flooded hall's water band); the sword as a flat plank with the spark, burst and a big number piled on the beetle; the foreground silhouettes as blobby stains at every frame's foot; the Haar's dither halos and fog; large empty boxed rooms (plaza ceiling, the burrows' black top band, the veins in one purple); the hero small and lost in dark greens and purples; flat water rectangles; zone palettes from three different games; kit props (the glyph-tiled block, slab-on-chain platforms, X-brace trusses); flat cut-paper skylines; the empty minimap; a generic shop panel. Best frames: the canopy bridge, the dwarf hall, the source hall.",
+  "areas": {
+   "Art and cohesion": 5.5,
+   "Environments": 5.5,
+   "Characters and foes": 5.0,
+   "Combat readability": 5.0,
+   "UI and menus": 6.0,
+   "Atmosphere and lighting": 5.5
+  }
+ },
+ {
+  "t": "Nov 26, 8:40 AM",
+  "overall": 5.5,
+  "note": "Pass 665 spread (the same eight rooms as pass 660: the Hearthroot plaza, the grub burrows, the marsh road, the canopy bridge, the Tower foot, the sky steps, the Evercrown veins, the Sunken Spring's source hall; the Hearthroot arms shop; three fight frames with the HUD: the Heartwood tell, the Spires hit, the flooded hall's tell), a fresh strict grader. 5.5 (5.4 at pass 660). Art and cohesion 5.6 (5.5), environments 5.7 (5.5), characters and foes 4.9 (5.0), combat readability 4.4 (5.0), UI 6.6 (6.0), atmosphere 6.2 (5.5). Best frame: the Heartwood fight frame (root gate as a focal point, cyan mushrooms on warm roots, parallax and light shafts). Named, in order: fights that don't read (the foe and its spark lost on the gate, hero and beetle overlapping, no sign of an attack in the flooded hall); the hero small and dark with no value break (held); the marsh road's dither and fog (held); the black foreground blobs at the frame's foot; chain and rope platforms hung from nothing and the veins' one value band; the canopy's soft trees against the stepped border and the oversized bee; the source hall's water still a hard-edged box ending in a vertical line, and its flat brick frame; empty negative space in the veins and the Tower foot; the sword's flat bar and the debug-looking damage number; the empty minimap; the plaza's stamped skyline; the flooded hall's uniform tide band with nothing round the feet.",
+  "areas": {
+   "Art and cohesion": 5.6,
+   "Environments": 5.7,
+   "Characters and foes": 4.9,
+   "Combat readability": 4.4,
+   "UI and menus": 6.6,
+   "Atmosphere and lighting": 6.2
+  }
  }
 ]
