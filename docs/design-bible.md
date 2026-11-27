@@ -3382,6 +3382,15 @@ The grade of pass 665 found fights hard to read, and among its reasons "no sign 
 
 The fist's glow stays, and the windup is as long as it was (0.6 s); the lane only shows what the windup already promised. Judged by eye at 1x and 3x in `vorrhallow/flooded_hall`, wading. `test_the_crystal_dwarfs_tell_lights_the_spikes_lane` (`tests/test_enemies.gd`) holds it.
 
+### 12.145 The seat falls into shade behind a foe (pass 668)
+
+The grade of pass 665 named the Heartwood fight frame its best frame, and in the same breath found its foe and spark "lost on the gate": in the Rot Dwarf Hall the dwarves are met at the foot of the high seat (12.62), and a Rot Dwarf's grey-green stone stood on the seat's lit planks, pillars and dais at the same value, with his raised weapon and its glint over the east pillar. The root's haze (12.135) covered the trunk only.
+
+- **A shade over the timber and stone** (`HighSeat.SHADE_ALPHA` 0.7, `build_shade_mask`). Behind a hero or foe, in the haze's own cells (`CHUNK`, `HAZE_PAD`, `HAZE_FADE`), every timber, stone, rot and side-root tone off the trunk falls toward the darkest tone of its own ramp (umber-1, stone-1, moss-1, bark-0): the seat goes into shade behind the body, so a foe stands lit against it and keeps the frame's value break. The outline, the sap and the trunk (which keeps its lighter haze) are left as painted, so the seat keeps its shape and its one gold.
+- **Over a raised weapon** (`HEAD_ROOM` 14 px). A body's box is its collision shape, which stops at the shoulders; the haze and the shade reach 14 px above it, over a helm, a raised hammer and a tell's glint.
+
+Judged by eye at 1x and 4x in `heartwood-tell`: the dwarf's stone and his glint now stand on shaded planks and a shaded pillar, and away from him the seat is as painted. `test_the_seat_shades_behind_a_foe` (`tests/test_high_seat.gd`) holds it.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

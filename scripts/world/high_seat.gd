@@ -52,6 +52,17 @@ const CHUNK := 4
 const HAZE_FADE: Array[float] = [0.6, 0.3]
 ## No more than this many bodies get a haze at once.
 const MAX_HAZE := 6
+## The shade that lies over the timber and stone behind a body (pass 668, bible
+## 12.145): the hall's frame is the brighter thing (see ROOT), and a Rot Dwarf's
+## grey-green stone met its lit planks and pillars at the same value, so the
+## foe and its glint were lost on the seat. Each tone falls toward the darkest
+## of its own ramp, in the same cells as the root's haze, so the foe stands
+## lit against shade. The outline and the sap stay as painted.
+const SHADE_ALPHA := 0.7
+## A body's box is its collision shape, which stops at its shoulders; a raised
+## weapon, a helm or a tell's glint stands this far over it, so the haze and the
+## shade reach that far above the box too.
+const HEAD_ROOM := 14
 ## The baked image's rectangle, in world pixels from the origin.
 const IMG := Rect2i(-96, -288, 192, 288)
 ## The dais: its half width and its height. Too low to read as a step.
@@ -109,10 +120,12 @@ const POOL_HIGH := 3
 ## Baked once for the whole run.
 static var _baked: Image
 static var _baked_trunk: Image
+static var _baked_shade: Image
 
 var t := 0.0
 var _tex: ImageTexture
 var _trunk_tex: ImageTexture
+var _shade_tex: ImageTexture
 ## The boxes (local px) of the bodies in front of the root this frame.
 var hazed: Array[Rect2] = []
 
@@ -126,6 +139,9 @@ func _ready() -> void:
 	if _baked_trunk == null:
 		_baked_trunk = build_trunk_mask()
 	_trunk_tex = ImageTexture.create_from_image(_baked_trunk)
+	if _baked_shade == null:
+		_baked_shade = build_shade_mask(_baked)
+	_shade_tex = ImageTexture.create_from_image(_baked_shade)
 
 
 func _process(delta: float) -> void:
@@ -143,6 +159,34 @@ static func build_trunk_mask() -> Image:
 		var hw := root_half(y)
 		_fill(img, cx - hw, y, hw * 2, 1, HAZE)
 	return img
+
+
+## The timber, stone, rot and side roots of `img` (the baked seat), off the
+## trunk, each pixel in the darkest tone of its own ramp; the outline, the sap
+## and the trunk clear. What the shade may lie over.
+static func build_shade_mask(img: Image) -> Image:
+	var mask := Image.create(IMG.size.x, IMG.size.y, false, Image.FORMAT_RGBA8)
+	for y in img.get_height():
+		for x in img.get_width():
+			var col := img.get_pixel(x, y)
+			if col.a <= 0.0 or on_trunk(Vector2i(x, y) + IMG.position):
+				continue
+			var dark := shade_of(col)
+			if dark.a > 0.0:
+				mask.set_pixel(x, y, dark)
+	return mask
+
+
+## The darkest tone of the ramp `col` is on, or clear for the outline, the
+## sap and anything else.
+static func shade_of(col: Color) -> Color:
+	for ramp in [WOOD, STONE, ROT, ROOT]:
+		for tone in ramp:
+			if col.is_equal_approx(tone):
+				return ramp[0]
+	if col.is_equal_approx(BARK_LIT):
+		return ROOT[0]
+	return Color(0, 0, 0, 0)
 
 
 ## Whether the pixel at `c` (local) is on the main trunk, inside its outline.
@@ -205,7 +249,7 @@ func _find_hazed() -> void:
 		var g := Tide.body_rect(body)
 		if g.size == Vector2.ZERO:
 			continue
-		var r := Rect2(to_local(g.position), g.size)
+		var r := Rect2(to_local(g.position), g.size).grow_individual(0, HEAD_ROOM, 0, 0)
 		if r.grow(HAZE_PAD + CHUNK * HAZE_FADE.size()).intersects(area):
 			hazed.append(r)
 
@@ -673,7 +717,9 @@ func _draw() -> void:
 		var dst := Rect2(c.x, c.y, CHUNK, CHUNK).intersection(Rect2(Vector2(IMG.position), Vector2(IMG.size)))
 		if dst.size.x <= 0.0 or dst.size.y <= 0.0:
 			continue
-		draw_texture_rect_region(_trunk_tex, dst, Rect2(dst.position - Vector2(IMG.position), dst.size), Color(1, 1, 1, c.z))
+		var src := Rect2(dst.position - Vector2(IMG.position), dst.size)
+		draw_texture_rect_region(_trunk_tex, dst, src, Color(1, 1, 1, c.z))
+		draw_texture_rect_region(_shade_tex, dst, src, Color(1, 1, 1, c.z / HAZE_ALPHA * SHADE_ALPHA))
 	# A bead swells under the side root, then falls.
 	var phase := fposmod(t, DRIP_PERIOD) / DRIP_PERIOD
 	var y := roundf(drip_y(t))

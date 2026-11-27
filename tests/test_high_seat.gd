@@ -620,3 +620,65 @@ func test_the_root_hazes_behind_whoever_stands_before_it() -> void:
 	w.player.global_position = seat.to_global(Vector2(HighSeat.IMG.end.x + 200, -20))
 	await frames(3)
 	check(seat.hazed.is_empty(), "and away from it the root is as painted")
+
+
+## Pass 668 (bible 12.145): a Rot Dwarf's grey-green stone met the seat's lit
+## planks and pillars at the same value, and the foe and its glint were lost on
+## them. Behind a body the timber and stone fall toward the darkest tone of
+## their ramp, in the root's haze cells, reaching over a raised weapon.
+func test_the_seat_shades_behind_a_foe() -> void:
+	var img := HighSeat.build_image()
+	var mask := HighSeat.build_shade_mask(img)
+	var shaded := 0
+	var wrong := 0
+	for y in img.get_height():
+		for x in img.get_width():
+			var c := img.get_pixel(x, y)
+			if c.a <= 0.0:
+				continue
+			var m := mask.get_pixel(x, y)
+			var at := Vector2i(x, y) + HighSeat.IMG.position
+			if HighSeat.on_trunk(at) or c == HighSeat.OUTLINE or c in HighSeat.SAP:
+				wrong += 1 if m.a > 0.0 else 0
+				continue
+			var ramp: Array[Color] = []
+			for r: Array[Color] in [HighSeat.WOOD, HighSeat.STONE, HighSeat.ROT, HighSeat.ROOT]:
+				if c in r:
+					ramp = r
+			if c == HighSeat.BARK_LIT:
+				ramp = HighSeat.ROOT
+			if ramp.is_empty():
+				continue
+			shaded += 1
+			if m != ramp[0] or m.get_luminance() > c.get_luminance():
+				wrong += 1
+	check(shaded > 5000 and wrong == 0, "timber and stone shade to their ramp's darkest; trunk, outline and sap clear (%d px, %d wrong)" % [shaded, wrong])
+	check(HighSeat.SHADE_ALPHA >= 0.5 and HighSeat.SHADE_ALPHA <= 0.85, "dark enough to part the foe from the planks, the grain still showing (%.2f)" % HighSeat.SHADE_ALPHA)
+	# In the hall: a Rot Dwarf before the east pillar is shaded behind, over his head too.
+	var w := make_world({}, "heartwood/dwarf_hall")
+	var seat := _seat(w.room)
+	var dwarf: Enemy = null
+	for n in w.room.get_children():
+		if n is RotDwarf and dwarf == null:
+			dwarf = n
+		elif n is Enemy:
+			n.queue_free()
+	w.player.global_position = seat.to_global(Vector2(HighSeat.IMG.end.x + 300, -20))
+	check(dwarf != null, "the hall has a Rot Dwarf")
+	if dwarf == null:
+		return
+	dwarf.global_position = seat.to_global(Vector2(HighSeat.PILLAR_X, 0))
+	await frames(2)
+	check(seat.hazed.size() == 1, "the dwarf before the seat is shaded behind (%d)" % seat.hazed.size())
+	if seat.hazed.size() != 1:
+		return
+	var box := Tide.body_rect(dwarf)
+	var r: Rect2 = seat.hazed[0]
+	var over_head := seat.to_local(box.position).y - r.position.y
+	check(over_head >= 10.0 and is_equal_approx(over_head, HighSeat.HEAD_ROOM), "reaching over his box, for a raised weapon (%.0f px)" % over_head)
+	var over := 0
+	for c in HighSeat.haze_cells(seat.hazed):
+		var p := Vector2i(int(c.x) + 2, int(c.y) + 2) - HighSeat.IMG.position
+		if p.x >= 0 and p.y >= 0 and p.x < mask.get_width() and p.y < mask.get_height() and mask.get_pixel(p.x, p.y).a > 0.0:
+			over += 1
+	check(over >= 6, "over the pillar and the dais behind him (%d cells)" % over)
