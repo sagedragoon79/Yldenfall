@@ -543,7 +543,8 @@ func test_plank_a_hung_run_is_a_deck() -> void:
 		return
 	var d: Dictionary = decks[0]
 	check(is_equal_approx(d.left, 5.0 * T) and is_equal_approx(d.right, 10.0 * T) and is_equal_approx(d.y, 8.0 * T), "it spans the run's cells: %s" % [d])
-	for zone: String in ["tower", "spires", "haar", "sunken"]:
+	# The girder (pass 676: the town's deck; the other families build their own, 12.153).
+	for zone: String in ["gym", "hearthroot"]:
 		var look: Dictionary = PlankSupports.LOOKS[zone]
 		var parts := PlankSupports.deck_parts(d.left, d.right, d.y, look)
 		var opaque := parts.filter(func(p: Array) -> bool: return p.size() == 2)
@@ -566,6 +567,85 @@ func test_plank_a_hung_run_is_a_deck() -> void:
 		check(bolts.size() >= 8, "%s: bolted under each trestle foot: %d" % [zone, bolts.size()])
 		var shadow := parts.filter(func(p: Array) -> bool: return p.size() > 2 and p[0].position.y >= d.y + PlankSupports.DECK_FOOT)
 		check(not shadow.is_empty() and shadow.all(func(p: Array) -> bool: return p[2] < 1.0), "%s: a soft shadow under it" % zone)
+
+
+## Pass 676 (bible 12.153): the pass 675 grade still read "the hung-platform setup as
+## one template across the marsh road, Tower foot, sky steps and veins". Each zone
+## family now builds its own deck under its own rig, and the two shafts it named
+## vary their decks' widths and spacing.
+func test_plank_each_zone_family_builds_its_own_deck() -> void:
+	var used := {}
+	for zone: String in PlankSupports.LOOKS:
+		var deck := String(PlankSupports.LOOKS[zone].get("deck", ""))
+		check(deck in PlankSupports.DECKS, "%s builds a known deck (%s)" % [zone, deck])
+		used[deck] = true
+	check(used.size() == PlankSupports.DECKS.size(), "every deck is built somewhere (%s)" % [used.keys()])
+	var graded := {}
+	for zone: String in ["tower", "evercrown", "spires", "haar"]:
+		graded[PlankSupports.LOOKS[zone].deck] = true
+	check(graded.size() == 4, "the four zones the grade saw each build their own deck (%s)" % [graded.keys()])
+	var opaque_of := func(parts: Array) -> Array: return parts.filter(func(p: Array) -> bool: return p.size() == 2)
+	# The bottom of the opaque parts over one column, world y.
+	var foot_at := func(parts: Array, x: float) -> float:
+		var y := -INF
+		for p: Array in parts:
+			var r: Rect2 = p[0]
+			if p.size() == 2 and x >= r.position.x and x < r.end.x:
+				y = maxf(y, r.end.y)
+		return y
+	# A truss: a zigzag of stiffeners from under the board down to the flange, riveted.
+	var look: Dictionary = PlankSupports.LOOKS["tower"]
+	var parts: Array = PlankSupports.deck_parts(0.0, 80.0, 0.0, look)
+	var stiff: Array = opaque_of.call(parts).filter(func(p: Array) -> bool: return p[0].size == Vector2.ONE and p[1] == look.lit)
+	var ys := stiff.map(func(p: Array) -> float: return p[0].position.y)
+	check(stiff.size() >= 40, "the truss is stiffened by a zigzag (%d pixels)" % stiff.size())
+	check(not ys.is_empty() and ys.max() - ys.min() >= PlankSupports.DECK_CHORD - PlankSupports.DECK_WEB - 3.0, "running from under the board to the flange (%s to %s)" % [ys.min() if not ys.is_empty() else 0.0, ys.max() if not ys.is_empty() else 0.0])
+	check(is_equal_approx(foot_at.call(parts, 40.0), PlankSupports.DECK_FOOT), "and as deep as the cell")
+	# A raft: one log end per LOG px, and its underside scalloped between them.
+	look = PlankSupports.LOOKS["haar"]
+	parts = PlankSupports.deck_parts(0.0, 80.0, 0.0, look)
+	var centre: float = foot_at.call(parts, 12.0)
+	var seam: float = foot_at.call(parts, 16.0)
+	check(centre >= seam + 1.0, "a raft's underside is scalloped: %s under a log, %s between two" % [centre, seam])
+	var rings: Array = opaque_of.call(parts).filter(func(p: Array) -> bool: return p[1] == look.wood[0] and p[0].size == Vector2(2.0, 1.0))
+	check(rings.size() == int(80.0 / PlankSupports.LOG), "a log end every %s px: %d" % [PlankSupports.LOG, rings.size()])
+	check(PlankSupports.deck_depth(look) >= centre and PlankSupports.deck_depth(look) <= centre + 1.0, "its hangers take it under the logs: %s" % PlankSupports.deck_depth(look))
+	# A slab: stone, deeper than the cell, its foot stepped in at both ends.
+	look = PlankSupports.LOOKS["spires"]
+	parts = PlankSupports.deck_parts(0.0, 80.0, 0.0, look)
+	check(opaque_of.call(parts).all(func(p: Array) -> bool: return p[1] in look.foot or p[1] == look.bolt), "a slab is the zone's stone")
+	check(is_equal_approx(foot_at.call(parts, 40.0), PlankSupports.DECK_FOOT + PlankSupports.SLAB_DROP), "and hangs below its cell")
+	check(foot_at.call(parts, 1.0) < foot_at.call(parts, 40.0) - 2.0 and foot_at.call(parts, 79.0) < foot_at.call(parts, 40.0) - 2.0, "its foot is corbelled in at both ends")
+	# A room takes a raft in its stirrups under the logs.
+	var room := Room.from_text("zone: haar\n---\n##########\n#........#\n#........#\n#..----..#\n#........#\n#........#\n#........#\n#........#\n#........#\n#........#\n##########")
+	arena.add_child(room)
+	var holds := room.get_node_or_null("PlankSupports") as PlankSupports
+	var hangs: Array = holds.supports.filter(func(s: Dictionary) -> bool: return s.kind == "hang") if holds else []
+	check(not hangs.is_empty() and hangs.all(func(s: Dictionary) -> bool: return is_equal_approx(s.get("stirrup", 0.0), 3.0 * T + PlankSupports.deck_depth(look_of_zone("haar")))), "a raft's hangers take it under its logs")
+	room.queue_free()
+	# The two shafts the grade named: their hung decks vary in width and in the climb between them.
+	for path: String in ["res://levels/tower/foot.room", "res://levels/evercrown/veins.room"]:
+		var r := Room.from_file(path)
+		arena.add_child(r)
+		var h := r.get_node_or_null("PlankSupports") as PlankSupports
+		var widths := {}
+		var rows: Array = []
+		if h:
+			for d: Dictionary in h.decks:
+				widths[roundi((d.right - d.left) / T)] = true
+				if not d.y in rows:
+					rows.append(d.y)
+		rows.sort()
+		var gaps := {}
+		for i in range(1, rows.size()):
+			gaps[roundi((rows[i] - rows[i - 1]) / T)] = true
+		check(widths.size() >= 4, "%s: its decks are at least four widths (%s)" % [path, widths.keys()])
+		check(gaps.size() >= 3, "%s: and at least three climbs apart (%s)" % [path, gaps.keys()])
+		r.queue_free()
+
+
+func look_of_zone(zone: String) -> Dictionary:
+	return PlankSupports.LOOKS[zone]
 
 
 func test_plank_a_grown_shelf_swells_underneath() -> void:
