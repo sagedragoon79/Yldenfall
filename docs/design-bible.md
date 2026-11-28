@@ -1850,7 +1850,7 @@ Sean's reference shots for the room-density redesign (section 12.0 / the room-de
 **`LightShaft`** (`scripts/world/light_shaft.gd`) is a per-room overlay that draws a few broad, soft, angled god-ray beams down from the top of the room:
 
 - **Behind the tiles, in front of the backdrop** (`z_index = -1`). Solid geometry occludes a beam, so a shaft shows only in the open air of a room, rakes over the backdrop, and is cut off by any wall or platform in front of it. Every actor (player, foes, projectiles, drawn at `z >= 0`) also draws over the beams, so — like the room-light pools (12.10) and the drift pockets (12.16) — a shaft never falls across a foe or a telegraph, and combat reads over it unchanged.
-- **Additive and faint** (`PEAK` = 0.085, additive). A beam only ever adds a little light to the backdrop it falls on; it tints the air, it never washes anything out.
+- **Additive and faint** (`PEAK` = 0.085, additive; a sunlit zone's shafts may be stronger, 12.152). A beam only ever adds a little light to the backdrop it falls on; it tints the air, it never washes anything out.
 - **Per-zone light** (`SHAFTS`, keyed by zone, mirroring the `ZONE_HAZE`/`GRADE` families): warm gold through the hearths' windows (Hearthroot, the Spires), green-gold canopy sun in the woods (Heartwood, the High Boughs), pale cool light through the spring mist and water (the Haar, the Sunken Spring), violet crystal light (the Evercrown, Vorrhallow) and bare pale light through the grey stone (the Tower, the Trials). Every colour is bright (high luminance) so the additive draw adds light, never darkens; each pair's two zones lean opposite ways so they never cast one identical rake. A zone with no entry (the gym, any new zone) gets no shafts.
 - **Stable, not a mechanical comb.** Each beam is drawn as feathered vertical strips (no hard side edge) split into vertical bands that brighten toward the top (`along_alpha`: a soft head onset, then a fall to `TAIL` at the floor) — the god-ray gradient. Beam count scales with room width and their centres are spread between the margins with a per-beam jitter seeded by the room id, so a room's shafts are the same across frames and saves but never a dead-even row (`beam_centers`). The geometry is built once (12.3's static-overlay rule); a slow unison breathe is a cheap `self_modulate` tween with no redraw.
 
@@ -3460,6 +3460,16 @@ The grade of pass 670 named "tells drawn in the background's values": the Rot Dw
 - **The Crystal Dwarf's lane is keyed and its tips stand taller** (`CrystalDwarf.LANE_KEY`, `SEAM_HEIGHT` 10 px, 7 before). A dark pixel runs over the crack and down to the floor's top under it, the running tip has a dark box, and every crystal tip has a dark shard a pixel larger behind it.
 
 The tint, the pulse, the glint's growth and the wind-ups' lengths are unchanged. Judged by eye at 1x and 8x in `heartwood/dwarf_hall` and `vorrhallow/flooded_hall`. `test_a_tell_is_keyed_off_the_background` (`tests/test_tell_glint.gd`) holds it.
+
+### 12.152 The canopy's air is shaded and the sun falls through it (pass 675)
+
+The grade of pass 670 named "the canopy's flat mint wash". Measured in `boughs/canopy_bridge` in 8-pixel steps across the open air, every row from the canopy's underside down to the woods' crests had a median luminance of 136 out of 255, and the room's light shafts (12.17), additive at 0.085 over air that pale, did not show at all. The Boughs' day air (12.112) was right for the foes and wrong for the room: one value, lit from nowhere.
+
+- **A shade under the leaves** (`LightShaft.CANOPY`): a sunlit zone's open air is multiplied by `tint` (0.70, 0.80, 0.76) at the room's top, easing to no change `depth` (0.55) of the way down. It is drawn behind the tiles with the shafts, under them (`CanopyShade`, multiplied), so walls, planks and every actor keep their values, and the valley mist at the woods' foot, where the play line stands, is untouched.
+- **The sun through it** (`SHAFTS` may now carry its own `peak` and `half`): the Boughs' shafts are a warm gold (`f2e6a4`, the green-gold before) at `peak` 0.2 and `half` 44 px, so a beam is lighter than the shade beside it from the canopy down to the crests.
+- **No steps.** Each beam's strips and the shade's bands are drawn with their colour given at their corners, so both grade smoothly; at the stronger peak the old stepped strips read as seams. Other zones' shafts keep their peak and width and are only smoother.
+
+After: the same rows lie between medians 103 and 132, with beams 20 to 30 above the air beside them. Judged by eye at 1x and 2x in `boughs/canopy_bridge`, `boughs/sunlit_bough` and `heartwood/root_shrine` (a roofed zone, unchanged but for the smoother beams). `test_the_canopys_air_is_shaded_and_the_sun_falls_through_it` and `test_a_canopy_zones_shafts_carry_a_multiplied_shade_behind_them` (`tests/test_light_shaft.gd`) hold it.
 
 ## 13. Asset Production Plan
 
