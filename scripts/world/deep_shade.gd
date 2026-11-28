@@ -63,6 +63,8 @@ var _zone := ""
 var _seed := 0
 ## The deep's forms, built once per setup: [Rect2, Color] pairs, drawn over the shade.
 var _motif: Array = []
+## Whether the ground under a floor stops at the floor shade's full darkness (pass 681).
+var _floors := false
 ## Each form's bounds, for tests.
 var _strokes: Array[Rect2] = []
 
@@ -104,8 +106,10 @@ const MOTIF_LEN := Vector2(56.0, 150.0)
 ## Reads the room's solid cells (`solids`) over the `size` tile grid. When
 ## `only` is not empty, only those cells are shaded; cells in `skip` never are.
 ## `zone` picks the forms the deepest mass holds (none for a zone not in MOTIF);
-## `motif_seed` makes them the room's own.
-func setup(solids: Dictionary, size: Vector2i, only := {}, skip := {}, zone := "", motif_seed := 0) -> void:
+## `motif_seed` makes them the room's own. With `floors`, the ground under a
+## floor (`FloorShade.floor_tops`) sinks no darker than the floor shade's full.
+func setup(solids: Dictionary, size: Vector2i, only := {}, skip := {}, zone := "", motif_seed := 0, floors := false) -> void:
+	_floors = floors
 	_solids = solids
 	_size = size
 	_only = only
@@ -118,9 +122,17 @@ func setup(solids: Dictionary, size: Vector2i, only := {}, skip := {}, zone := "
 ## Recomputes the field and the rects (after the solid cells change).
 func rebuild() -> void:
 	_field = darkness_field(_solids, _size)
+	if _floors:
+		cap_under_floors(_field, _size, FloorShade.floor_tops(_solids, _size, _skip))
 	_rects = build_rects(_field, _size, _only, _skip)
 	_build_motif()
 	queue_redraw()
+
+
+## The darkness field (0..1 per cell, row major), unquantised: `FloorShade`
+## eases off it so the two never stack (pass 681).
+func field() -> PackedFloat32Array:
+	return _field
 
 
 ## The distance in tiles from each cell to the nearest open cell, 8-way, row
@@ -168,6 +180,24 @@ static func darkness_field(solids: Dictionary, size: Vector2i) -> PackedFloat32A
 	for i in dist.size():
 		f[i] = darkness_for(dist[i])
 	return f
+
+
+## Under a floor the ground is the frame's foreground, cut by the screen's
+## edge, not mass deep in the world (pass 681). The pass 680 grade read a heavy
+## dark ellipse under the Source Hall's floor: eight tiles of ground under the
+## walking line sank radially from the pool and the floor into a near-black
+## blob, with the floor shade's band laid over it. Now each cell at or under a
+## floor's top (`tops`, -1 for none) is held at the floor shade's full darkness,
+## so `FloorShade` grades that ground by its depth under the walking line and
+## the two read as one fall into shadow. Walls and hanging mass are untouched.
+static func cap_under_floors(field: PackedFloat32Array, size: Vector2i, tops: PackedInt32Array) -> void:
+	var cap := FloorShade.MAX_ALPHA / MAX_ALPHA
+	for x in mini(size.x, tops.size()):
+		if tops[x] < 0:
+			continue
+		for y in range(tops[x], size.y):
+			var i := y * size.x + x
+			field[i] = minf(field[i], cap)
 
 
 ## The field blended between cell centres at `p`, in tiles (a cell's centre is
@@ -227,6 +257,11 @@ static func build_rects(field: PackedFloat32Array, size: Vector2i, only := {}, s
 			var origin := Vector2(cell * TILE)
 			if lo >= 1.0:
 				out.append([Rect2(origin, Vector2(TILE, TILE)), alpha_for(LEVELS)])
+				continue
+			# Ground held under a floor (pass 681) is one flat value over the cell:
+			# one rect at the floor shade's full, not 64 dithered blocks.
+			if lo == hi and lo >= FloorShade.MAX_ALPHA / MAX_ALPHA - 0.0001:
+				out.append([Rect2(origin, Vector2(TILE, TILE)), MAX_ALPHA * lo])
 				continue
 			for by in per:
 				var run_start := 0

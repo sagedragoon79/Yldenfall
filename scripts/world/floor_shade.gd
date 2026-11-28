@@ -23,6 +23,13 @@ extends Node2D
 ##
 ## It draws over the tiles, `EdgeShade` and `DeepShade`, under the actors, once
 ## per room load and again when a guardian tears the floor.
+##
+## It never stacks on the deep shade (pass 681). The pass 680 grade read a
+## heavy dark ellipse under the Source Hall's floor: where a floor runs over
+## deep mass, `DeepShade` already darkens the ground, and this shade laid its
+## own 0.7 over it (0.96 together). Now it only adds the darkness the deep shade
+## has not already given, so the two together are as dark as the darker of them
+## and no more: `1 - (1 - floor) (1 - deep) = max(floor shade, deep shade)`.
 
 const TILE := 16
 ## Near-black with the same faint cool bias as `DeepShade`.
@@ -33,6 +40,11 @@ const FROM := 0.5
 const SPAN := 2.0
 ## The shade's opacity at full: the ground still shows through.
 const MAX_ALPHA := 0.7
+## Columns are drawn in this many strips, so the easing follows the deep shade
+## (whose field is blended between cell centres: two strips meet its corners).
+const STRIPS := 2
+## Below the falloff, rows of this many tiles, so the easing follows the deep shade down.
+const ROW := 1.0
 ## The fewest tiles of ground a floor needs to be shaded.
 const MIN_RUN := 2
 ## Bands the falloff is drawn in, colours graded between them.
@@ -41,13 +53,17 @@ const BANDS := 4
 ## Per column, the row of the floor's top, or -1 where the column has no floor.
 var tops := PackedInt32Array()
 var _size := Vector2i.ZERO
+## The deep shade's field over the same grid (`DeepShade.field()`), or empty.
+var _deep := PackedFloat32Array()
 
 
 ## Reads the room's solid cells over the `size` tile grid; columns holding a
-## cell in `skip` (a secret) are not shaded.
-func setup(solids: Dictionary, size: Vector2i, skip := {}) -> void:
+## cell in `skip` (a secret) are not shaded. `deep` is the deep shade's field
+## (`DeepShade.field()`), which this shade eases off; empty for none.
+func setup(solids: Dictionary, size: Vector2i, skip := {}, deep := PackedFloat32Array()) -> void:
 	_size = size
 	tops = floor_tops(solids, size, skip)
+	_deep = deep if deep.size() == size.x * size.y else PackedFloat32Array()
 	queue_redraw()
 
 
@@ -78,6 +94,35 @@ static func alpha_at_depth(depth: float) -> float:
 	return MAX_ALPHA * t * t * (3.0 - 2.0 * t)
 
 
+## The opacity this shade adds over a deep shade of opacity `deep` so the two
+## together reach `want` and never more: none where the deep is already as dark.
+static func eased(want: float, deep: float) -> float:
+	if deep >= want:
+		return 0.0
+	return (want - deep) / (1.0 - deep)
+
+
+## The deep shade's opacity at world pixel `px`, its field unquantised.
+func deep_alpha_at_pixel(px: Vector2) -> float:
+	if _deep.is_empty():
+		return 0.0
+	# `DeepShade.field_at` inlined: this runs for every corner the shade draws.
+	var qx := px.x / TILE - 0.5
+	var qy := px.y / TILE - 0.5
+	var x0 := floori(qx)
+	var y0 := floori(qy)
+	var tx := qx - x0
+	var ty := qy - y0
+	var w := _size.x
+	var xa := clampi(x0, 0, w - 1)
+	var xb := clampi(x0 + 1, 0, w - 1)
+	var ra := clampi(y0, 0, _size.y - 1) * w
+	var rb := clampi(y0 + 1, 0, _size.y - 1) * w
+	var top := _deep[ra + xa] + (_deep[ra + xb] - _deep[ra + xa]) * tx
+	var low := _deep[rb + xa] + (_deep[rb + xb] - _deep[rb + xa]) * tx
+	return DeepShade.MAX_ALPHA * (top + (low - top) * ty)
+
+
 ## The floor top measured at the west edge of column `x` (in rows): the lower
 ## of this column's and its west neighbour's, so the shade meets itself there.
 func _edge_top(x: int, edge: int) -> float:
@@ -88,8 +133,8 @@ func _edge_top(x: int, edge: int) -> float:
 	return float(maxi(own, tops[n]))
 
 
-## The opacity drawn at world pixel `px` (for tests): 0 where nothing is drawn.
-func alpha_at_pixel(px: Vector2) -> float:
+## The darkness this floor wants at world pixel `px`, before easing: 0 off a floor.
+func want_at_pixel(px: Vector2) -> float:
 	var x := floori(px.x / TILE)
 	if x < 0 or x >= _size.x or tops.is_empty() or tops[x] < 0:
 		return 0.0
@@ -100,42 +145,99 @@ func alpha_at_pixel(px: Vector2) -> float:
 	return alpha_at_depth(px.y / TILE - top)
 
 
+## The opacity drawn at world pixel `px` (for tests): 0 where nothing is drawn.
+func alpha_at_pixel(px: Vector2) -> float:
+	return eased(want_at_pixel(px), deep_alpha_at_pixel(px))
+
+
+## This shade and the deep shade together at world pixel `px` (for tests).
+func combined_alpha_at_pixel(px: Vector2) -> float:
+	return 1.0 - (1.0 - alpha_at_pixel(px)) * (1.0 - deep_alpha_at_pixel(px))
+
+
 func _draw() -> void:
+	# One triangle list for the room: per column, STRIPS strips across, and rows
+	# at the falloff's bands then every ROW tiles to the bottom, each corner
+	# coloured with the eased opacity there, so it grades smoothly. Each row's
+	# corners are worked out once and shared with the quads under them; a column
+	# stops once a row past the falloff adds nothing and the deep shade holds
+	# every cell under it at least as dark (the load budget, bible 14).
 	var bottom := float(_size.y * TILE)
+	var pts := PackedVector2Array()
+	var cols := PackedColorArray()
+	var idx := PackedInt32Array()
+	var depths := PackedFloat32Array()
+	for k in BANDS + 1:
+		depths.append(FROM + SPAN * k / BANDS)
+	var d := FROM + SPAN
+	while d < float(_size.y) + ROW:
+		d += ROW
+		depths.append(d)
+	var covered := _covered_from()
 	for x in _size.x:
 		if tops[x] < 0:
 			continue
 		var l := _edge_top(x, -1)
 		var r := _edge_top(x, 1)
-		var x0 := float(x * TILE)
-		var x1 := x0 + TILE
-		for k in BANDS + 1:
-			var d0 := FROM + SPAN * k / BANDS
-			var d1 := FROM + SPAN * (k + 1) / BANDS
-			var a0 := alpha_at_depth(d0)
-			var a1 := alpha_at_depth(d1)
-			var yl0 := minf((l + d0) * TILE, bottom)
-			var yr0 := minf((r + d0) * TILE, bottom)
-			var yl1 := minf((l + d1) * TILE, bottom)
-			var yr1 := minf((r + d1) * TILE, bottom)
-			if k == BANDS:
-				# The last band runs to the room's bottom at the full shade.
-				yl1 = bottom
-				yr1 = bottom
-				a1 = a0
-			if yl0 >= bottom and yr0 >= bottom:
+		var prev_p := PackedVector2Array()
+		var prev_a := PackedFloat32Array()
+		for k in depths.size():
+			var row_p := PackedVector2Array()
+			var row_a := PackedFloat32Array()
+			var want := alpha_at_depth(depths[k])
+			var any := false
+			for sx in STRIPS + 1:
+				var u := float(sx) / STRIPS
+				var p := Vector2((x + u) * TILE, minf((lerpf(l, r, u) + depths[k]) * TILE, bottom))
+				var a := eased(want, deep_alpha_at_pixel(p))
+				row_p.append(p)
+				row_a.append(a)
+				any = any or a > 0.002
+			if k > 0:
+				var lit := any
+				for a in prev_a:
+					lit = lit or a > 0.002
+				if lit:
+					for sx in STRIPS:
+						var base := pts.size()
+						pts.append_array([prev_p[sx], prev_p[sx + 1], row_p[sx + 1], row_p[sx]])
+						cols.append_array([Color(COLOR, prev_a[sx]), Color(COLOR, prev_a[sx + 1]),
+								Color(COLOR, row_a[sx + 1]), Color(COLOR, row_a[sx])])
+						idx.append_array([base, base + 1, base + 2, base, base + 2, base + 3])
+			if row_p[0].y >= bottom and row_p[STRIPS].y >= bottom:
 				break
-			var c0 := Color(COLOR, a0)
-			var c1 := Color(COLOR, a1)
-			# A side clamped to the bottom closes to a point: drop its doubled corner.
-			var pts := PackedVector2Array()
-			var cols := PackedColorArray()
-			for v: Array in [[Vector2(x0, yl0), c0], [Vector2(x1, yr0), c0], [Vector2(x1, yr1), c1], [Vector2(x0, yl1), c1]]:
-				if pts.is_empty() or (v[0] as Vector2).distance_to(pts[pts.size() - 1]) > 0.01:
-					pts.append(v[0])
-					cols.append(v[1])
-			if pts.size() > 3 and pts[0].distance_to(pts[pts.size() - 1]) <= 0.01:
-				pts.remove_at(pts.size() - 1)
-				cols.remove_at(cols.size() - 1)
-			if pts.size() >= 3:
-				draw_polygon(pts, cols)
+			if not any and depths[k] >= FROM + SPAN and covered[x] >= 0 and row_p[0].y >= covered[x] * TILE and row_p[STRIPS].y >= covered[x] * TILE:
+				break
+			prev_p = row_p
+			prev_a = row_a
+	if not idx.is_empty() and is_inside_tree():
+		RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), idx, pts, cols)
+
+
+## Per column, the row from which the deep shade holds every cell down to the
+## bottom, in this column and its neighbours, at least as dark as the floor
+## shade's full; -1 where it never does or there is no deep shade.
+func _covered_from() -> PackedInt32Array:
+	var out := PackedInt32Array()
+	out.resize(_size.x)
+	out.fill(-1)
+	if _deep.is_empty():
+		return out
+	var need := MAX_ALPHA / DeepShade.MAX_ALPHA - 0.001
+	var from := PackedInt32Array()
+	from.resize(_size.x)
+	for x in _size.x:
+		var y := _size.y
+		while y > 0 and _deep[(y - 1) * _size.x + x] >= need:
+			y -= 1
+		from[x] = y
+	for x in _size.x:
+		var y := from[x]
+		if x > 0:
+			y = maxi(y, from[x - 1])
+		if x < _size.x - 1:
+			y = maxi(y, from[x + 1])
+		# The field blends between cell centres: a cell further down is safe.
+		if y < _size.y - 1:
+			out[x] = y + 1
+	return out

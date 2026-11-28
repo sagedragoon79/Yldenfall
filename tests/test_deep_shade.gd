@@ -82,6 +82,18 @@ func test_deep_cells_are_one_rect_each() -> void:
 	check(shade.rect_count() == size.x * size.y, "a uniformly deep cell is one rect, not 64 blocks (%d rects)" % shade.rect_count())
 
 
+
+func test_ground_held_under_a_floor_is_one_rect_a_cell() -> void:
+	# Pass 681: the cap under a floor made every deep cell 64 dithered blocks, and
+	# the biggest rooms loaded past the 500 ms budget.
+	var size := Vector2i(20, 20)
+	var field := PackedFloat32Array()
+	field.resize(size.x * size.y)
+	field.fill(FloorShade.MAX_ALPHA / DeepShade.MAX_ALPHA)
+	var rects := DeepShade.build_rects(field, size)
+	check(rects.size() == size.x * size.y, "a held cell is one rect (%d rects)" % rects.size())
+	check(is_equal_approx(float(rects[0][1]), FloorShade.MAX_ALPHA), "at the floor shade's full")
+
 func test_skip_and_only_split_the_cells() -> void:
 	var size := Vector2i(12, 3)
 	var solids := _mass(size, Rect2i(0, 0, 1, 3))
@@ -112,7 +124,10 @@ func test_a_room_sinks_its_deep_mass_and_the_secret_layer_fades_its_own() -> voi
 	arena.add_child(room)
 	var shade := room.get_node("DeepShade") as DeepShade
 	check(shade != null, "the room has a deep shade")
-	check(shade.level_at_pixel(Vector2(3.5, 12.5) * Room.TILE) == DeepShade.LEVELS, "mass far below the floor is dark")
+	# Under a floor the ground stops at the floor shade's full (pass 681), a step short of the deepest.
+	var held := roundi(FloorShade.MAX_ALPHA / DeepShade.MAX_ALPHA * DeepShade.LEVELS)
+	check(shade.level_at_pixel(Vector2(3.5, 12.5) * Room.TILE) >= held, "mass far below the floor is dark")
+	check(shade.field()[12 * 16 + 3] < 1.0, "but held at the floor shade's full, not the deepest")
 	check(shade.level_at_pixel(Vector2(3.5, 4.5) * Room.TILE) == 0, "the floor's lit edge is bare")
 	check(shade.level_at_pixel(Vector2(12.5, 2.5) * Room.TILE) == 0, "the hidden room under its cover is not darkened by the main shade")
 	check(room.secrets != null and room.secrets.get_node_or_null("DeepShade") != null, "the secret layer carries its own shade, so it fades with the cover")
