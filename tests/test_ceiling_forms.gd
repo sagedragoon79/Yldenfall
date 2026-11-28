@@ -14,6 +14,7 @@ const HALL := "vorrhallow/flooded_hall"
 ## A roof this many rows thick over the burrows' tunnel is a dead band (pass 662).
 const BURROW_THICK := 9
 const PLAZA := "hearthroot/plaza"
+const SOURCE := "sunken/source_hall"
 
 
 func _grid(id: String) -> Array[String]:
@@ -194,3 +195,28 @@ func test_the_plaza_ceiling_is_one_vault() -> void:
 			check(run <= 10, "no step off the crown runs longer than ten columns (column %d)" % (i + 1))
 	check(steps >= 10 and chamfered == steps, "every one of its %d steps is chamfered by a haunch (%d)" % [steps, chamfered])
 
+
+
+## Pass 679 (bible 12.156): the Source Hall's ceiling was a flat brick band over a
+## box of a room; it is one vault, springing low at both walls.
+func test_the_source_hall_is_one_vault() -> void:
+	var grid := _grid(SOURCE)
+	var prof := _profile(grid)
+	var crown: int = prof.min()
+	check(crown <= 4, "the crown stands at row 4 or higher (%d)" % crown)
+	check(_turns(grid) == 1, "the ceiling turns once (%d)" % _turns(grid))
+	check(prof[0] >= 8 and prof.back() >= 8, "it springs from row 8 or lower at both walls (%d, %d)" % [prof[0], prof.back()])
+	var steps := 0
+	var chamfered := 0
+	var run := 1
+	for i in range(1, prof.size()):
+		if prof[i] == prof[i - 1]:
+			run += 1
+			continue
+		run = 1
+		steps += 1
+		var x := i + 1 if prof[i] < prof[i - 1] else i
+		var y := mini(prof[i], prof[i - 1])
+		if "`'".contains(grid[y][x]):
+			chamfered += 1
+	check(steps >= 8 and chamfered == steps, "every one of its %d steps is chamfered by a haunch (%d)" % [steps, chamfered])
