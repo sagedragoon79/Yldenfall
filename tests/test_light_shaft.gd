@@ -87,3 +87,54 @@ func test_paired_zones_lean_opposite_ways() -> void:
 		var a: float = LightShaft.SHAFTS[pair[0]]["slope"]
 		var b: float = LightShaft.SHAFTS[pair[1]]["slope"]
 		check(signf(a) != signf(b), "%s and %s lean opposite ways" % [pair[0], pair[1]])
+
+
+func test_the_canopys_air_is_shaded_and_the_sun_falls_through_it() -> void:
+	# Design bible 12.152: a sunlit zone's air lies in shade under its roof of
+	# leaves and its shafts are the sun through it, so the air is not one flat wash.
+	check(not LightShaft.CANOPY.is_empty(), "a zone has a canopy")
+	for z: String in LightShaft.CANOPY:
+		check(Backdrop.ZONE_AIR.has(z), "%s is a sunlit zone (day air, 12.112)" % z)
+		check(LightShaft.SHAFTS.has(z), "%s has shafts to fall through its shade" % z)
+		var top := LightShaft.shade_at(z, 0.0)
+		var top_lum := top.r * 0.299 + top.g * 0.587 + top.b * 0.114
+		check(top_lum < 0.85, "%s air is in shade under its roof (%.2f)" % [z, top_lum])
+		check(top_lum > 0.6, "%s shade is a shade, not a night (%.2f)" % [z, top_lum])
+		var depth: float = LightShaft.CANOPY[z]["depth"]
+		check(LightShaft.shade_at(z, depth).is_equal_approx(Color.WHITE),
+			"%s shade clears by its depth" % z)
+		check(LightShaft.shade_at(z, 1.0).is_equal_approx(Color.WHITE), "%s floor is untouched" % z)
+		var last := -1.0
+		var steady := true
+		for i in 21:
+			var c := LightShaft.shade_at(z, float(i) / 20.0)
+			var lum := c.r * 0.299 + c.g * 0.587 + c.b * 0.114
+			if lum < last - 0.0001:
+				steady = false
+			last = lum
+		check(steady, "%s shade only lightens going down" % z)
+		# The sun has to read against the pale day air: twice the default strength.
+		check(LightShaft.peak_for(z) >= LightShaft.PEAK * 2.0, "%s shafts are strong enough to see" % z)
+		check(LightShaft.half_for(z) >= LightShaft.HALF, "%s shafts are no narrower" % z)
+	check(LightShaft.shade_at("tower", 0.0).is_equal_approx(Color.WHITE), "a roofed zone has no canopy shade")
+	check(is_equal_approx(LightShaft.peak_for("tower"), LightShaft.PEAK), "other zones keep the default peak")
+	check(is_equal_approx(LightShaft.half_for("tower"), LightShaft.HALF), "other zones keep the default width")
+
+
+func test_a_canopy_zones_shafts_carry_a_multiplied_shade_behind_them() -> void:
+	for z: String in ["boughs", "tower"]:
+		var shaft := LightShaft.new()
+		shaft.zone = z
+		shaft.room_size = Vector2(640, 360)
+		shaft.seed = 7
+		arena.add_child(shaft)
+		var shade := shaft.get_node_or_null("CanopyShade") as Node2D
+		if z == "boughs":
+			check(shade != null, "the Boughs' shafts carry a canopy shade")
+			if shade != null:
+				var mat := shade.material as CanvasItemMaterial
+				check(mat != null and mat.blend_mode == CanvasItemMaterial.BLEND_MODE_MUL,
+					"the shade multiplies the air, so it only darkens")
+				check(shade.show_behind_parent, "the shade draws under the beams")
+		else:
+			check(shade == null, "the Tower's shafts carry no canopy shade")

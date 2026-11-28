@@ -56,7 +56,7 @@ const SHAFTS := {
 	"hearthroot": {"color": Color("f0dca0"), "slope": 0.22},
 	"spires": {"color": Color("f0dca0"), "slope": -0.26},
 	"heartwood": {"color": Color("d6e89a"), "slope": 0.26},
-	"boughs": {"color": Color("d6e89a"), "slope": -0.30},
+	"boughs": {"color": Color("f2e6a4"), "slope": -0.30, "peak": 0.2, "half": 44.0},
 	"haar": {"color": Color("c2e2ea"), "slope": 0.20},
 	"sunken": {"color": Color("bfe6de"), "slope": -0.18},
 	"evercrown": {"color": Color("d8bff0"), "slope": 0.24},
@@ -64,6 +64,18 @@ const SHAFTS := {
 	"tower": {"color": Color("dcd8e0"), "slope": 0.28},
 	"trials": {"color": Color("dcd8e0"), "slope": -0.24},
 }
+
+## The canopy's shade (design bible 12.152, pass 675): a sunlit zone's open air is
+## lit from above through a roof of leaves, so it is not one flat wash. Under the
+## roof the air lies in shade, multiplied by `tint` at the room's top and clearing
+## to nothing `depth` of the way down; the zone's shafts (stronger there, `peak` and
+## `half` in SHAFTS) are the sun falling through it. Drawn behind the tiles with the
+## beams, so walls, platforms and every actor stay as they were.
+const CANOPY := {
+	"boughs": {"tint": Color(0.7, 0.8, 0.76), "depth": 0.55},
+}
+## Bands the canopy's shade is drawn in, top to bottom.
+const SHADE_BANDS := 24
 
 ## Set by Room before the node enters the tree.
 var zone := ""
@@ -84,7 +96,37 @@ func _ready() -> void:
 	z_index = -1
 	if SHAFTS.has(zone):
 		_centers = beam_centers(room_size.x, seed)
+	if CANOPY.has(zone):
+		var shade := CanopyShade.new()
+		shade.name = "CanopyShade"
+		shade.zone = zone
+		shade.room_size = room_size
+		# Under the beams: the sun falls through the shade, not under it.
+		shade.show_behind_parent = true
+		add_child(shade)
 	queue_redraw()
+
+
+## A zone's peak additive brightness: its own `peak` in SHAFTS, or PEAK.
+static func peak_for(a_zone: String) -> float:
+	return float(SHAFTS.get(a_zone, {}).get("peak", PEAK))
+
+
+## A zone's beam half-width: its own `half` in SHAFTS, or HALF.
+static func half_for(a_zone: String) -> float:
+	return float(SHAFTS.get(a_zone, {}).get("half", HALF))
+
+
+## What the canopy's shade multiplies the air by at `t` (0 the room's top, 1 its
+## floor): `tint` at the top, easing to white (no change) by `depth`. White for a
+## zone with no canopy. Pure, so the gradient is tested without a scene.
+static func shade_at(a_zone: String, t: float) -> Color:
+	if not CANOPY.has(a_zone):
+		return Color.WHITE
+	var spec: Dictionary = CANOPY[a_zone]
+	var k := clampf(t / float(spec["depth"]), 0.0, 1.0)
+	k = k * k * (3.0 - 2.0 * k)
+	return (spec["tint"] as Color).lerp(Color.WHITE, k)
 
 
 ## How many beams a room of this width carries: one per `SPACING` px, clamped.
@@ -138,32 +180,41 @@ func _draw() -> void:
 	var spec: Dictionary = SHAFTS[zone]
 	var color: Color = spec["color"]
 	var slope: float = spec["slope"]
+	var peak := peak_for(zone)
+	var half := half_for(zone)
 	var h := room_size.y
 	for cx: float in _centers:
-		var ox := -HALF
-		while ox < HALF:
-			var mid := ox + STRIP * 0.5
-			var a_across := across_alpha(mid, HALF)
-			ox += STRIP
-			if a_across <= 0.0:
-				continue
-			var ox1 := minf(ox, HALF)
-			for b in BANDS:
-				var y0 := float(b) / BANDS * h
-				var y1 := float(b + 1) / BANDS * h
-				var a := PEAK * a_across * along_alpha((float(b) + 0.5) / BANDS)
-				if a <= 0.0:
-					continue
-				var c := Color(color.r, color.g, color.b, a)
-				draw_colored_polygon(
-					PackedVector2Array([
-						Vector2(cx + mid - STRIP * 0.5 + slope * y0, y0),
-						Vector2(cx + ox1 + slope * y0, y0),
-						Vector2(cx + ox1 + slope * y1, y1),
-						Vector2(cx + mid - STRIP * 0.5 + slope * y1, y1),
-					]),
-					c
-				)
+		# Each strip is drawn with its colour given at its corners, so the beam
+		# grades smoothly across and down instead of in visible steps (pass 675:
+		# at the Boughs' stronger peak the steps read as seams).
+		var ox := -half
+		while ox < half:
+			var ox1 := minf(ox + STRIP, half)
+			var a0 := across_alpha(ox, half)
+			var a1 := across_alpha(ox1, half)
+			if a0 > 0.0 or a1 > 0.0:
+				for b in BANDS:
+					var t0 := float(b) / BANDS
+					var t1 := float(b + 1) / BANDS
+					var y0 := t0 * h
+					var y1 := t1 * h
+					var d0 := peak * along_alpha(t0)
+					var d1 := peak * along_alpha(t1)
+					draw_polygon(
+						PackedVector2Array([
+							Vector2(cx + ox + slope * y0, y0),
+							Vector2(cx + ox1 + slope * y0, y0),
+							Vector2(cx + ox1 + slope * y1, y1),
+							Vector2(cx + ox + slope * y1, y1),
+						]),
+						PackedColorArray([
+							Color(color, d0 * a0),
+							Color(color, d0 * a1),
+							Color(color, d1 * a1),
+							Color(color, d1 * a0),
+						])
+					)
+			ox = ox1
 
 
 ## A slow unison breathe, so the shafts feel like living light rather than a decal.
@@ -173,3 +224,33 @@ func _process(delta: float) -> void:
 		return
 	_t += delta
 	self_modulate.a = 0.86 + 0.14 * (0.5 + 0.5 * sin(_t * 0.8))
+
+
+## The canopy's shade (CANOPY): a multiplied gradient over the open air, darkest
+## under the room's top. Built once; no per-frame redraw.
+class CanopyShade extends Node2D:
+	var zone := ""
+	var room_size := Vector2.ZERO
+
+	func _ready() -> void:
+		var mat := CanvasItemMaterial.new()
+		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_MUL
+		material = mat
+		queue_redraw()
+
+	func _draw() -> void:
+		var h := room_size.y
+		var bands := LightShaft.SHADE_BANDS
+		var w := room_size.x
+		for b in bands:
+			var t0 := float(b) / bands
+			var t1 := float(b + 1) / bands
+			var c0 := LightShaft.shade_at(zone, t0)
+			var c1 := LightShaft.shade_at(zone, t1)
+			if c0.is_equal_approx(Color.WHITE):
+				break
+			# Graded down each band, so the shade has no steps.
+			draw_polygon(
+				PackedVector2Array([Vector2(0, t0 * h), Vector2(w, t0 * h), Vector2(w, t1 * h), Vector2(0, t1 * h)]),
+				PackedColorArray([c0, c0, c1, c1])
+			)
