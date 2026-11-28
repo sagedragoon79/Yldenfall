@@ -49,7 +49,7 @@ not drawn at rest, nor in the tell); with the old 40 by 34 reach it fails once.
 
 ## Full suite
 
-FULL_SUITE_RESULT
+One full run (`TEST_TIMEOUT=7200`): 38,625 checks passed, 0 failed. CI (test and mix) is green.
 
 ## Rubric (design bible 15.3)
 
