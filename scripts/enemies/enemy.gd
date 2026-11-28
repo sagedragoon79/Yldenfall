@@ -99,6 +99,15 @@ const TELL_REACH_RIM := 0.45
 ## dark backing `GLINT_KEY` (half pixels) wider than its arms, so the warning has a
 ## value break on a light ground as well as a dark one.
 const TELL_KEY := Color("120c16")
+## A foe that carries its own light is keyed off it (bible 12.154, pass 677). The pass
+## 675 grade read the Crystal Dwarf as "lost in pink glow and the water band": his
+## steel, lifted by `FoeLight`, was the glow's own middle value, and nothing closed
+## his shape. A foe with a `FoeGlow` (`light_keyed`, set by the glow) wears a keyline
+## of near-black (`TELL_KEY`) round its whole silhouette, `LIGHT_KEY_STEPS` px wide,
+## at `LIGHT_KEY_RIM`, drawn first, so the glow lies behind a dark edge and the body
+## stands in front of it as the silhouette 12.52 meant.
+const LIGHT_KEY_STEPS := 2
+const LIGHT_KEY_RIM := 0.95
 const TELL_KEY_RIM := 0.5
 const TELL_KEY_STEP := 2.0
 const GLINT_KEY := 2.0
@@ -254,6 +263,10 @@ var _glint_drawn := 0.0
 ## Whether the last tell drawn wore its dark keyline (12.151), and its glint a backing.
 var _key_drawn := false
 var _glint_keyed := false
+## True for a foe that carries its own light (a `FoeGlow` sets it), and whether its
+## last sheet drawing wore the dark keyline that parts it from that light (12.154).
+var light_keyed := false
+var _light_key_drawn := false
 var _glint_at := Vector2.ZERO
 ## How far into its rear this foe's last sheet frame was drawn (0 to 1), and the
 ## most of the weapon's light that lay on it (an alpha; 0 with none).
@@ -821,6 +834,15 @@ func draw_sheet(sheet: String, anim: String, t: float, white := false, offset :=
 	_rear_drawn = rear_at(state_time) if glint else 0.0
 	_key_drawn = false
 	_glint_keyed = false
+	_light_key_drawn = false
+	if light_keyed and not dead:
+		# Keyed off its own light (12.154): its silhouette in near-black, a pixel out all
+		# round, under everything else; a tell's or a blow's rim lies over it.
+		for k in range(LIGHT_KEY_STEPS, 0, -1):
+			for step: Vector2 in RIM_STEPS:
+				draw_set_transform_matrix(_sheet_transform(offset + step * float(k)))
+				Sheet.draw(self, sheet, anim, f, Color(TELL_KEY, LIGHT_KEY_RIM), true)
+		_light_key_drawn = true
 	if _tell_drawn and glint:
 		# The tell lights the weapon, not the foe: the rim only near the point.
 		_sheet_white_alpha = 0.0
@@ -946,6 +968,11 @@ static func glint_arm(time: float, lit: bool) -> float:
 ## The arm of the glint this foe's last sheet drawing wore (0 when it wore none).
 func glint_drawn() -> float:
 	return _glint_drawn
+
+
+## Whether this foe's last sheet drawing wore the keyline off its own light (12.154).
+func light_key_drawn() -> bool:
+	return _light_key_drawn
 
 
 ## Whether this foe's last tell wore its dark keyline outside the warm rim (12.151).

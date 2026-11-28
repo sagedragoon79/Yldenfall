@@ -3277,7 +3277,7 @@ Judged by eye at 1x and 3x in the eleven fight frames: the grub in `heartwood-hi
 
 The grade of pass 655 found fights hard to read, and among its reasons "a foe half under the flooded hall's cyan water band". The tide (12.41) stands a full tile (32 px) deep on the floors and is drawn in front of what wades in it, at up to 0.68 alpha toward the floor, with the hall's mirror (12.115) laid over it at 0.5: the Crystal Dwarf (a 28 px box) lost everything under its belt to a teal band, and the hero his boots.
 
-- **Cleared over a wader** (`Tide.CLEAR` 0.35, `CLEAR_PAD` 2 px). Over every body that breaks the surface (the waders of 12.41), from its box's edge 2 px out, the surface row's body and its mirror are drawn at 0.35 of their strength, so legs and feet show through, tinted, under the bright waterline that still crosses them. The water elsewhere is as before, and the ripples, glints and laps stay on top.
+- **Cleared over a wader** (`Tide.CLEAR` 0.35, 0.2 since pass 677 (12.154); `CLEAR_PAD` 2 px). Over every body that breaks the surface (the waders of 12.41), from its box's edge 2 px out, the surface row's body and its mirror are drawn at 0.35 of their strength, so legs and feet show through, tinted, under the bright waterline that still crosses them. The water elsewhere is as before, and the ripples, glints and laps stay on top.
 - **In the dither's columns** (`CHUNK` 4 px). The clearing is laid in 4 px columns, the body strip's dither period, so the pattern keeps its phase; one more column either side is half way back, so the clearing has no hard edge. The mirror's shader reads the same spans (`clear_spans`, at most `MAX_CLEAR` 8 at once) and clears by the same amount. The deep water's swim surface (`SwimWater`) shares the shader and clears nothing.
 
 Judged by eye at 1x and 3x in `vorrhallow-tell`: the Crystal Dwarf now stands whole in the water with its feet on the floor, and the hero's boots show; the band reads as water round them, not a bar across them. `test_the_water_clears_over_a_wader` (`tests/test_tide_wake.gd`) holds it.
@@ -3486,6 +3486,16 @@ Each family of zones now builds its own deck (`PlankSupports.DECKS`, a `deck` pe
 The two shafts are replanned with the same climb: `tower/foot`'s hung decks are three to nine cells wide and three, four or seven rows apart; the veins' are four to ten wide and two, three or four rows apart, at no fixed column, and where one deck now stands within a post's reach of another (12.30) it stands on posts instead of hanging. Every light vein keeps the deck two rows under it that it had, and both rooms pass the reachability checker. Collision of the decks themselves is untouched; it is dressing only.
 
 Judged by eye at 1x and 4x in `tower/foot`, `evercrown/veins`, `spires/sky_steps` and `haar/marsh_road` (the raft, faint under the fog as everything there is). `test_plank_each_zone_family_builds_its_own_deck` (`tests/test_plank_supports.gd`) holds it: every zone builds a known deck and every deck is built, the four graded zones each build their own, the truss's zigzag, the raft's scallop and log count, the slab's stone, drop and corbelled foot, a raft taken in its stirrups under the logs, and at least four widths and three climbs among each named shaft's decks.
+
+### 12.154 A foe that carries its own light is keyed off it (pass 677)
+
+The grade of pass 675 named "the flooded hall's foe lost in pink glow and the water band". Measured in `vorrhallow-tell`, the Crystal Dwarf's steel, lifted to the cast's middle value by `FoeLight` (12.43, 12.149), was the value of his own crystal's glow behind him (12.52), and his sheet has no closed outline, so the silhouette 12.52 meant to make never formed: a grey figure in a pink cloud, cut at the belt by the tide.
+
+- **A keyline round the whole figure** (`Enemy.LIGHT_KEY_STEPS` 2 px, `LIGHT_KEY_RIM` 0.95, in `TELL_KEY` near-black). A foe that carries a `FoeGlow` is marked by it (`Enemy.light_keyed`), and its sheet frame is drawn first as a near-black silhouette one and two pixels out on every side, under the body and under a tell's or a blow's rim, which lie over it as before. The glow now lies behind a dark edge and the body in front of it. Dead, he is drawn without it, as his glow goes out.
+- **The glow is a pocket at the crystal** (`CrystalDwarf.GLOW_REACH` 30 by 28 px, 40 by 34 before): half again his width and his height, so it lights the dark just behind his back rather than a cloud twice his size round him. Its peak, dither and breath are unchanged.
+- **The water clears further over a wader** (`Tide.CLEAR` 0.2, 0.35 before, 12.134), so his legs and boots under the bright waterline keep their values; the band elsewhere is unchanged.
+
+Judged by eye at 1x, 2x and 4x in `vorrhallow-tell`. `test_a_foe_is_keyed_off_its_own_light` (`tests/test_foe_glow.gd`) holds it.
 
 ## 13. Asset Production Plan
 

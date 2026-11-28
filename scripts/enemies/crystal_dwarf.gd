@@ -49,7 +49,7 @@ const GLOW_HIGH := 9.0
 ## The crystal on his back (world px from his feet, facing right): where his glow sits
 ## (`FoeGlow`, bible 12.52), and its half extents.
 const CRYSTAL_AT := Vector2(-3, -20)
-const GLOW_REACH := Vector2(40, 34)
+const GLOW_REACH := Vector2(30, 28)
 
 var _struck := false
 var _behind_time := 0.0
