@@ -59,6 +59,10 @@ func _ready() -> void:
 	material = mat
 	show_behind_parent = true
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	# The foe it lights is keyed off it (12.154): a dark edge between body and glow.
+	var foe := get_parent() as Enemy
+	if foe != null:
+		foe.light_keyed = true
 
 
 ## The glow's step (0 nothing, LEVELS the centre) at `x`, `y` px from its

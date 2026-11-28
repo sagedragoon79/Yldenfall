@@ -143,3 +143,33 @@ func test_the_crystal_dwarf_carries_his_crystals_light() -> void:
 	check(foe.dead and foe.glow_strength() == 0.0, "dead, the crystal is dark")
 	await frames(30)
 	check(not is_instance_valid(foe) or foe.glow.shown_peak() == 0.0, "and the glow is gone (was %.2f)" % rest)
+
+
+## Pass 677 (bible 12.154): the pass 675 grade read the Crystal Dwarf in the Flooded
+## Hall as "lost in pink glow and the water band". A foe that carries its own light
+## wears a near-black keyline round its whole silhouette, the glow is a pocket at the
+## crystal rather than a cloud round him, and the tide clears further over his legs.
+func test_a_foe_is_keyed_off_its_own_light() -> void:
+	var foe := await _dwarf()
+	check(foe != null, "a Crystal Dwarf stands in the Flooded Hall")
+	if foe == null:
+		return
+	check(foe.light_keyed, "his glow keys him")
+	var plain := Enemy.new()
+	check(not plain.light_keyed, "a foe with no light of its own is not keyed")
+	plain.free()
+	await frames(2)
+	check(foe.light_key_drawn(), "drawn with the keyline at rest")
+	foe.set_state("windup")
+	foe.state_time = CrystalDwarf.WINDUP * 0.5
+	await frames(2)
+	check(foe.light_key_drawn(), "and through his tell, under the warm rim")
+	check(Enemy.LIGHT_KEY_STEPS >= 2 and Enemy.LIGHT_KEY_RIM >= 0.9, "two pixels wide and nearly solid, so it holds at 1x")
+	check(FoeLight.luma(Enemy.TELL_KEY) < 0.08, "in near-black (%.2f)" % FoeLight.luma(Enemy.TELL_KEY))
+	# The glow is a pocket at the crystal: no more than half again his width, not the 2x cloud it was.
+	check(CrystalDwarf.GLOW_REACH.x <= foe.body_size.x * 1.5 and CrystalDwarf.GLOW_REACH.y <= foe.body_size.y,
+		"the glow stays near his body (%s)" % CrystalDwarf.GLOW_REACH)
+	check(Tide.CLEAR <= 0.2, "the water over a wader is a fifth of its strength or less (%.2f)" % Tide.CLEAR)
+	foe.take_hit(9999, Vector2(0, 1))
+	await frames(2)
+	check(not is_instance_valid(foe) or not foe.light_key_drawn(), "dead, his light and its keyline are gone")

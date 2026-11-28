@@ -47,7 +47,7 @@ const MAX_RINGS := 48
 ## its box's edge CLEAR_PAD px out, in CHUNK px columns (the dither's period, so its
 ## pattern keeps its phase); one more CHUNK either side is half way back. At most
 ## MAX_CLEAR waders are cleared at once.
-const CLEAR := 0.35
+const CLEAR := 0.2
 const CLEAR_PAD := 2.0
 const CHUNK := 4
 const MAX_CLEAR := 8
