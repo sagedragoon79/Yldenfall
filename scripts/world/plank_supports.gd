@@ -86,6 +86,21 @@ const SPREADER_H := 4.0
 const SPREADER_OVER := 3.0
 ## How far a drooping sinew leg sags below its straight line, as a share of its rise.
 const KNOT_SAG := 0.3
+## How each zone family builds a hung deck (pass 676, design bible 12.153). The pass
+## 675 grade still read "the hung-platform setup as one template across the marsh
+## road, Tower foot, sky steps and veins": the rig over each deck differed (12.148),
+## but every deck under it was the same timber girder. The town keeps the girder
+## ("girder"); the Tower and the Trials rivet an iron plate girder stiffened by a
+## lit zigzag ("truss"); the timber and water zones hang a raft of logs laid across
+## the deck, their round ends in a row under the board ("raft"); the Spires and the
+## dwarf halls hang a dressed stone slab corbelled in toward its foot ("slab"); the
+## Evercrown's shelves swell into a grown underside ("grown").
+const DECKS := ["girder", "truss", "raft", "slab", "grown"]
+## A raft log's diameter, world px (two to a cell), and a slab's depth below the cell's foot.
+const LOG := 8.0
+const SLAB_DROP := 3.0
+## How far a slab's corbelled foot steps in at each end, world px.
+const SLAB_STEP := 3.0
 ## A frame's widest bay, world px; a longer span is split into bays.
 const BAY_MAX := 48.0
 ## A frame needs this much height between board and footing, world px (a post
@@ -99,21 +114,21 @@ const FRAME_MIN_H := 40.0
 ## `nail`), and `foot` the footing stone (lit, mid, dark). `moss`, where a zone has it
 ## (lit, mid, dark), grows on the rail and climbs each leg from its footing (pass 637).
 const LOOKS := {
-	"gym": {"frame": "x", "post": "squared", "hang": "rope", "rig": "block", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "aca1ba", "foot": ["797767", "58544c", "363330"]},
+	"gym": {"deck": "girder", "frame": "x", "post": "squared", "hang": "rope", "rig": "block", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "aca1ba", "foot": ["797767", "58544c", "363330"]},
 	# The Heartwood's timber is old and grey, grown over with moss, and lashed with flax (pass 637).
-	"heartwood": {"frame": "lashed", "post": "raked", "hang": "rope", "rig": "block", "lit": "aa9173", "mid": "8a6e56", "dark": "3c2c2a", "wood": ["728061", "4f5c47", "2f392d"], "moss": ["49aa36", "2b782c", "1e4825"], "bolt": "f0c02e", "foot": ["797767", "58544c", "363330"]},
-	"boughs": {"frame": "forked", "post": "trunk", "hang": "rope", "rig": "block", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "a1d684", "foot": ["797767", "58544c", "363330"]},
-	"hearthroot": {"frame": "x", "post": "squared", "hang": "chain", "rig": "ring", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "f0c02e", "foot": ["867ba2", "645e82", "2f2c3a"]},
-	"haar": {"frame": "piling", "post": "pile", "hang": "rope", "rig": "block", "lit": "aa9173", "mid": "8a6e56", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "989885", "foot": ["797767", "58544c", "363330"]},
-	"sunken": {"frame": "piling", "post": "pile", "hang": "chain", "rig": "block", "lit": "aa9173", "mid": "634a41", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "84cbd6", "foot": ["797767", "58544c", "363330"]},
+	"heartwood": {"deck": "raft", "frame": "lashed", "post": "raked", "hang": "rope", "rig": "block", "lit": "aa9173", "mid": "8a6e56", "dark": "3c2c2a", "wood": ["728061", "4f5c47", "2f392d"], "moss": ["49aa36", "2b782c", "1e4825"], "bolt": "f0c02e", "foot": ["797767", "58544c", "363330"]},
+	"boughs": {"deck": "raft", "frame": "forked", "post": "trunk", "hang": "rope", "rig": "block", "lit": "cd8c51", "mid": "aa6336", "dark": "48201e", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "a1d684", "foot": ["797767", "58544c", "363330"]},
+	"hearthroot": {"deck": "girder", "frame": "x", "post": "squared", "hang": "chain", "rig": "ring", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["aa6336", "783c2b", "48201e"], "bolt": "f0c02e", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"haar": {"deck": "raft", "frame": "piling", "post": "pile", "hang": "rope", "rig": "block", "lit": "aa9173", "mid": "8a6e56", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "989885", "foot": ["797767", "58544c", "363330"]},
+	"sunken": {"deck": "raft", "frame": "piling", "post": "pile", "hang": "chain", "rig": "block", "lit": "aa9173", "mid": "634a41", "dark": "3c2c2a", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "84cbd6", "foot": ["797767", "58544c", "363330"]},
 	# The Spires are a ruined stone city: their footings and piers are its own lilac stone (pass 625).
-	"spires": {"frame": "pier", "post": "stone", "hang": "rope", "rig": "ring", "lit": "bea860", "mid": "9c7f44", "dark": "432d23", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "edce6e", "foot": ["867ba2", "645e82", "2f2c3a"]},
-	"vorrhallow": {"frame": "arch", "post": "stone", "hang": "chain", "rig": "ring", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "d684c6", "foot": ["867ba2", "645e82", "2f2c3a"]},
-	"trials": {"frame": "truss", "post": "column", "set_in": 8.0, "hang": "chain", "rig": "spreader", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "b4b4a7", "foot": ["867ba2", "645e82", "2f2c3a"]},
-	"tower": {"frame": "truss", "post": "column", "set_in": 8.0, "hang": "chain", "rig": "spreader", "lit": "aca1ba", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "84cbd6", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"spires": {"deck": "slab", "frame": "pier", "post": "stone", "hang": "rope", "rig": "ring", "lit": "bea860", "mid": "9c7f44", "dark": "432d23", "wood": ["8a6e56", "634a41", "3c2c2a"], "bolt": "edce6e", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"vorrhallow": {"deck": "slab", "frame": "arch", "post": "stone", "hang": "chain", "rig": "ring", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "d684c6", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"trials": {"deck": "truss", "frame": "truss", "post": "column", "set_in": 8.0, "hang": "chain", "rig": "spreader", "lit": "867ba2", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "b4b4a7", "foot": ["867ba2", "645e82", "2f2c3a"]},
+	"tower": {"deck": "truss", "frame": "truss", "post": "column", "set_in": 8.0, "hang": "chain", "rig": "spreader", "lit": "aca1ba", "mid": "645e82", "dark": "2f2c3a", "wood": ["797767", "58544c", "363330"], "bolt": "84cbd6", "foot": ["867ba2", "645e82", "2f2c3a"]},
 	# The Evercrown's shelves are grown, not built (bible 12.34, pass 542): they hang on
 	# sinew strands (night-5, night-3, crystal-1: wine, not red, bible 12.48), not hot crystal chains.
-	"evercrown": {"frame": "web", "post": "squared", "hang": "sinew", "rig": "knot", "lit": "af92c9", "mid": "5d4997", "dark": "421e48", "wood": ["8265b8", "5d4997", "2c2541"], "bolt": "b5e3e1", "foot": ["8265b8", "5d4997", "2c2541"]},
+	"evercrown": {"deck": "grown", "frame": "web", "post": "squared", "hang": "sinew", "rig": "knot", "lit": "af92c9", "mid": "5d4997", "dark": "421e48", "wood": ["8265b8", "5d4997", "2c2541"], "bolt": "b5e3e1", "foot": ["8265b8", "5d4997", "2c2541"]},
 }
 
 ## How each zone frames two posts under one run (pass 604): the pass 600 grade saw
@@ -175,7 +190,7 @@ func setup(zone: String, planks: Dictionary, solid: Dictionary, size: Vector2i) 
 			continue
 		for d: Dictionary in decks:
 			if s.x >= d.left and s.x <= d.right and is_equal_approx(s.bottom, d.y + BOARD):
-				s["stirrup"] = d.y + DECK_FOOT
+				s["stirrup"] = d.y + PlankSupports.deck_depth(_look)
 	bridles = PlankSupports.bridle(planks, solid, size, supports)
 	queue_redraw()
 
@@ -246,10 +261,17 @@ static func hung_decks(planks: Dictionary, held: Array[Dictionary]) -> Array[Dic
 ## plates, and the shadow cast under it. A grown look (`web` frame) swells into
 ## a rounded underside instead of a chord.
 static func deck_parts(left: float, right: float, y: float, look: Dictionary) -> Array:
+	match String(look.get("deck", "girder")):
+		"truss":
+			return PlankSupports._truss_deck(left, right, y, look)
+		"raft":
+			return PlankSupports._raft_deck(left, right, y, look)
+		"slab":
+			return PlankSupports._slab_deck(left, right, y, look)
 	var out: Array = []
 	var w: Array = look.wood
 	var width := right - left
-	if look.get("frame", "") == "web":
+	if look.get("deck", "girder") == "grown":
 		# A grown underside, deepest at the middle, its rim a shade darker, a pore here and there.
 		var n := int(width)
 		for i in n:
@@ -283,6 +305,124 @@ static func deck_parts(left: float, right: float, y: float, look: Dictionary) ->
 	# The shadow it casts on the air under it, falling off.
 	out.append([Rect2(left + 1.0, y + DECK_FOOT, width - 2.0, DECK_SHADOW * 0.5), w[2], 0.45])
 	out.append([Rect2(left + 2.0, y + DECK_FOOT + DECK_SHADOW * 0.5, width - 4.0, DECK_SHADOW * 0.5), w[2], 0.2])
+	return out
+
+
+## How far under its cell's top a deck's underside reaches, where a hanger's stirrup takes it, world px.
+static func deck_depth(look: Dictionary) -> float:
+	match String(look.get("deck", "girder")):
+		"raft":
+			return DECK_WEB + LOG + 1.0
+		"slab":
+			return DECK_FOOT + SLAB_DROP
+	return DECK_FOOT
+
+
+## An iron plate girder (pass 676): a dark web as deep as the cell, a lit zigzag of
+## stiffeners riveted at each node, a heavy bottom flange in the hanger's iron, end
+## posts, and the shadow under it.
+static func _truss_deck(left: float, right: float, y: float, look: Dictionary) -> Array:
+	var out: Array = []
+	var width := right - left
+	var top := y + DECK_WEB
+	out.append([Rect2(left, top, width, DECK_FOOT - DECK_WEB), look.dark])
+	# The flange: lit top, the iron's mid tone, a dark foot.
+	out.append([Rect2(left, y + DECK_CHORD, width, DECK_FOOT - DECK_CHORD), look.mid])
+	out.append([Rect2(left, y + DECK_CHORD, width, 1.0), look.lit])
+	out.append([Rect2(left, y + DECK_FOOT - 1.0, width, 1.0), look.dark])
+	# The stiffeners: one diagonal per 8 px bay, alternating, from under the board to the flange.
+	var h := y + DECK_CHORD - top
+	var bay := 0
+	var x := left + 2.0
+	while x + 8.0 <= right - 1.0:
+		for i in 8:
+			var t := (i + 0.5) / 8.0
+			var dy := floorf((t if bay % 2 == 0 else 1.0 - t) * (h - 1.0))
+			out.append([Rect2(x + i, top + dy, 1.0, 1.0), look.mid])
+			if dy >= 1.0:
+				out.append([Rect2(x + i, top + dy - 1.0, 1.0, 1.0), look.lit])
+		out.append([Rect2(x - 0.5, top + (0.0 if bay % 2 == 0 else h - 2.0), 1.0, 1.0), look.bolt])
+		bay += 1
+		x += 8.0
+	# Rivets along the flange, one under each trestle foot.
+	x = left + 4.0
+	while x < right - 2.0:
+		out.append([Rect2(x, y + DECK_CHORD + 1.5, 1.0, 1.0), look.bolt])
+		x += 8.0
+	for e: float in [left, right - 2.0]:
+		out.append([Rect2(e, top, 2.0, DECK_FOOT - DECK_WEB), look.mid])
+		out.append([Rect2(e, top, 0.5, DECK_FOOT - DECK_WEB), look.lit])
+	out.append([Rect2(left + 1.0, y + DECK_FOOT, width - 2.0, DECK_SHADOW * 0.5), look.dark, 0.45])
+	out.append([Rect2(left + 2.0, y + DECK_FOOT + DECK_SHADOW * 0.5, width - 4.0, DECK_SHADOW * 0.5), look.dark, 0.2])
+	return out
+
+
+## A raft of logs laid across the deck (pass 676): under the board, a row of round
+## log ends, `LOG` across, each a dark rim, the timber's face and a lit growth ring
+## toward the key light, so its underside is scalloped; a rope lashing runs along
+## their tops, and each log casts its own shadow.
+static func _raft_deck(left: float, right: float, y: float, look: Dictionary) -> Array:
+	var out: Array = []
+	var w: Array = look.wood
+	var top := y + DECK_WEB
+	var rows := [4.0, 6.0, 8.0, 8.0, 8.0, 8.0, 6.0, 4.0]
+	var n := maxi(1, int(floorf((right - left) / LOG)))
+	var pad := ((right - left) - n * LOG) * 0.5
+	for k in n:
+		var cx := left + pad + (k + 0.5) * LOG
+		for i in rows.size():
+			var rw: float = rows[i]
+			out.append([Rect2(cx - rw * 0.5, top + i, rw, 1.0), w[2]])
+			if i > 0 and i < rows.size() - 1:
+				out.append([Rect2(cx - rw * 0.5 + 1.0, top + i, rw - 2.0, 1.0), w[1]])
+		# The end grain: a lit ring on its upper left, a dark heart.
+		out.append([Rect2(cx - 2.0, top + 2.0, 2.0, 1.0), w[0]])
+		out.append([Rect2(cx - 3.0, top + 3.0, 1.0, 2.0), w[0]])
+		out.append([Rect2(cx - 0.5, top + 3.5, 1.0, 1.0), w[2]])
+		out.append([Rect2(cx - 2.0, top + LOG, 4.0, DECK_SHADOW * 0.5), w[2], 0.4])
+	# The lashing: a rope over the logs' tops, under the board, in the hanger's lay.
+	out.append([Rect2(left, top, right - left, 1.0), look.mid])
+	var x := left + 1.0
+	while x < right - 1.0:
+		out.append([Rect2(x, top, 1.0, 1.0), look.lit])
+		x += 3.0
+	return out
+
+
+## A dressed stone slab (pass 676): two courses as deep as the cell and `SLAB_DROP`
+## past it, the lower course stepped in `SLAB_STEP` at each end like a corbel, lit
+## along its top and its left face, mortar joints staggered course by course, and
+## the shadow under its narrower foot.
+static func _slab_deck(left: float, right: float, y: float, look: Dictionary) -> Array:
+	var out: Array = []
+	var f: Array = look.foot
+	var top := y + DECK_WEB
+	var mid := y + DECK_CHORD - 1.0
+	var foot := y + DECK_FOOT + SLAB_DROP
+	var courses := [[left, right, top, mid], [left + SLAB_STEP, right - SLAB_STEP, mid, foot]]
+	for ci in courses.size():
+		var c: Array = courses[ci]
+		var x0: float = c[0]
+		var x1: float = c[1]
+		var y0: float = c[2]
+		var y1: float = c[3]
+		out.append([Rect2(x0, y0, x1 - x0, y1 - y0), f[2]])
+		out.append([Rect2(x0 + 0.5, y0 + 0.5, x1 - x0 - 1.0, y1 - y0 - 1.5), f[1]])
+		out.append([Rect2(x0 + 0.5, y0 + 0.5, x1 - x0 - 1.0, 1.0), f[0]])
+		out.append([Rect2(x0 + 0.5, y0 + 0.5, 1.0, y1 - y0 - 1.5), f[0]])
+		# Mortar joints, staggered: every 16 px, the lower course offset by 8.
+		var jx := x0 + (12.0 if ci == 0 else 8.0)
+		while jx < x1 - 4.0:
+			out.append([Rect2(jx, y0 + 1.0, 1.0, y1 - y0 - 1.5), f[2]])
+			out.append([Rect2(jx + 1.0, y0 + 1.0, 0.5, y1 - y0 - 1.5), f[0]])
+			jx += 16.0
+	# A cramp in the accent metal across the courses' meeting, every 16 px.
+	var bx := left + 8.0
+	while bx < right - 6.0:
+		out.append([Rect2(bx, mid - 0.5, 2.0, 1.0), look.bolt])
+		bx += 16.0
+	out.append([Rect2(left + SLAB_STEP + 1.0, foot, right - left - SLAB_STEP * 2.0 - 2.0, DECK_SHADOW * 0.5), f[2], 0.45])
+	out.append([Rect2(left + SLAB_STEP + 2.0, foot + DECK_SHADOW * 0.5, right - left - SLAB_STEP * 2.0 - 4.0, DECK_SHADOW * 0.5), f[2], 0.2])
 	return out
 
 

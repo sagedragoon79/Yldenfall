@@ -3471,6 +3471,22 @@ The grade of pass 670 named "the canopy's flat mint wash". Measured in `boughs/c
 
 After: the same rows lie between medians 103 and 132, with beams 20 to 30 above the air beside them. Judged by eye at 1x and 2x in `boughs/canopy_bridge`, `boughs/sunlit_bough` and `heartwood/root_shrine` (a roofed zone, unchanged but for the smoother beams). `test_the_canopys_air_is_shaded_and_the_sun_falls_through_it` and `test_a_canopy_zones_shafts_carry_a_multiplied_shade_behind_them` (`tests/test_light_shaft.gd`) hold it.
 
+### 12.153 Each zone family builds its own deck, and the shafts vary them (pass 676)
+
+The grade of pass 675 still read "the hung-platform setup as one template across the marsh road, Tower foot, sky steps and veins", and asked for the decks and their spacing to vary, not only the hang (12.148). Two things repeated. Every hung deck (12.128) was the same timber girder under its zone's rig, and the two shafts it named stacked one width of deck on one grid: in `tower/foot` eight decks of five cells, every four rows, at two columns; in `evercrown/veins` seventeen decks of eight cells, every three rows, at three columns.
+
+Each family of zones now builds its own deck (`PlankSupports.DECKS`, a `deck` per zone in `LOOKS`), and its underside changes with it:
+
+- **A girder** (`girder`; the gym, Hearthroot): the pass 652 deck, a dark web, a lit chord bolted under each trestle foot and end plates.
+- **A plate girder** (`truss`; the Tower, the Trials): a dark iron web as deep as the cell, stiffened by a lit zigzag, one diagonal per 8 px bay riveted at its nodes, on a flange in the hanger's iron.
+- **A raft** (`raft`; the Heartwood, the Boughs, the Haar, the Sunken Spring): logs laid across the deck, a row of round log ends `LOG` (8 px) across under the board, each with a lit growth ring toward the key light and its own shadow, so the underside is scalloped; a rope lashing runs along their tops. Its hangers take it under the logs (`deck_depth`).
+- **A slab** (`slab`; the Spires, Vorrhallow): two courses of the zone's dressed stone, the lower stepped in `SLAB_STEP` (3 px) at each end like a corbel and hanging `SLAB_DROP` (3 px) below the cell, mortar joints staggered course by course and cramps in the accent across them.
+- **Grown** (`grown`; the Evercrown): the swollen underside of 12.34, as before.
+
+The two shafts are replanned with the same climb: `tower/foot`'s decks are three to eight cells wide and three, four or seven rows apart; the veins' are four to ten wide and two, three or four rows apart, at no fixed column, and where one deck now stands within a post's reach of another (12.30) it stands on posts instead of hanging. Every light vein keeps the deck two rows under it that it had, and both rooms pass the reachability checker. Collision of the decks themselves is untouched; it is dressing only.
+
+Judged by eye at 1x and 4x in `tower/foot`, `evercrown/veins`, `spires/sky_steps` and `haar/marsh_road` (the raft, faint under the fog as everything there is). `test_plank_each_zone_family_builds_its_own_deck` (`tests/test_plank_supports.gd`) holds it: every zone builds a known deck and every deck is built, the four graded zones each build their own, the truss's zigzag, the raft's scallop and log count, the slab's stone, drop and corbelled foot, a raft taken in its stirrups under the logs, and at least four widths and three climbs among each named shaft's decks.
+
 ## 13. Asset Production Plan
 
 ### 13.1 Tools and when to use each

@@ -326,7 +326,7 @@ func test_the_veins_are_not_a_level_box() -> void:
 	check(grid[8][wide - 1] == "2" and grid[11][wide - 1] == "2" and grid[12].substr(25, 14) == "--------------", "the east door and its shelf are where they were")
 	for x in range(25, wide - 1):
 		check(12 - top_of[x] >= 6, "six open rows over the shelf at tile %d" % x)
-	# Nothing of the climb moved: the shelves, the veins, the sign.
+	# Nothing of the climb moved since pass 676: the shelves, the veins, the sign.
 	var planks := 0
 	var veins: Array[Vector2i] = []
 	var hazards := 0
@@ -336,7 +336,8 @@ func test_the_veins_are_not_a_level_box() -> void:
 		for x in wide:
 			if grid[row][x] == "x":
 				veins.append(Vector2i(x, row))
-	check(planks == 150, "every shelf of the climb is as it was (%d plank tiles)" % planks)
+	# Pass 676 (12.153) replanned the shelves at varied widths and climbs; the veins keep theirs.
+	check(planks == 133, "every shelf of the climb is as pass 676 planned it (%d plank tiles)" % planks)
 	check(veins == [Vector2i(21, 12), Vector2i(32, 21), Vector2i(21, 30), Vector2i(4, 39), Vector2i(14, 48), Vector2i(32, 57)], "the six veins are where they were (%s)" % [veins])
 	check(hazards == 0, "no hazard in the floor: the fight is the veins")
 	for x in range(18, 22):
