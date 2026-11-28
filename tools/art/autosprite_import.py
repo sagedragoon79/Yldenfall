@@ -467,6 +467,8 @@ class Importer:
             fy = box[3] + 1.0 if box else fy
         ox = int(round(self.origin[0] - (self.ref_x if ref_x is None else ref_x) * s))
         oy = int(round(self.origin[1] - (fy - lower) * s))
+        # Where source pixel (0, 0) lands in the cell, for points marked on the source frames.
+        self.offset = (ox, oy)
         cw, ch = self.cell
         solid = np.zeros((ch, cw), bool)
         keys = np.full((ch, cw), -1, np.int32)
@@ -499,6 +501,20 @@ class Importer:
         grid = np.full((ch, cw), "", object)
         grid[solid] = np.array(self.keys, object)[keys[solid]]
         return Image.fromarray(img, "RGBA"), Image.fromarray(mask, "RGBA"), grid
+
+    def mark_hands(self, meta, mark):
+        """A frame's weapon points marked by hand on its source frame (the 128 px hero's
+        body-only clips): [x, y, blade degrees] for the sword fist, then optionally [x, y]
+        for the shield fist. The game draws the sword through "hand" at "blade" (0 points
+        forward, positive turns down) and the shield at "off"."""
+        meta = dict(meta)
+        ox, oy = self.offset
+        s = self.scale
+        meta["hand"] = self.to_point(ox + mark[0] * s, oy + mark[1] * s)
+        meta["blade"] = mark[2]
+        if len(mark) > 3 and mark[3]:
+            meta["off"] = self.to_point(ox + mark[3][0] * s, oy + mark[3][1] * s)
+        return meta
 
     def detect_eye(self, grid, meta):
         """A one-eyed creature's eye (the white), for the pupil the game draws."""
@@ -602,7 +618,9 @@ def imported(name, cell, origin, code_meta):
             continue
         frames = []
         srcs = imp.recolor(source_frames(spec, imp.dir))
-        base = code_meta.get(anim) or [{}]
+        # A sheet with "own_meta" (the 128 px hero) takes nothing from the code rig: its points
+        # come from its own frames and the manifest's "hands".
+        base = [{}] if cfg.get("own_meta") else (code_meta.get(anim) or [{}])
         imp.use_ramps(cfg["ramps"] + spec.get("extra_ramps", []))
         if "erase" in spec:
             srcs = [_erase_hue(src, *spec["erase"], white=spec.get("erase_white", False)) for src in srcs]
@@ -643,6 +661,9 @@ def imported(name, cell, origin, code_meta):
                 meta = imp.detect_hero(img, meta)
             elif cfg.get("detect") == "eye":
                 meta = imp.detect_eye(grid, meta)
+            hands = spec.get("hands")
+            if hands and picks[i] < len(hands) and hands[picks[i]]:
+                meta = imp.mark_hands(meta, hands[picks[i]])
             if cfg.get("head") == "top":
                 # A set drawn helmed (the Elven Plate with its helmet): the crown is
                 # simply the top of the figure, the crest included.

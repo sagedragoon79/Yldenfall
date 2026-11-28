@@ -4,9 +4,9 @@ surface: stone
 map: 35, -7
 boss: haar_wyrm
 fog: 0.6
-bare: 22, 19, 37, 22
+bare: 22, 19, 37, 23
 grate: 23, 20, 36, 20
-prop: 30, 22, spring_haar
+prop: 30, 23, spring_haar
 npc: 44, 19, haar_keeper, boss:haar_wyrm !spring:haar
 npc: 44, 19, haar_keeper_glad, spring:haar
 sign: 3, 19, [spring:haar] THE HAAR SPRING. The dwarves' great cistern drank from it through three pipes.|It runs clean again; the wyrm's steam is gone, and the fog with it.
@@ -38,5 +38,5 @@ door: 2, boughs/windward_climb, 1
 #######################..............#######################
 #######################..............#######################
 #######################..............#######################
-############################################################
+#######################..............#######################
 ############################################################

@@ -18,7 +18,7 @@ const MAGIC := "magic"
 const WARD_SOUND := "ward"
 ## A guard held with too little MP to pay for a blow breaks (pass 242).
 const GUARD_BREAK_SOUND := "guard_break"
-const BODY_SIZE := Vector2(12, 40)
+const BODY_SIZE := Vector2(14, 54)
 ## Half the width of the hero's contact shadow (bible 12.110): a stride's width.
 const SHADOW_HALF := 10.0
 ## A crouch's low cut (bible 6.15): as long as a side slash, this tall, along the floor.
@@ -99,8 +99,9 @@ const GLIDE_FEATHERS := 0.14
 const CORRECTION_SLOP := 0.1
 ## A contact whose normal is at least this horizontal is a wall; a 45-degree
 ## slope's face (0.71) is floor.
-## How far the floor snap reaches when running (px, bible 6.1).
-const FLOOR_SNAP := 4.0
+## How far the floor snap reaches when running (px, bible 6.1). 6 since the 14 px wide body
+## (2026-11-26): at 4 it sometimes missed a frame's drop at a ramp's crest and sailed off.
+const FLOOR_SNAP := 6.0
 const WALL_NORMAL := 0.9
 
 
@@ -850,6 +851,7 @@ func _do_wall_jump(side: int) -> void:
 	has_double_jump = true
 	facing = away
 	visual.squash_for("wall_jump")
+	visual.play_wall_jump()
 	_spawn_dust(Vector2(side * BODY_SIZE.x * 0.5, -BODY_SIZE.y * 0.5), "walljump")
 	Sfx.play("wall_jump")
 	jumped.emit("wall")
@@ -1278,14 +1280,14 @@ func _attack_rect() -> Rect2:
 		"thrust":
 			# A long, low point: farther than a cut, half its height.
 			size = Vector2(THRUST_LENGTH + reach_bonus, SLASH_SIZE.y * 0.5 + arc_bonus * 0.5)
-			center = Vector2(facing * (BODY_SIZE.x * 0.5 + size.x * 0.5), -body_height() * 0.55)
+			center = Vector2(facing * (BODY_SIZE.x * 0.5 + size.x * 0.5), -reach_height() * 0.55)
 		"low":
 			# Along the floor, from the feet up (bible 6.15).
 			size = Vector2(SLASH_SIZE.x + reach_bonus, LOW_SLASH_HEIGHT + arc_bonus * 0.5)
 			center = Vector2(facing * (BODY_SIZE.x * 0.5 + 16 + reach_bonus * 0.5), -size.y * 0.5)
 		_:
 			size = SLASH_SIZE + Vector2(reach_bonus, arc_bonus)
-			center = Vector2(facing * (BODY_SIZE.x * 0.5 + 16 + reach_bonus * 0.5), -body_height() * 0.55)
+			center = Vector2(facing * (BODY_SIZE.x * 0.5 + 16 + reach_bonus * 0.5), -reach_height() * 0.55)
 	return Rect2(global_position + center - size * 0.5, size)
 
 
@@ -1420,6 +1422,25 @@ func _query_rect(rect: Rect2, mask: int) -> Array:
 
 func body_rect() -> Rect2:
 	var h := body_height()
+	return Rect2(global_position + Vector2(-BODY_SIZE.x * 0.5, -h), Vector2(BODY_SIZE.x, h))
+
+
+## How high over the feet an item pickup is touched: the old 46 px hero's 40 px body. Every
+## pickup in the game was placed for that reach (Reach.TOUCH_RISE, the perches the Featherstep
+## Boots gate), so the 128 px hero's taller head reaching 14 px higher would open them.
+const TOUCH_HEIGHT := 40.0
+
+
+## The body's height as its reach counts it: no more than TOUCH_HEIGHT. A cut and a thrust are
+## placed on it, so they still sweep as low as they did for the 40 px body (a foe 12 px tall,
+## a bomber's seed by your feet), and an item pickup is touched within it.
+func reach_height() -> float:
+	return minf(body_height(), TOUCH_HEIGHT)
+
+
+## Where an item pickup is touched: the body, no higher than TOUCH_HEIGHT.
+func touch_rect() -> Rect2:
+	var h := reach_height()
 	return Rect2(global_position + Vector2(-BODY_SIZE.x * 0.5, -h), Vector2(BODY_SIZE.x, h))
 
 
@@ -1561,7 +1582,7 @@ func _apply_one_way_ledge_correction(motion: Vector2) -> void:
 			return
 
 
-func _after_move(pre_velocity: Vector2, _delta: float) -> void:
+func _after_move(pre_velocity: Vector2, delta: float) -> void:
 	var on_floor := is_on_floor()
 	if not on_floor:
 		_peak_fall_speed = maxf(_peak_fall_speed, velocity.y)
@@ -1589,6 +1610,9 @@ func _after_move(pre_velocity: Vector2, _delta: float) -> void:
 		safe_position = global_position
 	_was_on_floor = on_floor
 	visual.position.y = _slope_sink(on_floor)
+	# A cling is drawn out from the wall; leaving it, the sprite eases back over the body.
+	var off := PlayerVisual.wall_offset(self)
+	visual.position.x = off if off != 0.0 else move_toward(visual.position.x, 0.0, PlayerVisual.WALL_STANDOFF_EASE * delta)
 
 
 ## On a slope the box rests on its downhill corner, up to half its width above

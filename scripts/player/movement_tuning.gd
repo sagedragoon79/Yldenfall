@@ -122,7 +122,7 @@ extends Resource
 
 @export_group("Crouch")
 ## The crouch (bible 6.15): Down held on the ground drops the body to
-## crouch_height (px; standing it is 40), so a blow above that passes over. A
+## crouch_height (px; standing it is 54), so a blow above that passes over. A
 ## crouch holds still and only turns; crouch_creep_speed is the creep a body
 ## pinned under a roof too low to stand in moves at, so it is never stuck.
 @export var crouch_height := 26.0

@@ -60,7 +60,7 @@ func test_air_combo_is_two_hits() -> void:
 	for i in 12:
 		rows.insert(1, "#..................#")
 	var room := make_room(rows)
-	var p := make_player(room, Vector2i(9, 1), {"glove": false})
+	var p := make_player(room, Vector2i(9, 4), {"glove": false})
 	var seen: Array[int] = []
 	for i in 3:
 		p.input.attack_pressed = true
@@ -1627,8 +1627,11 @@ func test_a_spike_never_sets_you_back_onto_footing_that_is_gone() -> void:
 func test_a_set_back_drops_the_presses_buffered_on_the_way_down() -> void:
 	var rows: Array = ARENA.duplicate()
 	rows[6] = "#.........^^^......#"
+	# Open overhead: the drop starts high enough that the 54 px body would be in the ceiling.
+	rows[0] = "#..................#"
 	var room := make_room(rows)
-	var p := make_player(room, Vector2i(3, 6), {"stride": true})
+	# No second jump: a press in the air could only be held for the landing.
+	var p := make_player(room, Vector2i(3, 6), {"stride": true, "boots": false})
 	p.max_hp = 100
 	p.hp = 100
 	await frames(4)
@@ -1637,7 +1640,8 @@ func test_a_set_back_drops_the_presses_buffered_on_the_way_down() -> void:
 		p.facing = 1
 		# Dropped from high over the spikes; the press comes just before they bite.
 		p.teleport(Vector2(11.5 * Room.TILE, 2 * Room.TILE))
-		await _until(func() -> bool: return p.global_position.y > 6 * Room.TILE + 2.0, 60)
+		# Just into the spikes. row, a frame before they bite.
+		await _until(func() -> bool: return p.global_position.y > 6 * Room.TILE, 60)
 		p.air_dash_charges = 0
 		if press == "jump":
 			p.input.jump_pressed = true

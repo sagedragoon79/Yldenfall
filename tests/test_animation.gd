@@ -239,6 +239,8 @@ func test_a_worn_blade_swings_from_its_own_clips() -> void:
 	# Swords are drawn into the attacks (design bible 13.5): with any blade but
 	# the Short Sword, a set's attacks play from "<set>_<blade>"; the rest of
 	# its clips stay the set's own.
+	# The armor sets, under the one-body hero (hero128) that wears them all for now.
+	PlayerVisual.one_body = false
 	for sheet in ["hero_base", "hero_leather", "hero_riveted", "hero_plate", "hero_battle", "hero_battle_helm"]:
 		for blade: String in PlayerVisual.BLADE_SHEETS.values():
 			for clip in PlayerVisual.BLADE_CLIPS:
@@ -258,11 +260,14 @@ func test_a_worn_blade_swings_from_its_own_clips() -> void:
 	await frames(2)
 	check(p.visual.anim == "slash1" and p.visual.sheet == "hero_plate", "the Short Sword is the set's own (%s %s)" % [p.visual.sheet, p.visual.anim])
 	GameState.data.equipment["armor"] = ""
+	PlayerVisual.one_body = true
 
 
 func test_a_worn_shield_is_drawn_into_the_block() -> void:
 	# Shields are drawn into the block pose (design bible 13.5): with a shield on,
 	# a set blocks from "<set>_<shield>" and the code-drawn shield is not added.
+	# The armor sets, under the one-body hero (hero128) that wears them all for now.
+	PlayerVisual.one_body = false
 	for sheet in ["hero_base", "hero_leather", "hero_riveted", "hero_plate", "hero_battle", "hero_battle_helm"]:
 		for shield: String in PlayerVisual.SHIELD_SHEETS:
 			check(Sheet.has_anim(sheet + "_" + shield, "block"), "%s_%s has block" % [sheet, shield])
@@ -292,11 +297,14 @@ func test_a_worn_shield_is_drawn_into_the_block() -> void:
 	p.input.block_held = false
 	PlayerVisual.body_sets = true
 	GameState.data.equipment["shield"] = ""
+	PlayerVisual.one_body = true
 
 
 func test_a_rune_dagger_throw_plays_its_flick() -> void:
 	# The Rune Dagger's throw (design bible 13.5): each set flicks it forward, or
 	# up when thrown up, over the legs' poses; the old hero has no flick.
+	# The armor sets, under the one-body hero (hero128) that wears them all for now.
+	PlayerVisual.one_body = false
 	for sheet in ["hero_base", "hero_leather", "hero_riveted", "hero_plate", "hero_battle", "hero_battle_helm"]:
 		for clip in ["throw", "throw_up"]:
 			check(Sheet.has_anim(sheet, clip), "%s has %s" % [sheet, clip])
@@ -336,11 +344,14 @@ func test_a_rune_dagger_throw_plays_its_flick() -> void:
 	GameState.data.equipment["armor"] = ""
 	for d in runner.get_tree().get_nodes_in_group("projectile"):
 		d.free()
+	PlayerVisual.one_body = true
 
 
 func test_armor_picks_its_body_set() -> void:
 	# Paper doll (design bible 13.4): each armor has a body sheet of its own,
 	# with the same clips, and anchors for the layers drawn over it.
+	# The armor sets, under the one-body hero (hero128) that wears them all for now.
+	PlayerVisual.one_body = false
 	var bad: Array[String] = []
 	var sheets: Array = PlayerVisual.ARMOR_SHEETS.values() + PlayerVisual.HELMED_SHEETS.values()
 	for sheet: String in sheets:
@@ -404,6 +415,7 @@ func test_armor_picks_its_body_set() -> void:
 	await frames(2)
 	check(p.visual.sheet == "hero_battle", "the helmet off: the bare-headed Elven Plate (%s)" % p.visual.sheet)
 	GameState.data.equipment.armor = ""
+	PlayerVisual.one_body = true
 
 
 
@@ -411,6 +423,8 @@ func test_the_hood_is_down_in_town_and_up_outside() -> void:
 	# The cloak layer (design bible 13.4): its hood is up out in the world,
 	# down in a town, and down under a helmet. Every PixelLab set draws its
 	# cloak in, in key green (13.5), so over them the layer is not drawn.
+	# The armor sets, under the one-body hero (hero128) that wears them all for now.
+	PlayerVisual.one_body = false
 	GameState.data.equipment["armor"] = "leather_armor"
 	var wild := make_room(ARENA)
 	var p := make_player(wild, Vector2i(3, 6))
@@ -440,6 +454,7 @@ func test_the_hood_is_down_in_town_and_up_outside() -> void:
 	check(not p.cloak.shown(), "a clip from the ranger's sheet draws its own cloak too")
 	p.input.block_held = false
 	GameState.data.equipment["armor"] = ""
+	PlayerVisual.one_body = true
 
 
 ## The PixelLab hero (design bible 13.5): the Delver's Pick is drawn on a pogo,

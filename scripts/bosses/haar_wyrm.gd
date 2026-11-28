@@ -55,7 +55,7 @@ const HANG := 110.0
 ## The cistern is sunk in the floor (Sean, 2026-11-20): its lip stands on these two
 ## columns and its inside is the pit between them, on these rows (the room is cut to match).
 const CISTERN_COLS := Vector2i(22, 37)
-const CISTERN_ROWS := Vector2i(20, 22)
+const CISTERN_ROWS := Vector2i(20, 23)
 ## The intakes, one to a head (Sean, 2026-11-22): tile, which way the mouth opens, and the
 ## head it feeds. The side heads' pipes stand on their pillars of the arch, under their
 ## heads; the middle head's hangs from the ceiling over the cistern, its mouth reached with

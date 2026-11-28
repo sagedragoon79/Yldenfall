@@ -18,7 +18,7 @@ const FLAT := [
 ]
 
 const LEDGE := [
-	"#####################",
+	"#...................#",
 	"#...................#",
 	"#...................#",
 	"#...................#",
@@ -896,10 +896,10 @@ func _rise_under_corner(overlap: float) -> float:
 		"#..........#",
 		"############",
 	]
-	# The block at cell (4,4) starts at x 64; the body is 12 wide.
+	# The block at cell (4,4) starts at x 64.
 	var room := make_room(rows)
 	var p := make_player(room, Vector2i(3, 8), {"boots": false})
-	p.position.x = 64.0 - 6.0 + overlap
+	p.position.x = 64.0 - Player.BODY_SIZE.x / 2.0 + overlap
 	await _settle(p)
 	var start_y := p.global_position.y
 	var min_y := start_y
@@ -944,7 +944,7 @@ func test_ledge_correction_lifts_you_4_px_onto_a_ledge() -> void:
 # --- Pass 111: the core moves on special terrain ---------------------------------
 
 const ONE_WAY_LEDGE := [
-	"#####################",
+	"#...................#",
 	"#...................#",
 	"#...................#",
 	"#...................#",
@@ -1053,8 +1053,9 @@ func test_a_jump_at_the_surface_jumps_out_at_any_point_of_the_bob() -> void:
 
 ## Bible 6.9: a wind current doesn't change coyote time.
 func test_coyote_time_holds_in_a_wind_current() -> void:
+	# Open overhead: the 54 px body stands taller than the three rows over the ledge.
 	var rows := [
-		"#####################",
+		"#...................#",
 		"#...................#",
 		"#.....>>>>>>>>>>....#",
 		"#.....>>>>>>>>>>....#",
@@ -1296,7 +1297,7 @@ func test_a_slope_is_solid_below_its_diagonal() -> void:
 ## Bible 6.11 (pass 124): a shaft with a ladder up through the floor of a loft,
 ## and a short ladder hanging in the air on the right.
 const LADDERS := [
-	"####################",
+	"#..................#",
 	"#..................#",
 	"#..................#",
 	"#..................#",
@@ -1538,7 +1539,8 @@ func test_ladders_jump_off_hits_and_hanging_ends() -> void:
 	var p := make_player(room, Vector2i(9, 10))
 	await frames(3)
 	p.input.up = true
-	await frames(30)
+	# Not so high that the head is up in the hatch, where the slab would stop a leap to the side.
+	await frames(16)
 	p.input.up = false
 	check(p.on_ladder, "on the ladder")
 	var x0 := p.global_position.x
@@ -1743,8 +1745,9 @@ func test_wind_and_wrong_gravity_are_heard() -> void:
 	check(Sfx.recent.count("drift_in") == 1 and Sfx.recent.count("drift_out") == 1, "each cue sounds once at the edge")
 	room.free()
 
+	# Open overhead, for the 54 px body standing on the ledge.
 	rows = [
-		"#####################",
+		"#...................#",
 		"#...................#",
 		"#.....>>>>>>>>>>....#",
 		"#.....>>>>>>>>>>....#",
@@ -1784,7 +1787,7 @@ const TUNNEL := [
 	"#....................#",
 	"#....................#",
 	"#....................#",
-	"#.........############",
+	"#....................#",
 	"#.........############",
 	"#.........############",
 	"######################",
@@ -1796,7 +1799,8 @@ func _dash_into_tunnel(clip: float) -> bool:
 	var p := make_player(room, Vector2i(5, 15), {"stride": true, "boots": false})
 	await _settle(p)
 	# Hang with the head `clip` px above the tunnel's ceiling (y 160), just short of its mouth.
-	p.teleport(Vector2(9 * 16 + 2, 160.0 - clip + 40.0))
+	# The tunnel is four tiles tall, as every passage is (pass 508).
+	p.teleport(Vector2(9 * 16 + 2, 160.0 - clip + Player.BODY_SIZE.y))
 	p.velocity = Vector2.ZERO
 	p.input.move_x = 1
 	p.input.dash_pressed = true
@@ -2558,9 +2562,11 @@ func test_a_jump_pressed_as_a_hold_ends_is_kept() -> void:
 		"#........#",
 		"#........#",
 		"#........#",
+		"#........#",
+		"#........#",
 		"##########",
 	])
-	var p := make_player(room, Vector2i(4, 4))
+	var p := make_player(room, Vector2i(4, 6))
 	p.input = PlayerInput.new()
 	await _settle(p)
 	# A door's hold: frozen for the scroll, let go, and Jump pressed at once.
@@ -2923,8 +2929,8 @@ func test_a_crouch_cuts_low_and_shoots_low() -> void:
 			check_near(rect.end.y, feet, 0.5, "the low cut runs along the floor")
 			check(rect.position.y >= feet - Player.LOW_SLASH_HEIGHT - 0.5, "and no higher than %.0f px" % Player.LOW_SLASH_HEIGHT)
 			check(rect.position.x > p.global_position.x, "in front of you")
-			check(PlayerVisual.current_pose(p) == "attack_low" and PlayerVisual.anim_for(p, "attack_low") == "slash1",
-				"drawn as the first slash, squat, until the crouch art lands")
+			check(PlayerVisual.current_pose(p) == "attack_low" and PlayerVisual.anim_for(p, "attack_low") == "crouch_slash",
+				"drawn as the hero's own crouch cut")
 		await frames(30)
 	check(kinds == ["low", "low", "low", "low"], "every press is the low cut (%s)" % [kinds])
 	check(not heavy and p.combo_index == 0, "never a combo or a finisher")
@@ -2996,6 +3002,15 @@ func test_the_placeholder_crouch_squats_the_idle() -> void:
 	var room := make_room(FLAT)
 	var p := make_player(room, Vector2i(10, 11))
 	await _settle(p)
+	p.input.down = true
+	await frames(20)
+	# The 128 px hero has a crouch of its own, so it is drawn at its own shape.
+	check(p.visual.anim == "crouch", "the hero's crouch plays its own clip (%s)" % p.visual.anim)
+	check(p.visual.crouch_scale.distance_to(Vector2.ONE) < 0.01, "unsquashed (%s)" % p.visual.crouch_scale)
+	p.input.down = false
+	await frames(20)
+	# A set without one (the old armor sets) squats its idle.
+	PlayerVisual.one_body = false
 	var neck := p.visual.neck_position().y
 	p.input.down = true
 	await frames(20)
@@ -3005,6 +3020,7 @@ func test_the_placeholder_crouch_squats_the_idle() -> void:
 	p.input.down = false
 	await frames(20)
 	check(p.visual.crouch_scale.distance_to(Vector2.ONE) < 0.01, "standing, it rises back to its own shape")
+	PlayerVisual.one_body = true
 	room.free()
 
 

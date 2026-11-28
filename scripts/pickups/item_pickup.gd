@@ -67,7 +67,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	_t += delta
 	var p := get_tree().get_first_node_in_group("player") as Player
-	if p != null and not p.dead and not p.frozen and p.body_rect().grow(4.0).has_point(global_position):
+	if p != null and not p.dead and not p.frozen and p.touch_rect().grow(4.0).has_point(global_position):
 		grant(p)
 		return
 	queue_redraw()

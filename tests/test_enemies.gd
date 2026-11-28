@@ -233,7 +233,7 @@ func test_shockwave_hugs_the_floor_and_breaks_at_a_wall() -> void:
 	w.direction = 1
 	room.add_child(w)
 	w.global_position = cell_feet(20, 6)
-	var body := Rect2(w.global_position + Vector2(-6, -40), Vector2(12, 40))
+	var body := Rect2(w.global_position + Vector2(-Player.BODY_SIZE.x / 2.0, -Player.BODY_SIZE.y), Player.BODY_SIZE)
 	check(w.hit_rect().intersects(body), "it hits a body standing on the floor")
 	check(not w.hit_rect().intersects(Rect2(body.position - Vector2(0, 14), body.size)), "a small hop clears it")
 	await frames(60)
@@ -1954,12 +1954,13 @@ func test_a_parried_seed_flies_back_at_its_bird() -> void:
 	var s := BomberSeed.new()
 	s.bomber = b
 	room.add_child(s)
-	s.global_position = p.global_position + Vector2(3, -60)
+	# Dropped from 20 px over the head; the guard goes up as it comes within 12 px.
+	s.global_position = p.global_position + Vector2(3, -Player.BODY_SIZE.y - 20.0)
 	s.velocity = Vector2(0, 200)
 	var hp := p.hp
 	for i in 30:
 		await frames(1)
-		if s.global_position.y > p.global_position.y - 52.0:
+		if s.global_position.y > p.global_position.y - Player.BODY_SIZE.y - 12.0:
 			break
 	p.input.block_pressed = true
 	p.input.block_held = true

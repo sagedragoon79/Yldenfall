@@ -529,7 +529,8 @@ static func door_arrival(door: Dictionary) -> Vector2:
 		"right":
 			pos.x = r.position.x - ARRIVE_INSET
 		"top":
-			pos.y = r.end.y + 40.0
+			# The whole body clear under the ceiling door.
+			pos.y = r.end.y + Player.BODY_SIZE.y
 		"bottom":
 			pos.y = r.position.y + 8.0
 	return pos

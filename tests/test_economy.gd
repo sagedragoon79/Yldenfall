@@ -3136,6 +3136,8 @@ func test_the_dyer_dyes_the_cloak() -> void:
 ## and the hair takes the color chosen on the Equipment page. The helmed set's
 ## purple crest is not hair.
 func test_the_key_green_cloak_and_the_hair_take_their_colors() -> void:
+	# The armor sets, under the one-body hero (hero128) that wears them all for now.
+	PlayerVisual.one_body = false
 	GameState.new_game()
 	var w := make_world(_town(), "test/town")
 	var p := w.player
@@ -3176,6 +3178,7 @@ func test_the_key_green_cloak_and_the_hair_take_their_colors() -> void:
 	GameState.data.equipment.helmet = ""
 	GameState.data.dye = ""
 	GameState.data.hair = ""
+	PlayerVisual.one_body = true
 
 
 ## Which key the hero shader puts `c` under, as hero_dye.gdshader does: "cloak", "hair" or "".

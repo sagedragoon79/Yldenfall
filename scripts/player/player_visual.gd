@@ -33,6 +33,12 @@ const BLADE_CLIPS := ["slash1", "slash2", "slash3", "slash_up", "throw", "throw_
 ## set's block with that shield up (hero_plate_large_shield). Without one the
 ## code-drawn shield is held over the clip.
 const SHIELD_SHEETS := ["small_shield", "large_shield", "magic_shield"]
+## The 128 px hero (one body, design bible 5.6 and 12.1): every armor wears it, and its
+## clips are drawn empty-handed, so the sword and shield are drawn here at each frame's
+## marked hand ("hand" and "blade") and shield fist ("off"). Head gear is not shown on it.
+const HERO_SHEET := "hero128"
+## Its sword, longer to match the taller body.
+const HERO_BLADE_LENGTH := 19.0
 
 const OUTLINE := Color("120f19")
 const STEEL := Color("cec5d3")
@@ -59,7 +65,8 @@ const BLADE_LENGTH := 11.0
 ## Animations that hold on until they finish even when the action behind them
 ## ends (the recovery frames of a swing). A pogo's strike ends the moment it
 ## lands, so the Delver's Pick's blow plays out over the bounce.
-const FINISH := ["slash1", "slash2", "slash3", "slash_up", "strike_down", "cast", "throw", "throw_up", "crouch_slash"]
+const FINISH := ["slash1", "slash2", "slash3", "slash_up", "strike_down", "cast", "throw", "throw_up", "crouch_slash",
+	"wall_jump"]
 ## The frame of each swing clip where the blade travels (every hero sheet draws
 ## its own blur of the blade there); the frames before it are the windup, with
 ## the sword still raised or drawn back. The smear waits for it (pass 537).
@@ -97,6 +104,8 @@ const HAIR := {
 static var forced := ""
 ## Off, the ranger's sheet plays everything (tests of the cloak it wears).
 static var body_sets := true
+## Off, the armor sets play instead of HERO_SHEET (tests of the paper-doll sets).
+static var one_body := true
 
 var player: Player
 ## Squash and stretch (design bible 6.7, pass 360): the shape each move sets
@@ -142,11 +151,18 @@ const LEVEL_GLOW := 0.7
 var _level_time := 0.0
 var _swings := 0
 var _throws := 0
+## Set by a wall jump: the push off the wall plays (where the sheet has it).
+var _wall_jumped := false
 
 
 ## The sheet: {"cell", "origin", "columns", "animations", ...} (see Sheet).
 static func data() -> Dictionary:
 	return Sheet.get_sheet(SHEET_NAME)
+
+
+## A wall jump: the clip turns from facing the camera on the wall to the jump.
+func play_wall_jump() -> void:
+	_wall_jumped = true
 
 
 func squash(amount: Vector2) -> void:
@@ -195,6 +211,11 @@ func _physics_process(delta: float) -> void:
 		var flick := "throw_up" if up else "throw"
 		if pose in OVERRIDABLE and Sheet.has_anim(sheet_for(flick), flick):
 			next = flick
+			restart = true
+	if _wall_jumped:
+		_wall_jumped = false
+		if pose in OVERRIDABLE and Sheet.has_anim(sheet_for("wall_jump"), "wall_jump"):
+			next = "wall_jump"
 			restart = true
 	if anim in FINISH and not finished() and pose in OVERRIDABLE and not restart:
 		next = anim
@@ -275,8 +296,9 @@ static func anim_for(p: Player, body_pose: String) -> String:
 		"attack_down":
 			return "strike_down"
 		"climb":
-			# Reaching up a ladder: the wall pose's reach, turned to the rungs.
-			return "wall"
+			# Reaching up a ladder: the wall pose's reach, turned to the rungs (the
+			# 128 px hero's palm-up cling, until it has a climb of its own).
+			return "wall_cling" if Sheet.has_anim(sheet_for("wall_cling"), "wall_cling") else "wall"
 		"walk":
 			# Until the sheet has a walk clip, the run plays slowed to the pace.
 			return "walk" if Sheet.has_anim(sheet_for("walk"), "walk") else "run"
@@ -287,6 +309,8 @@ static func anim_for(p: Player, body_pose: String) -> String:
 static func armor_sheet() -> String:
 	if not body_sets:
 		return ""
+	if one_body and Sheet.exists(HERO_SHEET):
+		return HERO_SHEET
 	var worn := String(GameState.data.equipment.get("armor", ""))
 	var name: String = ARMOR_SHEETS.get(worn, "")
 	var helmed: String = HELMED_SHEETS.get(worn, "")
@@ -301,6 +325,8 @@ static func sheet_for(name: String) -> String:
 	var body := armor_sheet()
 	if body == "":
 		return SHEET_NAME
+	if body == HERO_SHEET:
+		return body if Sheet.has_anim(body, name) else SHEET_NAME
 	var blade: String = BLADE_SHEETS.get(String(GameState.data.equipment.get("blade", "")), "")
 	if blade != "" and name in BLADE_CLIPS:
 		var held := body + "_" + blade
@@ -358,11 +384,30 @@ func finished() -> bool:
 	return Sheet.finished(sheet, anim, anim_time)
 
 
+## How far the 128 px hero's cling art reaches past the body's edge on the wall side
+## (palm and planted boot, 18 px). The sprite is drawn this far out from the wall so
+## the hand and boot rest on its face instead of sinking into it (Sean, 2026-11-28).
+const WALL_STANDOFF := 17.0
+## How fast the standoff eases out when he leaves the wall, in px/s.
+const WALL_STANDOFF_EASE := 220.0
+
+
+## Where the sprite sits across from the body: out from the wall in a cling.
+static func wall_offset(p: Player) -> float:
+	if p.is_wall_sliding and p.wall_dir != 0 and armor_sheet() == HERO_SHEET:
+		return -p.wall_dir * WALL_STANDOFF
+	return 0.0
+
+
 ## Which way the sprite is drawn. A wall slide is drawn gripping the wall (the
 ## sheet's pose reaches forward with a foot on it), while `facing` points away
-## from the wall so a wall jump or a swing still goes outward (playtest).
+## from the wall so a wall jump or a swing still goes outward (playtest). The
+## 128 px hero clings facing the camera with the wall at the left of its art
+## (Sean, 2026-11-26), so it is drawn mirrored when the wall is on the right.
 static func look_dir(p: Player) -> int:
-	return p.wall_dir if p.is_wall_sliding and p.wall_dir != 0 else p.facing
+	if p.is_wall_sliding and p.wall_dir != 0:
+		return -p.wall_dir if armor_sheet() == HERO_SHEET else p.wall_dir
+	return p.facing
 
 
 ## The current frame's metadata: hand and neck points (relative to the feet,
@@ -477,21 +522,27 @@ func _draw() -> void:
 			a *= 0.3
 		Sheet.draw(self, sheet, anim, frame, Color(OINTMENT, a), true)
 	var info := frame_info()
-	if player.cloak and player.cloak.shown():
+	var hero := sheet == HERO_SHEET
+	if player.cloak and player.cloak.shown() and not hero:
+		# The 128 px hero's lowered hood is drawn into its art.
 		player.cloak.draw_hood(self, info, tint)
 	var hand := Vector2(info.hand[0], info.hand[1])
-	if String(GameState.data.equipment.get("helmet", "")) == "elven_helm" and not sheet in HELMED_SHEETS.values():
+	# The shield fist, where the frame marks one.
+	var off := Vector2(info.off[0], info.off[1]) if info.has("off") else hand + Vector2(2, 0)
+	if String(GameState.data.equipment.get("helmet", "")) == "elven_helm" and not sheet in HELMED_SHEETS.values() and not hero:
 		# Its own layer over the head (paper-doll): the hero's sheet is bare-headed.
 		var crown: Array = info.get("head", [info.neck[0], info.neck[1] - 16])
 		_draw_helmet(Vector2(crown[0], crown[1]), tint)
-	if info.has("blade"):
-		_draw_blade(hand, deg_to_rad(float(info.blade)), BLADE_LENGTH + player.reach_bonus * 0.75, tint)
 	if anim == "block" and not shield_drawn():
-		_draw_shield(hand + Vector2(2, 0), tint)
-	elif anim == "drink" and not info.get("art_prop", false):
-		draw_rect(Rect2(hand + Vector2(-2, -6), Vector2(4, 6)), OUTLINE)
-		draw_rect(Rect2(hand + Vector2(-1, -5), Vector2(2, 4)), POTION * tint)
-		draw_rect(Rect2(hand + Vector2(-1, -5), Vector2(1, 1)), GLASS * tint)
+		_draw_shield(off, tint)
+	if info.has("blade"):
+		var length := HERO_BLADE_LENGTH if hero else BLADE_LENGTH
+		_draw_blade(hand, deg_to_rad(float(info.blade)), length + player.reach_bonus * 0.75, tint)
+	if anim == "drink" and not info.get("art_prop", false):
+		var vial := off if hero else hand
+		draw_rect(Rect2(vial + Vector2(-2, -6), Vector2(4, 6)), OUTLINE)
+		draw_rect(Rect2(vial + Vector2(-1, -5), Vector2(2, 4)), POTION * tint)
+		draw_rect(Rect2(vial + Vector2(-1, -5), Vector2(1, 1)), GLASS * tint)
 
 
 func _draw_blade(hand: Vector2, angle: float, length: float, tint: Color) -> void:
@@ -528,8 +579,10 @@ func shield_drawn() -> bool:
 
 
 func _draw_shield(at: Vector2, tint: Color) -> void:
-	var r := Rect2(at + Vector2(-2, -7), Vector2(6, 14))
+	# The 128 px hero's is larger, to match its body.
+	var big := sheet == HERO_SHEET
+	var r := Rect2(at + Vector2(-3, -10), Vector2(8, 20)) if big else Rect2(at + Vector2(-2, -7), Vector2(6, 14))
 	draw_rect(r.grow(1.0), OUTLINE)
 	draw_rect(r, SHIELD * tint)
 	draw_rect(Rect2(r.position + Vector2(1, 0), Vector2(1, r.size.y)), Color(SHIELD.lightened(0.25), 1.0) * tint)
-	draw_rect(Rect2(r.position + Vector2(2, 5), Vector2(2, 4)), SHIELD_BOSS * tint)
+	draw_rect(Rect2(r.position + Vector2(r.size.x / 2.0 - 1.0, r.size.y / 2.0 - 2.0), Vector2(2, 4)), SHIELD_BOSS * tint)

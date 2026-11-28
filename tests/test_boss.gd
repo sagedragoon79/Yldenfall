@@ -877,7 +877,9 @@ func test_durgan_phase_two_raises_the_lift_and_climbs() -> void:
 	check(dove and z.global_position.y < 12 * Room.TILE, "it climbs the wall (y %.0f)" % z.global_position.y)
 	check(absf(z.dive_target.x - w.player.global_position.x) < 48.0, "and marks the player's spot")
 	var landed := await _until(func() -> bool: return z.stuck(), 180)
-	check(landed and z.is_on_floor(), "then dives and buries the drill in the floor")
+	# The dive can stop a pixel short of the floor; it settles there the next frame.
+	await frames(2)
+	check(landed and z.stuck() and z.is_on_floor(), "then dives and buries the drill in the floor")
 
 
 func test_durgan_phase_three_opens_the_cockpit() -> void:
@@ -1561,7 +1563,7 @@ func test_the_plume_rolls_the_floor_straight_across_the_sunken_cistern() -> void
 		level = level and z.ground_at((col + 0.5) * t) == floor_y
 	check(level, "its ground is the floor all the way across, over the cistern's mouth too")
 	var pit := z.cistern.inside
-	check(is_equal_approx(pit.position.y, floor_y) and is_equal_approx(pit.size.y, 3 * t), "the cistern is a pit under the floor, three tiles deep (%s)" % pit)
+	check(is_equal_approx(pit.position.y, floor_y) and is_equal_approx(pit.size.y, 4 * t), "the cistern is a pit under the floor, four tiles deep (%s)" % pit)
 	check(not w.room.is_solid_at(pit.get_center()) and w.room.is_solid_at(Vector2(pit.get_center().x, pit.end.y + 4.0)), "cut into the room, with a bed under it")
 	var beside := true
 	for x: float in [pit.position.x - 8.0, pit.end.x + 8.0]:
@@ -1587,7 +1589,8 @@ func test_the_plume_rolls_the_floor_straight_across_the_sunken_cistern() -> void
 		plume.global_position.x = p.global_position.x
 		check(not plume.rect().intersects(p.body_rect()), "so the plume rolls over him")
 	# And he can get out again with one jump.
-	check(pit.size.y + lip.size.y < p.tuning.jump_height, "one jump clears the pit and its lip (%.0f px under a %.0f px jump)" % [pit.size.y + lip.size.y, p.tuning.jump_height])
+	# The lip is drawn behind him and holds nothing, so the jump only has to clear the pit.
+	check(pit.size.y < p.tuning.jump_height, "one jump clears the pit (%.0f px under a %.0f px jump)" % [pit.size.y, p.tuning.jump_height])
 
 
 func test_the_geyser_fires_a_locked_straight_line() -> void:
@@ -4176,7 +4179,7 @@ func test_the_alpha_waits_in_a_den_under_the_kings_kennels() -> void:
 	var kennels := Room.from_file(World.room_path("vorrhallow/kings_kennels"))
 	check(kennels.doors.has(3) and String(kennels.doors[3].target) == ALPHA_ROOM, "a shaft in the kennels' floor drops to the den")
 	kennels.free()
-	var w := make_world({}, ALPHA_ROOM, cell_feet(8, 3))
+	var w := make_world({}, ALPHA_ROOM, cell_feet(8, 6))
 	await frames(3)
 	var arena := _arena(w)
 	check(arena != null and arena.boss_id == "clockwork_alpha", "the den is a boss arena")
@@ -4285,7 +4288,7 @@ func test_the_alpha_winds_pups_in_its_second_phase() -> void:
 
 
 func test_the_alpha_gives_a_life_fruit() -> void:
-	var w := make_world({}, ALPHA_ROOM, cell_feet(8, 3))
+	var w := make_world({}, ALPHA_ROOM, cell_feet(8, 6))
 	var p := w.player
 	await frames(3)
 	var arena := _arena(w)

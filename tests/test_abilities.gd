@@ -44,9 +44,10 @@ const SPIKE_FLOOR := [
 
 
 ## Puts the player in the air against the right wall of the shaft, holding into it.
-func _start_on_right_wall(abilities := {}) -> Player:
+## Row 10 is low enough for four climb jumps under the ceiling (the 54 px body).
+func _start_on_right_wall(abilities := {}, row := 10) -> Player:
 	var room := make_room(SHAFT)
-	var p := make_player(room, Vector2i(14, 6), abilities)
+	var p := make_player(room, Vector2i(14, row), abilities)
 	p.input.move_x = 1
 	await frames(20)
 	return p
@@ -175,13 +176,41 @@ func test_wall_slide_is_drawn_gripping_the_wall() -> void:
 	var p := await _start_on_right_wall()
 	await frames(20)
 	check(p.is_wall_sliding and p.facing == -1, "sliding on a right wall, facing away for the jump")
-	check(PlayerVisual.look_dir(p) == 1, "but the sprite faces the wall it grips (playtest)")
+	# The 128 px hero clings facing the camera, its art drawn with the wall at its left
+	# (Sean, 2026-11-26): a right wall mirrors it. The old sets faced the wall they gripped.
+	check(PlayerVisual.look_dir(p) == -1, "the sprite is mirrored to put the right wall at its side")
 	await frames(1)
-	check(p.visual.scale.x > 0.0, "and is drawn unflipped (scale.x %.2f)" % p.visual.scale.x)
+	check(p.visual.scale.x < 0.0, "and is drawn flipped (scale.x %.2f)" % p.visual.scale.x)
+	check(p.visual.anim == "wall" and not p.visual.frame_info().has("blade"), "showing no sword on the wall")
+	PlayerVisual.one_body = false
+	check(PlayerVisual.look_dir(p) == 1, "an armor set still faces the wall it grips (playtest)")
+	PlayerVisual.one_body = true
+
+
+## Sean, 2026-11-28: the cling sat too far inside the wall. The art's palm and planted
+## boot reach 18 px past the body's edge, so the sprite is drawn out from the wall by
+## WALL_STANDOFF, and eases back over the body once he leaves it.
+func test_the_cling_rests_on_the_wall_face() -> void:
+	var p := await _start_on_right_wall()
+	await frames(20)
+	check(p.is_wall_sliding, "clinging to the right wall")
+	check(is_equal_approx(p.visual.position.x, -PlayerVisual.WALL_STANDOFF), "drawn %.0f px out from it (got %.1f)" % [PlayerVisual.WALL_STANDOFF, p.visual.position.x])
+	# The art reaches 25.5 px from its origin on the wall side (palm and boot); as drawn,
+	# that ends within 2 px of the wall's face.
+	var wall_face := p.global_position.x + Player.BODY_SIZE.x / 2.0
+	var reach := p.visual.global_position.x + 25.5
+	check(absf(reach - wall_face) <= 2.0, "the palm rests on the wall's face (%.1f px off)" % (reach - wall_face))
+	p.input.move_x = -1
+	p.input.jump_pressed = true
+	await frames(1)
+	p.input.jump_pressed = false
+	await frames(12)
+	check(not p.is_wall_sliding and p.visual.position.x == 0.0, "and is back over the body once off the wall (%.1f)" % p.visual.position.x)
 
 
 func test_no_wall_slide_without_glove() -> void:
-	var p := await _start_on_right_wall({"glove": false})
+	# High on the wall, so a fall at full speed is still falling when it is checked.
+	var p := await _start_on_right_wall({"glove": false}, 4)
 	await frames(5)
 	check(not p.is_wall_sliding, "no wall slide without the Climbing Glove")
 	check(p.velocity.y > p.tuning.wall_slide_speed, "falls at full speed (vy %.1f)" % p.velocity.y)
@@ -1017,7 +1046,7 @@ func test_feather_fall_needs_the_skill_and_brakes_a_fast_fall() -> void:
 ## Bible 6.2: air acceleration 1,400 px/s² and deceleration 900 px/s².
 func test_air_control_matches_the_bible() -> void:
 	var room := _tall_room()
-	var p := make_player(room, Vector2i(3, 3))
+	var p := make_player(room, Vector2i(3, 5))
 	await frames(1)
 	p.velocity = Vector2.ZERO
 	p.input.move_x = 1
