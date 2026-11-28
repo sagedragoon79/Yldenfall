@@ -55,7 +55,13 @@ the floor, stands on posts.
 
 ## Full suite
 
-See below.
+Two full runs (`TEST_TIMEOUT=7200`). The first failed `test_ladders_never_open_a_gated_room`
+(fixed above) and frame-time checks. The second: 38,613 checks passed, 2 failed, both frame-time
+budgets (a 63 ms spike after the end, `spires/sky_steps` at 8.15 ms). Rerun alone, both pass. The
+room-load budget (`test_every_room_loads_and_settles_inside_the_budget`) misses on this PC by 3 to
+20 ms in `evercrown/proving_scar` and also fails twice on an untouched `main` checkout (521 and
+515 ms, `sky_steps` 8.04 ms), so it predates this pass; the decks are drawn once per room load. CI
+(test and mix) is green, with the full suite passing there.
 
 ## Rubric (design bible 15.3)
 
