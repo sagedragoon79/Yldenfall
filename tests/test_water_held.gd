@@ -61,6 +61,31 @@ func test_the_source_halls_pool_lies_level_with_its_ledge() -> void:
 	check(top == ledge, "the surface (row %d) is the ledge's top (row %d)" % [top, ledge])
 
 
+
+## Pass 679 (bible 12.156): the Source Hall's pool was a box, one depth from wall to
+## ledge. Its bed now climbs to the ledge in steps under the water and a fallen block
+## lies on it, so the pool takes three depths or more.
+func test_the_source_halls_basin_climbs_to_its_ledge() -> void:
+	var grid: Array[String] = Room.parse(_rooms()["sunken/source_hall"]).grid
+	var water := _water(grid)
+	var depth := {}
+	for c: Vector2i in water:
+		depth[c.x] = int(depth.get(c.x, 0)) + 1
+	var cols: Array = depth.keys()
+	cols.sort()
+	var kinds := {}
+	for x: int in cols:
+		kinds[depth[x]] = true
+	check(kinds.size() >= 3, "the pool takes three depths or more (%s)" % [kinds.keys()])
+	var last: int = cols.back()
+	check(int(depth[last]) < int(depth[last - 4]) - 1, "the bed climbs toward the ledge (%d at the ledge, %d four columns west)" % [depth[last], depth[last - 4]])
+	var bump := false
+	for i in range(2, cols.size() - 6):
+		var x: int = cols[i]
+		if int(depth[x]) < int(depth[cols[i - 1]]) and int(depth[x]) < int(depth[cols[i + 2]]):
+			bump = true
+	check(bump, "a fallen block lies on the bed away from the ledge")
+
 func test_what_is_set_in_the_water_is_under_it() -> void:
 	var grid: Array[String] = Room.parse(_rooms()["sunken/spring_gate"]).grid
 	var water := {}

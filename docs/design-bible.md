@@ -3355,7 +3355,7 @@ Judged by eye at 1x and 2x in the Source Hall, the Drowned Aqueduct, the Spring 
 
 The grade of pass 665 named the Source Hall's water "a hard-edged box ending in a vertical line". It was: the pool's top two rows stood two tiles over the ledge beside it, so from the surface down to the ledge its right side was a wall of water against open air, held by nothing. The same fault, smaller, was in the Spring Gate: a chest and a figure set in the water each kept a dry cell of their own (the room marks only `a` and `l` cells as water), and one open cell under the stone beside the east door stood dry with water on three sides.
 
-- **The Source Hall's pool lies level with its ledge.** Its surface is now the ledge's top (row 15), five tiles deep, so it meets stone at both ends and laps there (12.97). The shafts of 12.141 still enter it.
+- **The Source Hall's pool lies level with its ledge.** Its surface is now the ledge's top (row 15), five tiles deep (since 12.156 its bed climbs to the ledge in steps), so it meets stone at both ends and laps there (12.97). The shafts of 12.141 still enter it.
 - **What is set in the water is under it** (`Room.water_holes`). After the grid is placed, an open cell with water over it, and water or what holds water (stone, a slope, a board, a door) at each side and under it, becomes water; it grows down from the water and then lets go of any cell left open, so a pocket two cells deep fills whole. A cell under the open air over the surface is never filled. The Spring Gate's chest and figure are now in the water; its cell by the door is drawn as water in the room file.
 - **The rule, for every room** (`Room.unheld_water`): no swim water cell has open air at its side or under it. A door counts as holding it (the water goes on into the next room).
 
@@ -3505,6 +3505,15 @@ The grade of pass 675 named "the canopy bridge's hit frame": a red hurt hero und
 - **Every sheet foe is keyed off its ground** (`Enemy.FOE_KEY_STEPS` 1 px, in `TELL_KEY` at `LIGHT_KEY_RIM` 0.95). The keyline 12.154 gave a foe with its own light now runs round every foe drawn from a sheet, one pixel wide; a lit foe keeps its two (`Enemy.key_steps`). It lies under a tell's and a blow's rim, and a dead foe is drawn without it. On a dark ground it sinks into the dark; on a light one (the canopy, the plaza's sun, the source hall's water) it is the value break the foe lacked, and it gives a cast drawn by several hands one edge.
 
 Judged by eye at 1x and 3x in the canopy bridge and across the eleven fight frames. `test_the_hurt_hero_keeps_his_colors_and_every_foe_is_keyed` (`tests/test_hit_flash.gd`) holds it.
+
+### 12.156 The Source Hall is a vault over a basin (pass 679)
+
+The grade of pass 675 named "the source hall's water box in its brick border". It was both: the hall's ceiling was one flat brick band four rows deep from wall to wall, so the room was a ruled rectangle of brick, and the pool in it was another, five tiles deep from the west door to the ledge with a flat bed and a sheer brick side.
+
+- **One vault** (`levels/sunken/source_hall.room`). The ceiling springs from row 9 at the west wall and row 8 at the east and rises in five steps a side to an eleven-column crown at row 4 over the middle of the hall; every step, and its corner with each wall, carries a haunch (12.78). The east door, the platform and its Life Fruit keep their headroom.
+- **A basin, not a box.** The pool's bed climbs to the ledge in three steps under the water (one, two and four tiles high), so the deep water shoals before it meets stone, and a fallen block lies on its bed toward the west. The surface still lies level with the ledge (12.142) and the shafts of 12.141 still enter it; they stop on the steps.
+
+Reachability is unchanged. Judged by eye at 1x and 2x. `test_the_source_hall_is_one_vault` (`tests/test_ceiling_forms.gd`) and `test_the_source_halls_basin_climbs_to_its_ledge` (`tests/test_water_held.gd`) hold it.
 
 ## 13. Asset Production Plan
 
