@@ -126,6 +126,17 @@ var sheet := SHEET_NAME
 var _dye_worn := ""
 var _blink_time := 0.0
 var _red_time := 0.0
+## The hurt flash keeps the hero's colors (bible 12.155, pass 678). The pass 675 grade
+## read the hurt hero, multiplied to a dark red all over for the flash, as a foe: a
+## maroon figure beside the mantis that struck him. Through the flash he is drawn in
+## his own colors inside a ring: `HURT_RIM` one pixel out, and the near-black
+## `HURT_KEY` a pixel beyond it, so the blow shows on his edge and he is still himself.
+const HURT_RIM := Color("ff5a4a")
+const HURT_KEY := Color("120c16")
+const HURT_STEPS: Array[Vector2] = [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]
+## Whether the last drawing wore the hurt ring, and the tint its body was drawn in (for tests).
+var hurt_ring_drawn := false
+var drawn_tint := Color.WHITE
 ## The level-up glow (design bible 5.6): how long is left of LEVEL_GLOW.
 const LEVEL_GLOW := 0.7
 var _level_time := 0.0
@@ -430,7 +441,16 @@ func _sync_dye() -> void:
 
 func _draw() -> void:
 	_sync_dye()
-	var tint := Color(1.0, 0.45, 0.45) if _red_time > 0.0 else Color.WHITE
+	var tint := Color.WHITE
+	hurt_ring_drawn = _red_time > 0.0 and not player.dead
+	if hurt_ring_drawn:
+		# The hurt ring (12.155): the key two pixels out, the red one pixel out, and his
+		# own colors over both.
+		for k: int in [2, 1]:
+			for step: Vector2 in HURT_STEPS:
+				draw_set_transform(step * float(k))
+				Sheet.draw(self, sheet, anim, frame, HURT_KEY if k == 2 else HURT_RIM, true)
+		draw_set_transform(Vector2.ZERO)
 	var ill := player.shown_condition()
 	if ill != "" and _red_time <= 0.0:
 		# A condition lays its own cast over the hero (poison's sickly green,
@@ -447,6 +467,7 @@ func _draw() -> void:
 		Sheet.draw(self, sheet, anim, frame, Color(0.25, 0.95, 1.0, 0.55 * k), false)
 		draw_set_transform(Vector2.ZERO)
 		tint = tint.lerp(Color(1.6, 1.5, 1.1), 0.7 * k)
+	drawn_tint = tint
 	Sheet.draw(self, sheet, anim, frame, tint, false)
 	var oint := player.ointment_left
 	if oint > 0.0:

@@ -257,3 +257,39 @@ func test_a_struck_foe_is_lit_on_the_side_the_blow_came_from() -> void:
 			check(h.struck_edge_drawn() == 0, "a tell never wears it")
 	check(tells >= 1, "the wind-up pulsed (%d frames)" % tells)
 	h.state = "idle"
+
+
+## Pass 678 (bible 12.155): the pass 675 grade read the canopy bridge's hit frame
+## wrongly twice over. The hurt hero, multiplied to a dark red all over, read as a
+## foe; the mantis and the Bark Knight stood at the green air's own value. The hurt
+## hero keeps his own colors inside a red ring with a dark key, and every sheet foe
+## wears a near-black keyline round its silhouette.
+func test_the_hurt_hero_keeps_his_colors_and_every_foe_is_keyed() -> void:
+	var room := Room.from_text("\n".join(PackedStringArray(ROWS)))
+	arena.add_child(room)
+	var h: Hornet = null
+	for c in room.get_children():
+		if c is Hornet:
+			h = c
+	var p := make_player(room, Vector2i(3, 7))
+	await frames(2)
+	# Every sheet foe is keyed, at rest and through a blow; a lit foe keeps its wider key.
+	check(h.key_steps_drawn() == Enemy.FOE_KEY_STEPS and Enemy.FOE_KEY_STEPS >= 1, "a hornet at rest wears the keyline (%d)" % h.key_steps_drawn())
+	check(not h.light_keyed and h.key_steps() < Enemy.LIGHT_KEY_STEPS, "narrower than a lit foe's")
+	h.take_hit(1, Vector2(1, 0))
+	await frames(1)
+	check(h.key_steps_drawn() == Enemy.FOE_KEY_STEPS and h.hit_rim_drawn(), "and through a blow, under the dark rim")
+	check(FoeLight.luma(Enemy.TELL_KEY) < 0.08 and Enemy.LIGHT_KEY_RIM >= 0.9, "in near-black, nearly solid")
+	# The hurt hero: a ring, never a red body.
+	check(not p.visual.hurt_ring_drawn, "the hero at rest wears no ring")
+	p.take_damage(10)
+	await frames(1)
+	check(p.visual.hurt_ring_drawn, "hurt, he wears the ring")
+	check(p.visual.drawn_tint == Color.WHITE, "in his own colors (%s)" % p.visual.drawn_tint)
+	check(PlayerVisual.HURT_RIM.r > 0.9 and PlayerVisual.HURT_RIM.g < 0.5, "the ring is red")
+	check(FoeLight.luma(PlayerVisual.HURT_KEY) < 0.08, "keyed in near-black outside it")
+	await frames(12)
+	check(not p.visual.hurt_ring_drawn, "and it goes with the flash")
+	h.take_hit(9999, Vector2(1, 0))
+	await frames(2)
+	check(not is_instance_valid(h) or h.key_steps_drawn() == 0, "a dead foe is drawn without it")

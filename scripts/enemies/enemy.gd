@@ -108,6 +108,14 @@ const TELL_KEY := Color("120c16")
 ## stands in front of it as the silhouette 12.52 meant.
 const LIGHT_KEY_STEPS := 2
 const LIGHT_KEY_RIM := 0.95
+## Every sheet foe is keyed off its ground (bible 12.155, pass 678). The pass 675 grade
+## read the canopy bridge's mantis and Bark Knight "on the green": a lime body and an
+## olive one at the canopy air's own value, and neither sheet closes its shape in a
+## dark line. Every sheet foe now wears the same near-black keyline, `FOE_KEY_STEPS`
+## px wide, round its whole silhouette (a foe with its own light keeps its wider one),
+## so a foe has a value break on a light ground as well as a dark one, and the cast,
+## drawn by several hands, shares one edge.
+const FOE_KEY_STEPS := 1
 const TELL_KEY_RIM := 0.5
 const TELL_KEY_STEP := 2.0
 const GLINT_KEY := 2.0
@@ -267,6 +275,8 @@ var _glint_keyed := false
 ## last sheet drawing wore the dark keyline that parts it from that light (12.154).
 var light_keyed := false
 var _light_key_drawn := false
+## How many pixels wide the keyline was in this foe's last sheet drawing (12.155).
+var _key_steps_drawn := 0
 var _glint_at := Vector2.ZERO
 ## How far into its rear this foe's last sheet frame was drawn (0 to 1), and the
 ## most of the weapon's light that lay on it (an alpha; 0 with none).
@@ -835,14 +845,18 @@ func draw_sheet(sheet: String, anim: String, t: float, white := false, offset :=
 	_key_drawn = false
 	_glint_keyed = false
 	_light_key_drawn = false
-	if light_keyed and not dead:
-		# Keyed off its own light (12.154): its silhouette in near-black, a pixel out all
-		# round, under everything else; a tell's or a blow's rim lies over it.
-		for k in range(LIGHT_KEY_STEPS, 0, -1):
+	_key_steps_drawn = 0
+	if not dead:
+		# Keyed off its ground (12.155), or off its own light, wider (12.154): its
+		# silhouette in near-black, a pixel out all round, under everything else; a
+		# tell's or a blow's rim lies over it.
+		var steps := key_steps()
+		for k in range(steps, 0, -1):
 			for step: Vector2 in RIM_STEPS:
 				draw_set_transform_matrix(_sheet_transform(offset + step * float(k)))
 				Sheet.draw(self, sheet, anim, f, Color(TELL_KEY, LIGHT_KEY_RIM), true)
-		_light_key_drawn = true
+		_key_steps_drawn = steps
+		_light_key_drawn = light_keyed
 	if _tell_drawn and glint:
 		# The tell lights the weapon, not the foe: the rim only near the point.
 		_sheet_white_alpha = 0.0
@@ -973,6 +987,18 @@ func glint_drawn() -> float:
 ## Whether this foe's last sheet drawing wore the keyline off its own light (12.154).
 func light_key_drawn() -> bool:
 	return _light_key_drawn
+
+
+## How wide this foe's keyline is (bible 12.155): a foe with its own light's wider
+## one (12.154), or every other sheet foe's.
+func key_steps() -> int:
+	return LIGHT_KEY_STEPS if light_keyed else FOE_KEY_STEPS
+
+
+## How many pixels wide the keyline was in this foe's last sheet drawing; 0 when none
+## was drawn (dead, or a foe drawn in code rather than from a sheet).
+func key_steps_drawn() -> int:
+	return 0 if dead else _key_steps_drawn
 
 
 ## Whether this foe's last tell wore its dark keyline outside the warm rim (12.151).
