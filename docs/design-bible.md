@@ -2070,7 +2070,7 @@ The hitbox, the pogo, the cut and the fight are unchanged. Judged by eye at 1x a
 
 ### 12.38 Solid mass falls off into darkness (pass 547)
 
-(A floor two to four tiles thick is too thin for this falloff; since pass 680 it has its own, 12.157.)
+(A floor two to four tiles thick is too thin for this falloff; since pass 680 it has its own, 12.157. Since pass 681 the ground under a floor sinks no darker than that floor shade's full, 12.158.)
 
 The pass 545 grade's top defect: "off-room solid mass is one flat repeated cobble tile with scattered dots". The tilesets have three depths of ground tile (the lit edge, one step in, the interior), so every cell three or more tiles from open air drew the same interior tile, out to the room's frame. `DeepShade` (`scripts/world/deep_shade.gd`) now sinks the interior into shadow the deeper it lies, over the tiles and `EdgeShade`, under the actors:
 
@@ -3524,9 +3524,20 @@ The grade of pass 675 named "uniform floor strips" in the Tower foot, the veins 
 - **The foot of a column** (`FloorShade.floor_tops`). A floor is the run of solid cells from a column's bottom row up to its first open cell, at least two tiles deep (`MIN_RUN`). A wall that runs from the room's top to its bottom is not one, mass that hangs over the floor does not join it, a pit is not one, and a column holding a secret is left alone.
 - **The lip stays lit, the ground falls away** (`FloorShade.FROM` 0.5, `SPAN` 2.0, `MAX_ALPHA` 0.7). The walking tile's upper half (its lip, the riveted rail, the moss) is untouched; under it the ground sinks on a smoothstep to 0.7 of near-black by two and a half tiles down, so the ground still shows through. It is drawn in four bands with colours at their corners, so it grades smoothly: no dither and no steps (the marsh road's dither is a held defect).
 - **It meets itself.** At a column's edge the depth is measured from the lower of the two floors' tops, so across a bank or a slope (12.150) the shade is continuous and never reaches into a walking tile; beside a step down it eases to meet the lower floor.
-- Drawn over the tiles, `EdgeShade` and `DeepShade` and under the actors, once per room load and again when a guardian tears the floor. Where the floor is deep (the Source Hall's east half) it lies on `DeepShade` and the two together take the mass to near-black.
+- Drawn over the tiles, `EdgeShade` and `DeepShade` and under the actors, once per room load and again when a guardian tears the floor. Where the floor is deep (the Source Hall's east half) it lay on `DeepShade` and the two together took the mass to near-black; since pass 681 they never stack (12.158).
 
 After, the same Tower foot rows fall from 96 at the lip to 68 a tile down and 33 a tile and a half down (96 and 71 before). Judged by eye at 1x and 2x in the three named rooms beside the pictures from before, and at 1x in the Hearthroot plaza, the canopy bridge and the deep roots: each floor now reads as a lit edge over ground going into shadow, as Hollow Knight's do. `tests/test_floor_shade.gd` holds it: which columns are floors, the lit lip and the falloff, no seam across a bank, and every flat floor of the three named rooms in shade two and a half tiles down.
+
+### 12.158 The ground under a floor is one fall into shadow (pass 681)
+
+The grade of pass 680 read "a heavy dark ellipse" under the Source Hall's floor. Its east half stands on eight tiles of ground, and two shades met there: `DeepShade` (12.38) sank that ground radially, by its distance from the pool and the walking line, to 0.86 of near-black, and `FloorShade` (12.157) laid its own 0.7 over it, 0.96 together. The ground under the floor became a black blob, its brickwork gone, bounded by the lit steps of the pool's bed.
+
+- **The ground under a floor is foreground** (`DeepShade.cap_under_floors`). The room passes its floors (`FloorShade.floor_tops`) to `DeepShade`, and every cell at or under a floor's top is held at the floor shade's full darkness (0.7 of near-black, a field of 0.7 / 0.86). That ground is cut by the screen's edge, not mass deep in the world. Walls from the room's top to its bottom, mass hanging over the room and the secret layer's own shade are untouched. The deep forms (12.123) need a full field, so they stay out of the ground under a floor.
+- **The floor shade never stacks** (`FloorShade.eased`). It adds only the darkness the deep shade has not already given: `(want - deep) / (1 - deep)`, nothing where the deep is already as dark. The two together are as dark as the darker of them, so the ground grades by its depth under the walking line and reads as one fall into shadow. It is drawn as one triangle list, four strips to a column and a row every half tile below the falloff, coloured at the corners, so the easing follows the deep shade smoothly.
+
+After: under the Source Hall's ledge the deepest ground rose from 6 to 12 of 255 to about 20, and the brick courses read down to the frame. Judged by eye at 1x and 2x beside the picture from before, and at 1x in the Tower foot, the veins and the Hearthroot plaza, whose thin floors are unchanged. `tests/test_floor_shade.gd` and `tests/test_deep_shade.gd` hold it: the easing reaches the floor's darkness and no more, the ground under a floor stops at the cap while hanging mass sinks to full, and in the Source Hall the two shades never stack and never pass the floor shade's full.
+
+A held cell is one flat value, so the deep shade paints it as one rect at the floor shade's full, not as dithered blocks between two steps; the dithered version cost the biggest rooms 60 to 200 ms of load.
 
 ## 13. Asset Production Plan
 
