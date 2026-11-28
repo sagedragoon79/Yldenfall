@@ -30,7 +30,7 @@ Design bible 12.153 (new); `scripts/world/plank_supports.gd` (`DECKS`, a `deck` 
 - **The Spires and the dwarf halls: a stone slab.** Two courses of the zone's stone, the lower one
   corbelled in at each end and hanging 3 px below the cell, joints staggered.
 - **The town keeps the girder; the Evercrown keeps its grown underside.**
-- **The shafts replanned.** `tower/foot`'s decks are three to eight cells wide and three, four or
+- **The shafts replanned.** `tower/foot`'s hung decks are three to nine cells wide and three, four or
   seven rows apart; the veins' four to ten wide and two, three or four rows apart, at no fixed
   column. Where a deck now stands within a post's reach of the one below, it stands on posts
   (12.30), which breaks the stack further. Every light vein keeps a deck two rows under it.
@@ -48,7 +48,10 @@ V braces over the slab; at 1x they read as joints in the stone.
 Mutation check: with the raft's log ends drawn square the test fails (no scallop); with the Tower
 building the girder it fails twice (no zigzag). The first replan of the Tower's upper decks left a
 2-cell gap under a four-row climb and the reachability checker lost the chest at (13, 7); the decks
-now meet edge to edge there.
+now meet edge to edge there. The first full run then found the lower decks no longer reached the
+ledge without the ladder (`test_ladders_never_open_a_gated_room`: the ladder opened the winch hall
+and the rooms past it); they too meet edge to edge or overlap now, and the lowest, three rows over
+the floor, stands on posts.
 
 ## Full suite
 
