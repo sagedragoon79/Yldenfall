@@ -2070,6 +2070,8 @@ The hitbox, the pogo, the cut and the fight are unchanged. Judged by eye at 1x a
 
 ### 12.38 Solid mass falls off into darkness (pass 547)
 
+(A floor two to four tiles thick is too thin for this falloff; since pass 680 it has its own, 12.157.)
+
 The pass 545 grade's top defect: "off-room solid mass is one flat repeated cobble tile with scattered dots". The tilesets have three depths of ground tile (the lit edge, one step in, the interior), so every cell three or more tiles from open air drew the same interior tile, out to the room's frame. `DeepShade` (`scripts/world/deep_shade.gd`) now sinks the interior into shadow the deeper it lies, over the tiles and `EdgeShade`, under the actors:
 
 - **Distance to air**: each solid cell's 8-way distance in tiles to the nearest open cell (slopes count as open, as for the tile depth; the room's outside counts as solid). Nothing within 2.5 tiles, so the lit edge and the step in are never touched; full darkness 4 tiles further in, at 86% of a near-black, so a trace of the rock still shows at the back.
@@ -3514,6 +3516,17 @@ The grade of pass 675 named "the source hall's water box in its brick border". I
 - **A basin, not a box.** The pool's bed climbs to the ledge in three steps under the water (one, two and four tiles high), so the deep water shoals before it meets stone, and a fallen block lies on its bed toward the west. The surface still lies level with the ledge (12.142) and the shafts of 12.141 still enter it; they stop on the steps.
 
 Reachability is unchanged. Judged by eye at 1x and 2x. `test_the_source_hall_is_one_vault` (`tests/test_ceiling_forms.gd`) and `test_the_source_halls_basin_climbs_to_its_ledge` (`tests/test_water_held.gd`) hold it.
+
+### 12.157 A floor sinks into the ground under it (pass 680)
+
+The grade of pass 675 named "uniform floor strips" in the Tower foot, the veins and the Source Hall. A room's floor is two to four tiles of ground between the walking line and the frame. `DeepShade` (12.38) starts 2.5 tiles from open air, and the room's bottom edge counts as solid, so it barely touched a floor that thin: measured in the Tower foot, the plates stood at the walking tile's value (median 96 of 255) down to two tiles under it, one tile repeated from wall to wall, a lit strip under the whole room.
+
+- **The foot of a column** (`FloorShade.floor_tops`). A floor is the run of solid cells from a column's bottom row up to its first open cell, at least two tiles deep (`MIN_RUN`). A wall that runs from the room's top to its bottom is not one, mass that hangs over the floor does not join it, a pit is not one, and a column holding a secret is left alone.
+- **The lip stays lit, the ground falls away** (`FloorShade.FROM` 0.5, `SPAN` 2.0, `MAX_ALPHA` 0.7). The walking tile's upper half (its lip, the riveted rail, the moss) is untouched; under it the ground sinks on a smoothstep to 0.7 of near-black by two and a half tiles down, so the ground still shows through. It is drawn in four bands with colours at their corners, so it grades smoothly: no dither and no steps (the marsh road's dither is a held defect).
+- **It meets itself.** At a column's edge the depth is measured from the lower of the two floors' tops, so across a bank or a slope (12.150) the shade is continuous and never reaches into a walking tile; beside a step down it eases to meet the lower floor.
+- Drawn over the tiles, `EdgeShade` and `DeepShade` and under the actors, once per room load and again when a guardian tears the floor. Where the floor is deep (the Source Hall's east half) it lies on `DeepShade` and the two together take the mass to near-black.
+
+After, the same Tower foot rows fall from 96 at the lip to 68 a tile down and 33 a tile and a half down (96 and 71 before). Judged by eye at 1x and 2x in the three named rooms beside the pictures from before, and at 1x in the Hearthroot plaza, the canopy bridge and the deep roots: each floor now reads as a lit edge over ground going into shadow, as Hollow Knight's do. `tests/test_floor_shade.gd` holds it: which columns are floors, the lit lip and the falloff, no seam across a bank, and every flat floor of the three named rooms in shade two and a half tiles down.
 
 ## 13. Asset Production Plan
 

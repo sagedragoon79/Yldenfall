@@ -45,6 +45,7 @@ var _planks := {}
 var _grates := {}
 var _secret_cells := {}
 var _deep_shade: DeepShade
+var _floor_shade: FloorShade
 var _soffit_shade: SoffitShade
 var _top_lip: TopLip
 ## Where Carillon's rain lands (design bible 12.107); null where it does not rain.
@@ -346,6 +347,12 @@ func build(text: String) -> void:
 		secrets.add_child(hidden)
 		hidden.setup(_deep_solids(), size_tiles, _secret_cells, {}, zone, hash(id))
 
+	# A floor sinks into the ground under it (design bible 12.157).
+	_floor_shade = FloorShade.new()
+	_floor_shade.name = "FloorShade"
+	add_child(_floor_shade)
+	_floor_shade.setup(_deep_solids(), size_tiles, _secret_cells)
+
 	# What holds each plank run up: a brace, a post or hangers (design bible 12.30).
 	if not _planks.is_empty():
 		var holds := PlankSupports.new()
@@ -578,6 +585,8 @@ func tear_floor(col_from: int, col_to: int, row_from: int, row_to: int) -> void:
 			_spawn(Spikes.new(), Vector2((x + 0.5) * TILE, below.y * TILE))
 	if _deep_shade != null:
 		_deep_shade.setup(_deep_solids(), size_tiles, {}, _secret_cells, zone, hash(id))
+	if _floor_shade != null:
+		_floor_shade.setup(_deep_solids(), size_tiles, _secret_cells)
 	if _soffit_shade != null:
 		_shade_soffits()
 	if _top_lip != null:

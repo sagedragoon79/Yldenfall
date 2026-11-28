@@ -20,6 +20,7 @@ const SUITES := [
 	preload("res://tests/test_edge_shade.gd"),
 	preload("res://tests/test_deep_shade.gd"),
 	preload("res://tests/test_soffit_shade.gd"),
+	preload("res://tests/test_floor_shade.gd"),
 	preload("res://tests/test_exit_mouth.gd"),
 	preload("res://tests/test_top_lip.gd"),
 	preload("res://tests/test_standout.gd"),
