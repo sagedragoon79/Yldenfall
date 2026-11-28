@@ -223,6 +223,7 @@ func _clean_slate() -> void:
 	BossPractice.running = false
 	PlayerVisual.forced = ""
 	PlayerVisual.body_sets = true
+	PlayerVisual.one_body = true
 	# A menu left open leaves the game paused, and the next test's world
 	# would stand still (pass 399).
 	get_tree().paused = false
@@ -263,6 +264,8 @@ func _leaks() -> Array[String]:
 		out.append("a forced pose (%s)" % PlayerVisual.forced)
 	if not PlayerVisual.body_sets:
 		out.append("body sets off")
+	if not PlayerVisual.one_body:
+		out.append("the one body off")
 	if Settings.path != TestSuite.SETTINGS_PATH or Settings.snapshot() != _clean_settings:
 		out.append("settings changed")
 	if Drop.bread_chance != 0.0 or Drop.mana_chance != 0.0 or Drop.poison_chance != 0.0 or Drop.rare_chance != 0.0:

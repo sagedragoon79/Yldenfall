@@ -1889,7 +1889,9 @@ func test_the_ring_of_thorns_is_cleared_by_pogo() -> void:
 			p.input.move_x = 0 if absf(dx) < 3.0 else int(signf(dx))
 		var falling := not on and p.velocity.y > 0.0
 		p.input.down = falling
-		p.input.attack_pressed = falling and f % 4 == 0
+		# Strike as a bulb comes up under the feet, not the moment the fall begins.
+		var near := target == null or target.global_position.y - p.global_position.y < 48.0
+		p.input.attack_pressed = falling and near and f % 4 == 0
 		var vy := p.velocity.y
 		await frames(1)
 		f += 1

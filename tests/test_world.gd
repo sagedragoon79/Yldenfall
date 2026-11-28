@@ -53,8 +53,9 @@ func test_slash_hits_dummy() -> void:
 
 
 func test_down_strike_breaks_cracked_floor() -> void:
+	# Open overhead: the hero drops in from the top row.
 	var rows := [
-		"##########",
+		"#........#",
 		"#........#",
 		"#........#",
 		"#........#",
@@ -205,9 +206,10 @@ func test_cracked_stone_answers_the_real_controller() -> void:
 	await frames(10)
 	check(_whole(room) < 3 and Sfx.recent.has("break"), "a fresh tap breaks the cracked stone, heard (%d whole)" % _whole(room))
 	room.free()
-	# The floor: Down alone lands on it; Down with a tap of Attack breaks it.
+	# The floor: Down alone lands on it; Down with a tap of Attack breaks it. Open
+	# overhead, so the hero dropped in from the top row fits.
 	room = make_room([
-		"##########",
+		"#........#",
 		"#........#",
 		"#........#",
 		"#........#",

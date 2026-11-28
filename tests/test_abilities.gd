@@ -44,9 +44,10 @@ const SPIKE_FLOOR := [
 
 
 ## Puts the player in the air against the right wall of the shaft, holding into it.
-func _start_on_right_wall(abilities := {}) -> Player:
+## Row 10 is low enough for four climb jumps under the ceiling (the 54 px body).
+func _start_on_right_wall(abilities := {}, row := 10) -> Player:
 	var room := make_room(SHAFT)
-	var p := make_player(room, Vector2i(14, 6), abilities)
+	var p := make_player(room, Vector2i(14, row), abilities)
 	p.input.move_x = 1
 	await frames(20)
 	return p
@@ -175,13 +176,20 @@ func test_wall_slide_is_drawn_gripping_the_wall() -> void:
 	var p := await _start_on_right_wall()
 	await frames(20)
 	check(p.is_wall_sliding and p.facing == -1, "sliding on a right wall, facing away for the jump")
-	check(PlayerVisual.look_dir(p) == 1, "but the sprite faces the wall it grips (playtest)")
+	# The 128 px hero clings facing the camera, its art drawn with the wall at its left
+	# (Sean, 2026-11-26): a right wall mirrors it. The old sets faced the wall they gripped.
+	check(PlayerVisual.look_dir(p) == -1, "the sprite is mirrored to put the right wall at its side")
 	await frames(1)
-	check(p.visual.scale.x > 0.0, "and is drawn unflipped (scale.x %.2f)" % p.visual.scale.x)
+	check(p.visual.scale.x < 0.0, "and is drawn flipped (scale.x %.2f)" % p.visual.scale.x)
+	check(p.visual.anim == "wall" and not p.visual.frame_info().has("blade"), "showing no sword on the wall")
+	PlayerVisual.one_body = false
+	check(PlayerVisual.look_dir(p) == 1, "an armor set still faces the wall it grips (playtest)")
+	PlayerVisual.one_body = true
 
 
 func test_no_wall_slide_without_glove() -> void:
-	var p := await _start_on_right_wall({"glove": false})
+	# High on the wall, so a fall at full speed is still falling when it is checked.
+	var p := await _start_on_right_wall({"glove": false}, 4)
 	await frames(5)
 	check(not p.is_wall_sliding, "no wall slide without the Climbing Glove")
 	check(p.velocity.y > p.tuning.wall_slide_speed, "falls at full speed (vy %.1f)" % p.velocity.y)
@@ -1017,7 +1025,7 @@ func test_feather_fall_needs_the_skill_and_brakes_a_fast_fall() -> void:
 ## Bible 6.2: air acceleration 1,400 px/s² and deceleration 900 px/s².
 func test_air_control_matches_the_bible() -> void:
 	var room := _tall_room()
-	var p := make_player(room, Vector2i(3, 3))
+	var p := make_player(room, Vector2i(3, 5))
 	await frames(1)
 	p.velocity = Vector2.ZERO
 	p.input.move_x = 1

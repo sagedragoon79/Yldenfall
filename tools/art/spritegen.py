@@ -268,6 +268,11 @@ SHIELDS = ["small_shield", "large_shield", "magic_shield"]
 ARMOR_SHEETS = BODY_SETS + [f"{s}_{b}" for s in BODY_SETS for b in BLADES] + [f"{s}_{h}" for s in BODY_SETS for h in SHIELDS]
 # Their cells run 20 px deeper under the feet than the code rig's, for the Delver's Pick's head on a pogo.
 ARMOR_CELL = (CELL, CELL + 20)
+# The 128 px hero (one body, design bible 5.6 and 12.1): about 59 px tall, so a cell of its own with
+# room over the head for an up-slash and to the sides for the cloak and a lunge.
+HERO_SHEET = "hero128"
+HERO_CELL = (112, 96)
+HERO_ORIGIN = (56, 84)
 
 
 def main():
@@ -278,6 +283,9 @@ def main():
         clips = manifest.get(sheet, {}).get("animations", {})
         if clips:
             write_sheet(sheet, ARMOR_CELL, ORIGIN, [a for a in anims if a[0] in clips], render)
+    clips = manifest.get(HERO_SHEET, {}).get("animations", {})
+    if clips:
+        write_sheet(HERO_SHEET, HERO_CELL, HERO_ORIGIN, [a for a in anims if a[0] in clips], render)
 
 
 if __name__ == "__main__":

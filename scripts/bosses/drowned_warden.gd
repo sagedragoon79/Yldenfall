@@ -52,7 +52,9 @@ const UNDERTOW_TIME := 1.4
 const UNDERTOW_PULL := 85.0
 const SLAM_TELL := 0.45
 const SLAM_DAMAGE := 22
-const SLAM_SIZE := Vector2(120, 100)
+## From 70 px over the surface to 60 under it: a 54 px hero dragged off a ledge sinks
+## that far before he floats up, and the slam still reaches him (2026-11-28; it was 30).
+const SLAM_SIZE := Vector2(120, 130)
 const RECOVER := 0.7
 const STAGGER := 1.4
 const ROAR := 1.0

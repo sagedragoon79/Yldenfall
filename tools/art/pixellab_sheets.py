@@ -141,6 +141,16 @@ NO_SLAB_CLEANING = set()
 # Art pass 6: the Glass Slug's grey-violet foot is a flat dull grey the cleaner would eat.
 NO_SLAB_CLEANING |= {"meteor_slug"}
 
+# The 128 px hero (one body, design bible 5.6 and 12.1): body-only clips with empty hands, made with
+# skeleton-v3 on the neutral PixelLab state (3a665ec6), 176 px frames. The game draws the sword and
+# shield at each frame's hand point. The wall clips face the camera (Sean, 2026-11-26) and carry the
+# lowered hood painted in. The steel is a flat ash grey the slab cleaner would eat.
+HERO128 = ("idle", "walk", "run", "jump", "slash1", "slash2", "slash3", "slash_up", "pogo", "crouch",
+           "crouch_slash", "dash", "throw", "throw_up", "cast", "drink", "hurt", "death", "block", "parry",
+           "bash", "riposte", "wall_slide", "wall_cling", "wall_jump")
+SHEETS["hero128"] = {f"{clip}.png": f"hero/neutral128/{clip}" for clip in HERO128}
+NO_SLAB_CLEANING |= {"hero128"}
+
 
 def frames_of(folder):
     # Prefer Sean's cleaned frames (art/cleanup/<folder>) over the raw PixelLab output.

@@ -12,7 +12,7 @@ const SAVE_SLOT := 9
 ## Room C: an inner door (1) back to B.
 func _rooms(extra_a := {}) -> Dictionary:
 	var a := grid_rows(40, 23)
-	put_tiles(a, 39, 17, "1", 1, 3)
+	put_tiles(a, 39, 16, "1", 1, 4)
 	put_tiles(a, 5, 19, "P")
 	put_tiles(a, 10, 19, "S")
 	put_tiles(a, 20, 20, ".", 3, 2)
@@ -20,7 +20,7 @@ func _rooms(extra_a := {}) -> Dictionary:
 	for k: Vector2i in extra_a:
 		put_tiles(a, k.x, k.y, extra_a[k])
 	var b := grid_rows(40, 23)
-	put_tiles(b, 0, 17, "1", 1, 3)
+	put_tiles(b, 0, 16, "1", 1, 4)
 	put_tiles(b, 20, 0, "2", 3, 1)
 	put_tiles(b, 30, 19, "3")
 	put_tiles(b, 6, 19, "P")
@@ -1244,7 +1244,7 @@ func test_decor_dresses_open_surfaces_only() -> void:
 	var rows := grid_rows(40, 23)
 	put_tiles(rows, 3, 19, "P")
 	put_tiles(rows, 20, 19, "^")
-	put_tiles(rows, 39, 17, "1", 1, 3)
+	put_tiles(rows, 39, 16, "1", 1, 4)
 	var text := room_text(["name: T", "zone: heartwood", "door: 1, t/x, 1"], rows)
 	var room := Room.from_text(text, "t/decor")
 	arena.add_child(room)
