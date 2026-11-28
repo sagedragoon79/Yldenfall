@@ -1582,7 +1582,7 @@ func _apply_one_way_ledge_correction(motion: Vector2) -> void:
 			return
 
 
-func _after_move(pre_velocity: Vector2, _delta: float) -> void:
+func _after_move(pre_velocity: Vector2, delta: float) -> void:
 	var on_floor := is_on_floor()
 	if not on_floor:
 		_peak_fall_speed = maxf(_peak_fall_speed, velocity.y)
@@ -1610,6 +1610,9 @@ func _after_move(pre_velocity: Vector2, _delta: float) -> void:
 		safe_position = global_position
 	_was_on_floor = on_floor
 	visual.position.y = _slope_sink(on_floor)
+	# A cling is drawn out from the wall; leaving it, the sprite eases back over the body.
+	var off := PlayerVisual.wall_offset(self)
+	visual.position.x = off if off != 0.0 else move_toward(visual.position.x, 0.0, PlayerVisual.WALL_STANDOFF_EASE * delta)
 
 
 ## On a slope the box rests on its downhill corner, up to half its width above

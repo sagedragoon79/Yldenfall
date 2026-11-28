@@ -187,6 +187,27 @@ func test_wall_slide_is_drawn_gripping_the_wall() -> void:
 	PlayerVisual.one_body = true
 
 
+## Sean, 2026-11-28: the cling sat too far inside the wall. The art's palm and planted
+## boot reach 18 px past the body's edge, so the sprite is drawn out from the wall by
+## WALL_STANDOFF, and eases back over the body once he leaves it.
+func test_the_cling_rests_on_the_wall_face() -> void:
+	var p := await _start_on_right_wall()
+	await frames(20)
+	check(p.is_wall_sliding, "clinging to the right wall")
+	check(is_equal_approx(p.visual.position.x, -PlayerVisual.WALL_STANDOFF), "drawn %.0f px out from it (got %.1f)" % [PlayerVisual.WALL_STANDOFF, p.visual.position.x])
+	# The art reaches 25.5 px from its origin on the wall side (palm and boot); as drawn,
+	# that ends within 2 px of the wall's face.
+	var wall_face := p.global_position.x + Player.BODY_SIZE.x / 2.0
+	var reach := p.visual.global_position.x + 25.5
+	check(absf(reach - wall_face) <= 2.0, "the palm rests on the wall's face (%.1f px off)" % (reach - wall_face))
+	p.input.move_x = -1
+	p.input.jump_pressed = true
+	await frames(1)
+	p.input.jump_pressed = false
+	await frames(12)
+	check(not p.is_wall_sliding and p.visual.position.x == 0.0, "and is back over the body once off the wall (%.1f)" % p.visual.position.x)
+
+
 func test_no_wall_slide_without_glove() -> void:
 	# High on the wall, so a fall at full speed is still falling when it is checked.
 	var p := await _start_on_right_wall({"glove": false}, 4)

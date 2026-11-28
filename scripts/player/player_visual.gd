@@ -373,6 +373,21 @@ func finished() -> bool:
 	return Sheet.finished(sheet, anim, anim_time)
 
 
+## How far the 128 px hero's cling art reaches past the body's edge on the wall side
+## (palm and planted boot, 18 px). The sprite is drawn this far out from the wall so
+## the hand and boot rest on its face instead of sinking into it (Sean, 2026-11-28).
+const WALL_STANDOFF := 17.0
+## How fast the standoff eases out when he leaves the wall, in px/s.
+const WALL_STANDOFF_EASE := 220.0
+
+
+## Where the sprite sits across from the body: out from the wall in a cling.
+static func wall_offset(p: Player) -> float:
+	if p.is_wall_sliding and p.wall_dir != 0 and armor_sheet() == HERO_SHEET:
+		return -p.wall_dir * WALL_STANDOFF
+	return 0.0
+
+
 ## Which way the sprite is drawn. A wall slide is drawn gripping the wall (the
 ## sheet's pose reaches forward with a foot on it), while `facing` points away
 ## from the wall so a wall jump or a swing still goes outward (playtest). The
